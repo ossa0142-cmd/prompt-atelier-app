@@ -892,14 +892,34 @@ function TranslationModal({ prompt, onClose, copyText }: any) {
 
 function MemoModal({ prompt, onClose, onSave }: any) {
   const [memo, setMemo] = React.useState(prompt.memo || "");
+  const [showConfirm, setShowConfirm] = React.useState(false);
+  const savedMemo = prompt.memo || "";
+  const isDirty = memo !== savedMemo;
+  const requestClose = () => {
+    if (isDirty) {
+      setShowConfirm(true);
+      return;
+    }
+    onClose();
+  };
   return (
-    <Modal title="メモ" onClose={onClose}>
+    <Modal title="メモ" onClose={requestClose} hideClose>
       <div className="translation-box">
         <h3>{prompt.title} のメモ</h3>
         <textarea className="memo-textarea" value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="このプロンプトで気づいたこと、使いどころ、商品化メモなど" />
       </div>
-      <div className="modal-actions">
-        <button onClick={onClose}>閉じる</button>
+      {showConfirm && (
+        <div className="unsaved-confirm">
+          <strong>保存せず閉じますか？</strong>
+          <div>
+            <button onClick={() => setShowConfirm(false)}>キャンセル</button>
+            <button className="danger" onClick={onClose}>保存せず閉じる</button>
+            <button className="primary" onClick={() => onSave(memo)}>保存して閉じる</button>
+          </div>
+        </div>
+      )}
+      <div className="memo-modal-footer">
+        <button onClick={requestClose}>閉じる</button>
         <button className="primary" onClick={() => onSave(memo)}>メモを保存</button>
       </div>
     </Modal>
@@ -1263,13 +1283,13 @@ function FormGrid({ children }: any) {
   return <div className="form-grid">{children}</div>;
 }
 
-function Modal({ title, children, onClose }: any) {
+function Modal({ title, children, onClose, hideClose }: any) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal">
         <div className="modal-head">
           <h2>{title}</h2>
-          <button onClick={onClose}>閉じる</button>
+          {!hideClose && <button onClick={onClose}>閉じる</button>}
         </div>
         {children}
       </div>

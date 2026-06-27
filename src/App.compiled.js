@@ -956,9 +956,20 @@ function MemoModal({
   onSave
 }) {
   const [memo, setMemo] = React.useState(prompt.memo || "");
+  const [showConfirm, setShowConfirm] = React.useState(false);
+  const savedMemo = prompt.memo || "";
+  const isDirty = memo !== savedMemo;
+  const requestClose = () => {
+    if (isDirty) {
+      setShowConfirm(true);
+      return;
+    }
+    onClose();
+  };
   return /*#__PURE__*/React.createElement(Modal, {
     title: "メモ",
-    onClose: onClose
+    onClose: requestClose,
+    hideClose: true
   }, /*#__PURE__*/React.createElement("div", {
     className: "translation-box"
   }, /*#__PURE__*/React.createElement("h3", null, prompt.title, " のメモ"), /*#__PURE__*/React.createElement("textarea", {
@@ -966,10 +977,20 @@ function MemoModal({
     value: memo,
     onChange: event => setMemo(event.target.value),
     placeholder: "このプロンプトで気づいたこと、使いどころ、商品化メモなど"
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  })), showConfirm && /*#__PURE__*/React.createElement("div", {
+    className: "unsaved-confirm"
+  }, /*#__PURE__*/React.createElement("strong", null, "保存せず閉じますか？"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowConfirm(false)
+  }, "キャンセル"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
     onClick: onClose
+  }, "保存せず閉じる"), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => onSave(memo)
+  }, "保存して閉じる"))), /*#__PURE__*/React.createElement("div", {
+    className: "memo-modal-footer"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: requestClose
   }, "閉じる"), /*#__PURE__*/React.createElement("button", {
     className: "primary",
     onClick: () => onSave(memo)
@@ -1663,7 +1684,8 @@ function FormGrid({
 function Modal({
   title,
   children,
-  onClose
+  onClose,
+  hideClose
 }) {
   return /*#__PURE__*/React.createElement("div", {
     className: "modal-backdrop",
@@ -1673,7 +1695,7 @@ function Modal({
     className: "modal"
   }, /*#__PURE__*/React.createElement("div", {
     className: "modal-head"
-  }, /*#__PURE__*/React.createElement("h2", null, title), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("h2", null, title), !hideClose && /*#__PURE__*/React.createElement("button", {
     onClick: onClose
   }, "閉じる")), children));
 }
