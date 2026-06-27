@@ -612,6 +612,22 @@ function Library({
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
+  const promptSlotCount = currentCategory ? filteredPrompts.length < 10 ? 10 : Math.ceil((filteredPrompts.length + 1) / 5) * 5 : 0;
+  const promptSlots = currentCategory ? Array.from({
+    length: promptSlotCount
+  }, (_, index) => filteredPrompts[index] || null) : [];
+  const createBlankLibraryPrompt = () => ({
+    id: "",
+    title: "",
+    category: "ステッカーモックアップ",
+    categoryId: currentCategory?.id || boardCategories[0]?.id || "",
+    description: "",
+    prompt: "",
+    memo: "",
+    tags: [],
+    imageUrl: "",
+    japaneseTranslation: ""
+  });
   const saveCategory = item => {
     const next = {
       ...item,
@@ -707,24 +723,14 @@ function Library({
     alt: ""
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, currentCategory.title), /*#__PURE__*/React.createElement("p", null, currentCategory.description)), /*#__PURE__*/React.createElement("button", {
     className: "primary",
-    onClick: () => setEditingPrompt({
-      id: "",
-      title: "",
-      category: "ステッカーモックアップ",
-      categoryId: currentCategory.id,
-      description: "",
-      prompt: "",
-      memo: "",
-      tags: [],
-      imageUrl: ""
-    })
+    onClick: () => setEditingPrompt(createBlankLibraryPrompt())
   }, "＋ このカテゴリにプロンプトを追加")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
     value: query,
     onChange: e => setQuery(e.target.value),
     placeholder: `${currentCategory.title}内を検索...`
   })), /*#__PURE__*/React.createElement("div", {
     className: "library-prompt-grid"
-  }, filteredPrompts.map(prompt => /*#__PURE__*/React.createElement("article", {
+  }, promptSlots.map((prompt, index) => prompt ? /*#__PURE__*/React.createElement("article", {
     className: "library-prompt-card",
     key: prompt.id
   }, /*#__PURE__*/React.createElement(PromptMenuButton, {
@@ -798,9 +804,11 @@ function Library({
       event.stopPropagation();
       setMemoPrompt(prompt);
     }
-  }, "メモ"))))), !filteredPrompts.length && /*#__PURE__*/React.createElement(Empty, {
-    text: "このカテゴリにはまだプロンプトがありません。"
-  }))), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
+  }, "メモ")))) : /*#__PURE__*/React.createElement("button", {
+    className: "add-prompt-card",
+    key: `empty-prompt-${index}`,
+    onClick: () => setEditingPrompt(createBlankLibraryPrompt())
+  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト"))))), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
     item: editingCategory,
     onClose: () => setEditingCategory(null),
     onSave: saveCategory

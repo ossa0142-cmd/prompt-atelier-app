@@ -665,6 +665,24 @@ function Library({ copyText }: any) {
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
+  const promptSlotCount = currentCategory
+    ? filteredPrompts.length < 10
+      ? 10
+      : Math.ceil((filteredPrompts.length + 1) / 5) * 5
+    : 0;
+  const promptSlots = currentCategory ? Array.from({ length: promptSlotCount }, (_, index) => filteredPrompts[index] || null) : [];
+  const createBlankLibraryPrompt = () => ({
+    id: "",
+    title: "",
+    category: "ステッカーモックアップ" as Category,
+    categoryId: currentCategory?.id || boardCategories[0]?.id || "",
+    description: "",
+    prompt: "",
+    memo: "",
+    tags: [],
+    imageUrl: "",
+    japaneseTranslation: "",
+  });
   const saveCategory = (item: MockupCategory) => {
     const next = { ...item, id: item.id || uid(), coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7") };
     setBoardCategories((items: MockupCategory[]) => item.id ? items.map((category) => category.id === item.id ? next : category) : [next, ...items]);
@@ -735,23 +753,13 @@ function Library({ copyText }: any) {
               <h2>{currentCategory.title}</h2>
               <p>{currentCategory.description}</p>
             </div>
-            <button className="primary" onClick={() => setEditingPrompt({
-              id: "",
-              title: "",
-              category: "ステッカーモックアップ",
-              categoryId: currentCategory.id,
-              description: "",
-              prompt: "",
-              memo: "",
-              tags: [],
-              imageUrl: "",
-            })}>＋ このカテゴリにプロンプトを追加</button>
+            <button className="primary" onClick={() => setEditingPrompt(createBlankLibraryPrompt())}>＋ このカテゴリにプロンプトを追加</button>
           </div>
           <Filters>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${currentCategory.title}内を検索...`} />
           </Filters>
           <div className="library-prompt-grid">
-            {filteredPrompts.map((prompt) => (
+            {promptSlots.map((prompt, index) => prompt ? (
               <article className="library-prompt-card" key={prompt.id}>
                 <PromptMenuButton
                   onDuplicate={() => duplicatePrompt(prompt)}
@@ -790,8 +798,12 @@ function Library({ copyText }: any) {
                   </div>
                 </div>
               </article>
+            ) : (
+              <button className="add-prompt-card" key={`empty-prompt-${index}`} onClick={() => setEditingPrompt(createBlankLibraryPrompt())}>
+                <span>＋</span>
+                <strong>新しいプロンプト</strong>
+              </button>
             ))}
-            {!filteredPrompts.length && <Empty text="このカテゴリにはまだプロンプトがありません。" />}
           </div>
         </>
       )}
