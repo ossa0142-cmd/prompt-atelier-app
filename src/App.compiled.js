@@ -591,16 +591,16 @@ function Library({
   copyText
 }) {
   const [query, setQuery] = React.useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = React.useState("");
+  const [selectedCategory, setSelectedCategory] = React.useState(null);
   const [editingCategory, setEditingCategory] = React.useState(null);
   const [editingPrompt, setEditingPrompt] = React.useState(null);
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v2", defaultLibraryBoardPrompts);
-  const selectedCategory = boardCategories.find(category => category.id === selectedCategoryId);
+  const currentCategory = selectedCategory ? boardCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const filteredCategories = boardCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter(item => {
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
-    return item.categoryId === selectedCategoryId && lowerIncludes(haystack, query);
+    return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
   const saveCategory = item => {
     const next = {
@@ -612,7 +612,7 @@ function Library({
     setEditingCategory(null);
   };
   const savePrompt = item => {
-    const category = boardCategories.find(category => category.id === item.categoryId) || selectedCategory || boardCategories[0];
+    const category = boardCategories.find(category => category.id === item.categoryId) || currentCategory || boardCategories[0];
     const next = {
       ...item,
       id: item.id || uid(),
@@ -640,7 +640,7 @@ function Library({
   };
   return /*#__PURE__*/React.createElement("section", {
     className: "page library-page"
-  }, !selectedCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
+  }, !currentCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
     title: "モックアップライブラリ",
     action: /*#__PURE__*/React.createElement("button", {
       className: "primary",
@@ -670,7 +670,7 @@ function Library({
   }), /*#__PURE__*/React.createElement("button", {
     className: "category-open",
     onClick: () => {
-      setSelectedCategoryId(category.id);
+      setSelectedCategory(category);
       setQuery("");
     }
   }, /*#__PURE__*/React.createElement("img", {
@@ -680,25 +680,29 @@ function Library({
     className: "library-detail-head"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      setSelectedCategoryId("");
+      setSelectedCategory(null);
       setQuery("");
     }
-  }, "← カテゴリ一覧へ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, selectedCategory.title), /*#__PURE__*/React.createElement("p", null, selectedCategory.description)), /*#__PURE__*/React.createElement("button", {
+  }, "← ライブラリへ戻る"), /*#__PURE__*/React.createElement("img", {
+    className: "library-detail-cover",
+    src: currentCategory.coverImage,
+    alt: ""
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, currentCategory.title), /*#__PURE__*/React.createElement("p", null, currentCategory.description)), /*#__PURE__*/React.createElement("button", {
     className: "primary",
     onClick: () => setEditingPrompt({
       id: "",
       title: "",
       category: "ステッカーモックアップ",
-      categoryId: selectedCategory.id,
+      categoryId: currentCategory.id,
       description: "",
       prompt: "",
       tags: [],
       imageUrl: ""
     })
-  }, "＋ プロンプトを追加")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+  }, "＋ このカテゴリにプロンプトを追加")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
     value: query,
     onChange: e => setQuery(e.target.value),
-    placeholder: `${selectedCategory.title}内を検索...`
+    placeholder: `${currentCategory.title}内を検索...`
   })), /*#__PURE__*/React.createElement("div", {
     className: "library-prompt-grid"
   }, filteredPrompts.map(prompt => /*#__PURE__*/React.createElement("article", {
@@ -735,7 +739,8 @@ function MenuButton({
   onDelete
 }) {
   return /*#__PURE__*/React.createElement("details", {
-    className: "card-menu"
+    className: "card-menu",
+    onClick: event => event.stopPropagation()
   }, /*#__PURE__*/React.createElement("summary", {
     "aria-label": "メニュー"
   }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {

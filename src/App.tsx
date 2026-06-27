@@ -642,16 +642,16 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
 
 function Library({ copyText }: any) {
   const [query, setQuery] = React.useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = React.useState("");
+  const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
   const [editingPrompt, setEditingPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v2", defaultLibraryBoardPrompts);
-  const selectedCategory = boardCategories.find((category) => category.id === selectedCategoryId);
+  const currentCategory = selectedCategory ? boardCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
   const filteredCategories = boardCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter((item) => {
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
-    return item.categoryId === selectedCategoryId && lowerIncludes(haystack, query);
+    return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
   const saveCategory = (item: MockupCategory) => {
     const next = { ...item, id: item.id || uid(), coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7") };
@@ -659,7 +659,7 @@ function Library({ copyText }: any) {
     setEditingCategory(null);
   };
   const savePrompt = (item: LibraryBoardPrompt) => {
-    const category = boardCategories.find((category) => category.id === item.categoryId) || selectedCategory || boardCategories[0];
+    const category = boardCategories.find((category) => category.id === item.categoryId) || currentCategory || boardCategories[0];
     const next = {
       ...item,
       id: item.id || uid(),
@@ -679,7 +679,7 @@ function Library({ copyText }: any) {
   };
   return (
     <section className="page library-page">
-      {!selectedCategory ? (
+      {!currentCategory ? (
         <>
           <PageHead
             title="モックアップライブラリ"
@@ -700,7 +700,7 @@ function Library({ copyText }: any) {
                   onImage={() => setEditingCategory(category)}
                   onDelete={() => setBoardCategories((items: MockupCategory[]) => items.filter((item) => item.id !== category.id))}
                 />
-                <button className="category-open" onClick={() => { setSelectedCategoryId(category.id); setQuery(""); }}>
+                <button className="category-open" onClick={() => { setSelectedCategory(category); setQuery(""); }}>
                   <img src={category.coverImage} alt="" />
                   <span>{category.title}</span>
                   <small>{category.description}</small>
@@ -712,24 +712,25 @@ function Library({ copyText }: any) {
       ) : (
         <>
           <div className="library-detail-head">
-            <button onClick={() => { setSelectedCategoryId(""); setQuery(""); }}>← カテゴリ一覧へ</button>
+            <button onClick={() => { setSelectedCategory(null); setQuery(""); }}>← ライブラリへ戻る</button>
+            <img className="library-detail-cover" src={currentCategory.coverImage} alt="" />
             <div>
-              <h2>{selectedCategory.title}</h2>
-              <p>{selectedCategory.description}</p>
+              <h2>{currentCategory.title}</h2>
+              <p>{currentCategory.description}</p>
             </div>
             <button className="primary" onClick={() => setEditingPrompt({
               id: "",
               title: "",
               category: "ステッカーモックアップ",
-              categoryId: selectedCategory.id,
+              categoryId: currentCategory.id,
               description: "",
               prompt: "",
               tags: [],
               imageUrl: "",
-            })}>＋ プロンプトを追加</button>
+            })}>＋ このカテゴリにプロンプトを追加</button>
           </div>
           <Filters>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${selectedCategory.title}内を検索...`} />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${currentCategory.title}内を検索...`} />
           </Filters>
           <div className="library-prompt-grid">
             {filteredPrompts.map((prompt) => (
@@ -760,7 +761,7 @@ function Library({ copyText }: any) {
 
 function MenuButton({ onEdit, onDuplicate, onImage, onDelete }: any) {
   return (
-    <details className="card-menu">
+    <details className="card-menu" onClick={(event) => event.stopPropagation()}>
       <summary aria-label="メニュー">…</summary>
       <div>
         <button onClick={onEdit}>編集</button>

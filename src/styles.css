@@ -742,7 +742,7 @@ main {
 
 .library-detail-head {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto 112px minmax(0, 1fr) auto;
   align-items: center;
   gap: 18px;
   border: 1px solid rgba(232, 222, 209, 0.9);
@@ -752,6 +752,16 @@ main {
     #fffdf9;
   box-shadow: 0 14px 34px rgba(73, 58, 45, 0.06);
   padding: 20px;
+}
+
+.library-detail-cover {
+  width: 112px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(232, 222, 209, 0.9);
+  border-radius: 22px;
+  object-fit: cover;
+  background: var(--sand);
+  box-shadow: 0 10px 24px rgba(73, 58, 45, 0.08);
 }
 
 .library-detail-head h2 {
@@ -1312,6 +1322,12 @@ summary {
   .library-detail-head {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .library-detail-cover {
+    width: 100%;
+    max-height: 220px;
+    aspect-ratio: 1.8;
   }
 }
 
