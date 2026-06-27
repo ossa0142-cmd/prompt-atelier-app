@@ -27,6 +27,7 @@ type MockupCategory = {
 type LibraryBoardPrompt = LibraryPrompt & {
   categoryId: string;
   japaneseTranslation?: string;
+  memo?: string;
 };
 
 type MyPrompt = LibraryPrompt & {
@@ -654,9 +655,10 @@ function Library({ copyText }: any) {
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
   const [editingPrompt, setEditingPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [translationPrompt, setTranslationPrompt] = React.useState<LibraryBoardPrompt | null>(null);
+  const [memoPrompt, setMemoPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
-  const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v4", defaultLibraryBoardPrompts);
+  const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const currentCategory = selectedCategory ? boardCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
   const filteredCategories = boardCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter((item) => {
@@ -677,6 +679,7 @@ function Library({ copyText }: any) {
       category: "ステッカーモックアップ" as Category,
       imageUrl: item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
+      memo: item.memo || "",
       tags: item.tags || [],
     };
     setBoardPrompts((items: LibraryBoardPrompt[]) => item.id ? items.map((prompt) => prompt.id === item.id ? next : prompt) : [next, ...items]);
@@ -739,6 +742,7 @@ function Library({ copyText }: any) {
               categoryId: currentCategory.id,
               description: "",
               prompt: "",
+              memo: "",
               tags: [],
               imageUrl: "",
             })}>＋ このカテゴリにプロンプトを追加</button>
@@ -771,28 +775,18 @@ function Library({ copyText }: any) {
                     onSave={(title) => { updatePrompt(prompt.id, { title }); setInlineEdit(null); }}
                   />
                   <InlineEditable
-                    className="inline-description"
+                    className="inline-prompt"
                     multiline
-                    value={prompt.description}
-                    placeholder="説明文"
-                    isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "description"}
-                    onEdit={() => setInlineEdit({ id: prompt.id, field: "description" })}
-                    onSave={(description) => { updatePrompt(prompt.id, { description }); setInlineEdit(null); }}
+                    value={prompt.prompt}
+                    placeholder="プロンプト本文"
+                    isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "prompt"}
+                    onEdit={() => setInlineEdit({ id: prompt.id, field: "prompt" })}
+                    onSave={(promptText) => { updatePrompt(prompt.id, { prompt: promptText }); setInlineEdit(null); }}
                   />
-                  <details className="prompt-edit-details" onClick={(event) => event.stopPropagation()}>
-                    <summary>プロンプト本文・和訳を編集</summary>
-                    <label>
-                      <span>プロンプト本文</span>
-                      <textarea value={prompt.prompt} onChange={(event) => updatePrompt(prompt.id, { prompt: event.target.value })} />
-                    </label>
-                    <label>
-                      <span>和訳本文</span>
-                      <textarea value={prompt.japaneseTranslation || ""} onChange={(event) => updatePrompt(prompt.id, { japaneseTranslation: event.target.value })} />
-                    </label>
-                  </details>
                   <div className="prompt-card-actions">
                     <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
                     <button onClick={(event) => { event.stopPropagation(); setTranslationPrompt(prompt); }}>和訳</button>
+                    <button onClick={(event) => { event.stopPropagation(); setMemoPrompt(prompt); }}>メモ</button>
                   </div>
                 </div>
               </article>
@@ -804,6 +798,16 @@ function Library({ copyText }: any) {
       {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
       {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={boardCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
       {translationPrompt && <TranslationModal prompt={translationPrompt} onClose={() => setTranslationPrompt(null)} copyText={copyText} />}
+      {memoPrompt && (
+        <MemoModal
+          prompt={memoPrompt}
+          onClose={() => setMemoPrompt(null)}
+          onSave={(memo) => {
+            updatePrompt(memoPrompt.id, { memo });
+            setMemoPrompt(null);
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -886,6 +890,22 @@ function TranslationModal({ prompt, onClose, copyText }: any) {
   );
 }
 
+function MemoModal({ prompt, onClose, onSave }: any) {
+  const [memo, setMemo] = React.useState(prompt.memo || "");
+  return (
+    <Modal title="メモ" onClose={onClose}>
+      <div className="translation-box">
+        <h3>{prompt.title} のメモ</h3>
+        <textarea className="memo-textarea" value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="このプロンプトで気づいたこと、使いどころ、商品化メモなど" />
+      </div>
+      <div className="modal-actions">
+        <button onClick={onClose}>閉じる</button>
+        <button className="primary" onClick={() => onSave(memo)}>メモを保存</button>
+      </div>
+    </Modal>
+  );
+}
+
 function MenuButton({ onEdit, onDuplicate, onImage, onDelete }: any) {
   const runMenuAction = (event: any, action: () => void) => {
     event.preventDefault();
@@ -962,6 +982,7 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
         <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
         <textarea className="tall" value={draft.japaneseTranslation || ""} onChange={(e) => setDraft({ ...draft, japaneseTranslation: e.target.value })} placeholder="和訳本文" />
+        <textarea value={draft.memo || ""} onChange={(e) => setDraft({ ...draft, memo: e.target.value })} placeholder="メモ" />
         <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サムネイル画像URL" />
         <label className="upload-box">
           <span>画像をアップロード</span>

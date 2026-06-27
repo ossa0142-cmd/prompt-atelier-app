@@ -818,14 +818,16 @@ main {
   line-height: 1.35;
 }
 
-.library-prompt-card p {
+.library-prompt-card p,
+.inline-prompt {
   display: -webkit-box;
-  min-height: 44px;
+  min-height: 92px;
   margin-bottom: 0;
   overflow: hidden;
   font-size: 14px;
+  line-height: 1.55;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 5;
 }
 
 .library-prompt-card .primary {
@@ -834,17 +836,16 @@ main {
 }
 
 .prompt-card-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(70px, 0.75fr) minmax(70px, 0.75fr);
   gap: 8px;
 }
 
 .prompt-card-actions button {
-  flex: 1 1 auto;
   min-height: 40px;
   justify-content: center;
   padding-inline: 12px;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .thumbnail-button {
@@ -919,7 +920,7 @@ main {
 }
 
 textarea.inline-input {
-  min-height: 78px;
+  min-height: 112px;
 }
 
 .prompt-edit-details {
@@ -966,6 +967,11 @@ textarea.inline-input {
 .translation-box h3,
 .translation-box p {
   margin-bottom: 0;
+}
+
+.memo-textarea {
+  min-height: 180px;
+  border-radius: 18px;
 }
 
 .upload-box {
@@ -1549,6 +1555,10 @@ summary {
   .continue-card,
   .home-prompt-card {
     border-radius: 24px;
+  }
+
+  .prompt-card-actions {
+    grid-template-columns: 1fr;
   }
 
   .page-head {

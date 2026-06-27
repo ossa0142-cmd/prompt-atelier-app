@@ -602,9 +602,10 @@ function Library({
   const [editingCategory, setEditingCategory] = React.useState(null);
   const [editingPrompt, setEditingPrompt] = React.useState(null);
   const [translationPrompt, setTranslationPrompt] = React.useState(null);
+  const [memoPrompt, setMemoPrompt] = React.useState(null);
   const [inlineEdit, setInlineEdit] = React.useState(null);
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
-  const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v4", defaultLibraryBoardPrompts);
+  const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const currentCategory = selectedCategory ? boardCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const filteredCategories = boardCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter(item => {
@@ -629,6 +630,7 @@ function Library({
       category: "ステッカーモックアップ",
       imageUrl: item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
+      memo: item.memo || "",
       tags: item.tags || []
     };
     setBoardPrompts(items => item.id ? items.map(prompt => prompt.id === item.id ? next : prompt) : [next, ...items]);
@@ -712,6 +714,7 @@ function Library({
       categoryId: currentCategory.id,
       description: "",
       prompt: "",
+      memo: "",
       tags: [],
       imageUrl: ""
     })
@@ -762,35 +765,22 @@ function Library({
       setInlineEdit(null);
     }
   }), /*#__PURE__*/React.createElement(InlineEditable, {
-    className: "inline-description",
+    className: "inline-prompt",
     multiline: true,
-    value: prompt.description,
-    placeholder: "説明文",
-    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "description",
+    value: prompt.prompt,
+    placeholder: "プロンプト本文",
+    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "prompt",
     onEdit: () => setInlineEdit({
       id: prompt.id,
-      field: "description"
+      field: "prompt"
     }),
-    onSave: description => {
+    onSave: promptText => {
       updatePrompt(prompt.id, {
-        description
+        prompt: promptText
       });
       setInlineEdit(null);
     }
-  }), /*#__PURE__*/React.createElement("details", {
-    className: "prompt-edit-details",
-    onClick: event => event.stopPropagation()
-  }, /*#__PURE__*/React.createElement("summary", null, "プロンプト本文・和訳を編集"), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("span", null, "プロンプト本文"), /*#__PURE__*/React.createElement("textarea", {
-    value: prompt.prompt,
-    onChange: event => updatePrompt(prompt.id, {
-      prompt: event.target.value
-    })
-  })), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("span", null, "和訳本文"), /*#__PURE__*/React.createElement("textarea", {
-    value: prompt.japaneseTranslation || "",
-    onChange: event => updatePrompt(prompt.id, {
-      japaneseTranslation: event.target.value
-    })
-  }))), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "prompt-card-actions"
   }, /*#__PURE__*/React.createElement("button", {
     className: "primary",
@@ -803,7 +793,12 @@ function Library({
       event.stopPropagation();
       setTranslationPrompt(prompt);
     }
-  }, "和訳"))))), !filteredPrompts.length && /*#__PURE__*/React.createElement(Empty, {
+  }, "和訳"), /*#__PURE__*/React.createElement("button", {
+    onClick: event => {
+      event.stopPropagation();
+      setMemoPrompt(prompt);
+    }
+  }, "メモ"))))), !filteredPrompts.length && /*#__PURE__*/React.createElement(Empty, {
     text: "このカテゴリにはまだプロンプトがありません。"
   }))), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
     item: editingCategory,
@@ -818,6 +813,15 @@ function Library({
     prompt: translationPrompt,
     onClose: () => setTranslationPrompt(null),
     copyText: copyText
+  }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
+    prompt: memoPrompt,
+    onClose: () => setMemoPrompt(null),
+    onSave: memo => {
+      updatePrompt(memoPrompt.id, {
+        memo
+      });
+      setMemoPrompt(null);
+    }
   }));
 }
 function PromptThumbnail({
@@ -945,6 +949,31 @@ function TranslationModal({
     className: "primary",
     onClick: () => copyText(translation)
   }, "和訳をコピー")));
+}
+function MemoModal({
+  prompt,
+  onClose,
+  onSave
+}) {
+  const [memo, setMemo] = React.useState(prompt.memo || "");
+  return /*#__PURE__*/React.createElement(Modal, {
+    title: "メモ",
+    onClose: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "translation-box"
+  }, /*#__PURE__*/React.createElement("h3", null, prompt.title, " のメモ"), /*#__PURE__*/React.createElement("textarea", {
+    className: "memo-textarea",
+    value: memo,
+    onChange: event => setMemo(event.target.value),
+    placeholder: "このプロンプトで気づいたこと、使いどころ、商品化メモなど"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "modal-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose
+  }, "閉じる"), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => onSave(memo)
+  }, "メモを保存")));
 }
 function MenuButton({
   onEdit,
@@ -1105,6 +1134,13 @@ function LibraryPromptModal({
       japaneseTranslation: e.target.value
     }),
     placeholder: "和訳本文"
+  }), /*#__PURE__*/React.createElement("textarea", {
+    value: draft.memo || "",
+    onChange: e => setDraft({
+      ...draft,
+      memo: e.target.value
+    }),
+    placeholder: "メモ"
   }), /*#__PURE__*/React.createElement("input", {
     value: draft.imageUrl,
     onChange: e => setDraft({
