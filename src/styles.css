@@ -785,6 +785,27 @@ main {
   background: var(--sand);
 }
 
+.image-placeholder {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1.25;
+  place-items: center;
+  background:
+    radial-gradient(circle at 24% 24%, rgba(255, 255, 255, 0.72), transparent 34%),
+    linear-gradient(145deg, #f3eee7, #e9ebe6);
+}
+
+.image-placeholder svg {
+  width: 58px;
+  height: 58px;
+  fill: none;
+  stroke: #a99d92;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.6;
+  opacity: 0.68;
+}
+
 .library-prompt-card > div {
   display: grid;
   gap: 12px;
@@ -809,6 +830,32 @@ main {
 .library-prompt-card .primary {
   width: fit-content;
   padding-inline: 18px;
+}
+
+.prompt-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.prompt-card-actions button {
+  flex: 1 1 auto;
+  min-height: 42px;
+  justify-content: center;
+}
+
+.translation-box {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fffdf9;
+  padding: 18px;
+}
+
+.translation-box h3,
+.translation-box p {
+  margin-bottom: 0;
 }
 
 .upload-box {

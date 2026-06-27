@@ -26,6 +26,7 @@ type MockupCategory = {
 
 type LibraryBoardPrompt = LibraryPrompt & {
   categoryId: string;
+  japaneseTranslation?: string;
 };
 
 type MyPrompt = LibraryPrompt & {
@@ -209,6 +210,7 @@ const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
   ...libraryPrompts.map((prompt) => ({
     ...prompt,
     categoryId: mockupCategoryIdByTitle[prompt.category],
+    japaneseTranslation: prompt.prompt,
   })),
   {
     id: "sticker-simple",
@@ -216,9 +218,10 @@ const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
     category: "ステッカーモックアップ",
     categoryId: "sticker",
     description: "白背景でステッカーの形と色を見せる、いちばん使いやすい基本モックアップ。",
-    prompt: "白い背景にステッカーをきれいに並べたシンプルな商品写真。やわらかな自然光、薄い影、Etsy販売画像向け、余白多め。",
+    prompt: "simple sticker mockup on a clean white background, neatly arranged sticker designs, soft natural light, subtle shadows, Etsy listing photo, generous whitespace",
+    japaneseTranslation: "白い背景にステッカーをきれいに並べたシンプルな商品写真。やわらかな自然光、薄い影、Etsy販売画像向け、余白多め。",
     tags: [],
-    imageUrl: art("Simple", "#fff6ee", "#dce7d7"),
+    imageUrl: "",
   },
   {
     id: "sticker-lifestyle",
@@ -226,9 +229,10 @@ const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
     category: "ステッカーモックアップ",
     categoryId: "sticker",
     description: "手帳や文具と一緒に置いた、暮らしの中で使う雰囲気のモックアップ。",
-    prompt: "手帳、ペン、マスキングテープのそばにステッカーを置いたライフスタイル写真。韓国文具風、淡いパステル、自然光、かわいい作業机。",
+    prompt: "lifestyle sticker mockup on a cute creator desk with planner, pen, washi tape, soft pastel Korean stationery mood, natural daylight, cozy handmade shop aesthetic",
+    japaneseTranslation: "手帳、ペン、マスキングテープのそばにステッカーを置いたライフスタイル写真。韓国文具風、淡いパステル、自然光、かわいい作業机。",
     tags: [],
-    imageUrl: art("Lifestyle", "#f7e8e3", "#f1e7d8"),
+    imageUrl: "",
   },
   {
     id: "sticker-clear",
@@ -236,9 +240,10 @@ const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
     category: "ステッカーモックアップ",
     categoryId: "sticker",
     description: "透明素材の縁やつや感が分かる、質感重視の販売画像。",
-    prompt: "透明ステッカーのつやと薄い縁が見える接写モックアップ。白い台紙、やわらかな反射、清潔感のある商品写真。",
+    prompt: "close-up clear sticker mockup showing glossy transparent edges, white backing card, soft reflection, clean premium product photography",
+    japaneseTranslation: "透明ステッカーのつやと薄い縁が見える接写モックアップ。白い台紙、やわらかな反射、清潔感のある商品写真。",
     tags: [],
-    imageUrl: art("Clear", "#e8edf5", "#fffaf4"),
+    imageUrl: "",
   },
   {
     id: "sticker-laptop",
@@ -246,9 +251,10 @@ const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
     category: "ステッカーモックアップ",
     categoryId: "sticker",
     description: "ノートPCに貼った使用例として見せる、クリエイター向けモックアップ。",
-    prompt: "シンプルなノートPCの天板にかわいいステッカーを貼ったモックアップ。明るいデスク、文具、ナチュラルな影、販売用プレビュー。",
+    prompt: "cute sticker mockup placed on a minimal laptop cover, bright desk, stationery props, natural soft shadow, realistic product preview for online shop",
+    japaneseTranslation: "シンプルなノートPCの天板にかわいいステッカーを貼ったモックアップ。明るいデスク、文具、ナチュラルな影、販売用プレビュー。",
     tags: [],
-    imageUrl: art("Laptop", "#eff0ec", "#dce7d7"),
+    imageUrl: "",
   },
   {
     id: "sticker-phone",
@@ -256,9 +262,10 @@ const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
     category: "ステッカーモックアップ",
     categoryId: "sticker",
     description: "スマホケースや小物に貼った雰囲気が伝わるモックアップ。",
-    prompt: "スマホケースにステッカーを貼ったかわいい商品写真。淡い背景、手帳や小物を添えた構図、やわらかな光。",
+    prompt: "cute sticker mockup on a phone case, soft pastel background, planner and small stationery props, gentle light, clean handmade product photo",
+    japaneseTranslation: "スマホケースにステッカーを貼ったかわいい商品写真。淡い背景、手帳や小物を添えた構図、やわらかな光。",
     tags: [],
-    imageUrl: art("Phone", "#f6e6ec", "#fff6e9"),
+    imageUrl: "",
   },
   {
     id: "sticker-packaging",
@@ -266,9 +273,10 @@ const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
     category: "ステッカーモックアップ",
     categoryId: "sticker",
     description: "台紙や袋に入れた販売時の梱包イメージを見せるモックアップ。",
-    prompt: "ステッカーを台紙と透明袋に入れたパッケージモックアップ。ショップカード、淡いベージュ背景、ハンドメイド販売向け。",
+    prompt: "sticker packaging mockup with backing card and clear sleeve, small shop card, soft beige background, handmade Etsy seller product presentation",
+    japaneseTranslation: "ステッカーを台紙と透明袋に入れたパッケージモックアップ。ショップカード、淡いベージュ背景、ハンドメイド販売向け。",
     tags: [],
-    imageUrl: art("Package", "#efe1d2", "#f8e6e1"),
+    imageUrl: "",
   },
 ];
 
@@ -645,8 +653,9 @@ function Library({ copyText }: any) {
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
   const [editingPrompt, setEditingPrompt] = React.useState<LibraryBoardPrompt | null>(null);
+  const [translationPrompt, setTranslationPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
-  const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v2", defaultLibraryBoardPrompts);
+  const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v4", defaultLibraryBoardPrompts);
   const currentCategory = selectedCategory ? boardCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
   const filteredCategories = boardCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter((item) => {
@@ -665,7 +674,8 @@ function Library({ copyText }: any) {
       id: item.id || uid(),
       categoryId: item.categoryId || category.id,
       category: "ステッカーモックアップ" as Category,
-      imageUrl: item.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df"),
+      imageUrl: item.imageUrl || "",
+      japaneseTranslation: item.japaneseTranslation || item.prompt,
       tags: item.tags || [],
     };
     setBoardPrompts((items: LibraryBoardPrompt[]) => item.id ? items.map((prompt) => prompt.id === item.id ? next : prompt) : [next, ...items]);
@@ -741,11 +751,14 @@ function Library({ copyText }: any) {
                   onImage={() => setEditingPrompt(prompt)}
                   onDelete={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
                 />
-                <img src={prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+                <PromptThumbnail imageUrl={prompt.imageUrl} />
                 <div>
                   <h3>{prompt.title}</h3>
                   <p>{prompt.description}</p>
-                  <button className="primary" onClick={() => copyText(prompt.prompt, prompt.id)}>📋 プロンプトをコピー</button>
+                  <div className="prompt-card-actions">
+                    <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
+                    <button onClick={(event) => { event.stopPropagation(); setTranslationPrompt(prompt); }}>和訳</button>
+                  </div>
                 </div>
               </article>
             ))}
@@ -755,19 +768,54 @@ function Library({ copyText }: any) {
       )}
       {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
       {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={boardCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
+      {translationPrompt && <TranslationModal prompt={translationPrompt} onClose={() => setTranslationPrompt(null)} copyText={copyText} />}
     </section>
   );
 }
 
+function PromptThumbnail({ imageUrl }: { imageUrl?: string }) {
+  if (imageUrl) return <img src={imageUrl} alt="" />;
+  return (
+    <div className="image-placeholder" aria-label="画像未設定">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="12" y="16" width="40" height="32" rx="7" />
+        <path d="M18 41l10-10 8 8 5-5 7 7" />
+        <circle cx="42" cy="25" r="4" />
+      </svg>
+    </div>
+  );
+}
+
+function TranslationModal({ prompt, onClose, copyText }: any) {
+  const translation = prompt.japaneseTranslation || "このプロンプトにはまだ和訳がありません。編集画面から和訳を追加できます。";
+  return (
+    <Modal title="日本語訳" onClose={onClose}>
+      <div className="translation-box">
+        <h3>{prompt.title} の和訳</h3>
+        <p>{translation}</p>
+      </div>
+      <div className="modal-actions">
+        <button onClick={onClose}>閉じる</button>
+        <button className="primary" onClick={() => copyText(translation)}>和訳をコピー</button>
+      </div>
+    </Modal>
+  );
+}
+
 function MenuButton({ onEdit, onDuplicate, onImage, onDelete }: any) {
+  const runMenuAction = (event: any, action: () => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  };
   return (
     <details className="card-menu" onClick={(event) => event.stopPropagation()}>
       <summary aria-label="メニュー">…</summary>
       <div>
-        <button onClick={onEdit}>編集</button>
-        <button onClick={onDuplicate}>複製</button>
-        <button onClick={onImage}>画像変更</button>
-        <button className="danger" onClick={onDelete}>削除</button>
+        <button onClick={(event) => runMenuAction(event, onEdit)}>編集</button>
+        <button onClick={(event) => runMenuAction(event, onDuplicate)}>複製</button>
+        <button onClick={(event) => runMenuAction(event, onImage)}>画像変更</button>
+        <button className="danger" onClick={(event) => runMenuAction(event, onDelete)}>削除</button>
       </div>
     </details>
   );
@@ -811,6 +859,7 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
         </select>
         <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
+        <textarea className="tall" value={draft.japaneseTranslation || ""} onChange={(e) => setDraft({ ...draft, japaneseTranslation: e.target.value })} placeholder="和訳本文" />
         <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サムネイル画像URL" />
         <label className="upload-box">
           <span>画像をアップロード</span>

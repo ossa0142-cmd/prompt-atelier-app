@@ -116,61 +116,68 @@ const defaultMockupCategories = [{
 }];
 const defaultLibraryBoardPrompts = [...libraryPrompts.map(prompt => ({
   ...prompt,
-  categoryId: mockupCategoryIdByTitle[prompt.category]
+  categoryId: mockupCategoryIdByTitle[prompt.category],
+  japaneseTranslation: prompt.prompt
 })), {
   id: "sticker-simple",
   title: "シンプル",
   category: "ステッカーモックアップ",
   categoryId: "sticker",
   description: "白背景でステッカーの形と色を見せる、いちばん使いやすい基本モックアップ。",
-  prompt: "白い背景にステッカーをきれいに並べたシンプルな商品写真。やわらかな自然光、薄い影、Etsy販売画像向け、余白多め。",
+  prompt: "simple sticker mockup on a clean white background, neatly arranged sticker designs, soft natural light, subtle shadows, Etsy listing photo, generous whitespace",
+  japaneseTranslation: "白い背景にステッカーをきれいに並べたシンプルな商品写真。やわらかな自然光、薄い影、Etsy販売画像向け、余白多め。",
   tags: [],
-  imageUrl: art("Simple", "#fff6ee", "#dce7d7")
+  imageUrl: ""
 }, {
   id: "sticker-lifestyle",
   title: "ライフスタイル",
   category: "ステッカーモックアップ",
   categoryId: "sticker",
   description: "手帳や文具と一緒に置いた、暮らしの中で使う雰囲気のモックアップ。",
-  prompt: "手帳、ペン、マスキングテープのそばにステッカーを置いたライフスタイル写真。韓国文具風、淡いパステル、自然光、かわいい作業机。",
+  prompt: "lifestyle sticker mockup on a cute creator desk with planner, pen, washi tape, soft pastel Korean stationery mood, natural daylight, cozy handmade shop aesthetic",
+  japaneseTranslation: "手帳、ペン、マスキングテープのそばにステッカーを置いたライフスタイル写真。韓国文具風、淡いパステル、自然光、かわいい作業机。",
   tags: [],
-  imageUrl: art("Lifestyle", "#f7e8e3", "#f1e7d8")
+  imageUrl: ""
 }, {
   id: "sticker-clear",
   title: "透明ステッカー",
   category: "ステッカーモックアップ",
   categoryId: "sticker",
   description: "透明素材の縁やつや感が分かる、質感重視の販売画像。",
-  prompt: "透明ステッカーのつやと薄い縁が見える接写モックアップ。白い台紙、やわらかな反射、清潔感のある商品写真。",
+  prompt: "close-up clear sticker mockup showing glossy transparent edges, white backing card, soft reflection, clean premium product photography",
+  japaneseTranslation: "透明ステッカーのつやと薄い縁が見える接写モックアップ。白い台紙、やわらかな反射、清潔感のある商品写真。",
   tags: [],
-  imageUrl: art("Clear", "#e8edf5", "#fffaf4")
+  imageUrl: ""
 }, {
   id: "sticker-laptop",
   title: "ノートPC",
   category: "ステッカーモックアップ",
   categoryId: "sticker",
   description: "ノートPCに貼った使用例として見せる、クリエイター向けモックアップ。",
-  prompt: "シンプルなノートPCの天板にかわいいステッカーを貼ったモックアップ。明るいデスク、文具、ナチュラルな影、販売用プレビュー。",
+  prompt: "cute sticker mockup placed on a minimal laptop cover, bright desk, stationery props, natural soft shadow, realistic product preview for online shop",
+  japaneseTranslation: "シンプルなノートPCの天板にかわいいステッカーを貼ったモックアップ。明るいデスク、文具、ナチュラルな影、販売用プレビュー。",
   tags: [],
-  imageUrl: art("Laptop", "#eff0ec", "#dce7d7")
+  imageUrl: ""
 }, {
   id: "sticker-phone",
   title: "スマホ",
   category: "ステッカーモックアップ",
   categoryId: "sticker",
   description: "スマホケースや小物に貼った雰囲気が伝わるモックアップ。",
-  prompt: "スマホケースにステッカーを貼ったかわいい商品写真。淡い背景、手帳や小物を添えた構図、やわらかな光。",
+  prompt: "cute sticker mockup on a phone case, soft pastel background, planner and small stationery props, gentle light, clean handmade product photo",
+  japaneseTranslation: "スマホケースにステッカーを貼ったかわいい商品写真。淡い背景、手帳や小物を添えた構図、やわらかな光。",
   tags: [],
-  imageUrl: art("Phone", "#f6e6ec", "#fff6e9")
+  imageUrl: ""
 }, {
   id: "sticker-packaging",
   title: "パッケージ",
   category: "ステッカーモックアップ",
   categoryId: "sticker",
   description: "台紙や袋に入れた販売時の梱包イメージを見せるモックアップ。",
-  prompt: "ステッカーを台紙と透明袋に入れたパッケージモックアップ。ショップカード、淡いベージュ背景、ハンドメイド販売向け。",
+  prompt: "sticker packaging mockup with backing card and clear sleeve, small shop card, soft beige background, handmade Etsy seller product presentation",
+  japaneseTranslation: "ステッカーを台紙と透明袋に入れたパッケージモックアップ。ショップカード、淡いベージュ背景、ハンドメイド販売向け。",
   tags: [],
-  imageUrl: art("Package", "#efe1d2", "#f8e6e1")
+  imageUrl: ""
 }];
 const samplePrompts = [{
   ...libraryPrompts[0],
@@ -594,8 +601,9 @@ function Library({
   const [selectedCategory, setSelectedCategory] = React.useState(null);
   const [editingCategory, setEditingCategory] = React.useState(null);
   const [editingPrompt, setEditingPrompt] = React.useState(null);
+  const [translationPrompt, setTranslationPrompt] = React.useState(null);
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
-  const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v2", defaultLibraryBoardPrompts);
+  const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v4", defaultLibraryBoardPrompts);
   const currentCategory = selectedCategory ? boardCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const filteredCategories = boardCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter(item => {
@@ -618,7 +626,8 @@ function Library({
       id: item.id || uid(),
       categoryId: item.categoryId || category.id,
       category: "ステッカーモックアップ",
-      imageUrl: item.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df"),
+      imageUrl: item.imageUrl || "",
+      japaneseTranslation: item.japaneseTranslation || item.prompt,
       tags: item.tags || []
     };
     setBoardPrompts(items => item.id ? items.map(prompt => prompt.id === item.id ? next : prompt) : [next, ...items]);
@@ -713,13 +722,22 @@ function Library({
     onDuplicate: () => duplicatePrompt(prompt),
     onImage: () => setEditingPrompt(prompt),
     onDelete: () => setBoardPrompts(items => items.filter(item => item.id !== prompt.id))
-  }), /*#__PURE__*/React.createElement("img", {
-    src: prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df"),
-    alt: ""
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, prompt.title), /*#__PURE__*/React.createElement("p", null, prompt.description), /*#__PURE__*/React.createElement("button", {
+  }), /*#__PURE__*/React.createElement(PromptThumbnail, {
+    imageUrl: prompt.imageUrl
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, prompt.title), /*#__PURE__*/React.createElement("p", null, prompt.description), /*#__PURE__*/React.createElement("div", {
+    className: "prompt-card-actions"
+  }, /*#__PURE__*/React.createElement("button", {
     className: "primary",
-    onClick: () => copyText(prompt.prompt, prompt.id)
-  }, "📋 プロンプトをコピー")))), !filteredPrompts.length && /*#__PURE__*/React.createElement(Empty, {
+    onClick: event => {
+      event.stopPropagation();
+      copyText(prompt.prompt, prompt.id);
+    }
+  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+    onClick: event => {
+      event.stopPropagation();
+      setTranslationPrompt(prompt);
+    }
+  }, "和訳"))))), !filteredPrompts.length && /*#__PURE__*/React.createElement(Empty, {
     text: "このカテゴリにはまだプロンプトがありません。"
   }))), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
     item: editingCategory,
@@ -730,7 +748,58 @@ function Library({
     categories: boardCategories,
     onClose: () => setEditingPrompt(null),
     onSave: savePrompt
+  }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
+    prompt: translationPrompt,
+    onClose: () => setTranslationPrompt(null),
+    copyText: copyText
   }));
+}
+function PromptThumbnail({
+  imageUrl
+}) {
+  if (imageUrl) return /*#__PURE__*/React.createElement("img", {
+    src: imageUrl,
+    alt: ""
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    className: "image-placeholder",
+    "aria-label": "画像未設定"
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 64 64",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "12",
+    y: "16",
+    width: "40",
+    height: "32",
+    rx: "7"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M18 41l10-10 8 8 5-5 7 7"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "42",
+    cy: "25",
+    r: "4"
+  })));
+}
+function TranslationModal({
+  prompt,
+  onClose,
+  copyText
+}) {
+  const translation = prompt.japaneseTranslation || "このプロンプトにはまだ和訳がありません。編集画面から和訳を追加できます。";
+  return /*#__PURE__*/React.createElement(Modal, {
+    title: "日本語訳",
+    onClose: onClose
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "translation-box"
+  }, /*#__PURE__*/React.createElement("h3", null, prompt.title, " の和訳"), /*#__PURE__*/React.createElement("p", null, translation)), /*#__PURE__*/React.createElement("div", {
+    className: "modal-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onClose
+  }, "閉じる"), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => copyText(translation)
+  }, "和訳をコピー")));
 }
 function MenuButton({
   onEdit,
@@ -738,20 +807,25 @@ function MenuButton({
   onImage,
   onDelete
 }) {
+  const runMenuAction = (event, action) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  };
   return /*#__PURE__*/React.createElement("details", {
     className: "card-menu",
     onClick: event => event.stopPropagation()
   }, /*#__PURE__*/React.createElement("summary", {
     "aria-label": "メニュー"
   }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-    onClick: onEdit
+    onClick: event => runMenuAction(event, onEdit)
   }, "編集"), /*#__PURE__*/React.createElement("button", {
-    onClick: onDuplicate
+    onClick: event => runMenuAction(event, onDuplicate)
   }, "複製"), /*#__PURE__*/React.createElement("button", {
-    onClick: onImage
+    onClick: event => runMenuAction(event, onImage)
   }, "画像変更"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
-    onClick: onDelete
+    onClick: event => runMenuAction(event, onDelete)
   }, "削除")));
 }
 function readImage(event, onLoad) {
@@ -854,6 +928,14 @@ function LibraryPromptModal({
       prompt: e.target.value
     }),
     placeholder: "プロンプト本文"
+  }), /*#__PURE__*/React.createElement("textarea", {
+    className: "tall",
+    value: draft.japaneseTranslation || "",
+    onChange: e => setDraft({
+      ...draft,
+      japaneseTranslation: e.target.value
+    }),
+    placeholder: "和訳本文"
   }), /*#__PURE__*/React.createElement("input", {
     value: draft.imageUrl,
     onChange: e => setDraft({
