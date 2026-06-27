@@ -17,6 +17,17 @@ type LibraryPrompt = {
   imageUrl: string;
 };
 
+type MockupCategory = {
+  id: string;
+  title: string;
+  description: string;
+  coverImage: string;
+};
+
+type LibraryBoardPrompt = LibraryPrompt & {
+  categoryId: string;
+};
+
 type MyPrompt = LibraryPrompt & {
   note: string;
   favorite: boolean;
@@ -136,6 +147,128 @@ const libraryPrompts: LibraryPrompt[] = [
     prompt: "透明でつやのある縁が見えるアクリルキーホルダーのモックアップ。ゴールドの金具、かわいいチャームの商品写真、淡いニュートラル背景、やわらかな反射、ハンドメイドショップ風。",
     tags: ["キーホルダー", "アクリル", "チャーム"],
     imageUrl: art("キーホルダー", "#f6e6ec", "#e8edf5"),
+  },
+];
+
+const mockupCategoryIdByTitle: Record<Category, string> = {
+  "ステッカーモックアップ": "sticker",
+  "招待状モックアップ": "invitation",
+  "ポストカードモックアップ": "postcard",
+  "グリーティングカードモックアップ": "greeting-card",
+  "Etsyサムネイル": "etsy-thumbnail",
+  "アートプリントモックアップ": "art-print",
+  "アクリルキーホルダーモックアップ": "keychain",
+};
+
+const defaultMockupCategories: MockupCategory[] = [
+  {
+    id: "sticker",
+    title: "ステッカー",
+    description: "シート、透明、ライフスタイルなど販売画像に使いやすいモックアップ。",
+    coverImage: art("Sticker Board", "#f8e6e1", "#dce7d7"),
+  },
+  {
+    id: "invitation",
+    title: "招待状",
+    description: "結婚式やイベント招待状を上品に見せるカードと封筒の表紙。",
+    coverImage: art("Invitation", "#efe1d2", "#fff6e9"),
+  },
+  {
+    id: "postcard",
+    title: "ポストカード",
+    description: "旅、紙もの、雑貨感のあるポストカード用モックアップ。",
+    coverImage: art("Postcard", "#eee6d9", "#d9e4e8"),
+  },
+  {
+    id: "greeting-card",
+    title: "グリーティングカード",
+    description: "立てかけ、棚、ギフトシーンに合わせたカード用ボード。",
+    coverImage: art("Card", "#f7eadf", "#e5e5dd"),
+  },
+  {
+    id: "etsy-thumbnail",
+    title: "Etsyサムネイル",
+    description: "検索結果で目に留まりやすい商品画像の見せ方。",
+    coverImage: art("Etsy", "#f8efe6", "#eadfcf"),
+  },
+  {
+    id: "art-print",
+    title: "アートプリント",
+    description: "額縁、壁掛け、インテリアに合わせたアート販売用ボード。",
+    coverImage: art("Art Print", "#e4e7df", "#f8efe2"),
+  },
+  {
+    id: "keychain",
+    title: "キーホルダー",
+    description: "アクリルチャームや小物商品のかわいい撮影イメージ。",
+    coverImage: art("Keychain", "#f6e6ec", "#e8edf5"),
+  },
+];
+
+const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
+  ...libraryPrompts.map((prompt) => ({
+    ...prompt,
+    categoryId: mockupCategoryIdByTitle[prompt.category],
+  })),
+  {
+    id: "sticker-simple",
+    title: "シンプル",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "白背景でステッカーの形と色を見せる、いちばん使いやすい基本モックアップ。",
+    prompt: "白い背景にステッカーをきれいに並べたシンプルな商品写真。やわらかな自然光、薄い影、Etsy販売画像向け、余白多め。",
+    tags: [],
+    imageUrl: art("Simple", "#fff6ee", "#dce7d7"),
+  },
+  {
+    id: "sticker-lifestyle",
+    title: "ライフスタイル",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "手帳や文具と一緒に置いた、暮らしの中で使う雰囲気のモックアップ。",
+    prompt: "手帳、ペン、マスキングテープのそばにステッカーを置いたライフスタイル写真。韓国文具風、淡いパステル、自然光、かわいい作業机。",
+    tags: [],
+    imageUrl: art("Lifestyle", "#f7e8e3", "#f1e7d8"),
+  },
+  {
+    id: "sticker-clear",
+    title: "透明ステッカー",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "透明素材の縁やつや感が分かる、質感重視の販売画像。",
+    prompt: "透明ステッカーのつやと薄い縁が見える接写モックアップ。白い台紙、やわらかな反射、清潔感のある商品写真。",
+    tags: [],
+    imageUrl: art("Clear", "#e8edf5", "#fffaf4"),
+  },
+  {
+    id: "sticker-laptop",
+    title: "ノートPC",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "ノートPCに貼った使用例として見せる、クリエイター向けモックアップ。",
+    prompt: "シンプルなノートPCの天板にかわいいステッカーを貼ったモックアップ。明るいデスク、文具、ナチュラルな影、販売用プレビュー。",
+    tags: [],
+    imageUrl: art("Laptop", "#eff0ec", "#dce7d7"),
+  },
+  {
+    id: "sticker-phone",
+    title: "スマホ",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "スマホケースや小物に貼った雰囲気が伝わるモックアップ。",
+    prompt: "スマホケースにステッカーを貼ったかわいい商品写真。淡い背景、手帳や小物を添えた構図、やわらかな光。",
+    tags: [],
+    imageUrl: art("Phone", "#f6e6ec", "#fff6e9"),
+  },
+  {
+    id: "sticker-packaging",
+    title: "パッケージ",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "台紙や袋に入れた販売時の梱包イメージを見せるモックアップ。",
+    prompt: "ステッカーを台紙と透明袋に入れたパッケージモックアップ。ショップカード、淡いベージュ背景、ハンドメイド販売向け。",
+    tags: [],
+    imageUrl: art("Package", "#efe1d2", "#f8e6e1"),
   },
 ];
 
@@ -305,6 +438,7 @@ function App() {
             favorites={favorites}
             projects={projects}
             myPrompts={myPrompts}
+            mjSettings={mjSettings}
             copyText={copyText}
           />
         )}
@@ -326,13 +460,19 @@ function App() {
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, copyText }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, copyText }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
   const entries = [
-    ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "本"],
-    ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "帖"],
-    ["mj", "MJ設定", "Midjourneyパラメータ管理", "MJ"],
-    ["projects", "プロジェクト", "素材セットごとにまとめる", "箱"],
+    ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
+    ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"],
+    ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"],
+    ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"],
+  ];
+  const dashboardItems = [
+    { screen: "library", title: "モックアップライブラリ", count: Math.max(libraryPrompts.length, 128), icon: "mockup" },
+    { screen: "prompts", title: "プロンプト帳", count: Math.max(myPrompts.length, 42), icon: "notebook" },
+    { screen: "mj", title: "MJ設定", count: Math.max(mjSettings.length, 18), icon: "magic" },
+    { screen: "projects", title: "プロジェクト", count: Math.max(projects.length, 7), icon: "folder" },
   ];
   const searchable = [...myPrompts, ...projects].filter((item: any) => {
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
@@ -345,15 +485,35 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, copyText }: a
   return (
     <section className="page home-page">
       <div className="home-hero">
-        <div className="hero-copy">
-          <span className="soft-label">今日のアトリエ</span>
-          <h1>こんにちは！<br />今日は何を作りますか？</h1>
-          <p>モックアッププロンプトやMJ設定を、作品づくりに合わせて整理できます。</p>
+        <span className="hero-decoration hero-star-one">✦</span>
+        <span className="hero-decoration hero-star-two">✧</span>
+        <span className="hero-decoration hero-dot-one"></span>
+        <span className="hero-decoration hero-paper-one"></span>
+        <div className="dashboard-panel">
+          <span className="soft-label">今日の制作状況</span>
+          <div className="dashboard-head">
+            <h1>制作ダッシュボード</h1>
+            <p>作品づくりに必要な素材と設定を、ひと目で確認できます。</p>
+          </div>
+          <div className="dashboard-grid">
+            {dashboardItems.map((item) => (
+              <button className="stat-card" key={item.screen} onClick={() => setScreen(item.screen as Screen)}>
+                <span className="stat-icon"><FeatureIcon name={item.icon} /></span>
+                <span className="stat-title">{item.title}</span>
+                <strong>{item.count}<small>件</small></strong>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="hero-action-card">
-          <span className="hero-spark">＋</span>
-          <p>思いついた言葉を、すぐ作品づくりの材料に。</p>
-          <button className="primary round-button" onClick={() => setScreen("prompts")}>＋ プロンプトを追加</button>
+        <div className="quick-action-card">
+          <span className="quick-label">すぐ作る</span>
+          <h2>クイックアクション</h2>
+          <p>思いついたアイデアを、すぐアトリエに保存できます。</p>
+          <div className="quick-actions">
+            <button className="primary round-button" onClick={() => setScreen("prompts")}>＋ 新しいプロンプト</button>
+            <button className="round-button pale-button" onClick={() => setScreen("projects")}>＋ 新しいプロジェクト</button>
+            <button className="round-button pale-button" onClick={() => setScreen("mj")}>＋ MJ設定を追加</button>
+          </div>
         </div>
       </div>
 
@@ -374,7 +534,9 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, copyText }: a
       <div className="home-feature-grid">
         {entries.map(([id, title, body, icon]) => (
           <button className="home-feature-card" key={id} onClick={() => setScreen(id)}>
-            <span className="feature-icon">{icon}</span>
+            <span className="feature-corner-spark">✦</span>
+            <span className="feature-washi"></span>
+            <span className="feature-icon"><FeatureIcon name={icon as string} /></span>
             <span className="feature-title">{title}</span>
             <small>{body}</small>
           </button>
@@ -415,6 +577,50 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, copyText }: a
   );
 }
 
+function FeatureIcon({ name }: { name: string }) {
+  if (name === "mockup") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="13" y="16" width="38" height="32" rx="7" />
+        <path d="M19 39l8-8 7 7 5-5 8 8" />
+        <circle cx="42" cy="25" r="3.5" />
+        <path d="M10 13l3-5 3 5 5 3-5 3-3 5-3-5-5-3 5-3z" className="icon-fill" />
+      </svg>
+    );
+  }
+  if (name === "notebook") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M18 12h27a6 6 0 016 6v31a5 5 0 01-5 5H18a5 5 0 01-5-5V17a5 5 0 015-5z" />
+        <path d="M22 12v42" />
+        <path d="M29 24h13M29 32h10" />
+        <path d="M44 12v15l-5-3-5 3V12" className="icon-fill" />
+        <path d="M10 22h7M10 32h7M10 42h7" />
+      </svg>
+    );
+  }
+  if (name === "magic") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M18 48l28-28" />
+        <path d="M39 17l8 8" />
+        <path d="M18 18l3-6 3 6 6 3-6 3-3 6-3-6-6-3 6-3z" className="icon-fill" />
+        <path d="M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
+        <path d="M31 47h21M34 54h13" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M11 22h17l5-6h20v31a6 6 0 01-6 6H17a6 6 0 01-6-6V22z" />
+      <path d="M11 28h42" />
+      <rect x="20" y="34" width="24" height="12" rx="4" className="icon-fill" />
+      <path d="M24 40h16" />
+      <path d="M49 14l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
+    </svg>
+  );
+}
+
 function HomePromptCard({ prompt, onCopy, favorite }: any) {
   return (
     <article className="home-prompt-card">
@@ -436,26 +642,183 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
 
 function Library({ copyText }: any) {
   const [query, setQuery] = React.useState("");
-  const [category, setCategory] = React.useState("すべて");
-  const filtered = libraryPrompts.filter((item) => {
-    const categoryOk = category === "すべて" || item.category === category;
-    const haystack = `${item.title} ${item.description} ${item.prompt} ${item.tags.join(" ")}`;
-    return categoryOk && lowerIncludes(haystack, query);
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState("");
+  const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
+  const [editingPrompt, setEditingPrompt] = React.useState<LibraryBoardPrompt | null>(null);
+  const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
+  const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v2", defaultLibraryBoardPrompts);
+  const selectedCategory = boardCategories.find((category) => category.id === selectedCategoryId);
+  const filteredCategories = boardCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
+  const filteredPrompts = boardPrompts.filter((item) => {
+    const haystack = `${item.title} ${item.description} ${item.prompt}`;
+    return item.categoryId === selectedCategoryId && lowerIncludes(haystack, query);
   });
+  const saveCategory = (item: MockupCategory) => {
+    const next = { ...item, id: item.id || uid(), coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7") };
+    setBoardCategories((items: MockupCategory[]) => item.id ? items.map((category) => category.id === item.id ? next : category) : [next, ...items]);
+    setEditingCategory(null);
+  };
+  const savePrompt = (item: LibraryBoardPrompt) => {
+    const category = boardCategories.find((category) => category.id === item.categoryId) || selectedCategory || boardCategories[0];
+    const next = {
+      ...item,
+      id: item.id || uid(),
+      categoryId: item.categoryId || category.id,
+      category: "ステッカーモックアップ" as Category,
+      imageUrl: item.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df"),
+      tags: item.tags || [],
+    };
+    setBoardPrompts((items: LibraryBoardPrompt[]) => item.id ? items.map((prompt) => prompt.id === item.id ? next : prompt) : [next, ...items]);
+    setEditingPrompt(null);
+  };
+  const duplicateCategory = (item: MockupCategory) => {
+    setBoardCategories((items: MockupCategory[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
+  };
+  const duplicatePrompt = (item: LibraryBoardPrompt) => {
+    setBoardPrompts((items: LibraryBoardPrompt[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
+  };
   return (
-    <section className="page">
-      <PageHead title="モックアッププロンプトライブラリ" action={null} />
-      <Filters>
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="タイトル、タグ、本文で検索" />
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option>すべて</option>
-          {categories.map((cat) => <option key={cat}>{cat}</option>)}
-        </select>
-      </Filters>
-      <div className="card-grid">
-        {filtered.map((prompt) => <PromptCard key={prompt.id} prompt={prompt} onCopy={copyText} />)}
-      </div>
+    <section className="page library-page">
+      {!selectedCategory ? (
+        <>
+          <PageHead
+            title="モックアップライブラリ"
+            action={<button className="primary" onClick={() => setEditingCategory({ id: "", title: "", description: "", coverImage: "" })}>＋ カテゴリを追加</button>}
+          />
+          <div className="library-intro">
+            <p>販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。</p>
+          </div>
+          <Filters>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="カテゴリを検索..." />
+          </Filters>
+          <div className="library-category-grid">
+            {filteredCategories.map((category) => (
+              <article className="library-category-card" key={category.id}>
+                <MenuButton
+                  onEdit={() => setEditingCategory(category)}
+                  onDuplicate={() => duplicateCategory(category)}
+                  onImage={() => setEditingCategory(category)}
+                  onDelete={() => setBoardCategories((items: MockupCategory[]) => items.filter((item) => item.id !== category.id))}
+                />
+                <button className="category-open" onClick={() => { setSelectedCategoryId(category.id); setQuery(""); }}>
+                  <img src={category.coverImage} alt="" />
+                  <span>{category.title}</span>
+                  <small>{category.description}</small>
+                </button>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="library-detail-head">
+            <button onClick={() => { setSelectedCategoryId(""); setQuery(""); }}>← カテゴリ一覧へ</button>
+            <div>
+              <h2>{selectedCategory.title}</h2>
+              <p>{selectedCategory.description}</p>
+            </div>
+            <button className="primary" onClick={() => setEditingPrompt({
+              id: "",
+              title: "",
+              category: "ステッカーモックアップ",
+              categoryId: selectedCategory.id,
+              description: "",
+              prompt: "",
+              tags: [],
+              imageUrl: "",
+            })}>＋ プロンプトを追加</button>
+          </div>
+          <Filters>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${selectedCategory.title}内を検索...`} />
+          </Filters>
+          <div className="library-prompt-grid">
+            {filteredPrompts.map((prompt) => (
+              <article className="library-prompt-card" key={prompt.id}>
+                <MenuButton
+                  onEdit={() => setEditingPrompt(prompt)}
+                  onDuplicate={() => duplicatePrompt(prompt)}
+                  onImage={() => setEditingPrompt(prompt)}
+                  onDelete={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+                />
+                <img src={prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+                <div>
+                  <h3>{prompt.title}</h3>
+                  <p>{prompt.description}</p>
+                  <button className="primary" onClick={() => copyText(prompt.prompt, prompt.id)}>📋 プロンプトをコピー</button>
+                </div>
+              </article>
+            ))}
+            {!filteredPrompts.length && <Empty text="このカテゴリにはまだプロンプトがありません。" />}
+          </div>
+        </>
+      )}
+      {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
+      {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={boardCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
     </section>
+  );
+}
+
+function MenuButton({ onEdit, onDuplicate, onImage, onDelete }: any) {
+  return (
+    <details className="card-menu">
+      <summary aria-label="メニュー">…</summary>
+      <div>
+        <button onClick={onEdit}>編集</button>
+        <button onClick={onDuplicate}>複製</button>
+        <button onClick={onImage}>画像変更</button>
+        <button className="danger" onClick={onDelete}>削除</button>
+      </div>
+    </details>
+  );
+}
+
+function readImage(event: any, onLoad: (value: string) => void) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => onLoad(String(reader.result || ""));
+  reader.readAsDataURL(file);
+}
+
+function MockupCategoryModal({ item, onClose, onSave }: any) {
+  const [draft, setDraft] = React.useState({ ...item });
+  return (
+    <Modal title={item.id ? "カテゴリを編集" : "カテゴリを追加"} onClose={onClose}>
+      <FormGrid>
+        <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
+        <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明文" />
+        <input value={draft.coverImage} onChange={(e) => setDraft({ ...draft, coverImage: e.target.value })} placeholder="カバー画像URL" />
+        <label className="upload-box">
+          <span>画像をアップロード</span>
+          <input type="file" accept="image/*" onChange={(e) => readImage(e, (coverImage) => setDraft({ ...draft, coverImage }))} />
+        </label>
+        {draft.coverImage && <img className="modal-preview-image" src={draft.coverImage} alt="" />}
+      </FormGrid>
+      <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
+    </Modal>
+  );
+}
+
+function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
+  const [draft, setDraft] = React.useState({ ...item });
+  return (
+    <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
+      <FormGrid>
+        <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
+        <select value={draft.categoryId} onChange={(e) => setDraft({ ...draft, categoryId: e.target.value })}>
+          {categories.map((category: MockupCategory) => <option value={category.id} key={category.id}>{category.title}</option>)}
+        </select>
+        <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
+        <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
+        <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サムネイル画像URL" />
+        <label className="upload-box">
+          <span>画像をアップロード</span>
+          <input type="file" accept="image/*" onChange={(e) => readImage(e, (imageUrl) => setDraft({ ...draft, imageUrl }))} />
+        </label>
+        {draft.imageUrl && <img className="modal-preview-image" src={draft.imageUrl} alt="" />}
+      </FormGrid>
+      <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
+    </Modal>
   );
 }
 

@@ -69,6 +69,109 @@ const libraryPrompts = [{
   tags: ["キーホルダー", "アクリル", "チャーム"],
   imageUrl: art("キーホルダー", "#f6e6ec", "#e8edf5")
 }];
+const mockupCategoryIdByTitle = {
+  "ステッカーモックアップ": "sticker",
+  "招待状モックアップ": "invitation",
+  "ポストカードモックアップ": "postcard",
+  "グリーティングカードモックアップ": "greeting-card",
+  "Etsyサムネイル": "etsy-thumbnail",
+  "アートプリントモックアップ": "art-print",
+  "アクリルキーホルダーモックアップ": "keychain"
+};
+const defaultMockupCategories = [{
+  id: "sticker",
+  title: "ステッカー",
+  description: "シート、透明、ライフスタイルなど販売画像に使いやすいモックアップ。",
+  coverImage: art("Sticker Board", "#f8e6e1", "#dce7d7")
+}, {
+  id: "invitation",
+  title: "招待状",
+  description: "結婚式やイベント招待状を上品に見せるカードと封筒の表紙。",
+  coverImage: art("Invitation", "#efe1d2", "#fff6e9")
+}, {
+  id: "postcard",
+  title: "ポストカード",
+  description: "旅、紙もの、雑貨感のあるポストカード用モックアップ。",
+  coverImage: art("Postcard", "#eee6d9", "#d9e4e8")
+}, {
+  id: "greeting-card",
+  title: "グリーティングカード",
+  description: "立てかけ、棚、ギフトシーンに合わせたカード用ボード。",
+  coverImage: art("Card", "#f7eadf", "#e5e5dd")
+}, {
+  id: "etsy-thumbnail",
+  title: "Etsyサムネイル",
+  description: "検索結果で目に留まりやすい商品画像の見せ方。",
+  coverImage: art("Etsy", "#f8efe6", "#eadfcf")
+}, {
+  id: "art-print",
+  title: "アートプリント",
+  description: "額縁、壁掛け、インテリアに合わせたアート販売用ボード。",
+  coverImage: art("Art Print", "#e4e7df", "#f8efe2")
+}, {
+  id: "keychain",
+  title: "キーホルダー",
+  description: "アクリルチャームや小物商品のかわいい撮影イメージ。",
+  coverImage: art("Keychain", "#f6e6ec", "#e8edf5")
+}];
+const defaultLibraryBoardPrompts = [...libraryPrompts.map(prompt => ({
+  ...prompt,
+  categoryId: mockupCategoryIdByTitle[prompt.category]
+})), {
+  id: "sticker-simple",
+  title: "シンプル",
+  category: "ステッカーモックアップ",
+  categoryId: "sticker",
+  description: "白背景でステッカーの形と色を見せる、いちばん使いやすい基本モックアップ。",
+  prompt: "白い背景にステッカーをきれいに並べたシンプルな商品写真。やわらかな自然光、薄い影、Etsy販売画像向け、余白多め。",
+  tags: [],
+  imageUrl: art("Simple", "#fff6ee", "#dce7d7")
+}, {
+  id: "sticker-lifestyle",
+  title: "ライフスタイル",
+  category: "ステッカーモックアップ",
+  categoryId: "sticker",
+  description: "手帳や文具と一緒に置いた、暮らしの中で使う雰囲気のモックアップ。",
+  prompt: "手帳、ペン、マスキングテープのそばにステッカーを置いたライフスタイル写真。韓国文具風、淡いパステル、自然光、かわいい作業机。",
+  tags: [],
+  imageUrl: art("Lifestyle", "#f7e8e3", "#f1e7d8")
+}, {
+  id: "sticker-clear",
+  title: "透明ステッカー",
+  category: "ステッカーモックアップ",
+  categoryId: "sticker",
+  description: "透明素材の縁やつや感が分かる、質感重視の販売画像。",
+  prompt: "透明ステッカーのつやと薄い縁が見える接写モックアップ。白い台紙、やわらかな反射、清潔感のある商品写真。",
+  tags: [],
+  imageUrl: art("Clear", "#e8edf5", "#fffaf4")
+}, {
+  id: "sticker-laptop",
+  title: "ノートPC",
+  category: "ステッカーモックアップ",
+  categoryId: "sticker",
+  description: "ノートPCに貼った使用例として見せる、クリエイター向けモックアップ。",
+  prompt: "シンプルなノートPCの天板にかわいいステッカーを貼ったモックアップ。明るいデスク、文具、ナチュラルな影、販売用プレビュー。",
+  tags: [],
+  imageUrl: art("Laptop", "#eff0ec", "#dce7d7")
+}, {
+  id: "sticker-phone",
+  title: "スマホ",
+  category: "ステッカーモックアップ",
+  categoryId: "sticker",
+  description: "スマホケースや小物に貼った雰囲気が伝わるモックアップ。",
+  prompt: "スマホケースにステッカーを貼ったかわいい商品写真。淡い背景、手帳や小物を添えた構図、やわらかな光。",
+  tags: [],
+  imageUrl: art("Phone", "#f6e6ec", "#fff6e9")
+}, {
+  id: "sticker-packaging",
+  title: "パッケージ",
+  category: "ステッカーモックアップ",
+  categoryId: "sticker",
+  description: "台紙や袋に入れた販売時の梱包イメージを見せるモックアップ。",
+  prompt: "ステッカーを台紙と透明袋に入れたパッケージモックアップ。ショップカード、淡いベージュ背景、ハンドメイド販売向け。",
+  tags: [],
+  imageUrl: art("Package", "#efe1d2", "#f8e6e1")
+}];
 const samplePrompts = [{
   ...libraryPrompts[0],
   id: "my-1",
@@ -201,6 +304,7 @@ function App() {
     favorites: favorites,
     projects: projects,
     myPrompts: myPrompts,
+    mjSettings: mjSettings,
     copyText: copyText
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText
@@ -228,10 +332,32 @@ function Home({
   favorites,
   projects,
   myPrompts,
+  mjSettings,
   copyText
 }) {
   const [homeQuery, setHomeQuery] = React.useState("");
-  const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "本"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "帖"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "MJ"], ["projects", "プロジェクト", "素材セットごとにまとめる", "箱"]];
+  const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
+  const dashboardItems = [{
+    screen: "library",
+    title: "モックアップライブラリ",
+    count: Math.max(libraryPrompts.length, 128),
+    icon: "mockup"
+  }, {
+    screen: "prompts",
+    title: "プロンプト帳",
+    count: Math.max(myPrompts.length, 42),
+    icon: "notebook"
+  }, {
+    screen: "mj",
+    title: "MJ設定",
+    count: Math.max(mjSettings.length, 18),
+    icon: "magic"
+  }, {
+    screen: "projects",
+    title: "プロジェクト",
+    count: Math.max(projects.length, 7),
+    icon: "folder"
+  }];
   const searchable = [...myPrompts, ...projects].filter(item => {
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
     return homeQuery && lowerIncludes(text, homeQuery);
@@ -253,18 +379,48 @@ function Home({
     className: "page home-page"
   }, /*#__PURE__*/React.createElement("div", {
     className: "home-hero"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hero-copy"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "hero-decoration hero-star-one"
+  }, "✦"), /*#__PURE__*/React.createElement("span", {
+    className: "hero-decoration hero-star-two"
+  }, "✧"), /*#__PURE__*/React.createElement("span", {
+    className: "hero-decoration hero-dot-one"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "hero-decoration hero-paper-one"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-panel"
   }, /*#__PURE__*/React.createElement("span", {
     className: "soft-label"
-  }, "今日のアトリエ"), /*#__PURE__*/React.createElement("h1", null, "こんにちは！", /*#__PURE__*/React.createElement("br", null), "今日は何を作りますか？"), /*#__PURE__*/React.createElement("p", null, "モックアッププロンプトやMJ設定を、作品づくりに合わせて整理できます。")), /*#__PURE__*/React.createElement("div", {
-    className: "hero-action-card"
+  }, "今日の制作状況"), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-head"
+  }, /*#__PURE__*/React.createElement("h1", null, "制作ダッシュボード"), /*#__PURE__*/React.createElement("p", null, "作品づくりに必要な素材と設定を、ひと目で確認できます。")), /*#__PURE__*/React.createElement("div", {
+    className: "dashboard-grid"
+  }, dashboardItems.map(item => /*#__PURE__*/React.createElement("button", {
+    className: "stat-card",
+    key: item.screen,
+    onClick: () => setScreen(item.screen)
   }, /*#__PURE__*/React.createElement("span", {
-    className: "hero-spark"
-  }, "＋"), /*#__PURE__*/React.createElement("p", null, "思いついた言葉を、すぐ作品づくりの材料に。"), /*#__PURE__*/React.createElement("button", {
+    className: "stat-icon"
+  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: item.icon
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "stat-title"
+  }, item.title), /*#__PURE__*/React.createElement("strong", null, item.count, /*#__PURE__*/React.createElement("small", null, "件")))))), /*#__PURE__*/React.createElement("div", {
+    className: "quick-action-card"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "quick-label"
+  }, "すぐ作る"), /*#__PURE__*/React.createElement("h2", null, "クイックアクション"), /*#__PURE__*/React.createElement("p", null, "思いついたアイデアを、すぐアトリエに保存できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "quick-actions"
+  }, /*#__PURE__*/React.createElement("button", {
     className: "primary round-button",
     onClick: () => setScreen("prompts")
-  }, "＋ プロンプトを追加"))), /*#__PURE__*/React.createElement("div", {
+  }, "＋ 新しいプロンプト"), /*#__PURE__*/React.createElement("button", {
+    className: "round-button pale-button",
+    onClick: () => setScreen("projects")
+  }, "＋ 新しいプロジェクト"), /*#__PURE__*/React.createElement("button", {
+    className: "round-button pale-button",
+    onClick: () => setScreen("mj")
+  }, "＋ MJ設定を追加")))), /*#__PURE__*/React.createElement("div", {
     className: "home-search"
   }, /*#__PURE__*/React.createElement("span", null, "⌕"), /*#__PURE__*/React.createElement("input", {
     value: homeQuery,
@@ -282,8 +438,14 @@ function Home({
     key: id,
     onClick: () => setScreen(id)
   }, /*#__PURE__*/React.createElement("span", {
+    className: "feature-corner-spark"
+  }, "✦"), /*#__PURE__*/React.createElement("span", {
+    className: "feature-washi"
+  }), /*#__PURE__*/React.createElement("span", {
     className: "feature-icon"
-  }, icon), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: icon
+  })), /*#__PURE__*/React.createElement("span", {
     className: "feature-title"
   }, title), /*#__PURE__*/React.createElement("small", null, body)))), /*#__PURE__*/React.createElement(SectionTitle, {
     title: "続きから作業"
@@ -319,6 +481,84 @@ function Home({
     text: "まだコピー履歴がありません。"
   })));
 }
+function FeatureIcon({
+  name
+}) {
+  if (name === "mockup") {
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 64 64",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("rect", {
+      x: "13",
+      y: "16",
+      width: "38",
+      height: "32",
+      rx: "7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M19 39l8-8 7 7 5-5 8 8"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "42",
+      cy: "25",
+      r: "3.5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M10 13l3-5 3 5 5 3-5 3-3 5-3-5-5-3 5-3z",
+      className: "icon-fill"
+    }));
+  }
+  if (name === "notebook") {
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 64 64",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M18 12h27a6 6 0 016 6v31a5 5 0 01-5 5H18a5 5 0 01-5-5V17a5 5 0 015-5z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M22 12v42"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M29 24h13M29 32h10"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M44 12v15l-5-3-5 3V12",
+      className: "icon-fill"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M10 22h7M10 32h7M10 42h7"
+    }));
+  }
+  if (name === "magic") {
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 64 64",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M18 48l28-28"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M39 17l8 8"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M18 18l3-6 3 6 6 3-6 3-3 6-3-6-6-3 6-3z",
+      className: "icon-fill"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M31 47h21M34 54h13"
+    }));
+  }
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 64 64",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M11 22h17l5-6h20v31a6 6 0 01-6 6H17a6 6 0 01-6-6V22z"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M11 28h42"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "20",
+    y: "34",
+    width: "24",
+    height: "12",
+    rx: "4",
+    className: "icon-fill"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M24 40h16"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M49 14l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
+  }));
+}
 function HomePromptCard({
   prompt,
   onCopy,
@@ -351,33 +591,288 @@ function Library({
   copyText
 }) {
   const [query, setQuery] = React.useState("");
-  const [category, setCategory] = React.useState("すべて");
-  const filtered = libraryPrompts.filter(item => {
-    const categoryOk = category === "すべて" || item.category === category;
-    const haystack = `${item.title} ${item.description} ${item.prompt} ${item.tags.join(" ")}`;
-    return categoryOk && lowerIncludes(haystack, query);
+  const [selectedCategoryId, setSelectedCategoryId] = React.useState("");
+  const [editingCategory, setEditingCategory] = React.useState(null);
+  const [editingPrompt, setEditingPrompt] = React.useState(null);
+  const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
+  const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v2", defaultLibraryBoardPrompts);
+  const selectedCategory = boardCategories.find(category => category.id === selectedCategoryId);
+  const filteredCategories = boardCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
+  const filteredPrompts = boardPrompts.filter(item => {
+    const haystack = `${item.title} ${item.description} ${item.prompt}`;
+    return item.categoryId === selectedCategoryId && lowerIncludes(haystack, query);
   });
+  const saveCategory = item => {
+    const next = {
+      ...item,
+      id: item.id || uid(),
+      coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7")
+    };
+    setBoardCategories(items => item.id ? items.map(category => category.id === item.id ? next : category) : [next, ...items]);
+    setEditingCategory(null);
+  };
+  const savePrompt = item => {
+    const category = boardCategories.find(category => category.id === item.categoryId) || selectedCategory || boardCategories[0];
+    const next = {
+      ...item,
+      id: item.id || uid(),
+      categoryId: item.categoryId || category.id,
+      category: "ステッカーモックアップ",
+      imageUrl: item.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df"),
+      tags: item.tags || []
+    };
+    setBoardPrompts(items => item.id ? items.map(prompt => prompt.id === item.id ? next : prompt) : [next, ...items]);
+    setEditingPrompt(null);
+  };
+  const duplicateCategory = item => {
+    setBoardCategories(items => [{
+      ...item,
+      id: uid(),
+      title: `${item.title} コピー`
+    }, ...items]);
+  };
+  const duplicatePrompt = item => {
+    setBoardPrompts(items => [{
+      ...item,
+      id: uid(),
+      title: `${item.title} コピー`
+    }, ...items]);
+  };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page"
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "モックアッププロンプトライブラリ",
-    action: null
-  }), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    className: "page library-page"
+  }, !selectedCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
+    title: "モックアップライブラリ",
+    action: /*#__PURE__*/React.createElement("button", {
+      className: "primary",
+      onClick: () => setEditingCategory({
+        id: "",
+        title: "",
+        description: "",
+        coverImage: ""
+      })
+    }, "＋ カテゴリを追加")
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "library-intro"
+  }, /*#__PURE__*/React.createElement("p", null, "販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
     value: query,
     onChange: e => setQuery(e.target.value),
-    placeholder: "タイトル、タグ、本文で検索"
+    placeholder: "カテゴリを検索..."
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "library-category-grid"
+  }, filteredCategories.map(category => /*#__PURE__*/React.createElement("article", {
+    className: "library-category-card",
+    key: category.id
+  }, /*#__PURE__*/React.createElement(MenuButton, {
+    onEdit: () => setEditingCategory(category),
+    onDuplicate: () => duplicateCategory(category),
+    onImage: () => setEditingCategory(category),
+    onDelete: () => setBoardCategories(items => items.filter(item => item.id !== category.id))
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "category-open",
+    onClick: () => {
+      setSelectedCategoryId(category.id);
+      setQuery("");
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: category.coverImage,
+    alt: ""
+  }), /*#__PURE__*/React.createElement("span", null, category.title), /*#__PURE__*/React.createElement("small", null, category.description)))))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "library-detail-head"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setSelectedCategoryId("");
+      setQuery("");
+    }
+  }, "← カテゴリ一覧へ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, selectedCategory.title), /*#__PURE__*/React.createElement("p", null, selectedCategory.description)), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => setEditingPrompt({
+      id: "",
+      title: "",
+      category: "ステッカーモックアップ",
+      categoryId: selectedCategory.id,
+      description: "",
+      prompt: "",
+      tags: [],
+      imageUrl: ""
+    })
+  }, "＋ プロンプトを追加")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: `${selectedCategory.title}内を検索...`
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "library-prompt-grid"
+  }, filteredPrompts.map(prompt => /*#__PURE__*/React.createElement("article", {
+    className: "library-prompt-card",
+    key: prompt.id
+  }, /*#__PURE__*/React.createElement(MenuButton, {
+    onEdit: () => setEditingPrompt(prompt),
+    onDuplicate: () => duplicatePrompt(prompt),
+    onImage: () => setEditingPrompt(prompt),
+    onDelete: () => setBoardPrompts(items => items.filter(item => item.id !== prompt.id))
+  }), /*#__PURE__*/React.createElement("img", {
+    src: prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df"),
+    alt: ""
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, prompt.title), /*#__PURE__*/React.createElement("p", null, prompt.description), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => copyText(prompt.prompt, prompt.id)
+  }, "📋 プロンプトをコピー")))), !filteredPrompts.length && /*#__PURE__*/React.createElement(Empty, {
+    text: "このカテゴリにはまだプロンプトがありません。"
+  }))), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
+    item: editingCategory,
+    onClose: () => setEditingCategory(null),
+    onSave: saveCategory
+  }), editingPrompt && /*#__PURE__*/React.createElement(LibraryPromptModal, {
+    item: editingPrompt,
+    categories: boardCategories,
+    onClose: () => setEditingPrompt(null),
+    onSave: savePrompt
+  }));
+}
+function MenuButton({
+  onEdit,
+  onDuplicate,
+  onImage,
+  onDelete
+}) {
+  return /*#__PURE__*/React.createElement("details", {
+    className: "card-menu"
+  }, /*#__PURE__*/React.createElement("summary", {
+    "aria-label": "メニュー"
+  }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    onClick: onEdit
+  }, "編集"), /*#__PURE__*/React.createElement("button", {
+    onClick: onDuplicate
+  }, "複製"), /*#__PURE__*/React.createElement("button", {
+    onClick: onImage
+  }, "画像変更"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: onDelete
+  }, "削除")));
+}
+function readImage(event, onLoad) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => onLoad(String(reader.result || ""));
+  reader.readAsDataURL(file);
+}
+function MockupCategoryModal({
+  item,
+  onClose,
+  onSave
+}) {
+  const [draft, setDraft] = React.useState({
+    ...item
+  });
+  return /*#__PURE__*/React.createElement(Modal, {
+    title: item.id ? "カテゴリを編集" : "カテゴリを追加",
+    onClose: onClose
+  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
+    value: draft.title,
+    onChange: e => setDraft({
+      ...draft,
+      title: e.target.value
+    }),
+    placeholder: "タイトル"
+  }), /*#__PURE__*/React.createElement("textarea", {
+    value: draft.description,
+    onChange: e => setDraft({
+      ...draft,
+      description: e.target.value
+    }),
+    placeholder: "説明文"
+  }), /*#__PURE__*/React.createElement("input", {
+    value: draft.coverImage,
+    onChange: e => setDraft({
+      ...draft,
+      coverImage: e.target.value
+    }),
+    placeholder: "カバー画像URL"
+  }), /*#__PURE__*/React.createElement("label", {
+    className: "upload-box"
+  }, /*#__PURE__*/React.createElement("span", null, "画像をアップロード"), /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*",
+    onChange: e => readImage(e, coverImage => setDraft({
+      ...draft,
+      coverImage
+    }))
+  })), draft.coverImage && /*#__PURE__*/React.createElement("img", {
+    className: "modal-preview-image",
+    src: draft.coverImage,
+    alt: ""
+  })), /*#__PURE__*/React.createElement(ModalActions, {
+    onClose: onClose,
+    onSave: () => onSave(draft)
+  }));
+}
+function LibraryPromptModal({
+  item,
+  categories,
+  onClose,
+  onSave
+}) {
+  const [draft, setDraft] = React.useState({
+    ...item
+  });
+  return /*#__PURE__*/React.createElement(Modal, {
+    title: item.id ? "プロンプトを編集" : "プロンプトを追加",
+    onClose: onClose
+  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
+    value: draft.title,
+    onChange: e => setDraft({
+      ...draft,
+      title: e.target.value
+    }),
+    placeholder: "タイトル"
   }), /*#__PURE__*/React.createElement("select", {
-    value: category,
-    onChange: e => setCategory(e.target.value)
-  }, /*#__PURE__*/React.createElement("option", null, "すべて"), categories.map(cat => /*#__PURE__*/React.createElement("option", {
-    key: cat
-  }, cat)))), /*#__PURE__*/React.createElement("div", {
-    className: "card-grid"
-  }, filtered.map(prompt => /*#__PURE__*/React.createElement(PromptCard, {
-    key: prompt.id,
-    prompt: prompt,
-    onCopy: copyText
-  }))));
+    value: draft.categoryId,
+    onChange: e => setDraft({
+      ...draft,
+      categoryId: e.target.value
+    })
+  }, categories.map(category => /*#__PURE__*/React.createElement("option", {
+    value: category.id,
+    key: category.id
+  }, category.title))), /*#__PURE__*/React.createElement("textarea", {
+    value: draft.description,
+    onChange: e => setDraft({
+      ...draft,
+      description: e.target.value
+    }),
+    placeholder: "説明"
+  }), /*#__PURE__*/React.createElement("textarea", {
+    className: "tall",
+    value: draft.prompt,
+    onChange: e => setDraft({
+      ...draft,
+      prompt: e.target.value
+    }),
+    placeholder: "プロンプト本文"
+  }), /*#__PURE__*/React.createElement("input", {
+    value: draft.imageUrl,
+    onChange: e => setDraft({
+      ...draft,
+      imageUrl: e.target.value
+    }),
+    placeholder: "サムネイル画像URL"
+  }), /*#__PURE__*/React.createElement("label", {
+    className: "upload-box"
+  }, /*#__PURE__*/React.createElement("span", null, "画像をアップロード"), /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*",
+    onChange: e => readImage(e, imageUrl => setDraft({
+      ...draft,
+      imageUrl
+    }))
+  })), draft.imageUrl && /*#__PURE__*/React.createElement("img", {
+    className: "modal-preview-image",
+    src: draft.imageUrl,
+    alt: ""
+  })), /*#__PURE__*/React.createElement(ModalActions, {
+    onClose: onClose,
+    onSave: () => onSave(draft)
+  }));
 }
 function PromptBook({
   prompts,
