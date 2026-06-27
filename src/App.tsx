@@ -654,6 +654,7 @@ function Library({ copyText }: any) {
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
   const [editingPrompt, setEditingPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [translationPrompt, setTranslationPrompt] = React.useState<LibraryBoardPrompt | null>(null);
+  const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v4", defaultLibraryBoardPrompts);
   const currentCategory = selectedCategory ? boardCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
@@ -686,6 +687,9 @@ function Library({ copyText }: any) {
   };
   const duplicatePrompt = (item: LibraryBoardPrompt) => {
     setBoardPrompts((items: LibraryBoardPrompt[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
+  };
+  const updatePrompt = (id: string, patch: Partial<LibraryBoardPrompt>) => {
+    setBoardPrompts((items: LibraryBoardPrompt[]) => items.map((prompt) => prompt.id === id ? { ...prompt, ...patch } : prompt));
   };
   return (
     <section className="page library-page">
@@ -745,16 +749,47 @@ function Library({ copyText }: any) {
           <div className="library-prompt-grid">
             {filteredPrompts.map((prompt) => (
               <article className="library-prompt-card" key={prompt.id}>
-                <MenuButton
-                  onEdit={() => setEditingPrompt(prompt)}
+                <PromptMenuButton
                   onDuplicate={() => duplicatePrompt(prompt)}
-                  onImage={() => setEditingPrompt(prompt)}
+                  onClearImage={() => updatePrompt(prompt.id, { imageUrl: "" })}
                   onDelete={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
                 />
-                <PromptThumbnail imageUrl={prompt.imageUrl} />
-                <div>
-                  <h3>{prompt.title}</h3>
-                  <p>{prompt.description}</p>
+                <EditableThumbnail
+                  prompt={prompt}
+                  isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl"}
+                  onEdit={() => setInlineEdit({ id: prompt.id, field: "imageUrl" })}
+                  onCancel={() => setInlineEdit(null)}
+                  onSave={(imageUrl) => { updatePrompt(prompt.id, { imageUrl }); setInlineEdit(null); }}
+                />
+                <div className="prompt-card-content">
+                  <InlineEditable
+                    className="inline-title"
+                    value={prompt.title}
+                    placeholder="タイトル"
+                    isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "title"}
+                    onEdit={() => setInlineEdit({ id: prompt.id, field: "title" })}
+                    onSave={(title) => { updatePrompt(prompt.id, { title }); setInlineEdit(null); }}
+                  />
+                  <InlineEditable
+                    className="inline-description"
+                    multiline
+                    value={prompt.description}
+                    placeholder="説明文"
+                    isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "description"}
+                    onEdit={() => setInlineEdit({ id: prompt.id, field: "description" })}
+                    onSave={(description) => { updatePrompt(prompt.id, { description }); setInlineEdit(null); }}
+                  />
+                  <details className="prompt-edit-details" onClick={(event) => event.stopPropagation()}>
+                    <summary>プロンプト本文・和訳を編集</summary>
+                    <label>
+                      <span>プロンプト本文</span>
+                      <textarea value={prompt.prompt} onChange={(event) => updatePrompt(prompt.id, { prompt: event.target.value })} />
+                    </label>
+                    <label>
+                      <span>和訳本文</span>
+                      <textarea value={prompt.japaneseTranslation || ""} onChange={(event) => updatePrompt(prompt.id, { japaneseTranslation: event.target.value })} />
+                    </label>
+                  </details>
                   <div className="prompt-card-actions">
                     <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
                     <button onClick={(event) => { event.stopPropagation(); setTranslationPrompt(prompt); }}>和訳</button>
@@ -786,6 +821,55 @@ function PromptThumbnail({ imageUrl }: { imageUrl?: string }) {
   );
 }
 
+function EditableThumbnail({ prompt, isEditing, onEdit, onCancel, onSave }: any) {
+  const [draft, setDraft] = React.useState(prompt.imageUrl || "");
+  React.useEffect(() => setDraft(prompt.imageUrl || ""), [prompt.imageUrl, isEditing]);
+  if (isEditing) {
+    return (
+      <div className="thumbnail-editor" onClick={(event) => event.stopPropagation()}>
+        <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="サムネイル画像URL" autoFocus />
+        <label className="mini-upload">
+          画像を選ぶ
+          <input type="file" accept="image/*" onChange={(event) => readImage(event, (imageUrl) => setDraft(imageUrl))} />
+        </label>
+        <div>
+          <button className="primary" onClick={() => onSave(draft)}>保存</button>
+          <button onClick={onCancel}>閉じる</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <button className="thumbnail-button" onClick={(event) => { event.stopPropagation(); onEdit(); }} aria-label="画像を変更">
+      <PromptThumbnail imageUrl={prompt.imageUrl} />
+    </button>
+  );
+}
+
+function InlineEditable({ value, placeholder, isEditing, onEdit, onSave, multiline, className }: any) {
+  const [draft, setDraft] = React.useState(value || "");
+  React.useEffect(() => setDraft(value || ""), [value, isEditing]);
+  const save = () => onSave(draft.trim() || value || "");
+  if (isEditing) {
+    const commonProps = {
+      value: draft,
+      onChange: (event: any) => setDraft(event.target.value),
+      onBlur: save,
+      onClick: (event: any) => event.stopPropagation(),
+      onKeyDown: (event: any) => {
+        if (event.key === "Enter" && !multiline) save();
+        if (event.key === "Escape") setDraft(value || "");
+      },
+      autoFocus: true,
+      placeholder,
+      className: `inline-input ${className || ""}`,
+    };
+    return multiline ? <textarea {...commonProps} /> : <input {...commonProps} />;
+  }
+  const Tag = className === "inline-title" ? "h3" : "p";
+  return <Tag className={`inline-editable ${className || ""}`} onClick={(event: any) => { event.stopPropagation(); onEdit(); }}>{value || placeholder}</Tag>;
+}
+
 function TranslationModal({ prompt, onClose, copyText }: any) {
   const translation = prompt.japaneseTranslation || "このプロンプトにはまだ和訳がありません。編集画面から和訳を追加できます。";
   return (
@@ -815,6 +899,24 @@ function MenuButton({ onEdit, onDuplicate, onImage, onDelete }: any) {
         <button onClick={(event) => runMenuAction(event, onEdit)}>編集</button>
         <button onClick={(event) => runMenuAction(event, onDuplicate)}>複製</button>
         <button onClick={(event) => runMenuAction(event, onImage)}>画像変更</button>
+        <button className="danger" onClick={(event) => runMenuAction(event, onDelete)}>削除</button>
+      </div>
+    </details>
+  );
+}
+
+function PromptMenuButton({ onDuplicate, onClearImage, onDelete }: any) {
+  const runMenuAction = (event: any, action: () => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  };
+  return (
+    <details className="card-menu" onClick={(event) => event.stopPropagation()}>
+      <summary aria-label="メニュー">…</summary>
+      <div>
+        <button onClick={(event) => runMenuAction(event, onDuplicate)}>複製</button>
+        <button onClick={(event) => runMenuAction(event, onClearImage)}>画像を削除</button>
         <button className="danger" onClick={(event) => runMenuAction(event, onDelete)}>削除</button>
       </div>
     </details>

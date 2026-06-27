@@ -602,6 +602,7 @@ function Library({
   const [editingCategory, setEditingCategory] = React.useState(null);
   const [editingPrompt, setEditingPrompt] = React.useState(null);
   const [translationPrompt, setTranslationPrompt] = React.useState(null);
+  const [inlineEdit, setInlineEdit] = React.useState(null);
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v4", defaultLibraryBoardPrompts);
   const currentCategory = selectedCategory ? boardCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
@@ -646,6 +647,12 @@ function Library({
       id: uid(),
       title: `${item.title} コピー`
     }, ...items]);
+  };
+  const updatePrompt = (id, patch) => {
+    setBoardPrompts(items => items.map(prompt => prompt.id === id ? {
+      ...prompt,
+      ...patch
+    } : prompt));
   };
   return /*#__PURE__*/React.createElement("section", {
     className: "page library-page"
@@ -717,14 +724,73 @@ function Library({
   }, filteredPrompts.map(prompt => /*#__PURE__*/React.createElement("article", {
     className: "library-prompt-card",
     key: prompt.id
-  }, /*#__PURE__*/React.createElement(MenuButton, {
-    onEdit: () => setEditingPrompt(prompt),
+  }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
-    onImage: () => setEditingPrompt(prompt),
+    onClearImage: () => updatePrompt(prompt.id, {
+      imageUrl: ""
+    }),
     onDelete: () => setBoardPrompts(items => items.filter(item => item.id !== prompt.id))
-  }), /*#__PURE__*/React.createElement(PromptThumbnail, {
-    imageUrl: prompt.imageUrl
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, prompt.title), /*#__PURE__*/React.createElement("p", null, prompt.description), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement(EditableThumbnail, {
+    prompt: prompt,
+    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl",
+    onEdit: () => setInlineEdit({
+      id: prompt.id,
+      field: "imageUrl"
+    }),
+    onCancel: () => setInlineEdit(null),
+    onSave: imageUrl => {
+      updatePrompt(prompt.id, {
+        imageUrl
+      });
+      setInlineEdit(null);
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "prompt-card-content"
+  }, /*#__PURE__*/React.createElement(InlineEditable, {
+    className: "inline-title",
+    value: prompt.title,
+    placeholder: "タイトル",
+    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "title",
+    onEdit: () => setInlineEdit({
+      id: prompt.id,
+      field: "title"
+    }),
+    onSave: title => {
+      updatePrompt(prompt.id, {
+        title
+      });
+      setInlineEdit(null);
+    }
+  }), /*#__PURE__*/React.createElement(InlineEditable, {
+    className: "inline-description",
+    multiline: true,
+    value: prompt.description,
+    placeholder: "説明文",
+    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "description",
+    onEdit: () => setInlineEdit({
+      id: prompt.id,
+      field: "description"
+    }),
+    onSave: description => {
+      updatePrompt(prompt.id, {
+        description
+      });
+      setInlineEdit(null);
+    }
+  }), /*#__PURE__*/React.createElement("details", {
+    className: "prompt-edit-details",
+    onClick: event => event.stopPropagation()
+  }, /*#__PURE__*/React.createElement("summary", null, "プロンプト本文・和訳を編集"), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("span", null, "プロンプト本文"), /*#__PURE__*/React.createElement("textarea", {
+    value: prompt.prompt,
+    onChange: event => updatePrompt(prompt.id, {
+      prompt: event.target.value
+    })
+  })), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("span", null, "和訳本文"), /*#__PURE__*/React.createElement("textarea", {
+    value: prompt.japaneseTranslation || "",
+    onChange: event => updatePrompt(prompt.id, {
+      japaneseTranslation: event.target.value
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "prompt-card-actions"
   }, /*#__PURE__*/React.createElement("button", {
     className: "primary",
@@ -781,6 +847,85 @@ function PromptThumbnail({
     r: "4"
   })));
 }
+function EditableThumbnail({
+  prompt,
+  isEditing,
+  onEdit,
+  onCancel,
+  onSave
+}) {
+  const [draft, setDraft] = React.useState(prompt.imageUrl || "");
+  React.useEffect(() => setDraft(prompt.imageUrl || ""), [prompt.imageUrl, isEditing]);
+  if (isEditing) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "thumbnail-editor",
+      onClick: event => event.stopPropagation()
+    }, /*#__PURE__*/React.createElement("input", {
+      value: draft,
+      onChange: event => setDraft(event.target.value),
+      placeholder: "サムネイル画像URL",
+      autoFocus: true
+    }), /*#__PURE__*/React.createElement("label", {
+      className: "mini-upload"
+    }, "画像を選ぶ", /*#__PURE__*/React.createElement("input", {
+      type: "file",
+      accept: "image/*",
+      onChange: event => readImage(event, imageUrl => setDraft(imageUrl))
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+      className: "primary",
+      onClick: () => onSave(draft)
+    }, "保存"), /*#__PURE__*/React.createElement("button", {
+      onClick: onCancel
+    }, "閉じる")));
+  }
+  return /*#__PURE__*/React.createElement("button", {
+    className: "thumbnail-button",
+    onClick: event => {
+      event.stopPropagation();
+      onEdit();
+    },
+    "aria-label": "画像を変更"
+  }, /*#__PURE__*/React.createElement(PromptThumbnail, {
+    imageUrl: prompt.imageUrl
+  }));
+}
+function InlineEditable({
+  value,
+  placeholder,
+  isEditing,
+  onEdit,
+  onSave,
+  multiline,
+  className
+}) {
+  const [draft, setDraft] = React.useState(value || "");
+  React.useEffect(() => setDraft(value || ""), [value, isEditing]);
+  const save = () => onSave(draft.trim() || value || "");
+  if (isEditing) {
+    const commonProps = {
+      value: draft,
+      onChange: event => setDraft(event.target.value),
+      onBlur: save,
+      onClick: event => event.stopPropagation(),
+      onKeyDown: event => {
+        if (event.key === "Enter" && !multiline) save();
+        if (event.key === "Escape") setDraft(value || "");
+      },
+      autoFocus: true,
+      placeholder,
+      className: `inline-input ${className || ""}`
+    };
+    return multiline ? /*#__PURE__*/React.createElement("textarea", commonProps) : /*#__PURE__*/React.createElement("input", commonProps);
+  }
+  const Tag = className === "inline-title" ? "h3" : "p";
+  return /*#__PURE__*/React.createElement(Tag, {
+    className: `inline-editable ${className || ""}`,
+    onClick: event => {
+      event.stopPropagation();
+      onEdit();
+    }
+  }, value || placeholder);
+}
 function TranslationModal({
   prompt,
   onClose,
@@ -824,6 +969,30 @@ function MenuButton({
   }, "複製"), /*#__PURE__*/React.createElement("button", {
     onClick: event => runMenuAction(event, onImage)
   }, "画像変更"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: event => runMenuAction(event, onDelete)
+  }, "削除")));
+}
+function PromptMenuButton({
+  onDuplicate,
+  onClearImage,
+  onDelete
+}) {
+  const runMenuAction = (event, action) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  };
+  return /*#__PURE__*/React.createElement("details", {
+    className: "card-menu",
+    onClick: event => event.stopPropagation()
+  }, /*#__PURE__*/React.createElement("summary", {
+    "aria-label": "メニュー"
+  }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    onClick: event => runMenuAction(event, onDuplicate)
+  }, "複製"), /*#__PURE__*/React.createElement("button", {
+    onClick: event => runMenuAction(event, onClearImage)
+  }, "画像を削除"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
     onClick: event => runMenuAction(event, onDelete)
   }, "削除")));
