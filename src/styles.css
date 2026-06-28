@@ -460,7 +460,8 @@ main {
   font-weight: 800;
 }
 
-.quick-action-card {
+.quick-action-card,
+.quick-link-card {
   align-self: stretch;
   display: grid;
   align-content: start;
@@ -474,7 +475,8 @@ main {
   padding: 28px;
 }
 
-.quick-action-card::before {
+.quick-action-card::before,
+.quick-link-card::before {
   content: "";
   position: absolute;
   top: -12px;
@@ -496,7 +498,8 @@ main {
   padding: 7px 11px;
 }
 
-.quick-action-card h2 {
+.quick-action-card h2,
+.quick-link-card h2 {
   margin-bottom: 0;
   font-size: 28px;
 }
@@ -505,6 +508,100 @@ main {
   display: grid;
   gap: 12px;
   margin-top: 8px;
+}
+
+.quick-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.quick-link-item,
+.quick-link-add {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(232, 222, 209, 0.88);
+  border-radius: 22px;
+  background: rgba(255, 253, 249, 0.84);
+  box-shadow: 0 10px 22px rgba(73, 58, 45, 0.04);
+  padding: 12px;
+}
+
+.quick-link-item a,
+.quick-link-add {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  color: var(--ink);
+  min-height: 118px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.quick-link-item a span,
+.quick-link-add span {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(145deg, var(--shell), var(--sage));
+  color: #6f5f51;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.quick-link-item a strong,
+.quick-link-add strong {
+  font-size: 14px;
+}
+
+.quick-link-item a small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.quick-link-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.quick-link-tools button {
+  min-height: 28px;
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+.quick-link-add {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.quick-link-editor {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(232, 222, 209, 0.9);
+  border-radius: 22px;
+  background: rgba(255, 253, 249, 0.92);
+  padding: 14px;
+}
+
+.quick-link-editor-head,
+.quick-link-editor-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.quick-link-editor-head button,
+.quick-link-editor-actions button {
+  min-height: 34px;
+  font-size: 12px;
+  padding: 7px 11px;
 }
 
 .round-button {

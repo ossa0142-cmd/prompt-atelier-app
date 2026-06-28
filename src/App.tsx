@@ -92,6 +92,14 @@ type HomeSettings = {
   order: HomeSectionId[];
 };
 
+type QuickLink = {
+  id: string;
+  name: string;
+  url: string;
+  icon: string;
+  memo?: string;
+};
+
 const categories: Category[] = [
   "ステッカーモックアップ",
   "招待状モックアップ",
@@ -104,7 +112,7 @@ const categories: Category[] = [
 
 const homeSections: { id: HomeSectionId; label: string }[] = [
   { id: "dashboard", label: "制作ダッシュボード" },
-  { id: "quickActions", label: "クイックアクション" },
+  { id: "quickActions", label: "リンク集" },
   { id: "search", label: "検索バー" },
   { id: "featureCards", label: "メイン機能カード" },
   { id: "continue", label: "続きから作業" },
@@ -160,6 +168,12 @@ const mjParamValue = (params: string[], key: string) => {
   return found ? found.replace(key, "").trim() : "";
 };
 const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
+const defaultQuickLinks: QuickLink[] = [
+  { id: "quick-midjourney", name: "Midjourney", url: "https://www.midjourney.com/", icon: "MJ", memo: "画像生成" },
+  { id: "quick-pinterest", name: "Pinterest", url: "https://www.pinterest.com/", icon: "P", memo: "参考画像" },
+  { id: "quick-chatgpt", name: "ChatGPT", url: "https://chatgpt.com/", icon: "GPT", memo: "文章づくり" },
+];
+
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
   bannerImageUrl: "",
@@ -531,6 +545,7 @@ function App() {
   const [projects, setProjects] = useStoredState<Project[]>("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
   const [rawHomeSettings, setRawHomeSettings] = useStoredState<HomeSettings>("promptAtelierHomeSettings", defaultHomeSettings);
+  const [quickLinks, setQuickLinks] = useStoredState<QuickLink[]>("promptAtelierQuickLinks", defaultQuickLinks);
   const [toast, setToast] = React.useState("");
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -595,6 +610,8 @@ function App() {
             mjSettings={mjSettings}
             copyText={copyText}
             settings={homeSettings}
+            quickLinks={quickLinks}
+            setQuickLinks={setQuickLinks}
           />
         )}
         {screen === "customize" && <HomeCustomize settings={homeSettings} setSettings={setRawHomeSettings} setScreen={setScreen} />}
@@ -616,8 +633,9 @@ function App() {
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, copyText, settings }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, copyText, settings, quickLinks, setQuickLinks }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
+  const [editingLink, setEditingLink] = React.useState<QuickLink | null>(null);
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
     ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
@@ -639,6 +657,30 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     ...projects.slice(0, 2).map((project: Project) => ({ type: "プロジェクト", title: project.name, note: project.description, tags: project.tags, screen: "projects" })),
     ...myPrompts.slice(0, 2).map((prompt: MyPrompt) => ({ type: "プロンプト", title: prompt.title, note: prompt.note || prompt.description, tags: prompt.tags, screen: "prompts" })),
   ].slice(0, 3);
+  const normalizedLinks = (quickLinks as QuickLink[]).slice(0, 5);
+  const saveQuickLink = (link: QuickLink) => {
+    const rawUrl = link.url.trim();
+    const safeUrl = rawUrl ? (/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`) : "https://";
+    const next = {
+      ...link,
+      id: link.id || uid(),
+      name: link.name || "新しいリンク",
+      url: safeUrl,
+      icon: link.icon || (link.name || "Link").slice(0, 2).toUpperCase(),
+    };
+    setQuickLinks((items: QuickLink[]) => link.id ? items.map((item) => item.id === link.id ? next : item).slice(0, 5) : [...items, next].slice(0, 5));
+    setEditingLink(null);
+  };
+  const moveQuickLink = (id: string, direction: -1 | 1) => {
+    setQuickLinks((items: QuickLink[]) => {
+      const next = [...items];
+      const index = next.findIndex((item) => item.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= next.length) return items;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
@@ -663,15 +705,34 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     }
     if (sectionId === "quickActions") {
       return (
-        <section className="quick-action-card home-module" key={sectionId}>
-          <span className="quick-label">すぐ作る</span>
-          <h2>クイックアクション</h2>
-          <p>思いついたアイデアを、すぐアトリエに保存できます。</p>
-          <div className="quick-actions">
-            <button className="primary round-button" onClick={() => setScreen("prompts")}>＋ 新しいプロンプト</button>
-            <button className="round-button pale-button" onClick={() => setScreen("projects")}>＋ 新しいプロジェクト</button>
-            <button className="round-button pale-button" onClick={() => setScreen("mj")}>＋ MJ設定を追加</button>
+        <section className="quick-link-card home-module" key={sectionId}>
+          <span className="quick-label">よく使う場所</span>
+          <h2>リンク集</h2>
+          <p>制作中によく開くサービスへ、ここからすぐ移動できます。</p>
+          <div className="quick-link-grid">
+            {normalizedLinks.map((link: QuickLink, index: number) => (
+              <article className="quick-link-item" key={link.id}>
+                <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={`${link.name}を開く`}>
+                  <span>{link.icon || link.name.slice(0, 2)}</span>
+                  <strong>{link.name}</strong>
+                  {link.memo && <small>{link.memo}</small>}
+                </a>
+                <div className="quick-link-tools">
+                  <button onClick={() => setEditingLink(link)}>編集</button>
+                  <button onClick={() => moveQuickLink(link.id, -1)} disabled={index === 0}>上へ</button>
+                  <button onClick={() => moveQuickLink(link.id, 1)} disabled={index === normalizedLinks.length - 1}>下へ</button>
+                  <button className="danger" onClick={() => setQuickLinks((items: QuickLink[]) => items.filter((item) => item.id !== link.id))}>削除</button>
+                </div>
+              </article>
+            ))}
+            {normalizedLinks.length < 5 && (
+              <button className="quick-link-add" onClick={() => setEditingLink({ id: "", name: "", url: "", icon: "", memo: "" })}>
+                <span>＋</span>
+                <strong>リンクを追加</strong>
+              </button>
+            )}
           </div>
+          {editingLink && <QuickLinkEditor link={editingLink} onClose={() => setEditingLink(null)} onSave={saveQuickLink} />}
         </section>
       );
     }
@@ -778,6 +839,27 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
       )}
       {settings.order.map((sectionId: HomeSectionId) => renderSection(sectionId))}
     </section>
+  );
+}
+
+function QuickLinkEditor({ link, onClose, onSave }: any) {
+  const [draft, setDraft] = React.useState({ ...link });
+  const update = (key: keyof QuickLink, value: string) => setDraft({ ...draft, [key]: value });
+  return (
+    <div className="quick-link-editor">
+      <div className="quick-link-editor-head">
+        <strong>{link.id ? "リンクを編集" : "リンクを追加"}</strong>
+        <button onClick={onClose}>閉じる</button>
+      </div>
+      <input value={draft.name} onChange={(event) => update("name", event.target.value)} placeholder="表示名" />
+      <input value={draft.url} onChange={(event) => update("url", event.target.value)} placeholder="URL" />
+      <input value={draft.icon} onChange={(event) => update("icon", event.target.value)} placeholder="アイコン（例：MJ / P / GPT）" />
+      <input value={draft.memo || ""} onChange={(event) => update("memo", event.target.value)} placeholder="メモ（任意）" />
+      <div className="quick-link-editor-actions">
+        <button onClick={onClose}>キャンセル</button>
+        <button className="primary" onClick={() => onSave(draft)}>保存する</button>
+      </div>
+    </div>
   );
 }
 
