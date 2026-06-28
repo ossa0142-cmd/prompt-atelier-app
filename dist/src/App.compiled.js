@@ -192,17 +192,6 @@ const mjParamValue = (params, key) => {
   return found ? found.replace(key, "").trim() : "";
 };
 const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
-const promptTranslationMap = [[/cute/gi, "かわいい"], [/pastel/gi, "淡いパステル"], [/clipart/gi, "クリップアート"], [/white background/gi, "白背景"], [/transparent background/gi, "透明背景"], [/no shadow/gi, "影なし"], [/soft shadow/gi, "やわらかな影"], [/watercolor/gi, "水彩風"], [/sticker/gi, "ステッカー"], [/flat lay/gi, "平置き"], [/product photo/gi, "商品写真"], [/natural light/gi, "自然光"], [/high quality/gi, "高品質"], [/simple/gi, "シンプル"], [/kawaii/gi, "かわいい"], [/cozy/gi, "心地よい"], [/minimal/gi, "ミニマル"], [/hand drawn/gi, "手描き風"], [/seamless pattern/gi, "シームレスパターン"], [/clean/gi, "清潔感のある"]];
-const translatePromptToJapanese = prompt => {
-  const source = prompt.trim();
-  if (!source) return "";
-  let translated = source;
-  promptTranslationMap.forEach(([pattern, replacement]) => {
-    translated = translated.replace(pattern, replacement);
-  });
-  translated = translated.replace(/\bstyle\b/gi, "スタイル").replace(/\bset\b/gi, "セット").replace(/\bprintable\b/gi, "印刷向き").replace(/\bisolated\b/gi, "単体配置").replace(/\s*,\s*/g, "、").replace(/\s+/g, " ").trim();
-  return translated === source ? `仮翻訳：${source}` : translated;
-};
 const defaultHomeSettings = {
   themeId: "cute",
   bannerImageUrl: "",
@@ -1962,9 +1951,9 @@ function Midjourney({
 }) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
-  const [originalPrompt, setOriginalPrompt] = React.useState("");
-  const [translatedPrompt, setTranslatedPrompt] = React.useState("");
-  const [promptLanguage, setPromptLanguage] = React.useState("en");
+  const [promptEn, setPromptEn] = React.useState("");
+  const [promptJa, setPromptJa] = React.useState("");
+  const [activeLanguage, setActiveLanguage] = React.useState("en");
   const [selectedParams, setSelectedParams] = React.useState([]);
   const [fullPrompt, setFullPrompt] = React.useState("");
   const [title, setTitle] = React.useState("");
@@ -1978,7 +1967,8 @@ function Midjourney({
   const filtered = normalizedSettings.filter(item => lowerIncludes(`${item.memo || ""} ${item.note || ""} ${mjCommand(item)} ${(item.extractedParams || []).join(" ")}`, query));
   const saveLimitReached = settings.length >= 50 && !editingId;
   const currentParams = parseMidjourneyPrompt(fullPrompt).params;
-  const completePrompt = combinePrompt(basePrompt, currentParams);
+  const displayedPrompt = activeLanguage === "en" ? promptEn : promptJa;
+  const completePrompt = combinePrompt(displayedPrompt, currentParams);
   const canSave = Boolean(completePrompt.trim()) && !saveLimitReached;
   const showEmptySlots = !query.trim();
   const shelfSlotCount = showEmptySlots ? settings.length < 3 ? 3 : Math.min(50, filtered.length + (settings.length < 50 ? 1 : 0)) : filtered.length;
@@ -1990,27 +1980,27 @@ function Midjourney({
     cardId: item.id,
     index
   })));
-  const updateBasePrompt = value => {
+  const updatePromptField = value => {
     setBasePrompt(value);
-    if (promptLanguage === "en") setOriginalPrompt(value);
-    if (promptLanguage === "ja") setTranslatedPrompt(value);
+    if (activeLanguage === "en") setPromptEn(value);
+    if (activeLanguage === "ja") setPromptJa(value);
   };
-  const toggleTranslation = () => {
-    if (promptLanguage === "en") {
-      const english = basePrompt || originalPrompt;
-      const next = translatedPrompt || translatePromptToJapanese(english) || english;
-      setOriginalPrompt(english);
-      setTranslatedPrompt(next);
-      setBasePrompt(next);
-      setPromptLanguage("ja");
+  const switchPromptLanguage = () => {
+    if (activeLanguage === "en") {
+      const english = displayedPrompt || promptEn;
+      const japanese = promptJa || english;
+      setPromptEn(english);
+      setPromptJa(japanese);
+      setBasePrompt(japanese);
+      setActiveLanguage("ja");
       return;
     }
-    const japanese = basePrompt || translatedPrompt;
-    const next = originalPrompt || japanese || "";
-    setTranslatedPrompt(japanese);
-    setOriginalPrompt(next);
-    setBasePrompt(next);
-    setPromptLanguage("en");
+    const japanese = displayedPrompt || promptJa;
+    const english = promptEn || japanese;
+    setPromptJa(japanese);
+    setPromptEn(english);
+    setBasePrompt(english);
+    setActiveLanguage("en");
   };
   const applyParamFromCard = param => {
     const key = mjParamKey(param);
@@ -2034,9 +2024,9 @@ function Midjourney({
   };
   const clearComposer = () => {
     setBasePrompt("");
-    setOriginalPrompt("");
-    setTranslatedPrompt("");
-    setPromptLanguage("en");
+    setPromptEn("");
+    setPromptJa("");
+    setActiveLanguage("en");
     setSelectedParams([]);
     setFullPrompt("");
     setTitle("");
@@ -2054,17 +2044,20 @@ function Midjourney({
       description: memo,
       imageUrl: images[0] || "",
       images,
-      prompt: combinePrompt(basePrompt, parsed.params.length ? parsed.params : selectedParams),
+      prompt: combinePrompt(displayedPrompt, parsed.params.length ? parsed.params : selectedParams),
+      promptEn: activeLanguage === "en" ? displayedPrompt : promptEn,
+      promptJa: activeLanguage === "ja" ? displayedPrompt : promptJa,
+      activeLanguage,
       memo,
       note: memo,
-      basePrompt,
-      originalPrompt: promptLanguage === "en" ? basePrompt : originalPrompt,
-      translatedPrompt: promptLanguage === "ja" ? basePrompt : translatedPrompt,
-      englishPrompt: promptLanguage === "en" ? basePrompt : originalPrompt,
-      japanesePrompt: promptLanguage === "ja" ? basePrompt : translatedPrompt,
+      basePrompt: displayedPrompt,
+      originalPrompt: activeLanguage === "en" ? displayedPrompt : promptEn,
+      translatedPrompt: activeLanguage === "ja" ? displayedPrompt : promptJa,
+      englishPrompt: activeLanguage === "en" ? displayedPrompt : promptEn,
+      japanesePrompt: activeLanguage === "ja" ? displayedPrompt : promptJa,
       extractedParams: parsed.params.length ? parsed.params : selectedParams,
-      fullPrompt: combinePrompt(basePrompt, parsed.params.length ? parsed.params : selectedParams),
-      extra: basePrompt,
+      fullPrompt: combinePrompt(displayedPrompt, parsed.params.length ? parsed.params : selectedParams),
+      extra: displayedPrompt,
       createdAt: editingId ? settings.find(item => item.id === editingId)?.createdAt : new Date().toISOString()
     });
     setSettings(items => editingId ? items.map(item => item.id === editingId ? normalized : item) : [normalized, ...items]);
@@ -2095,6 +2088,9 @@ function Midjourney({
       memo: "",
       note: "",
       prompt: "",
+      promptEn: "",
+      promptJa: "",
+      activeLanguage: "en",
       basePrompt: "",
       originalPrompt: "",
       translatedPrompt: "",
@@ -2138,12 +2134,12 @@ function Midjourney({
   }, /*#__PURE__*/React.createElement("div", {
     className: "mj-field-head"
   }, /*#__PURE__*/React.createElement("h3", null, "プロンプト"), /*#__PURE__*/React.createElement("button", {
-    onClick: toggleTranslation
-  }, promptLanguage === "en" ? "和訳" : "英語に戻す")), /*#__PURE__*/React.createElement("textarea", {
+    onClick: switchPromptLanguage
+  }, activeLanguage === "en" ? "和訳" : "英語に戻す")), /*#__PURE__*/React.createElement("textarea", {
     className: "mj-base-input",
-    value: basePrompt,
-    onChange: event => updateBasePrompt(event.target.value),
-    placeholder: "例：cute pastel clipart, white background, no shadow"
+    value: displayedPrompt,
+    onChange: event => updatePromptField(event.target.value),
+    placeholder: activeLanguage === "en" ? "例：cute pastel clipart, white background, no shadow" : "ここに日本語訳を入力してください"
   }), /*#__PURE__*/React.createElement("h3", null, "パラメータ"), /*#__PURE__*/React.createElement("textarea", {
     className: "mj-final-input",
     value: fullPrompt,
@@ -2329,6 +2325,8 @@ function MJEditableCard({
     onUpdate({
       title: item.title || promptCardHeading(value),
       prompt: value,
+      promptEn: value,
+      activeLanguage: item.activeLanguage || "en",
       basePrompt: parsed.basePrompt,
       originalPrompt: value,
       englishPrompt: value,
@@ -2537,6 +2535,9 @@ function normalizeMjSetting(item) {
   const basePrompt = item.basePrompt || parsed.basePrompt || item.extra || "";
   const originalPrompt = item.originalPrompt || item.englishPrompt || fullPrompt || basePrompt;
   const translatedPrompt = item.translatedPrompt || item.japanesePrompt || "";
+  const promptEn = item.promptEn || originalPrompt || fullPrompt || "";
+  const promptJa = item.promptJa || translatedPrompt || "";
+  const activeLanguage = item.activeLanguage === "ja" ? "ja" : "en";
   const images = Array.isArray(item.images) ? item.images.slice(0, 5) : item.imageUrl ? [item.imageUrl] : [];
   return {
     id: item.id || uid(),
@@ -2545,6 +2546,9 @@ function normalizeMjSetting(item) {
     images,
     imageUrl: images[0] || item.imageUrl || "",
     prompt: fullPrompt || combinePrompt(basePrompt, params),
+    promptEn,
+    promptJa,
+    activeLanguage,
     memo: item.memo || item.note || item.description || "",
     basePrompt,
     originalPrompt,
