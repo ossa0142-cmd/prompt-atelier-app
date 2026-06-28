@@ -191,6 +191,7 @@ const mjParamValue = (params, key) => {
   const found = params.find(param => mjParamKey(param) === key);
   return found ? found.replace(key, "").trim() : "";
 };
+const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
 const defaultHomeSettings = {
   themeId: "cute",
   bannerImageUrl: "",
@@ -1952,22 +1953,20 @@ function Midjourney({
   const [editingId, setEditingId] = React.useState("");
   const [copied, setCopied] = React.useState(false);
   const filtered = settings.filter(item => lowerIncludes(`${item.title} ${item.description} ${item.note} ${item.memo || ""} ${mjCommand(item)}`, query));
+  const saveLimitReached = settings.length >= 50 && !editingId;
   const updateBasePrompt = value => {
     setBasePrompt(value);
     setFullPrompt(combinePrompt(value, selectedParams));
   };
-  const toggleParam = param => {
+  const applyParamFromCard = param => {
     const key = mjParamKey(param);
-    const exists = selectedParams.some(item => mjParamKey(item) === key);
-    const exact = selectedParams.includes(param);
-    const next = exact || exists && (key === "--seed" || key === "--profile") ? selectedParams.filter(item => mjParamKey(item) !== key) : [...selectedParams.filter(item => mjParamKey(item) !== key), param];
+    const parsed = parseMidjourneyPrompt(fullPrompt);
+    const replaceSameKind = mjReplaceKeys.includes(key);
+    const current = parsed.params;
+    const alreadyExists = current.includes(param);
+    const next = alreadyExists ? current : replaceSameKind ? [...current.filter(item => mjParamKey(item) !== key), param] : [...current.filter(item => item !== param), param];
     setSelectedParams(next);
-    setFullPrompt(combinePrompt(basePrompt, next));
-  };
-  const updateParamValue = (key, value) => {
-    const next = [...selectedParams.filter(item => mjParamKey(item) !== key), value.trim() ? `${key} ${value.trim()}` : key];
-    setSelectedParams(next);
-    setFullPrompt(combinePrompt(basePrompt, next));
+    setFullPrompt(combinePrompt(parsed.basePrompt, next));
   };
   const copyFullPrompt = async () => {
     await copyText(fullPrompt);
@@ -1984,6 +1983,8 @@ function Midjourney({
     setEditingId("");
   };
   const save = () => {
+    if (saveLimitReached || !fullPrompt.trim()) return;
+    const parsed = parseMidjourneyPrompt(fullPrompt);
     const normalized = normalizeMjSetting({
       id: editingId,
       title: title || "無題のMJ設定",
@@ -1992,9 +1993,10 @@ function Midjourney({
       memo,
       note: memo,
       basePrompt,
-      extractedParams: selectedParams,
+      extractedParams: parsed.params.length ? parsed.params : selectedParams,
       fullPrompt,
-      extra: basePrompt
+      extra: basePrompt,
+      createdAt: editingId ? settings.find(item => item.id === editingId)?.createdAt : new Date().toISOString()
     });
     setSettings(items => editingId ? items.map(item => item.id === editingId ? normalized : item) : [normalized, ...items]);
     clearComposer();
@@ -2016,7 +2018,7 @@ function Midjourney({
     action: /*#__PURE__*/React.createElement("button", {
       className: "primary",
       onClick: save,
-      disabled: !fullPrompt.trim()
+      disabled: !fullPrompt.trim() || saveLimitReached
     }, "この設定を保存")
   }), /*#__PURE__*/React.createElement("div", {
     className: "mj-workspace"
@@ -2029,24 +2031,7 @@ function Midjourney({
     value: basePrompt,
     onChange: event => updateBasePrompt(event.target.value),
     placeholder: "例：cute pastel clipart, white background, no shadow"
-  }), /*#__PURE__*/React.createElement("h3", null, "パラメータ"), /*#__PURE__*/React.createElement("div", {
-    className: "mj-param-pills"
-  }, mjParameterOptions.map(param => {
-    const key = mjParamKey(param);
-    const selected = selectedParams.some(item => mjParamKey(item) === key && (item === param || param === key));
-    return /*#__PURE__*/React.createElement("button", {
-      key: param,
-      className: selected ? "selected" : "",
-      onClick: () => toggleParam(param)
-    }, param);
-  })), ["--seed", "--profile"].map(key => selectedParams.some(item => mjParamKey(item) === key) && /*#__PURE__*/React.createElement("label", {
-    className: "mj-param-value",
-    key: key
-  }, /*#__PURE__*/React.createElement("span", null, key), /*#__PURE__*/React.createElement("input", {
-    value: mjParamValue(selectedParams, key),
-    onChange: event => updateParamValue(key, event.target.value),
-    placeholder: key === "--seed" ? "1234" : "z74d73i"
-  }))), /*#__PURE__*/React.createElement("h3", null, "完成プロンプト"), /*#__PURE__*/React.createElement("textarea", {
+  }), /*#__PURE__*/React.createElement("h3", null, "完成プロンプト"), /*#__PURE__*/React.createElement("textarea", {
     className: "mj-final-input",
     value: fullPrompt,
     onChange: event => setFullPrompt(event.target.value),
@@ -2073,10 +2058,12 @@ function Midjourney({
     disabled: !fullPrompt.trim()
   }, "📋 完成プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
     onClick: save,
-    disabled: !fullPrompt.trim()
+    disabled: !fullPrompt.trim() || saveLimitReached
   }, "この設定を保存"), editingId && /*#__PURE__*/React.createElement("button", {
     onClick: clearComposer
-  }, "新規作成に戻る"), copied && /*#__PURE__*/React.createElement("span", null, "コピーしました")))), /*#__PURE__*/React.createElement("section", {
+  }, "新規作成に戻る"), copied && /*#__PURE__*/React.createElement("span", null, "コピーしました")), saveLimitReached && /*#__PURE__*/React.createElement("p", {
+    className: "limit-message"
+  }, "保存上限（50件）に達しました"))), /*#__PURE__*/React.createElement("section", {
     className: "mj-saved-shelf"
   }, /*#__PURE__*/React.createElement("div", {
     className: "mj-shelf-head"
@@ -2097,7 +2084,9 @@ function Midjourney({
       imageUrl: item.imageUrl
     })), /*#__PURE__*/React.createElement("div", {
       className: "mj-card-body"
-    }, /*#__PURE__*/React.createElement("h3", null, item.title), item.memo && /*#__PURE__*/React.createElement("p", null, item.memo), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("small", {
+      className: "mj-date"
+    }, "保存日：", formatSavedAt(item.createdAt)), item.memo && /*#__PURE__*/React.createElement("p", null, item.memo), /*#__PURE__*/React.createElement("div", {
       className: "mj-card-section"
     }, /*#__PURE__*/React.createElement("span", null, "ベースプロンプト"), /*#__PURE__*/React.createElement("p", null, item.basePrompt || "未設定")), /*#__PURE__*/React.createElement("div", {
       className: "mj-card-section"
@@ -2107,8 +2096,9 @@ function Midjourney({
       className: "mj-param-label"
     }, "選択済みパラメータ"), /*#__PURE__*/React.createElement("div", {
       className: "mj-param-pills compact"
-    }, (item.extractedParams || []).length ? (item.extractedParams || []).map(param => /*#__PURE__*/React.createElement("span", {
-      key: param
+    }, (item.extractedParams || []).length ? (item.extractedParams || []).map(param => /*#__PURE__*/React.createElement("button", {
+      key: param,
+      onClick: () => applyParamFromCard(param)
     }, param)) : /*#__PURE__*/React.createElement("small", null, "パラメータなし")), /*#__PURE__*/React.createElement("div", {
       className: "mj-card-actions"
     }, /*#__PURE__*/React.createElement("button", {
@@ -2157,8 +2147,16 @@ function normalizeMjSetting(item) {
     seed: item.seed || "",
     raw: Boolean(item.raw),
     extra: item.extra || item.basePrompt || parsed.basePrompt || "",
-    note: item.note || item.memo || ""
+    note: item.note || item.memo || "",
+    createdAt: item.createdAt || ""
   };
+}
+function formatSavedAt(value) {
+  if (!value) return "未設定";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "未設定";
+  const pad = num => String(num).padStart(2, "0");
+  return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 function mjCommandLegacy(item) {
   return [item.extra, item.ar && `--ar ${item.ar}`, item.stylize && `--stylize ${item.stylize}`, item.chaos && `--chaos ${item.chaos}`, item.raw && "--raw", item.profile && `--profile ${item.profile}`, item.seed && `--seed ${item.seed}`].filter(Boolean).join(" ");

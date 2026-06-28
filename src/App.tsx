@@ -48,6 +48,7 @@ type MjSetting = {
   basePrompt?: string;
   extractedParams?: string[];
   fullPrompt?: string;
+  createdAt?: string;
   ar: string;
   stylize: string;
   chaos: string;
@@ -149,6 +150,7 @@ const mjParamValue = (params: string[], key: string) => {
   const found = params.find((param) => mjParamKey(param) === key);
   return found ? found.replace(key, "").trim() : "";
 };
+const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
 
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
@@ -1600,24 +1602,24 @@ function Midjourney({ settings, setSettings, copyText }: any) {
   const [editingId, setEditingId] = React.useState("");
   const [copied, setCopied] = React.useState(false);
   const filtered = settings.filter((item: MjSetting) => lowerIncludes(`${item.title} ${item.description} ${item.note} ${item.memo || ""} ${mjCommand(item)}`, query));
+  const saveLimitReached = settings.length >= 50 && !editingId;
   const updateBasePrompt = (value: string) => {
     setBasePrompt(value);
     setFullPrompt(combinePrompt(value, selectedParams));
   };
-  const toggleParam = (param: string) => {
+  const applyParamFromCard = (param: string) => {
     const key = mjParamKey(param);
-    const exists = selectedParams.some((item) => mjParamKey(item) === key);
-    const exact = selectedParams.includes(param);
-    const next = exact || (exists && (key === "--seed" || key === "--profile"))
-      ? selectedParams.filter((item) => mjParamKey(item) !== key)
-      : [...selectedParams.filter((item) => mjParamKey(item) !== key), param];
+    const parsed = parseMidjourneyPrompt(fullPrompt);
+    const replaceSameKind = mjReplaceKeys.includes(key);
+    const current = parsed.params;
+    const alreadyExists = current.includes(param);
+    const next = alreadyExists
+      ? current
+      : replaceSameKind
+        ? [...current.filter((item) => mjParamKey(item) !== key), param]
+        : [...current.filter((item) => item !== param), param];
     setSelectedParams(next);
-    setFullPrompt(combinePrompt(basePrompt, next));
-  };
-  const updateParamValue = (key: string, value: string) => {
-    const next = [...selectedParams.filter((item) => mjParamKey(item) !== key), value.trim() ? `${key} ${value.trim()}` : key];
-    setSelectedParams(next);
-    setFullPrompt(combinePrompt(basePrompt, next));
+    setFullPrompt(combinePrompt(parsed.basePrompt, next));
   };
   const copyFullPrompt = async () => {
     await copyText(fullPrompt);
@@ -1634,6 +1636,8 @@ function Midjourney({ settings, setSettings, copyText }: any) {
     setEditingId("");
   };
   const save = () => {
+    if (saveLimitReached || !fullPrompt.trim()) return;
+    const parsed = parseMidjourneyPrompt(fullPrompt);
     const normalized = normalizeMjSetting({
       id: editingId,
       title: title || "無題のMJ設定",
@@ -1642,9 +1646,10 @@ function Midjourney({ settings, setSettings, copyText }: any) {
       memo,
       note: memo,
       basePrompt,
-      extractedParams: selectedParams,
+      extractedParams: parsed.params.length ? parsed.params : selectedParams,
       fullPrompt,
       extra: basePrompt,
+      createdAt: editingId ? settings.find((item: MjSetting) => item.id === editingId)?.createdAt : new Date().toISOString(),
     } as MjSetting);
     setSettings((items: MjSetting[]) => editingId ? items.map((item) => item.id === editingId ? normalized : item) : [normalized, ...items]);
     clearComposer();
@@ -1661,7 +1666,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
   };
   return (
     <section className="page mj-board-page">
-      <PageHead title="Midjourneyパラメータ制作ボード" action={<button className="primary" onClick={save} disabled={!fullPrompt.trim()}>この設定を保存</button>} />
+      <PageHead title="Midjourneyパラメータ制作ボード" action={<button className="primary" onClick={save} disabled={!fullPrompt.trim() || saveLimitReached}>この設定を保存</button>} />
       <div className="mj-workspace">
         <aside className="mj-builder-panel">
           <section className="mj-input-panel">
@@ -1672,22 +1677,6 @@ function Midjourney({ settings, setSettings, copyText }: any) {
               onChange={(event) => updateBasePrompt(event.target.value)}
               placeholder="例：cute pastel clipart, white background, no shadow"
             />
-            <h3>パラメータ</h3>
-            <div className="mj-param-pills">
-              {mjParameterOptions.map((param) => {
-                const key = mjParamKey(param);
-                const selected = selectedParams.some((item) => mjParamKey(item) === key && (item === param || param === key));
-                return (
-                  <button key={param} className={selected ? "selected" : ""} onClick={() => toggleParam(param)}>{param}</button>
-                );
-              })}
-            </div>
-            {["--seed", "--profile"].map((key) => selectedParams.some((item) => mjParamKey(item) === key) && (
-              <label className="mj-param-value" key={key}>
-                <span>{key}</span>
-                <input value={mjParamValue(selectedParams, key)} onChange={(event) => updateParamValue(key, event.target.value)} placeholder={key === "--seed" ? "1234" : "z74d73i"} />
-              </label>
-            ))}
             <h3>完成プロンプト</h3>
             <textarea className="mj-final-input" value={fullPrompt} onChange={(event) => setFullPrompt(event.target.value)} placeholder="ベースプロンプトと選択したパラメータがここに入ります" />
             <div className="mj-save-grid">
@@ -1697,10 +1686,11 @@ function Midjourney({ settings, setSettings, copyText }: any) {
             </div>
             <div className="mj-composer-actions">
               <button className="primary" onClick={copyFullPrompt} disabled={!fullPrompt.trim()}>📋 完成プロンプトをコピー</button>
-              <button onClick={save} disabled={!fullPrompt.trim()}>この設定を保存</button>
+              <button onClick={save} disabled={!fullPrompt.trim() || saveLimitReached}>この設定を保存</button>
               {editingId && <button onClick={clearComposer}>新規作成に戻る</button>}
               {copied && <span>コピーしました</span>}
             </div>
+            {saveLimitReached && <p className="limit-message">保存上限（50件）に達しました</p>}
           </section>
         </aside>
         <section className="mj-saved-shelf">
@@ -1719,6 +1709,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
                   <div className="mj-card-image"><PromptThumbnail imageUrl={item.imageUrl} /></div>
                   <div className="mj-card-body">
                     <h3>{item.title}</h3>
+                    <small className="mj-date">保存日：{formatSavedAt(item.createdAt)}</small>
                     {item.memo && <p>{item.memo}</p>}
                     <div className="mj-card-section">
                       <span>ベースプロンプト</span>
@@ -1730,7 +1721,9 @@ function Midjourney({ settings, setSettings, copyText }: any) {
                     </div>
                     <span className="mj-param-label">選択済みパラメータ</span>
                     <div className="mj-param-pills compact">
-                      {(item.extractedParams || []).length ? (item.extractedParams || []).map((param) => <span key={param}>{param}</span>) : <small>パラメータなし</small>}
+                      {(item.extractedParams || []).length ? (item.extractedParams || []).map((param) => (
+                        <button key={param} onClick={() => applyParamFromCard(param)}>{param}</button>
+                      )) : <small>パラメータなし</small>}
                     </div>
                     <div className="mj-card-actions">
                       <button className="primary" onClick={() => copyText(mjCommand(item), item.id)}>📋 コピー</button>
@@ -1782,7 +1775,16 @@ function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
     raw: Boolean(item.raw),
     extra: item.extra || item.basePrompt || parsed.basePrompt || "",
     note: item.note || item.memo || "",
+    createdAt: item.createdAt || "",
   };
+}
+
+function formatSavedAt(value?: string) {
+  if (!value) return "未設定";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "未設定";
+  const pad = (num: number) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function mjCommandLegacy(item: MjSetting) {

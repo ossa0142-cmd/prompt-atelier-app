@@ -1296,8 +1296,8 @@ main {
 
 .mj-card-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .mj-saved-shelf {
@@ -1341,25 +1341,36 @@ main {
 
 .mj-card-image img,
 .mj-card-image .image-placeholder {
-  aspect-ratio: 1.22;
+  aspect-ratio: 1.55;
 }
 
 .mj-card-body {
   display: grid;
-  gap: 10px;
-  padding: 18px;
+  gap: 8px;
+  padding: 14px;
 }
 
 .mj-card-body h3 {
+  display: -webkit-box;
   margin-bottom: 0;
+  overflow: hidden;
   color: var(--ink);
-  font-size: 18px;
+  font-size: 16px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .mj-card-body p {
   margin-bottom: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.mj-date {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .mj-card-section {
@@ -1381,20 +1392,20 @@ main {
   border-radius: 16px;
   background: #fffdf9;
   padding: 10px;
-  font-size: 13px;
+  font-size: 12px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
 .mj-prompt-snippet {
   display: -webkit-box;
-  min-height: 68px;
+  min-height: 60px;
   overflow: hidden;
   border: 1px solid rgba(232, 222, 209, 0.78);
   border-radius: 16px;
   background: #fffdf9;
   padding: 10px;
-  font-size: 13px;
+  font-size: 12px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -1407,6 +1418,17 @@ main {
   min-height: 30px;
   font-size: 12px;
   padding: 6px 10px;
+}
+
+.mj-param-pills.compact button {
+  min-height: 30px;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.mj-param-pills.compact button:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .customize-page {
