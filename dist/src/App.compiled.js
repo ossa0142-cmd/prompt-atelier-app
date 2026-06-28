@@ -1,7 +1,7 @@
 const categories = ["ステッカーモックアップ", "招待状モックアップ", "ポストカードモックアップ", "グリーティングカードモックアップ", "Etsyサムネイル", "アートプリントモックアップ", "アクリルキーホルダーモックアップ"];
 const homeSections = [{
   id: "dashboard",
-  label: "制作ダッシュボード"
+  label: "制作状況カード"
 }, {
   id: "quickActions",
   label: "作業ツール"
@@ -599,14 +599,74 @@ const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolean);
 const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
-function projectDueText(value) {
-  if (!value) return "";
+const isDarkTheme = id => ["dark", "night-lavender"].includes(id);
+function themeStyle(theme) {
+  const dark = isDarkTheme(theme.id);
+  return {
+    "--ink": theme.vars.ink,
+    "--muted": theme.vars.muted,
+    "--paper": theme.vars.paper,
+    "--ivory": theme.vars.ivory,
+    "--shell": theme.vars.shell,
+    "--sage": theme.vars.sage,
+    "--sand": theme.vars.sand,
+    "--line": theme.vars.line,
+    "--accent": theme.vars.accent,
+    "--sage-deep": theme.vars.accent,
+    "--heading": theme.vars.ink,
+    "--card-bg": dark ? theme.vars.paper : theme.vars.paper,
+    "--card-border": theme.vars.line,
+    "--button-bg": dark ? theme.vars.accent : theme.vars.paper,
+    "--button-ink": dark ? theme.vars.ivory : theme.vars.ink,
+    "--primary-bg": theme.vars.accent,
+    "--primary-ink": dark ? theme.vars.ivory : "#fffdf9",
+    "--input-bg": dark ? theme.vars.shell : "#fffdf9",
+    "--input-ink": theme.vars.ink,
+    "--nav-bg": dark ? theme.vars.paper : "color-mix(in srgb, var(--paper) 88%, transparent)",
+    "--nav-ink": theme.vars.ink
+  };
+}
+function projectDueInfo(value) {
+  if (!value) return {
+    diff: 999999,
+    expired: false,
+    text: ""
+  };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(due.getTime())) return "";
+  if (Number.isNaN(due.getTime())) return {
+    diff: 999999,
+    expired: false,
+    text: ""
+  };
   const diff = Math.ceil((due.getTime() - today.getTime()) / 86400000);
-  return diff < 0 ? "⚠ 達成予定日を過ぎています" : `達成予定まで あと ${diff}日`;
+  return {
+    diff,
+    expired: diff < 0,
+    text: diff < 0 ? `${Math.abs(diff)}日過ぎています` : diff === 0 ? "今日" : `あと${diff}日`
+  };
+}
+function projectDueText(value) {
+  const info = projectDueInfo(value);
+  return info.expired ? "⚠ 達成予定日を過ぎています" : `達成予定まで ${info.text}`;
+}
+function projectSortRank(project) {
+  if (!project.dueDate) return 1;
+  return projectDueInfo(project.dueDate).expired ? 2 : 0;
+}
+function sortProjectsForDisplay(items) {
+  return [...items].sort((a, b) => {
+    const rankDiff = projectSortRank(a) - projectSortRank(b);
+    if (rankDiff) return rankDiff;
+    if (projectSortRank(a) === 0) {
+      const dateDiff = String(a.dueDate).localeCompare(String(b.dueDate));
+      if (dateDiff) return dateDiff;
+    }
+    const updatedDiff = String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+    if (updatedDiff) return updatedDiff;
+    return String(b.id || "").localeCompare(String(a.id || ""));
+  });
 }
 function useStoredState(key, fallback) {
   const [value, setValue] = React.useState(() => {
@@ -637,18 +697,7 @@ function App() {
   const [toast, setToast] = React.useState("");
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
-  const appStyle = {
-    "--ink": activeTheme.vars.ink,
-    "--muted": activeTheme.vars.muted,
-    "--paper": activeTheme.vars.paper,
-    "--ivory": activeTheme.vars.ivory,
-    "--shell": activeTheme.vars.shell,
-    "--sage": activeTheme.vars.sage,
-    "--sand": activeTheme.vars.sand,
-    "--line": activeTheme.vars.line,
-    "--accent": activeTheme.vars.accent,
-    "--sage-deep": activeTheme.vars.accent
-  };
+  const appStyle = themeStyle(activeTheme);
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
@@ -723,32 +772,44 @@ function Home({
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = id => settings.visible[id] !== false;
   const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
-  const dashboardItems = [{
-    screen: "library",
-    title: "モックアップライブラリ",
-    count: Math.max(libraryPrompts.length, 128),
-    icon: "mockup"
-  }, {
-    screen: "prompts",
-    title: "プロンプト帳",
-    count: Math.max(myPrompts.length, 42),
-    icon: "notebook"
-  }, {
-    screen: "mj",
-    title: "MJ設定",
-    count: Math.max(mjSettings.length, 18),
-    icon: "magic"
-  }, {
-    screen: "projects",
-    title: "プロジェクト",
-    count: Math.max(projects.length, 7),
-    icon: "folder"
-  }];
   const searchable = [...myPrompts, ...projects].filter(item => {
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
     return homeQuery && lowerIncludes(text, homeQuery);
   }).slice(0, 3);
-  const reminders = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate))).slice(0, 4);
+  const nextReminder = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => {
+    const aInfo = projectDueInfo(a.dueDate || "");
+    const bInfo = projectDueInfo(b.dueDate || "");
+    if (aInfo.expired !== bInfo.expired) return aInfo.expired ? -1 : 1;
+    return Math.abs(aInfo.diff) - Math.abs(bInfo.diff);
+  })[0];
+  const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
+  const dashboardItems = [{
+    screen: "library",
+    title: "モックアップ",
+    value: `${Math.max(libraryPrompts.length, 128)}件`,
+    icon: "mockup"
+  }, {
+    screen: "prompts",
+    title: "プロンプト帳",
+    value: `${Math.max(myPrompts.length, 42)}件`,
+    icon: "notebook"
+  }, {
+    screen: "mj",
+    title: "MJ設定",
+    value: `${Math.max(mjSettings.length, 18)}件`,
+    icon: "magic"
+  }, {
+    screen: "projects",
+    title: "プロジェクト",
+    value: `${Math.min(projects.length, 30)}件`,
+    icon: "folder"
+  }, {
+    screen: "projects",
+    title: reminderInfo?.expired ? "期限超過" : "達成予定",
+    value: nextReminder ? reminderInfo?.text || "" : "リマインドなし",
+    icon: "alarm",
+    note: nextReminder?.name || ""
+  }];
   const normalizedTools = workTools.slice(0, 10);
   const renderSection = sectionId => {
     if (!isVisible(sectionId)) return null;
@@ -756,15 +817,11 @@ function Home({
       return /*#__PURE__*/React.createElement("section", {
         className: "dashboard-panel home-module",
         key: sectionId
-      }, /*#__PURE__*/React.createElement("span", {
-        className: "soft-label"
-      }, "今日の制作状況"), /*#__PURE__*/React.createElement("div", {
-        className: "dashboard-head"
-      }, /*#__PURE__*/React.createElement("h1", null, "制作ダッシュボード"), /*#__PURE__*/React.createElement("p", null, "作品づくりに必要な素材と設定を、ひと目で確認できます。")), /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", {
         className: "dashboard-grid"
       }, dashboardItems.map(item => /*#__PURE__*/React.createElement("button", {
         className: "stat-card",
-        key: item.screen,
+        key: `${item.title}-${item.icon}`,
         onClick: () => setScreen(item.screen)
       }, /*#__PURE__*/React.createElement("span", {
         className: "stat-icon"
@@ -772,13 +829,7 @@ function Home({
         name: item.icon
       })), /*#__PURE__*/React.createElement("span", {
         className: "stat-title"
-      }, item.title), /*#__PURE__*/React.createElement("strong", null, item.count, /*#__PURE__*/React.createElement("small", null, "件"))))), reminders.length > 0 && /*#__PURE__*/React.createElement("div", {
-        className: "project-reminders"
-      }, reminders.map(project => /*#__PURE__*/React.createElement("button", {
-        className: "project-reminder-card",
-        key: project.id,
-        onClick: () => setScreen("projects")
-      }, /*#__PURE__*/React.createElement("strong", null, "🎯 ", project.name || "無題のプロジェクト"), /*#__PURE__*/React.createElement("span", null, projectDueText(project.dueDate || ""))))));
+      }, item.title), /*#__PURE__*/React.createElement("strong", null, item.value), item.note && /*#__PURE__*/React.createElement("small", null, item.note)))));
     }
     if (sectionId === "quickActions") {
       return /*#__PURE__*/React.createElement("section", {
@@ -1124,15 +1175,7 @@ function HomeCustomize({
     className: "customize-preview"
   }, /*#__PURE__*/React.createElement("span", null, "プレビュー"), /*#__PURE__*/React.createElement("div", {
     className: "preview-shell",
-    style: {
-      "--ink": activeTheme.vars.ink,
-      "--paper": activeTheme.vars.paper,
-      "--ivory": activeTheme.vars.ivory,
-      "--shell": activeTheme.vars.shell,
-      "--sage": activeTheme.vars.sage,
-      "--line": activeTheme.vars.line,
-      "--accent": activeTheme.vars.accent
-    }
+    style: themeStyle(activeTheme)
   }, settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `preview-banner ${settings.bannerSize}`,
     style: settings.bannerImageUrl ? {
@@ -1200,6 +1243,21 @@ function FeatureIcon({
       d: "M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
     }), /*#__PURE__*/React.createElement("path", {
       d: "M31 47h21M34 54h13"
+    }));
+  }
+  if (name === "alarm") {
+    return /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 64 64",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: "32",
+      cy: "34",
+      r: "18"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M22 10l-9 8M42 10l9 8M32 22v13l9 5M24 54l-4 5M40 54l4 5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M25 5h14",
+      className: "icon-fill"
     }));
   }
   return /*#__PURE__*/React.createElement("svg", {
@@ -2814,28 +2872,34 @@ function Projects({
 }) {
   const [editing, setEditing] = React.useState(null);
   const [query, setQuery] = React.useState("");
-  const filtered = projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query));
+  const canAddProject = projects.length < 30;
+  const filtered = sortProjectsForDisplay(projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query)));
   const save = item => {
     const next = {
       ...item,
-      id: item.id || uid()
+      id: item.id || uid(),
+      updatedAt: new Date().toISOString()
     };
-    setProjects(items => item.id ? items.map(p => p.id === item.id ? next : p) : [next, ...items]);
+    setProjects(items => item.id ? items.map(p => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
   };
   return /*#__PURE__*/React.createElement("section", {
     className: "page"
   }, /*#__PURE__*/React.createElement(PageHead, {
     title: "プロジェクト管理",
-    action: /*#__PURE__*/React.createElement("button", {
+    action: canAddProject ? /*#__PURE__*/React.createElement("button", {
       className: "primary",
       onClick: () => setEditing(blankProject())
-    }, "追加する")
+    }, "追加する") : /*#__PURE__*/React.createElement("span", {
+      className: "limit-message"
+    }, "プロジェクトは最大30件まで登録できます")
   }), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
     value: query,
     onChange: e => setQuery(e.target.value),
     placeholder: "プロジェクト名、タグ、メモで検索"
-  })), /*#__PURE__*/React.createElement("div", {
+  })), !canAddProject && /*#__PURE__*/React.createElement("p", {
+    className: "limit-note"
+  }, "プロジェクトは最大30件まで登録できます"), /*#__PURE__*/React.createElement("div", {
     className: "project-grid"
   }, filtered.map(project => {
     const linkedPrompts = prompts.filter(p => project.promptIds.includes(p.id));

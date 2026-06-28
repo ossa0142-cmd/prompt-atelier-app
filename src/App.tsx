@@ -78,6 +78,7 @@ type Project = {
   tags: string[];
   dueDate?: string;
   remindOnHome?: boolean;
+  updatedAt?: string;
 };
 
 type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize";
@@ -117,7 +118,7 @@ const categories: Category[] = [
 ];
 
 const homeSections: { id: HomeSectionId; label: string }[] = [
-  { id: "dashboard", label: "制作ダッシュボード" },
+  { id: "dashboard", label: "制作状況カード" },
   { id: "quickActions", label: "作業ツール" },
   { id: "search", label: "検索バー" },
   { id: "featureCards", label: "メイン機能カード" },
@@ -532,14 +533,71 @@ const splitTags = (value: string) => value.split(",").map((tag) => tag.trim()).f
 const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
 
-function projectDueText(value: string) {
-  if (!value) return "";
+const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
+
+function themeStyle(theme: any) {
+  const dark = isDarkTheme(theme.id);
+  return {
+    "--ink": theme.vars.ink,
+    "--muted": theme.vars.muted,
+    "--paper": theme.vars.paper,
+    "--ivory": theme.vars.ivory,
+    "--shell": theme.vars.shell,
+    "--sage": theme.vars.sage,
+    "--sand": theme.vars.sand,
+    "--line": theme.vars.line,
+    "--accent": theme.vars.accent,
+    "--sage-deep": theme.vars.accent,
+    "--heading": theme.vars.ink,
+    "--card-bg": dark ? theme.vars.paper : theme.vars.paper,
+    "--card-border": theme.vars.line,
+    "--button-bg": dark ? theme.vars.accent : theme.vars.paper,
+    "--button-ink": dark ? theme.vars.ivory : theme.vars.ink,
+    "--primary-bg": theme.vars.accent,
+    "--primary-ink": dark ? theme.vars.ivory : "#fffdf9",
+    "--input-bg": dark ? theme.vars.shell : "#fffdf9",
+    "--input-ink": theme.vars.ink,
+    "--nav-bg": dark ? theme.vars.paper : "color-mix(in srgb, var(--paper) 88%, transparent)",
+    "--nav-ink": theme.vars.ink,
+  } as any;
+}
+
+function projectDueInfo(value: string) {
+  if (!value) return { diff: 999999, expired: false, text: "" };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const due = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(due.getTime())) return "";
+  if (Number.isNaN(due.getTime())) return { diff: 999999, expired: false, text: "" };
   const diff = Math.ceil((due.getTime() - today.getTime()) / 86400000);
-  return diff < 0 ? "⚠ 達成予定日を過ぎています" : `達成予定まで あと ${diff}日`;
+  return {
+    diff,
+    expired: diff < 0,
+    text: diff < 0 ? `${Math.abs(diff)}日過ぎています` : diff === 0 ? "今日" : `あと${diff}日`,
+  };
+}
+
+function projectDueText(value: string) {
+  const info = projectDueInfo(value);
+  return info.expired ? "⚠ 達成予定日を過ぎています" : `達成予定まで ${info.text}`;
+}
+
+function projectSortRank(project: Project) {
+  if (!project.dueDate) return 1;
+  return projectDueInfo(project.dueDate).expired ? 2 : 0;
+}
+
+function sortProjectsForDisplay(items: Project[]) {
+  return [...items].sort((a, b) => {
+    const rankDiff = projectSortRank(a) - projectSortRank(b);
+    if (rankDiff) return rankDiff;
+    if (projectSortRank(a) === 0) {
+      const dateDiff = String(a.dueDate).localeCompare(String(b.dueDate));
+      if (dateDiff) return dateDiff;
+    }
+    const updatedDiff = String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+    if (updatedDiff) return updatedDiff;
+    return String(b.id || "").localeCompare(String(a.id || ""));
+  });
 }
 
 function useStoredState<T>(key: string, fallback: T) {
@@ -572,18 +630,7 @@ function App() {
   const [toast, setToast] = React.useState("");
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
-  const appStyle = {
-    "--ink": activeTheme.vars.ink,
-    "--muted": activeTheme.vars.muted,
-    "--paper": activeTheme.vars.paper,
-    "--ivory": activeTheme.vars.ivory,
-    "--shell": activeTheme.vars.shell,
-    "--sage": activeTheme.vars.sage,
-    "--sand": activeTheme.vars.sand,
-    "--line": activeTheme.vars.line,
-    "--accent": activeTheme.vars.accent,
-    "--sage-deep": activeTheme.vars.accent,
-  } as any;
+  const appStyle = themeStyle(activeTheme);
 
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
@@ -672,50 +719,48 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"],
     ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"],
   ];
-  const dashboardItems = [
-    { screen: "library", title: "モックアップライブラリ", count: Math.max(libraryPrompts.length, 128), icon: "mockup" },
-    { screen: "prompts", title: "プロンプト帳", count: Math.max(myPrompts.length, 42), icon: "notebook" },
-    { screen: "mj", title: "MJ設定", count: Math.max(mjSettings.length, 18), icon: "magic" },
-    { screen: "projects", title: "プロジェクト", count: Math.max(projects.length, 7), icon: "folder" },
-  ];
   const searchable = [...myPrompts, ...projects].filter((item: any) => {
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
     return homeQuery && lowerIncludes(text, homeQuery);
   }).slice(0, 3);
-  const reminders = (projects as Project[])
+  const nextReminder = (projects as Project[])
     .filter((project) => project.remindOnHome && project.dueDate)
-    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
-    .slice(0, 4);
+    .sort((a, b) => {
+      const aInfo = projectDueInfo(a.dueDate || "");
+      const bInfo = projectDueInfo(b.dueDate || "");
+      if (aInfo.expired !== bInfo.expired) return aInfo.expired ? -1 : 1;
+      return Math.abs(aInfo.diff) - Math.abs(bInfo.diff);
+    })[0];
+  const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
+  const dashboardItems = [
+    { screen: "library", title: "モックアップ", value: `${Math.max(libraryPrompts.length, 128)}件`, icon: "mockup" },
+    { screen: "prompts", title: "プロンプト帳", value: `${Math.max(myPrompts.length, 42)}件`, icon: "notebook" },
+    { screen: "mj", title: "MJ設定", value: `${Math.max(mjSettings.length, 18)}件`, icon: "magic" },
+    { screen: "projects", title: "プロジェクト", value: `${Math.min(projects.length, 30)}件`, icon: "folder" },
+    {
+      screen: "projects",
+      title: reminderInfo?.expired ? "期限超過" : "達成予定",
+      value: nextReminder ? reminderInfo?.text || "" : "リマインドなし",
+      icon: "alarm",
+      note: nextReminder?.name || "",
+    },
+  ];
   const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
       return (
         <section className="dashboard-panel home-module" key={sectionId}>
-          <span className="soft-label">今日の制作状況</span>
-          <div className="dashboard-head">
-            <h1>制作ダッシュボード</h1>
-            <p>作品づくりに必要な素材と設定を、ひと目で確認できます。</p>
-          </div>
           <div className="dashboard-grid">
             {dashboardItems.map((item) => (
-              <button className="stat-card" key={item.screen} onClick={() => setScreen(item.screen as Screen)}>
+              <button className="stat-card" key={`${item.title}-${item.icon}`} onClick={() => setScreen(item.screen as Screen)}>
                 <span className="stat-icon"><FeatureIcon name={item.icon} /></span>
                 <span className="stat-title">{item.title}</span>
-                <strong>{item.count}<small>件</small></strong>
+                <strong>{item.value}</strong>
+                {item.note && <small>{item.note}</small>}
               </button>
             ))}
           </div>
-          {reminders.length > 0 && (
-            <div className="project-reminders">
-              {reminders.map((project) => (
-                <button className="project-reminder-card" key={project.id} onClick={() => setScreen("projects")}>
-                  <strong>🎯 {project.name || "無題のプロジェクト"}</strong>
-                  <span>{projectDueText(project.dueDate || "")}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </section>
       );
     }
@@ -1009,15 +1054,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
 
         <aside className="customize-preview">
           <span>プレビュー</span>
-          <div className="preview-shell" style={{
-            "--ink": activeTheme.vars.ink,
-            "--paper": activeTheme.vars.paper,
-            "--ivory": activeTheme.vars.ivory,
-            "--shell": activeTheme.vars.shell,
-            "--sage": activeTheme.vars.sage,
-            "--line": activeTheme.vars.line,
-            "--accent": activeTheme.vars.accent,
-          } as any}>
+          <div className="preview-shell" style={themeStyle(activeTheme)}>
             {settings.bannerVisible && <div className={`preview-banner ${settings.bannerSize}`} style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined} />}
             <div className="preview-card large"></div>
             <div className="preview-grid">
@@ -1060,6 +1097,15 @@ function FeatureIcon({ name }: { name: string }) {
         <path d="M18 18l3-6 3 6 6 3-6 3-3 6-3-6-6-3 6-3z" className="icon-fill" />
         <path d="M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
         <path d="M31 47h21M34 54h13" />
+      </svg>
+    );
+  }
+  if (name === "alarm") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="34" r="18" />
+        <path d="M22 10l-9 8M42 10l9 8M32 22v13l9 5M24 54l-4 5M40 54l4 5" />
+        <path d="M25 5h14" className="icon-fill" />
       </svg>
     );
   }
@@ -2311,16 +2357,21 @@ function mjCommandLegacy(item: MjSetting) {
 function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
   const [editing, setEditing] = React.useState<Project | null>(null);
   const [query, setQuery] = React.useState("");
-  const filtered = projects.filter((item: Project) => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query));
+  const canAddProject = projects.length < 30;
+  const filtered = sortProjectsForDisplay(projects.filter((item: Project) => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query)));
   const save = (item: Project) => {
-    const next = { ...item, id: item.id || uid() };
-    setProjects((items: Project[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items]);
+    const next = { ...item, id: item.id || uid(), updatedAt: new Date().toISOString() };
+    setProjects((items: Project[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
   };
   return (
     <section className="page">
-      <PageHead title="プロジェクト管理" action={<button className="primary" onClick={() => setEditing(blankProject())}>追加する</button>} />
+      <PageHead
+        title="プロジェクト管理"
+        action={canAddProject ? <button className="primary" onClick={() => setEditing(blankProject())}>追加する</button> : <span className="limit-message">プロジェクトは最大30件まで登録できます</span>}
+      />
       <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="プロジェクト名、タグ、メモで検索" /></Filters>
+      {!canAddProject && <p className="limit-note">プロジェクトは最大30件まで登録できます</p>}
       <div className="project-grid">
         {filtered.map((project: Project) => {
           const linkedPrompts = prompts.filter((p: MyPrompt) => project.promptIds.includes(p.id));
