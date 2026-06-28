@@ -4,7 +4,7 @@ const homeSections = [{
   label: "制作ダッシュボード"
 }, {
   id: "quickActions",
-  label: "リンク集"
+  label: "作業ツール"
 }, {
   id: "search",
   label: "検索バー"
@@ -192,23 +192,26 @@ const mjParamValue = (params, key) => {
   return found ? found.replace(key, "").trim() : "";
 };
 const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
-const defaultQuickLinks = [{
-  id: "quick-midjourney",
+const defaultWorkTools = [{
+  id: "tool-midjourney",
   name: "Midjourney",
   url: "https://www.midjourney.com/",
-  icon: "MJ",
+  iconText: "MJ",
+  iconImage: "",
   memo: "画像生成"
 }, {
-  id: "quick-pinterest",
+  id: "tool-pinterest",
   name: "Pinterest",
   url: "https://www.pinterest.com/",
-  icon: "P",
+  iconText: "P",
+  iconImage: "",
   memo: "参考画像"
 }, {
-  id: "quick-chatgpt",
+  id: "tool-chatgpt",
   name: "ChatGPT",
   url: "https://chatgpt.com/",
-  icon: "GPT",
+  iconText: "GPT",
+  iconImage: "",
   memo: "文章づくり"
 }];
 const defaultHomeSettings = {
@@ -534,7 +537,7 @@ function App() {
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
   const [rawHomeSettings, setRawHomeSettings] = useStoredState("promptAtelierHomeSettings", defaultHomeSettings);
-  const [quickLinks, setQuickLinks] = useStoredState("promptAtelierQuickLinks", defaultQuickLinks);
+  const [workTools, setWorkTools] = useStoredState("promptAtelierWorkTools", defaultWorkTools);
   const [toast, setToast] = React.useState("");
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -583,12 +586,13 @@ function App() {
     mjSettings: mjSettings,
     copyText: copyText,
     settings: homeSettings,
-    quickLinks: quickLinks,
-    setQuickLinks: setQuickLinks
+    workTools: workTools
   }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
-    setScreen: setScreen
+    setScreen: setScreen,
+    workTools: workTools,
+    setWorkTools: setWorkTools
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
@@ -618,11 +622,9 @@ function Home({
   mjSettings,
   copyText,
   settings,
-  quickLinks,
-  setQuickLinks
+  workTools
 }) {
   const [homeQuery, setHomeQuery] = React.useState("");
-  const [editingLink, setEditingLink] = React.useState(null);
   const isVisible = id => settings.visible[id] !== false;
   const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
   const dashboardItems = [{
@@ -663,30 +665,7 @@ function Home({
     tags: prompt.tags,
     screen: "prompts"
   }))].slice(0, 3);
-  const normalizedLinks = quickLinks.slice(0, 5);
-  const saveQuickLink = link => {
-    const rawUrl = link.url.trim();
-    const safeUrl = rawUrl ? /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}` : "https://";
-    const next = {
-      ...link,
-      id: link.id || uid(),
-      name: link.name || "新しいリンク",
-      url: safeUrl,
-      icon: link.icon || (link.name || "Link").slice(0, 2).toUpperCase()
-    };
-    setQuickLinks(items => link.id ? items.map(item => item.id === link.id ? next : item).slice(0, 5) : [...items, next].slice(0, 5));
-    setEditingLink(null);
-  };
-  const moveQuickLink = (id, direction) => {
-    setQuickLinks(items => {
-      const next = [...items];
-      const index = next.findIndex(item => item.id === id);
-      const target = index + direction;
-      if (index < 0 || target < 0 || target >= next.length) return items;
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  };
+  const normalizedTools = workTools.slice(0, 5);
   const renderSection = sectionId => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
@@ -713,47 +692,21 @@ function Home({
     }
     if (sectionId === "quickActions") {
       return /*#__PURE__*/React.createElement("section", {
-        className: "quick-link-card home-module",
+        className: "work-tools-card home-module",
         key: sectionId
-      }, /*#__PURE__*/React.createElement("span", {
-        className: "quick-label"
-      }, "よく使う場所"), /*#__PURE__*/React.createElement("h2", null, "リンク集"), /*#__PURE__*/React.createElement("p", null, "制作中によく開くサービスへ、ここからすぐ移動できます。"), /*#__PURE__*/React.createElement("div", {
-        className: "quick-link-grid"
-      }, normalizedLinks.map((link, index) => /*#__PURE__*/React.createElement("article", {
-        className: "quick-link-item",
-        key: link.id
-      }, /*#__PURE__*/React.createElement("a", {
-        href: link.url,
+      }, /*#__PURE__*/React.createElement("h2", null, "作業ツール"), /*#__PURE__*/React.createElement("div", {
+        className: "work-tools-launcher"
+      }, normalizedTools.map(tool => /*#__PURE__*/React.createElement("a", {
+        className: "work-tool-launcher-item",
+        href: tool.url,
         target: "_blank",
         rel: "noopener noreferrer",
-        "aria-label": `${link.name}を開く`
-      }, /*#__PURE__*/React.createElement("span", null, link.icon || link.name.slice(0, 2)), /*#__PURE__*/React.createElement("strong", null, link.name), link.memo && /*#__PURE__*/React.createElement("small", null, link.memo)), /*#__PURE__*/React.createElement("div", {
-        className: "quick-link-tools"
-      }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setEditingLink(link)
-      }, "編集"), /*#__PURE__*/React.createElement("button", {
-        onClick: () => moveQuickLink(link.id, -1),
-        disabled: index === 0
-      }, "上へ"), /*#__PURE__*/React.createElement("button", {
-        onClick: () => moveQuickLink(link.id, 1),
-        disabled: index === normalizedLinks.length - 1
-      }, "下へ"), /*#__PURE__*/React.createElement("button", {
-        className: "danger",
-        onClick: () => setQuickLinks(items => items.filter(item => item.id !== link.id))
-      }, "削除")))), normalizedLinks.length < 5 && /*#__PURE__*/React.createElement("button", {
-        className: "quick-link-add",
-        onClick: () => setEditingLink({
-          id: "",
-          name: "",
-          url: "",
-          icon: "",
-          memo: ""
-        })
-      }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "リンクを追加"))), editingLink && /*#__PURE__*/React.createElement(QuickLinkEditor, {
-        link: editingLink,
-        onClose: () => setEditingLink(null),
-        onSave: saveQuickLink
-      }));
+        key: tool.id,
+        "aria-label": `${tool.name}を開く`
+      }, /*#__PURE__*/React.createElement("span", null, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
+        src: tool.iconImage,
+        alt: ""
+      }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("strong", null, tool.name)))));
     }
     if (sectionId === "search") {
       return /*#__PURE__*/React.createElement("section", {
@@ -853,13 +806,13 @@ function Home({
     } : undefined
   }, !settings.bannerImageUrl && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)));
 }
-function QuickLinkEditor({
-  link,
+function WorkToolEditor({
+  tool,
   onClose,
   onSave
 }) {
   const [draft, setDraft] = React.useState({
-    ...link
+    ...tool
   });
   const update = (key, value) => setDraft({
     ...draft,
@@ -869,7 +822,7 @@ function QuickLinkEditor({
     className: "quick-link-editor"
   }, /*#__PURE__*/React.createElement("div", {
     className: "quick-link-editor-head"
-  }, /*#__PURE__*/React.createElement("strong", null, link.id ? "リンクを編集" : "リンクを追加"), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("strong", null, tool.id ? "作業ツールを編集" : "作業ツールを追加"), /*#__PURE__*/React.createElement("button", {
     onClick: onClose
   }, "閉じる")), /*#__PURE__*/React.createElement("input", {
     value: draft.name,
@@ -880,9 +833,20 @@ function QuickLinkEditor({
     onChange: event => update("url", event.target.value),
     placeholder: "URL"
   }), /*#__PURE__*/React.createElement("input", {
-    value: draft.icon,
-    onChange: event => update("icon", event.target.value),
-    placeholder: "アイコン（例：MJ / P / GPT）"
+    value: draft.iconText,
+    onChange: event => update("iconText", event.target.value),
+    placeholder: "アイコン文字（例：MJ / P / GPT）"
+  }), /*#__PURE__*/React.createElement("input", {
+    value: draft.iconImage,
+    onChange: event => update("iconImage", event.target.value),
+    placeholder: "アイコン画像URL"
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*",
+    onChange: event => readImage(event, iconImage => setDraft({
+      ...draft,
+      iconImage
+    }))
   }), /*#__PURE__*/React.createElement("input", {
     value: draft.memo || "",
     onChange: event => update("memo", event.target.value),
@@ -899,8 +863,11 @@ function QuickLinkEditor({
 function HomeCustomize({
   settings,
   setSettings,
-  setScreen
+  setScreen,
+  workTools,
+  setWorkTools
 }) {
+  const [editingTool, setEditingTool] = React.useState(null);
   const updateSettings = patch => setSettings(normalizeHomeSettings({
     ...settings,
     ...patch
@@ -923,6 +890,37 @@ function HomeCustomize({
   };
   const reset = () => {
     if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
+  };
+  const normalizedTools = workTools.slice(0, 5);
+  const saveWorkTool = tool => {
+    const rawUrl = tool.url.trim();
+    const safeUrl = rawUrl ? /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}` : "https://";
+    const next = {
+      ...tool,
+      id: tool.id || uid(),
+      name: tool.name || "新しい作業ツール",
+      url: safeUrl,
+      iconText: tool.iconText || (tool.name || "TL").slice(0, 3).toUpperCase(),
+      iconImage: tool.iconImage || "",
+      memo: tool.memo || ""
+    };
+    setWorkTools(items => tool.id ? items.map(item => item.id === tool.id ? next : item).slice(0, 5) : [...items, next].slice(0, 5));
+    setEditingTool(null);
+  };
+  const moveWorkTool = (id, direction) => {
+    setWorkTools(items => {
+      const next = [...items];
+      const index = next.findIndex(item => item.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= next.length) return items;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+  const deleteWorkTool = id => {
+    if (window.confirm("この作業ツールを削除しますか？")) {
+      setWorkTools(items => items.filter(item => item.id !== id));
+    }
   };
   const activeTheme = homeThemes.find(theme => theme.id === settings.themeId) || homeThemes[0];
   return /*#__PURE__*/React.createElement("section", {
@@ -981,6 +979,45 @@ function HomeCustomize({
       bannerImageUrl: ""
     })
   }, "画像を削除"))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大5件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "work-tool-edit-list"
+  }, normalizedTools.map((tool, index) => /*#__PURE__*/React.createElement("article", {
+    className: "work-tool-edit-row",
+    key: tool.id
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "work-tool-edit-icon"
+  }, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
+    src: tool.iconImage,
+    alt: ""
+  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, tool.name), /*#__PURE__*/React.createElement("small", null, tool.url)), /*#__PURE__*/React.createElement("div", {
+    className: "work-tool-edit-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditingTool(tool)
+  }, "編集"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => moveWorkTool(tool.id, -1),
+    disabled: index === 0
+  }, "上へ"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => moveWorkTool(tool.id, 1),
+    disabled: index === normalizedTools.length - 1
+  }, "下へ"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: () => deleteWorkTool(tool.id)
+  }, "削除"))))), normalizedTools.length < 5 && /*#__PURE__*/React.createElement("button", {
+    className: "add-work-tool-button",
+    onClick: () => setEditingTool({
+      id: "",
+      name: "",
+      url: "",
+      iconText: "",
+      iconImage: "",
+      memo: ""
+    })
+  }, "＋ 作業ツールを追加"), editingTool && /*#__PURE__*/React.createElement(WorkToolEditor, {
+    tool: editingTool,
+    onClose: () => setEditingTool(null),
+    onSave: saveWorkTool
+  })), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "表示項目"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"), /*#__PURE__*/React.createElement("div", {
     className: "toggle-list"
