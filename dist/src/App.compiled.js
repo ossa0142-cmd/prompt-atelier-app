@@ -228,7 +228,7 @@ const sampleProjects = [{
   note: "9月上旬までに30点作成。",
   tags: ["季節商品", "ハロウィン"]
 }];
-const blankPrompt = () => ({
+const blankPrompt = (textOnly = false) => ({
   id: "",
   title: "",
   category: "ステッカーモックアップ",
@@ -237,7 +237,10 @@ const blankPrompt = () => ({
   note: "",
   tags: [],
   imageUrl: "",
-  favorite: false
+  favorite: false,
+  japaneseTranslation: "",
+  memo: "",
+  isTextStock: textOnly
 });
 const blankMj = () => ({
   id: "",
@@ -1359,28 +1362,83 @@ function PromptBook({
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
   const [editing, setEditing] = React.useState(null);
+  const [translationPrompt, setTranslationPrompt] = React.useState(null);
+  const [memoPrompt, setMemoPrompt] = React.useState(null);
+  const [inlineEdit, setInlineEdit] = React.useState(null);
+  const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const tags = Array.from(new Set(prompts.flatMap(p => p.tags))).sort();
   const filtered = prompts.filter(item => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
     return lowerIncludes(haystack, query) && (tag === "すべて" || item.tags.includes(tag)) && (!favoritesOnly || item.favorite);
   });
+  const imagePrompts = filtered.filter(item => !item.isTextStock).slice(0, 20);
+  const textPrompts = filtered.filter(item => item.isTextStock);
+  const imagePromptCount = prompts.filter(item => !item.isTextStock).length;
+  const textStockCount = prompts.filter(item => item.isTextStock).length;
+  const canAddImagePrompt = imagePromptCount < 20;
+  const canAddTextStock = textStockCount < 100;
+  const imageSlotCount = imagePrompts.length < 20 ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4) : 20;
+  const imagePromptSlots = Array.from({
+    length: imageSlotCount
+  }, (_, index) => imagePrompts[index] || null);
+  const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, textPrompts.length));
+  const textStockSlots = Array.from({
+    length: visibleStockFrameCount
+  }, (_, index) => textPrompts[index] || null);
   const save = item => {
+    const countForKind = prompts.filter(prompt => Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
+    const limit = item.isTextStock ? 100 : 20;
+    if (!item.id && countForKind >= limit) {
+      setEditing(null);
+      return;
+    }
     const next = {
       ...item,
       id: item.id || uid(),
-      imageUrl: item.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df")
+      imageUrl: item.isTextStock ? "" : item.imageUrl || "",
+      japaneseTranslation: item.japaneseTranslation || item.prompt,
+      memo: item.memo || item.note || "",
+      note: item.note || item.memo || "",
+      tags: item.tags || [],
+      favorite: Boolean(item.favorite)
     };
-    setPrompts(items => item.id ? items.map(p => p.id === item.id ? next : p) : [next, ...items]);
+    setPrompts(items => item.id ? items.map(p => p.id === item.id ? next : p) : [...items, next]);
     setEditing(null);
   };
+  const updatePrompt = (id, patch) => {
+    setPrompts(items => items.map(prompt => prompt.id === id ? {
+      ...prompt,
+      ...patch
+    } : prompt));
+  };
+  const duplicatePrompt = prompt => {
+    const countForKind = prompts.filter(item => Boolean(item.isTextStock) === Boolean(prompt.isTextStock)).length;
+    if (countForKind >= (prompt.isTextStock ? 100 : 20)) return;
+    setPrompts(items => [...items, {
+      ...prompt,
+      id: uid(),
+      title: `${prompt.title} コピー`
+    }]);
+  };
+  const saveTextStockFrame = item => {
+    if (!item.title.trim() && !item.prompt.trim()) return;
+    save({
+      ...item,
+      isTextStock: true,
+      imageUrl: ""
+    });
+  };
+  const addTextStockFrame = () => {
+    if (!canAddTextStock) return;
+    setStockFrameCount(count => Math.min(100, count + 1));
+  };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page"
+    className: "page prompt-book-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "マイプロンプト帳",
-    action: /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: () => setEditing(blankPrompt())
-    }, "追加する")
+    title: "プロンプト帳",
+    action: /*#__PURE__*/React.createElement("span", {
+      className: "prompt-count-pill"
+    }, "画像 ", imagePromptCount, " / 20・ストック ", textStockCount, " / 100")
   }), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
     value: query,
     onChange: e => setQuery(e.target.value),
@@ -1396,27 +1454,68 @@ function PromptBook({
     type: "checkbox",
     checked: favoritesOnly,
     onChange: e => setFavoritesOnly(e.target.checked)
-  }), " お気に入りのみ")), /*#__PURE__*/React.createElement("div", {
-    className: "card-grid"
-  }, filtered.map(prompt => /*#__PURE__*/React.createElement(PromptCard, {
+  }), " お気に入りのみ")), /*#__PURE__*/React.createElement("section", {
+    className: "prompt-area"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "prompt-area-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "画像付きプロンプト"), /*#__PURE__*/React.createElement("p", null, "お気に入り・よく使うプロンプトを、最大20個まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+    className: "library-prompt-grid"
+  }, imagePromptSlots.map((prompt, index) => prompt ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
     key: prompt.id,
     prompt: prompt,
-    onCopy: copyText,
-    extra: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setPrompts(items => items.map(p => p.id === prompt.id ? {
-        ...p,
-        favorite: !p.favorite
-      } : p))
-    }, prompt.favorite ? "お気に入り済み" : "お気に入り"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setEditing(prompt)
-    }, "編集"), /*#__PURE__*/React.createElement("button", {
-      className: "danger",
-      onClick: () => setPrompts(items => items.filter(p => p.id !== prompt.id))
-    }, "削除"))
-  }))), editing && /*#__PURE__*/React.createElement(PromptModal, {
+    inlineEdit: inlineEdit,
+    setInlineEdit: setInlineEdit,
+    updatePrompt: updatePrompt,
+    duplicatePrompt: duplicatePrompt,
+    deletePrompt: () => setPrompts(items => items.filter(item => item.id !== prompt.id)),
+    copyText: copyText,
+    showTranslation: () => setTranslationPrompt(prompt),
+    showMemo: () => setMemoPrompt(prompt)
+  }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
+    className: "add-prompt-card",
+    key: `my-empty-prompt-${index}`,
+    onClick: () => setEditing(blankPrompt())
+  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト")) : null))), /*#__PURE__*/React.createElement("section", {
+    className: "prompt-area text-prompt-area"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "prompt-area-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトストック"), /*#__PURE__*/React.createElement("p", null, "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+    className: "text-prompt-list"
+  }, textStockSlots.map((prompt, index) => /*#__PURE__*/React.createElement(TextStockFrame, {
+    key: prompt?.id || `my-stock-frame-${index}`,
+    prompt: prompt,
+    blankPrompt: blankPrompt(true),
+    onCreate: saveTextStockFrame,
+    onUpdate: updatePrompt,
+    copyText: copyText,
+    showTranslation: () => prompt && setTranslationPrompt(prompt),
+    showMemo: () => prompt && setMemoPrompt(prompt)
+  }))), canAddTextStock && textStockCount >= visibleStockFrameCount && /*#__PURE__*/React.createElement("button", {
+    className: "add-stock-button",
+    onClick: addTextStockFrame
+  }, "＋ プロンプトを追加"), !canAddTextStock && /*#__PURE__*/React.createElement("p", {
+    className: "limit-message"
+  }, "保存上限（100件）に達しました")), editing && /*#__PURE__*/React.createElement(PromptModal, {
     item: editing,
     onClose: () => setEditing(null),
     onSave: save
+  }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
+    prompt: translationPrompt,
+    onClose: () => setTranslationPrompt(null),
+    copyText: copyText
+  }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
+    prompt: {
+      ...memoPrompt,
+      memo: memoPrompt.memo || memoPrompt.note
+    },
+    onClose: () => setMemoPrompt(null),
+    onSave: memo => {
+      updatePrompt(memoPrompt.id, {
+        memo,
+        note: memo
+      });
+      setMemoPrompt(null);
+    }
   }));
 }
 function Midjourney({

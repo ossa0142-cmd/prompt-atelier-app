@@ -34,6 +34,9 @@ type LibraryBoardPrompt = LibraryPrompt & {
 type MyPrompt = LibraryPrompt & {
   note: string;
   favorite: boolean;
+  japaneseTranslation?: string;
+  memo?: string;
+  isTextStock?: boolean;
 };
 
 type MjSetting = {
@@ -342,7 +345,7 @@ const sampleProjects: Project[] = [
   },
 ];
 
-const blankPrompt = (): MyPrompt => ({
+const blankPrompt = (textOnly = false): MyPrompt => ({
   id: "",
   title: "",
   category: "ステッカーモックアップ",
@@ -352,6 +355,9 @@ const blankPrompt = (): MyPrompt => ({
   tags: [],
   imageUrl: "",
   favorite: false,
+  japaneseTranslation: "",
+  memo: "",
+  isTextStock: textOnly,
 });
 
 const blankMj = (): MjSetting => ({
@@ -1152,19 +1158,64 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
   const [editing, setEditing] = React.useState<MyPrompt | null>(null);
+  const [translationPrompt, setTranslationPrompt] = React.useState<MyPrompt | null>(null);
+  const [memoPrompt, setMemoPrompt] = React.useState<MyPrompt | null>(null);
+  const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
+  const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const tags = Array.from(new Set(prompts.flatMap((p: MyPrompt) => p.tags))).sort();
   const filtered = prompts.filter((item: MyPrompt) => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
     return lowerIncludes(haystack, query) && (tag === "すべて" || item.tags.includes(tag)) && (!favoritesOnly || item.favorite);
   });
+  const imagePrompts = filtered.filter((item: MyPrompt) => !item.isTextStock).slice(0, 20);
+  const textPrompts = filtered.filter((item: MyPrompt) => item.isTextStock);
+  const imagePromptCount = prompts.filter((item: MyPrompt) => !item.isTextStock).length;
+  const textStockCount = prompts.filter((item: MyPrompt) => item.isTextStock).length;
+  const canAddImagePrompt = imagePromptCount < 20;
+  const canAddTextStock = textStockCount < 100;
+  const imageSlotCount = imagePrompts.length < 20 ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4) : 20;
+  const imagePromptSlots = Array.from({ length: imageSlotCount }, (_, index) => imagePrompts[index] || null);
+  const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, textPrompts.length));
+  const textStockSlots = Array.from({ length: visibleStockFrameCount }, (_, index) => textPrompts[index] || null);
   const save = (item: MyPrompt) => {
-    const next = { ...item, id: item.id || uid(), imageUrl: item.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df") };
-    setPrompts((items: MyPrompt[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items]);
+    const countForKind = prompts.filter((prompt: MyPrompt) => Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
+    const limit = item.isTextStock ? 100 : 20;
+    if (!item.id && countForKind >= limit) {
+      setEditing(null);
+      return;
+    }
+    const next = {
+      ...item,
+      id: item.id || uid(),
+      imageUrl: item.isTextStock ? "" : item.imageUrl || "",
+      japaneseTranslation: item.japaneseTranslation || item.prompt,
+      memo: item.memo || item.note || "",
+      note: item.note || item.memo || "",
+      tags: item.tags || [],
+      favorite: Boolean(item.favorite),
+    };
+    setPrompts((items: MyPrompt[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [...items, next]);
     setEditing(null);
   };
+  const updatePrompt = (id: string, patch: Partial<MyPrompt>) => {
+    setPrompts((items: MyPrompt[]) => items.map((prompt) => prompt.id === id ? { ...prompt, ...patch } : prompt));
+  };
+  const duplicatePrompt = (prompt: MyPrompt) => {
+    const countForKind = prompts.filter((item: MyPrompt) => Boolean(item.isTextStock) === Boolean(prompt.isTextStock)).length;
+    if (countForKind >= (prompt.isTextStock ? 100 : 20)) return;
+    setPrompts((items: MyPrompt[]) => [...items, { ...prompt, id: uid(), title: `${prompt.title} コピー` }]);
+  };
+  const saveTextStockFrame = (item: MyPrompt) => {
+    if (!item.title.trim() && !item.prompt.trim()) return;
+    save({ ...item, isTextStock: true, imageUrl: "" });
+  };
+  const addTextStockFrame = () => {
+    if (!canAddTextStock) return;
+    setStockFrameCount((count) => Math.min(100, count + 1));
+  };
   return (
-    <section className="page">
-      <PageHead title="マイプロンプト帳" action={<button className="primary" onClick={() => setEditing(blankPrompt())}>追加する</button>} />
+    <section className="page prompt-book-page">
+      <PageHead title="プロンプト帳" action={<span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span>} />
       <Filters>
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="検索" />
         <select value={tag} onChange={(e) => setTag(e.target.value)}>
@@ -1173,25 +1224,73 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
         </select>
         <label className="check"><input type="checkbox" checked={favoritesOnly} onChange={(e) => setFavoritesOnly(e.target.checked)} /> お気に入りのみ</label>
       </Filters>
-      <div className="card-grid">
-        {filtered.map((prompt: MyPrompt) => (
-          <PromptCard
-            key={prompt.id}
-            prompt={prompt}
-            onCopy={copyText}
-            extra={
-              <>
-                <button onClick={() => setPrompts((items: MyPrompt[]) => items.map((p) => p.id === prompt.id ? { ...p, favorite: !p.favorite } : p))}>
-                  {prompt.favorite ? "お気に入り済み" : "お気に入り"}
-                </button>
-                <button onClick={() => setEditing(prompt)}>編集</button>
-                <button className="danger" onClick={() => setPrompts((items: MyPrompt[]) => items.filter((p) => p.id !== prompt.id))}>削除</button>
-              </>
-            }
-          />
-        ))}
-      </div>
+      <section className="prompt-area">
+        <div className="prompt-area-head">
+          <div>
+            <h3>画像付きプロンプト</h3>
+            <p>お気に入り・よく使うプロンプトを、最大20個まで保存できます。</p>
+          </div>
+        </div>
+        <div className="library-prompt-grid">
+          {imagePromptSlots.map((prompt, index) => prompt ? (
+            <LibraryImagePromptCard
+              key={prompt.id}
+              prompt={prompt}
+              inlineEdit={inlineEdit}
+              setInlineEdit={setInlineEdit}
+              updatePrompt={updatePrompt}
+              duplicatePrompt={duplicatePrompt}
+              deletePrompt={() => setPrompts((items: MyPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+              copyText={copyText}
+              showTranslation={() => setTranslationPrompt(prompt)}
+              showMemo={() => setMemoPrompt(prompt)}
+            />
+          ) : canAddImagePrompt ? (
+            <button className="add-prompt-card" key={`my-empty-prompt-${index}`} onClick={() => setEditing(blankPrompt())}>
+              <span>＋</span>
+              <strong>新しいプロンプト</strong>
+            </button>
+          ) : null)}
+        </div>
+      </section>
+      <section className="prompt-area text-prompt-area">
+        <div className="prompt-area-head">
+          <div>
+            <h3>プロンプトストック</h3>
+            <p>画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+          </div>
+        </div>
+        <div className="text-prompt-list">
+          {textStockSlots.map((prompt, index) => (
+            <TextStockFrame
+              key={prompt?.id || `my-stock-frame-${index}`}
+              prompt={prompt}
+              blankPrompt={blankPrompt(true)}
+              onCreate={saveTextStockFrame}
+              onUpdate={updatePrompt}
+              copyText={copyText}
+              showTranslation={() => prompt && setTranslationPrompt(prompt)}
+              showMemo={() => prompt && setMemoPrompt(prompt)}
+            />
+          ))}
+        </div>
+        {canAddTextStock && textStockCount >= visibleStockFrameCount && (
+          <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
+        )}
+        {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+      </section>
       {editing && <PromptModal item={editing} onClose={() => setEditing(null)} onSave={save} />}
+      {translationPrompt && <TranslationModal prompt={translationPrompt} onClose={() => setTranslationPrompt(null)} copyText={copyText} />}
+      {memoPrompt && (
+        <MemoModal
+          prompt={{ ...memoPrompt, memo: memoPrompt.memo || memoPrompt.note }}
+          onClose={() => setMemoPrompt(null)}
+          onSave={(memo) => {
+            updatePrompt(memoPrompt.id, { memo, note: memo });
+            setMemoPrompt(null);
+          }}
+        />
+      )}
     </section>
   );
 }
