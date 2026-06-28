@@ -12,14 +12,8 @@ const homeSections = [{
   id: "featureCards",
   label: "メイン機能カード"
 }, {
-  id: "continue",
-  label: "続きから作業"
-}, {
   id: "favorites",
   label: "お気に入り"
-}, {
-  id: "recent",
-  label: "最近使ったプロンプト"
 }];
 const homeFeatures = [{
   id: "library",
@@ -316,14 +310,12 @@ const defaultHomeSettings = {
     mj: true,
     projects: true,
     favorites: true,
-    recent: true,
-    continue: true,
     dashboard: true,
     quickActions: true,
     search: true,
     featureCards: true
   },
-  order: ["dashboard", "quickActions", "search", "featureCards", "continue", "favorites", "recent"]
+  order: ["dashboard", "quickActions", "search", "featureCards", "favorites"]
 };
 const normalizeHomeSettings = settings => ({
   ...defaultHomeSettings,
@@ -743,19 +735,6 @@ function Home({
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
     return homeQuery && lowerIncludes(text, homeQuery);
   }).slice(0, 3);
-  const continueItems = [...projects.slice(0, 2).map(project => ({
-    type: "プロジェクト",
-    title: project.name,
-    note: project.description,
-    tags: project.tags,
-    screen: "projects"
-  })), ...myPrompts.slice(0, 2).map(prompt => ({
-    type: "プロンプト",
-    title: prompt.title,
-    note: prompt.note || prompt.description,
-    tags: prompt.tags,
-    screen: "prompts"
-  }))].slice(0, 3);
   const normalizedTools = workTools.slice(0, 10);
   const renderSection = sectionId => {
     if (!isVisible(sectionId)) return null;
@@ -837,24 +816,9 @@ function Home({
         className: "feature-title"
       }, title), /*#__PURE__*/React.createElement("small", null, body))));
     }
-    if (sectionId === "continue") {
-      return /*#__PURE__*/React.createElement("section", {
-        key: sectionId
-      }, /*#__PURE__*/React.createElement(SectionTitle, {
-        title: "続きから作業"
-      }), /*#__PURE__*/React.createElement("div", {
-        className: "continue-grid"
-      }, continueItems.length ? continueItems.map(item => /*#__PURE__*/React.createElement("button", {
-        className: "continue-card",
-        key: `${item.type}-${item.title}`,
-        onClick: () => setScreen(item.screen)
-      }, /*#__PURE__*/React.createElement("span", null, item.type), /*#__PURE__*/React.createElement("strong", null, item.title), /*#__PURE__*/React.createElement("small", null, item.note || "次の作品づくりをここから再開できます。"))) : /*#__PURE__*/React.createElement("button", {
-        className: "continue-card",
-        onClick: () => setScreen("projects")
-      }, /*#__PURE__*/React.createElement("span", null, "サンプル"), /*#__PURE__*/React.createElement("strong", null, "季節の素材セット"), /*#__PURE__*/React.createElement("small", null, "プロジェクトを作ると、ここからすぐ再開できます。"))));
-    }
     if (sectionId === "favorites") {
       return /*#__PURE__*/React.createElement("section", {
+        className: "home-favorites-section",
         key: sectionId
       }, /*#__PURE__*/React.createElement(SectionTitle, {
         title: "お気に入り"
@@ -869,19 +833,7 @@ function Home({
         text: "お気に入りにしたプロンプトがここに表示されます。"
       })));
     }
-    return /*#__PURE__*/React.createElement("section", {
-      key: sectionId
-    }, /*#__PURE__*/React.createElement(SectionTitle, {
-      title: "最近使ったプロンプト"
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "home-prompt-row recent-row"
-    }, recent.length ? recent.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
-      key: prompt.id,
-      prompt: prompt,
-      onCopy: copyText
-    })) : /*#__PURE__*/React.createElement(Empty, {
-      text: "まだコピー履歴がありません。"
-    })));
+    return null;
   };
   return /*#__PURE__*/React.createElement("section", {
     className: "page home-page"
@@ -1073,7 +1025,7 @@ function HomeCustomize({
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "作業ツール"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
     className: "icon-style-choices"
-  }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"], ["vivid", "ビビッド"], ["cute", "キュート"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: settings.workToolIconStyle === id ? "active-soft" : "",
     onClick: () => updateSettings({

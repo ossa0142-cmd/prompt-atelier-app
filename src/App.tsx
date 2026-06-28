@@ -80,10 +80,10 @@ type Project = {
 
 type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize";
 
-type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "continue" | "favorites" | "recent";
+type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites";
 type HomeFeatureId = "library" | "prompts" | "mj" | "projects";
 
-type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark";
+type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
 
 type HomeSettings = {
   themeId: string;
@@ -119,9 +119,7 @@ const homeSections: { id: HomeSectionId; label: string }[] = [
   { id: "quickActions", label: "作業ツール" },
   { id: "search", label: "検索バー" },
   { id: "featureCards", label: "メイン機能カード" },
-  { id: "continue", label: "続きから作業" },
   { id: "favorites", label: "お気に入り" },
-  { id: "recent", label: "最近使ったプロンプト" },
 ];
 
 const homeFeatures: { id: HomeFeatureId; label: string }[] = [
@@ -196,14 +194,12 @@ const defaultHomeSettings: HomeSettings = {
     mj: true,
     projects: true,
     favorites: true,
-    recent: true,
-    continue: true,
     dashboard: true,
     quickActions: true,
     search: true,
     featureCards: true,
   },
-  order: ["dashboard", "quickActions", "search", "featureCards", "continue", "favorites", "recent"],
+  order: ["dashboard", "quickActions", "search", "featureCards", "favorites"],
 };
 
 const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => ({
@@ -670,10 +666,6 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
     return homeQuery && lowerIncludes(text, homeQuery);
   }).slice(0, 3);
-  const continueItems = [
-    ...projects.slice(0, 2).map((project: Project) => ({ type: "プロジェクト", title: project.name, note: project.description, tags: project.tags, screen: "projects" })),
-    ...myPrompts.slice(0, 2).map((prompt: MyPrompt) => ({ type: "プロンプト", title: prompt.title, note: prompt.note || prompt.description, tags: prompt.tags, screen: "prompts" })),
-  ].slice(0, 3);
   const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
@@ -748,31 +740,9 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
         </section>
       );
     }
-    if (sectionId === "continue") {
-      return (
-        <section key={sectionId}>
-          <SectionTitle title="続きから作業" />
-          <div className="continue-grid">
-            {continueItems.length ? continueItems.map((item: any) => (
-              <button className="continue-card" key={`${item.type}-${item.title}`} onClick={() => setScreen(item.screen)}>
-                <span>{item.type}</span>
-                <strong>{item.title}</strong>
-                <small>{item.note || "次の作品づくりをここから再開できます。"}</small>
-              </button>
-            )) : (
-              <button className="continue-card" onClick={() => setScreen("projects")}>
-                <span>サンプル</span>
-                <strong>季節の素材セット</strong>
-                <small>プロジェクトを作ると、ここからすぐ再開できます。</small>
-              </button>
-            )}
-          </div>
-        </section>
-      );
-    }
     if (sectionId === "favorites") {
       return (
-        <section key={sectionId}>
+        <section className="home-favorites-section" key={sectionId}>
           <SectionTitle title="お気に入り" />
           <div className="home-prompt-row">
             {favorites.length ? favorites.map((prompt: MyPrompt) => (
@@ -782,16 +752,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
         </section>
       );
     }
-    return (
-      <section key={sectionId}>
-        <SectionTitle title="最近使ったプロンプト" />
-        <div className="home-prompt-row recent-row">
-          {recent.length ? recent.map((prompt: LibraryPrompt) => (
-            <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} />
-          )) : <Empty text="まだコピー履歴がありません。" />}
-        </div>
-      </section>
-    );
+    return null;
   };
   return (
     <section className="page home-page">
@@ -944,6 +905,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 ["frame", "フレーム"],
                 ["cool", "クール"],
                 ["dark", "ダーク"],
+                ["vivid", "ビビッド"],
+                ["cute", "キュート"],
               ].map(([id, label]) => (
                 <button key={id} className={settings.workToolIconStyle === id ? "active-soft" : ""} onClick={() => updateSettings({ workToolIconStyle: id as WorkToolIconStyle })}>
                   {label}
