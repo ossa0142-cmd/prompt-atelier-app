@@ -88,6 +88,7 @@ type HomeSettings = {
   bannerImageUrl: string;
   bannerVisible: boolean;
   bannerSize: "small" | "medium" | "large";
+  workToolIconStyle: "simple" | "pastel" | "frame";
   visible: Record<string, boolean>;
   order: HomeSectionId[];
 };
@@ -139,6 +140,12 @@ const homeThemes = [
   { id: "girly", name: "ガーリー", colors: ["#e9b7c2", "#fff4dc", "#d8b9a2"], vars: { ink: "#55383e", muted: "#896d71", paper: "#fff9f2", ivory: "#fff4e6", shell: "#f3d7dc", sage: "#e3e8d9", sand: "#ead6c5", line: "#ead4d8", accent: "#c97d91" } },
   { id: "antique", name: "アンティーク", colors: ["#e5d6bd", "#8a7463", "#89906f"], vars: { ink: "#45382c", muted: "#766959", paper: "#fff8ed", ivory: "#f0e5d2", shell: "#e5d6bd", sage: "#d5d9c4", sand: "#d8c6aa", line: "#d4c3aa", accent: "#89906f" } },
   { id: "pastel", name: "パステル", colors: ["#f7d9e3", "#d8efe5", "#e8ddf4", "#fff4dc"], vars: { ink: "#463d46", muted: "#7b7280", paper: "#fffdf9", ivory: "#fff8ed", shell: "#f7d9e3", sage: "#d8efe5", sand: "#e8ddf4", line: "#eadfeb", accent: "#b995cf" } },
+  { id: "dark", name: "ダークモード", colors: ["#262321", "#3a3430", "#d8c7ae"], vars: { ink: "#f3eadf", muted: "#c6b8aa", paper: "#2a2725", ivory: "#1f1d1c", shell: "#3a3430", sage: "#4d4941", sand: "#d8c7ae", line: "#4a433d", accent: "#d8b98c" } },
+  { id: "night-lavender", name: "ナイトラベンダー", colors: ["#34234d", "#a98bd8", "#fff7ea"], vars: { ink: "#fff7ea", muted: "#d8c8ee", paper: "#3a2854", ivory: "#261936", shell: "#4d3670", sage: "#8069a8", sand: "#efe3ff", line: "#5c4678", accent: "#c7a6ff" } },
+  { id: "vivid-pink", name: "ビビッドピンク", colors: ["#ff4fa3", "#ffffff", "#222222"], vars: { ink: "#221d21", muted: "#6d5964", paper: "#ffffff", ivory: "#fff3f8", shell: "#ffd2e6", sage: "#f0eef5", sand: "#ffe6f1", line: "#f5b5d2", accent: "#ff4fa3" } },
+  { id: "pop-blue", name: "ポップブルー", colors: ["#2477ff", "#ffffff", "#e8edf5"], vars: { ink: "#1d2636", muted: "#59677a", paper: "#ffffff", ivory: "#f4f8ff", shell: "#dce9ff", sage: "#e8edf5", sand: "#edf3ff", line: "#c8dcff", accent: "#2477ff" } },
+  { id: "emerald", name: "エメラルド", colors: ["#00a878", "#fffaf0", "#26312d"], vars: { ink: "#26312d", muted: "#5f746b", paper: "#fffaf0", ivory: "#f2fbf4", shell: "#d8f2e6", sage: "#bfe9d8", sand: "#fff0ce", line: "#bde2d2", accent: "#00a878" } },
+  { id: "retro-orange", name: "レトロオレンジ", colors: ["#f28c28", "#fff1d6", "#704628"], vars: { ink: "#4a2f20", muted: "#80624b", paper: "#fff7ea", ivory: "#fff1d6", shell: "#ffd59d", sage: "#e6d8b9", sand: "#f4c178", line: "#e6b070", accent: "#f28c28" } },
 ];
 
 const mjParameterOptions = [
@@ -180,6 +187,7 @@ const defaultHomeSettings: HomeSettings = {
   bannerImageUrl: "",
   bannerVisible: true,
   bannerSize: "medium",
+  workToolIconStyle: "pastel",
   visible: {
     library: true,
     prompts: true,
@@ -689,7 +697,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     }
     if (sectionId === "quickActions") {
       return (
-        <section className="work-tools-card home-module" key={sectionId}>
+        <section className={`work-tools-card home-module ${settings.workToolIconStyle || "pastel"}`} key={sectionId}>
           <h2>作業ツール</h2>
           <div className="work-tools-launcher">
             {normalizedTools.map((tool: WorkTool) => (
@@ -926,6 +934,18 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           <section className="customize-card">
             <h3>作業ツール</h3>
             <p>ホームに表示する外部サービスのショートカットを編集できます。最大5件まで登録できます。</p>
+            <div className="icon-style-choices">
+              <strong>アイコンテイスト</strong>
+              {[
+                ["simple", "シンプル"],
+                ["pastel", "パステル"],
+                ["frame", "フレーム"],
+              ].map(([id, label]) => (
+                <button key={id} className={settings.workToolIconStyle === id ? "active-soft" : ""} onClick={() => updateSettings({ workToolIconStyle: id as HomeSettings["workToolIconStyle"] })}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="work-tool-edit-list">
               {normalizedTools.map((tool: WorkTool, index: number) => (
                 <article className="work-tool-edit-row" key={tool.id}>
@@ -936,8 +956,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                   </div>
                   <div className="work-tool-edit-actions">
                     <button onClick={() => setEditingTool(tool)}>編集</button>
-                    <button onClick={() => moveWorkTool(tool.id, -1)} disabled={index === 0}>上へ</button>
-                    <button onClick={() => moveWorkTool(tool.id, 1)} disabled={index === normalizedTools.length - 1}>下へ</button>
+                    <button onClick={() => moveWorkTool(tool.id, -1)} disabled={index === 0}>左へ</button>
+                    <button onClick={() => moveWorkTool(tool.id, 1)} disabled={index === normalizedTools.length - 1}>右へ</button>
                     <button className="danger" onClick={() => deleteWorkTool(tool.id)}>削除</button>
                   </div>
                 </article>

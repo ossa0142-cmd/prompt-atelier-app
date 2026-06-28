@@ -184,6 +184,96 @@ const homeThemes = [{
     line: "#eadfeb",
     accent: "#b995cf"
   }
+}, {
+  id: "dark",
+  name: "ダークモード",
+  colors: ["#262321", "#3a3430", "#d8c7ae"],
+  vars: {
+    ink: "#f3eadf",
+    muted: "#c6b8aa",
+    paper: "#2a2725",
+    ivory: "#1f1d1c",
+    shell: "#3a3430",
+    sage: "#4d4941",
+    sand: "#d8c7ae",
+    line: "#4a433d",
+    accent: "#d8b98c"
+  }
+}, {
+  id: "night-lavender",
+  name: "ナイトラベンダー",
+  colors: ["#34234d", "#a98bd8", "#fff7ea"],
+  vars: {
+    ink: "#fff7ea",
+    muted: "#d8c8ee",
+    paper: "#3a2854",
+    ivory: "#261936",
+    shell: "#4d3670",
+    sage: "#8069a8",
+    sand: "#efe3ff",
+    line: "#5c4678",
+    accent: "#c7a6ff"
+  }
+}, {
+  id: "vivid-pink",
+  name: "ビビッドピンク",
+  colors: ["#ff4fa3", "#ffffff", "#222222"],
+  vars: {
+    ink: "#221d21",
+    muted: "#6d5964",
+    paper: "#ffffff",
+    ivory: "#fff3f8",
+    shell: "#ffd2e6",
+    sage: "#f0eef5",
+    sand: "#ffe6f1",
+    line: "#f5b5d2",
+    accent: "#ff4fa3"
+  }
+}, {
+  id: "pop-blue",
+  name: "ポップブルー",
+  colors: ["#2477ff", "#ffffff", "#e8edf5"],
+  vars: {
+    ink: "#1d2636",
+    muted: "#59677a",
+    paper: "#ffffff",
+    ivory: "#f4f8ff",
+    shell: "#dce9ff",
+    sage: "#e8edf5",
+    sand: "#edf3ff",
+    line: "#c8dcff",
+    accent: "#2477ff"
+  }
+}, {
+  id: "emerald",
+  name: "エメラルド",
+  colors: ["#00a878", "#fffaf0", "#26312d"],
+  vars: {
+    ink: "#26312d",
+    muted: "#5f746b",
+    paper: "#fffaf0",
+    ivory: "#f2fbf4",
+    shell: "#d8f2e6",
+    sage: "#bfe9d8",
+    sand: "#fff0ce",
+    line: "#bde2d2",
+    accent: "#00a878"
+  }
+}, {
+  id: "retro-orange",
+  name: "レトロオレンジ",
+  colors: ["#f28c28", "#fff1d6", "#704628"],
+  vars: {
+    ink: "#4a2f20",
+    muted: "#80624b",
+    paper: "#fff7ea",
+    ivory: "#fff1d6",
+    shell: "#ffd59d",
+    sage: "#e6d8b9",
+    sand: "#f4c178",
+    line: "#e6b070",
+    accent: "#f28c28"
+  }
 }];
 const mjParameterOptions = ["--ar 1:1", "--ar 4:5", "--ar 3:4", "--ar 2:3", "--ar 16:9", "--stylize 50", "--stylize 80", "--stylize 100", "--chaos 5", "--chaos 10", "--chaos 20", "--raw", "--hd", "--seed", "--profile", "--v 6", "--niji 6", "--quality 1", "--weird 50"];
 const mjParamKey = param => param.trim().split(/\s+/)[0];
@@ -219,6 +309,7 @@ const defaultHomeSettings = {
   bannerImageUrl: "",
   bannerVisible: true,
   bannerSize: "medium",
+  workToolIconStyle: "pastel",
   visible: {
     library: true,
     prompts: true,
@@ -692,7 +783,7 @@ function Home({
     }
     if (sectionId === "quickActions") {
       return /*#__PURE__*/React.createElement("section", {
-        className: "work-tools-card home-module",
+        className: `work-tools-card home-module ${settings.workToolIconStyle || "pastel"}`,
         key: sectionId
       }, /*#__PURE__*/React.createElement("h2", null, "作業ツール"), /*#__PURE__*/React.createElement("div", {
         className: "work-tools-launcher"
@@ -981,6 +1072,14 @@ function HomeCustomize({
   }, "画像を削除"))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "作業ツール"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大5件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "icon-style-choices"
+  }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+    key: id,
+    className: settings.workToolIconStyle === id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      workToolIconStyle: id
+    })
+  }, label))), /*#__PURE__*/React.createElement("div", {
     className: "work-tool-edit-list"
   }, normalizedTools.map((tool, index) => /*#__PURE__*/React.createElement("article", {
     className: "work-tool-edit-row",
@@ -997,10 +1096,10 @@ function HomeCustomize({
   }, "編集"), /*#__PURE__*/React.createElement("button", {
     onClick: () => moveWorkTool(tool.id, -1),
     disabled: index === 0
-  }, "上へ"), /*#__PURE__*/React.createElement("button", {
+  }, "左へ"), /*#__PURE__*/React.createElement("button", {
     onClick: () => moveWorkTool(tool.id, 1),
     disabled: index === normalizedTools.length - 1
-  }, "下へ"), /*#__PURE__*/React.createElement("button", {
+  }, "右へ"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
     onClick: () => deleteWorkTool(tool.id)
   }, "削除"))))), normalizedTools.length < 5 && /*#__PURE__*/React.createElement("button", {
