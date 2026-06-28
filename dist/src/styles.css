@@ -1202,6 +1202,18 @@ main {
   margin-top: 0;
 }
 
+.mj-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mj-field-head h3 {
+  margin: 0;
+}
+
 .mj-base-input,
 .mj-final-input {
   min-height: 130px;
@@ -1339,9 +1351,77 @@ main {
   padding: 0;
 }
 
+.mj-empty-card {
+  display: grid;
+  min-height: 340px;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  border: 1.5px dashed rgba(205, 188, 168, 0.9);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 24% 20%, rgba(255, 255, 255, 0.86), transparent 34%),
+    linear-gradient(145deg, rgba(250, 240, 231, 0.92), rgba(235, 241, 232, 0.78));
+  color: #7b6655;
+}
+
+.mj-empty-card span {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.82);
+  color: #a98270;
+  font-size: 32px;
+}
+
+.mj-empty-card strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.image-only-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.image-only-button:hover {
+  transform: none;
+}
+
 .mj-card-image img,
 .mj-card-image .image-placeholder {
+  display: block;
+  width: 100%;
   aspect-ratio: 1.55;
+  object-fit: cover;
+}
+
+.image-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  display: flex;
+  gap: 5px;
+  transform: translateX(-50%);
+}
+
+.image-dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.image-dots i.active {
+  background: var(--accent);
 }
 
 .mj-card-body {
@@ -1429,6 +1509,19 @@ main {
 .mj-param-pills.compact button:hover {
   border-color: var(--accent);
   transform: translateY(-1px);
+}
+
+.image-preview-modal {
+  display: grid;
+  gap: 16px;
+}
+
+.image-preview-modal img {
+  width: min(760px, 100%);
+  max-height: 70vh;
+  border-radius: 22px;
+  object-fit: contain;
+  background: #fffdf9;
 }
 
 .customize-page {
