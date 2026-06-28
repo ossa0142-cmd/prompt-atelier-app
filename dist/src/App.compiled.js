@@ -498,7 +498,7 @@ function useStoredState(key, fallback) {
 function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
-  const [mjSettings, setMjSettings] = useStoredState("prompt-atelier-mj-ja-v2", sampleMj);
+  const [mjSettings, setMjSettings] = useStoredState("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
   const [rawHomeSettings, setRawHomeSettings] = useStoredState("promptAtelierHomeSettings", defaultHomeSettings);
@@ -1936,51 +1936,205 @@ function Midjourney({
   setSettings,
   copyText
 }) {
-  const [editing, setEditing] = React.useState(null);
   const [query, setQuery] = React.useState("");
-  const filtered = settings.filter(item => lowerIncludes(`${item.title} ${item.description} ${item.note} ${mjCommand(item)}`, query));
-  const save = item => {
-    const next = {
-      ...item,
-      id: item.id || uid()
-    };
-    setSettings(items => item.id ? items.map(p => p.id === item.id ? next : p) : [next, ...items]);
-    setEditing(null);
+  const [sourcePrompt, setSourcePrompt] = React.useState("");
+  const [basePrompt, setBasePrompt] = React.useState("");
+  const [extractedParams, setExtractedParams] = React.useState([]);
+  const [selectedParams, setSelectedParams] = React.useState([]);
+  const [fullPrompt, setFullPrompt] = React.useState("");
+  const [title, setTitle] = React.useState("");
+  const [imageUrl, setImageUrl] = React.useState("");
+  const [memo, setMemo] = React.useState("");
+  const [editingId, setEditingId] = React.useState("");
+  const [copied, setCopied] = React.useState(false);
+  const filtered = settings.filter(item => lowerIncludes(`${item.title} ${item.description} ${item.note} ${item.memo || ""} ${mjCommand(item)}`, query));
+  const handlePromptInput = value => {
+    const parsed = parseMidjourneyPrompt(value);
+    setSourcePrompt(value);
+    setBasePrompt(parsed.basePrompt);
+    setExtractedParams(parsed.params);
+    setSelectedParams(parsed.params);
+    setFullPrompt(combinePrompt(parsed.basePrompt, parsed.params));
+  };
+  const toggleParam = param => {
+    const next = selectedParams.includes(param) ? selectedParams.filter(item => item !== param) : [...selectedParams, param];
+    setSelectedParams(next);
+    setFullPrompt(combinePrompt(basePrompt, next));
+  };
+  const copyFullPrompt = async () => {
+    await copyText(fullPrompt);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+  const clearComposer = () => {
+    setSourcePrompt("");
+    setBasePrompt("");
+    setExtractedParams([]);
+    setSelectedParams([]);
+    setFullPrompt("");
+    setTitle("");
+    setImageUrl("");
+    setMemo("");
+    setEditingId("");
+  };
+  const save = () => {
+    const normalized = normalizeMjSetting({
+      id: editingId,
+      title: title || "無題のMJ設定",
+      description: memo,
+      imageUrl,
+      memo,
+      note: memo,
+      basePrompt,
+      extractedParams: selectedParams,
+      fullPrompt,
+      extra: basePrompt
+    });
+    setSettings(items => editingId ? items.map(item => item.id === editingId ? normalized : item) : [normalized, ...items]);
+    clearComposer();
+  };
+  const editCard = item => {
+    const normalized = normalizeMjSetting(item);
+    setEditingId(normalized.id);
+    setTitle(normalized.title);
+    setImageUrl(normalized.imageUrl || "");
+    setMemo(normalized.memo || normalized.note || "");
+    setBasePrompt(normalized.basePrompt || "");
+    setExtractedParams(normalized.extractedParams || []);
+    setSelectedParams(normalized.extractedParams || []);
+    setFullPrompt(normalized.fullPrompt || mjCommand(normalized));
+    setSourcePrompt(normalized.fullPrompt || mjCommand(normalized));
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page"
+    className: "page mj-board-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "ミッドジャーニー設定管理",
+    title: "MJプロンプト制作ボード",
     action: /*#__PURE__*/React.createElement("button", {
       className: "primary",
-      onClick: () => setEditing(blankMj())
-    }, "追加する")
-  }), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
-    value: query,
-    onChange: e => setQuery(e.target.value),
-    placeholder: "設定名やパラメータで検索"
+      onClick: save,
+      disabled: !fullPrompt.trim()
+    }, "この設定を保存")
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mj-composer"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "mj-input-panel"
+  }, /*#__PURE__*/React.createElement("h3", null, "Midjourneyプロンプトを入力"), /*#__PURE__*/React.createElement("textarea", {
+    className: "mj-source-input",
+    value: sourcePrompt,
+    onChange: event => handlePromptInput(event.target.value),
+    placeholder: "プロンプトを貼り付けると、パラメータを自動抽出します"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mj-param-pills"
+  }, extractedParams.length ? extractedParams.map(param => /*#__PURE__*/React.createElement("button", {
+    key: param,
+    className: selectedParams.includes(param) ? "selected" : "",
+    onClick: () => toggleParam(param)
+  }, param)) : /*#__PURE__*/React.createElement("small", null, "抽出されたパラメータがここに表示されます。"))), /*#__PURE__*/React.createElement("section", {
+    className: "mj-input-panel"
+  }, /*#__PURE__*/React.createElement("h3", null, "完成プロンプト"), /*#__PURE__*/React.createElement("textarea", {
+    className: "mj-final-input",
+    value: fullPrompt,
+    onChange: event => setFullPrompt(event.target.value),
+    placeholder: "ベースプロンプトと選択したパラメータがここに入ります"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mj-save-grid"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: title,
+    onChange: event => setTitle(event.target.value),
+    placeholder: "保存タイトル"
+  }), /*#__PURE__*/React.createElement("input", {
+    value: imageUrl,
+    onChange: event => setImageUrl(event.target.value),
+    placeholder: "サンプル画像URL"
+  }), /*#__PURE__*/React.createElement("textarea", {
+    value: memo,
+    onChange: event => setMemo(event.target.value),
+    placeholder: "メモ"
   })), /*#__PURE__*/React.createElement("div", {
-    className: "list"
-  }, filtered.map(item => /*#__PURE__*/React.createElement("article", {
-    className: "panel",
-    key: item.id
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("p", null, item.description), /*#__PURE__*/React.createElement("code", null, mjCommand(item)), item.note && /*#__PURE__*/React.createElement("p", {
-    className: "note"
-  }, item.note)), /*#__PURE__*/React.createElement("div", {
-    className: "actions"
+    className: "mj-composer-actions"
   }, /*#__PURE__*/React.createElement("button", {
     className: "primary",
-    onClick: () => copyText(mjCommand(item))
-  }, "コピー"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setEditing(item)
-  }, "編集"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: () => setSettings(items => items.filter(p => p.id !== item.id))
-  }, "削除"))))), editing && /*#__PURE__*/React.createElement(MjModal, {
-    item: editing,
-    onClose: () => setEditing(null),
-    onSave: save
-  }));
+    onClick: copyFullPrompt,
+    disabled: !fullPrompt.trim()
+  }, "📋 完成プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+    onClick: save,
+    disabled: !fullPrompt.trim()
+  }, "この設定を保存"), editingId && /*#__PURE__*/React.createElement("button", {
+    onClick: clearComposer
+  }, "新規作成に戻る"), copied && /*#__PURE__*/React.createElement("span", null, "コピーしました")))), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: "保存済みカードを検索"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mj-card-grid"
+  }, filtered.map(raw => {
+    const item = normalizeMjSetting(raw);
+    return /*#__PURE__*/React.createElement("article", {
+      className: "mj-card",
+      key: item.id
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mj-card-image"
+    }, /*#__PURE__*/React.createElement(PromptThumbnail, {
+      imageUrl: item.imageUrl
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "mj-card-body"
+    }, /*#__PURE__*/React.createElement("h3", null, item.title), item.memo && /*#__PURE__*/React.createElement("p", null, item.memo), /*#__PURE__*/React.createElement("p", {
+      className: "mj-prompt-snippet"
+    }, mjCommand(item)), /*#__PURE__*/React.createElement("div", {
+      className: "mj-param-pills compact"
+    }, (item.extractedParams || []).map(param => /*#__PURE__*/React.createElement("span", {
+      key: param
+    }, param))), /*#__PURE__*/React.createElement("div", {
+      className: "mj-card-actions"
+    }, /*#__PURE__*/React.createElement("button", {
+      className: "primary",
+      onClick: () => copyText(mjCommand(item), item.id)
+    }, "📋 コピー"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => editCard(item)
+    }, "編集"), /*#__PURE__*/React.createElement("button", {
+      className: "danger",
+      onClick: () => setSettings(items => items.filter(setting => setting.id !== item.id))
+    }, "削除"))));
+  })));
+}
+function parseMidjourneyPrompt(value) {
+  const params = Array.from(value.matchAll(/--[a-zA-Z0-9-]+(?:\s+(?!--)[^\s]+)*/g)).map(match => match[0].trim());
+  const uniqueParams = Array.from(new Set(params));
+  const basePrompt = value.replace(/--[a-zA-Z0-9-]+(?:\s+(?!--)[^\s]+)*/g, " ").replace(/\s+/g, " ").trim();
+  return {
+    basePrompt,
+    params: uniqueParams
+  };
+}
+function combinePrompt(basePrompt, params) {
+  return [basePrompt, ...params].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+}
+function normalizeMjSetting(item) {
+  const legacyPrompt = mjCommandLegacy(item);
+  const fullPrompt = item.fullPrompt || legacyPrompt;
+  const parsed = parseMidjourneyPrompt(fullPrompt);
+  const params = item.extractedParams?.length ? item.extractedParams : parsed.params;
+  return {
+    id: item.id || uid(),
+    title: item.title || "無題のMJ設定",
+    description: item.description || item.memo || item.note || "",
+    imageUrl: item.imageUrl || "",
+    memo: item.memo || item.note || item.description || "",
+    basePrompt: item.basePrompt || parsed.basePrompt || item.extra || "",
+    extractedParams: params,
+    fullPrompt: item.fullPrompt || combinePrompt(item.basePrompt || parsed.basePrompt || item.extra || "", params),
+    ar: item.ar || "",
+    stylize: item.stylize || "",
+    chaos: item.chaos || "",
+    profile: item.profile || "",
+    seed: item.seed || "",
+    raw: Boolean(item.raw),
+    extra: item.extra || item.basePrompt || parsed.basePrompt || "",
+    note: item.note || item.memo || ""
+  };
+}
+function mjCommandLegacy(item) {
+  return [item.extra, item.ar && `--ar ${item.ar}`, item.stylize && `--stylize ${item.stylize}`, item.chaos && `--chaos ${item.chaos}`, item.raw && "--raw", item.profile && `--profile ${item.profile}`, item.seed && `--seed ${item.seed}`].filter(Boolean).join(" ");
 }
 function Projects({
   projects,
@@ -2309,7 +2463,9 @@ function SelectList({
   }), " ", item[labelKey])) : /*#__PURE__*/React.createElement("small", null, "先に項目を追加してください。"));
 }
 function mjCommand(item) {
-  return [item.extra, item.ar && `--ar ${item.ar}`, item.stylize && `--stylize ${item.stylize}`, item.chaos && `--chaos ${item.chaos}`, item.raw && "--raw", item.profile && `--profile ${item.profile}`, item.seed && `--seed ${item.seed}`].filter(Boolean).join(" ");
+  if (item.fullPrompt) return item.fullPrompt;
+  const parsed = parseMidjourneyPrompt(mjCommandLegacy(item));
+  return combinePrompt(item.basePrompt || parsed.basePrompt || item.extra || "", item.extractedParams?.length ? item.extractedParams : parsed.params);
 }
 function PageHead({
   title,

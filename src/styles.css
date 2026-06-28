@@ -1163,6 +1163,153 @@ main {
   padding: 10px 14px;
 }
 
+.mj-board-page {
+  display: grid;
+  gap: 22px;
+}
+
+.mj-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.mj-input-panel,
+.mj-card {
+  border: 1px solid rgba(232, 222, 209, 0.92);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 10% 12%, rgba(255, 255, 255, 0.82), transparent 28%),
+    linear-gradient(145deg, rgba(255, 253, 249, 0.98), rgba(242, 238, 231, 0.72));
+  box-shadow: 0 14px 34px rgba(73, 58, 45, 0.06);
+  padding: 20px;
+}
+
+.mj-input-panel h3 {
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+
+.mj-source-input,
+.mj-final-input {
+  min-height: 190px;
+  border-radius: 20px;
+  background: #fffdf9;
+  line-height: 1.65;
+}
+
+.mj-param-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.mj-param-pills button,
+.mj-param-pills span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid #d9dce0;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #50545b;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 7px 12px;
+}
+
+.mj-param-pills button.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, #f3f4f6);
+  color: var(--ink);
+}
+
+.mj-param-pills small {
+  color: var(--muted);
+}
+
+.mj-save-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.mj-save-grid textarea {
+  min-height: 82px;
+}
+
+.mj-composer-actions,
+.mj-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.mj-composer-actions span {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.mj-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.mj-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.mj-card-image img,
+.mj-card-image .image-placeholder {
+  aspect-ratio: 1.22;
+}
+
+.mj-card-body {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.mj-card-body h3 {
+  margin-bottom: 0;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.mj-card-body p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.mj-prompt-snippet {
+  display: -webkit-box;
+  min-height: 68px;
+  overflow: hidden;
+  border: 1px solid rgba(232, 222, 209, 0.78);
+  border-radius: 16px;
+  background: #fffdf9;
+  padding: 10px;
+  font-size: 13px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.mj-param-pills.compact {
+  margin-top: 0;
+}
+
+.mj-param-pills.compact span {
+  min-height: 30px;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
 .customize-page {
   display: grid;
   gap: 22px;
@@ -2036,6 +2183,14 @@ summary {
   .customize-preview {
     position: static;
   }
+
+  .mj-composer {
+    grid-template-columns: 1fr;
+  }
+
+  .mj-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1180px) and (min-width: 981px) {
@@ -2112,6 +2267,10 @@ summary {
   }
 
   .theme-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mj-card-grid {
     grid-template-columns: 1fr;
   }
 

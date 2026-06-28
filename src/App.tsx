@@ -43,6 +43,11 @@ type MjSetting = {
   id: string;
   title: string;
   description: string;
+  imageUrl?: string;
+  memo?: string;
+  basePrompt?: string;
+  extractedParams?: string[];
+  fullPrompt?: string;
   ar: string;
   stylize: string;
   chaos: string;
@@ -478,7 +483,7 @@ function useStoredState<T>(key: string, fallback: T) {
 function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
-  const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("prompt-atelier-mj-ja-v2", sampleMj);
+  const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState<Project[]>("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
   const [rawHomeSettings, setRawHomeSettings] = useStoredState<HomeSettings>("promptAtelierHomeSettings", defaultHomeSettings);
@@ -1557,38 +1562,183 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
 }
 
 function Midjourney({ settings, setSettings, copyText }: any) {
-  const [editing, setEditing] = React.useState<MjSetting | null>(null);
   const [query, setQuery] = React.useState("");
-  const filtered = settings.filter((item: MjSetting) => lowerIncludes(`${item.title} ${item.description} ${item.note} ${mjCommand(item)}`, query));
-  const save = (item: MjSetting) => {
-    const next = { ...item, id: item.id || uid() };
-    setSettings((items: MjSetting[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items]);
-    setEditing(null);
+  const [sourcePrompt, setSourcePrompt] = React.useState("");
+  const [basePrompt, setBasePrompt] = React.useState("");
+  const [extractedParams, setExtractedParams] = React.useState<string[]>([]);
+  const [selectedParams, setSelectedParams] = React.useState<string[]>([]);
+  const [fullPrompt, setFullPrompt] = React.useState("");
+  const [title, setTitle] = React.useState("");
+  const [imageUrl, setImageUrl] = React.useState("");
+  const [memo, setMemo] = React.useState("");
+  const [editingId, setEditingId] = React.useState("");
+  const [copied, setCopied] = React.useState(false);
+  const filtered = settings.filter((item: MjSetting) => lowerIncludes(`${item.title} ${item.description} ${item.note} ${item.memo || ""} ${mjCommand(item)}`, query));
+  const handlePromptInput = (value: string) => {
+    const parsed = parseMidjourneyPrompt(value);
+    setSourcePrompt(value);
+    setBasePrompt(parsed.basePrompt);
+    setExtractedParams(parsed.params);
+    setSelectedParams(parsed.params);
+    setFullPrompt(combinePrompt(parsed.basePrompt, parsed.params));
+  };
+  const toggleParam = (param: string) => {
+    const next = selectedParams.includes(param) ? selectedParams.filter((item) => item !== param) : [...selectedParams, param];
+    setSelectedParams(next);
+    setFullPrompt(combinePrompt(basePrompt, next));
+  };
+  const copyFullPrompt = async () => {
+    await copyText(fullPrompt);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+  const clearComposer = () => {
+    setSourcePrompt("");
+    setBasePrompt("");
+    setExtractedParams([]);
+    setSelectedParams([]);
+    setFullPrompt("");
+    setTitle("");
+    setImageUrl("");
+    setMemo("");
+    setEditingId("");
+  };
+  const save = () => {
+    const normalized = normalizeMjSetting({
+      id: editingId,
+      title: title || "無題のMJ設定",
+      description: memo,
+      imageUrl,
+      memo,
+      note: memo,
+      basePrompt,
+      extractedParams: selectedParams,
+      fullPrompt,
+      extra: basePrompt,
+    } as MjSetting);
+    setSettings((items: MjSetting[]) => editingId ? items.map((item) => item.id === editingId ? normalized : item) : [normalized, ...items]);
+    clearComposer();
+  };
+  const editCard = (item: MjSetting) => {
+    const normalized = normalizeMjSetting(item);
+    setEditingId(normalized.id);
+    setTitle(normalized.title);
+    setImageUrl(normalized.imageUrl || "");
+    setMemo(normalized.memo || normalized.note || "");
+    setBasePrompt(normalized.basePrompt || "");
+    setExtractedParams(normalized.extractedParams || []);
+    setSelectedParams(normalized.extractedParams || []);
+    setFullPrompt(normalized.fullPrompt || mjCommand(normalized));
+    setSourcePrompt(normalized.fullPrompt || mjCommand(normalized));
   };
   return (
-    <section className="page">
-      <PageHead title="ミッドジャーニー設定管理" action={<button className="primary" onClick={() => setEditing(blankMj())}>追加する</button>} />
-      <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="設定名やパラメータで検索" /></Filters>
-      <div className="list">
-        {filtered.map((item: MjSetting) => (
-          <article className="panel" key={item.id}>
-            <div>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <code>{mjCommand(item)}</code>
-              {item.note && <p className="note">{item.note}</p>}
-            </div>
-            <div className="actions">
-              <button className="primary" onClick={() => copyText(mjCommand(item))}>コピー</button>
-              <button onClick={() => setEditing(item)}>編集</button>
-              <button className="danger" onClick={() => setSettings((items: MjSetting[]) => items.filter((p) => p.id !== item.id))}>削除</button>
-            </div>
-          </article>
-        ))}
+    <section className="page mj-board-page">
+      <PageHead title="MJプロンプト制作ボード" action={<button className="primary" onClick={save} disabled={!fullPrompt.trim()}>この設定を保存</button>} />
+      <div className="mj-composer">
+        <section className="mj-input-panel">
+          <h3>Midjourneyプロンプトを入力</h3>
+          <textarea
+            className="mj-source-input"
+            value={sourcePrompt}
+            onChange={(event) => handlePromptInput(event.target.value)}
+            placeholder="プロンプトを貼り付けると、パラメータを自動抽出します"
+          />
+          <div className="mj-param-pills">
+            {extractedParams.length ? extractedParams.map((param) => (
+              <button key={param} className={selectedParams.includes(param) ? "selected" : ""} onClick={() => toggleParam(param)}>{param}</button>
+            )) : <small>抽出されたパラメータがここに表示されます。</small>}
+          </div>
+        </section>
+        <section className="mj-input-panel">
+          <h3>完成プロンプト</h3>
+          <textarea className="mj-final-input" value={fullPrompt} onChange={(event) => setFullPrompt(event.target.value)} placeholder="ベースプロンプトと選択したパラメータがここに入ります" />
+          <div className="mj-save-grid">
+            <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="保存タイトル" />
+            <input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="サンプル画像URL" />
+            <textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="メモ" />
+          </div>
+          <div className="mj-composer-actions">
+            <button className="primary" onClick={copyFullPrompt} disabled={!fullPrompt.trim()}>📋 完成プロンプトをコピー</button>
+            <button onClick={save} disabled={!fullPrompt.trim()}>この設定を保存</button>
+            {editingId && <button onClick={clearComposer}>新規作成に戻る</button>}
+            {copied && <span>コピーしました</span>}
+          </div>
+        </section>
       </div>
-      {editing && <MjModal item={editing} onClose={() => setEditing(null)} onSave={save} />}
+      <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="保存済みカードを検索" /></Filters>
+      <div className="mj-card-grid">
+        {filtered.map((raw: MjSetting) => {
+          const item = normalizeMjSetting(raw);
+          return (
+            <article className="mj-card" key={item.id}>
+              <div className="mj-card-image"><PromptThumbnail imageUrl={item.imageUrl} /></div>
+              <div className="mj-card-body">
+                <h3>{item.title}</h3>
+                {item.memo && <p>{item.memo}</p>}
+                <p className="mj-prompt-snippet">{mjCommand(item)}</p>
+                <div className="mj-param-pills compact">
+                  {(item.extractedParams || []).map((param) => <span key={param}>{param}</span>)}
+                </div>
+                <div className="mj-card-actions">
+                  <button className="primary" onClick={() => copyText(mjCommand(item), item.id)}>📋 コピー</button>
+                  <button onClick={() => editCard(item)}>編集</button>
+                  <button className="danger" onClick={() => setSettings((items: MjSetting[]) => items.filter((setting) => setting.id !== item.id))}>削除</button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
+}
+
+function parseMidjourneyPrompt(value: string) {
+  const params = Array.from(value.matchAll(/--[a-zA-Z0-9-]+(?:\s+(?!--)[^\s]+)*/g)).map((match) => match[0].trim());
+  const uniqueParams = Array.from(new Set(params));
+  const basePrompt = value.replace(/--[a-zA-Z0-9-]+(?:\s+(?!--)[^\s]+)*/g, " ").replace(/\s+/g, " ").trim();
+  return { basePrompt, params: uniqueParams };
+}
+
+function combinePrompt(basePrompt: string, params: string[]) {
+  return [basePrompt, ...params].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+}
+
+function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
+  const legacyPrompt = mjCommandLegacy(item as MjSetting);
+  const fullPrompt = item.fullPrompt || legacyPrompt;
+  const parsed = parseMidjourneyPrompt(fullPrompt);
+  const params = item.extractedParams?.length ? item.extractedParams : parsed.params;
+  return {
+    id: item.id || uid(),
+    title: item.title || "無題のMJ設定",
+    description: item.description || item.memo || item.note || "",
+    imageUrl: item.imageUrl || "",
+    memo: item.memo || item.note || item.description || "",
+    basePrompt: item.basePrompt || parsed.basePrompt || item.extra || "",
+    extractedParams: params,
+    fullPrompt: item.fullPrompt || combinePrompt(item.basePrompt || parsed.basePrompt || item.extra || "", params),
+    ar: item.ar || "",
+    stylize: item.stylize || "",
+    chaos: item.chaos || "",
+    profile: item.profile || "",
+    seed: item.seed || "",
+    raw: Boolean(item.raw),
+    extra: item.extra || item.basePrompt || parsed.basePrompt || "",
+    note: item.note || item.memo || "",
+  };
+}
+
+function mjCommandLegacy(item: MjSetting) {
+  return [
+    item.extra,
+    item.ar && `--ar ${item.ar}`,
+    item.stylize && `--stylize ${item.stylize}`,
+    item.chaos && `--chaos ${item.chaos}`,
+    item.raw && "--raw",
+    item.profile && `--profile ${item.profile}`,
+    item.seed && `--seed ${item.seed}`,
+  ].filter(Boolean).join(" ");
 }
 
 function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
@@ -1740,15 +1890,9 @@ function SelectList({ title, items, selected, labelKey, onToggle }: any) {
 }
 
 function mjCommand(item: MjSetting) {
-  return [
-    item.extra,
-    item.ar && `--ar ${item.ar}`,
-    item.stylize && `--stylize ${item.stylize}`,
-    item.chaos && `--chaos ${item.chaos}`,
-    item.raw && "--raw",
-    item.profile && `--profile ${item.profile}`,
-    item.seed && `--seed ${item.seed}`,
-  ].filter(Boolean).join(" ");
+  if (item.fullPrompt) return item.fullPrompt;
+  const parsed = parseMidjourneyPrompt(mjCommandLegacy(item));
+  return combinePrompt(item.basePrompt || parsed.basePrompt || item.extra || "", item.extractedParams?.length ? item.extractedParams : parsed.params);
 }
 
 function PageHead({ title, action }: any) {
