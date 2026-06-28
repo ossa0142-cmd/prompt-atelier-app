@@ -47,6 +47,8 @@ type MjSetting = {
   images?: string[];
   memo?: string;
   basePrompt?: string;
+  originalPrompt?: string;
+  translatedPrompt?: string;
   englishPrompt?: string;
   japanesePrompt?: string;
   extractedParams?: string[];
@@ -154,7 +156,45 @@ const mjParamValue = (params: string[], key: string) => {
   return found ? found.replace(key, "").trim() : "";
 };
 const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
-const getDraftJapanesePrompt = (englishPrompt: string) => englishPrompt;
+const promptTranslationMap: [RegExp, string][] = [
+  [/cute/gi, "かわいい"],
+  [/pastel/gi, "淡いパステル"],
+  [/clipart/gi, "クリップアート"],
+  [/white background/gi, "白背景"],
+  [/transparent background/gi, "透明背景"],
+  [/no shadow/gi, "影なし"],
+  [/soft shadow/gi, "やわらかな影"],
+  [/watercolor/gi, "水彩風"],
+  [/sticker/gi, "ステッカー"],
+  [/flat lay/gi, "平置き"],
+  [/product photo/gi, "商品写真"],
+  [/natural light/gi, "自然光"],
+  [/high quality/gi, "高品質"],
+  [/simple/gi, "シンプル"],
+  [/kawaii/gi, "かわいい"],
+  [/cozy/gi, "心地よい"],
+  [/minimal/gi, "ミニマル"],
+  [/hand drawn/gi, "手描き風"],
+  [/seamless pattern/gi, "シームレスパターン"],
+  [/clean/gi, "清潔感のある"],
+];
+const translatePromptToJapanese = (prompt: string) => {
+  const source = prompt.trim();
+  if (!source) return "";
+  let translated = source;
+  promptTranslationMap.forEach(([pattern, replacement]) => {
+    translated = translated.replace(pattern, replacement);
+  });
+  translated = translated
+    .replace(/\bstyle\b/gi, "スタイル")
+    .replace(/\bset\b/gi, "セット")
+    .replace(/\bprintable\b/gi, "印刷向き")
+    .replace(/\bisolated\b/gi, "単体配置")
+    .replace(/\s*,\s*/g, "、")
+    .replace(/\s+/g, " ")
+    .trim();
+  return translated === source ? `仮翻訳：${source}` : translated;
+};
 
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
@@ -1598,8 +1638,8 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
 function Midjourney({ settings, setSettings, copyText }: any) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
-  const [englishPrompt, setEnglishPrompt] = React.useState("");
-  const [japanesePrompt, setJapanesePrompt] = React.useState("");
+  const [originalPrompt, setOriginalPrompt] = React.useState("");
+  const [translatedPrompt, setTranslatedPrompt] = React.useState("");
   const [promptLanguage, setPromptLanguage] = React.useState<"en" | "ja">("en");
   const [selectedParams, setSelectedParams] = React.useState<string[]>([]);
   const [fullPrompt, setFullPrompt] = React.useState("");
@@ -1609,31 +1649,38 @@ function Midjourney({ settings, setSettings, copyText }: any) {
   const [editingId, setEditingId] = React.useState("");
   const [copied, setCopied] = React.useState(false);
   const [imageModal, setImageModal] = React.useState<{ images: string[]; index: number } | null>(null);
-  const filtered = settings.filter((item: MjSetting) => lowerIncludes(`${item.title} ${item.description} ${item.note} ${item.memo || ""} ${mjCommand(item)}`, query));
+  const [highlightedId, setHighlightedId] = React.useState("");
+  const normalizedSettings = settings.map((item: MjSetting) => normalizeMjSetting(item));
+  const filtered = normalizedSettings.filter((item: MjSetting) => lowerIncludes(`${item.memo || ""} ${item.note || ""} ${mjCommand(item)} ${(item.extractedParams || []).join(" ")}`, query));
   const saveLimitReached = settings.length >= 50 && !editingId;
   const currentParams = parseMidjourneyPrompt(fullPrompt).params;
   const completePrompt = combinePrompt(basePrompt, currentParams);
   const canSave = Boolean(completePrompt.trim()) && !saveLimitReached;
-  const shelfSlots = Array.from({ length: filtered.length < 3 ? 3 : Math.min(50, filtered.length + (settings.length < 50 ? 1 : 0)) }, (_, index) => filtered[index] || null);
+  const showEmptySlots = !query.trim();
+  const shelfSlotCount = showEmptySlots
+    ? (settings.length < 3 ? 3 : Math.min(50, filtered.length + (settings.length < 50 ? 1 : 0)))
+    : filtered.length;
+  const shelfSlots = Array.from({ length: shelfSlotCount }, (_, index) => filtered[index] || null);
+  const imageSearchItems = normalizedSettings.flatMap((item: MjSetting) => (item.images || []).map((image, index) => ({ image, cardId: item.id, index })));
   const updateBasePrompt = (value: string) => {
     setBasePrompt(value);
-    if (promptLanguage === "en") setEnglishPrompt(value);
-    if (promptLanguage === "ja") setJapanesePrompt(value);
+    if (promptLanguage === "en") setOriginalPrompt(value);
+    if (promptLanguage === "ja") setTranslatedPrompt(value);
   };
   const toggleTranslation = () => {
     if (promptLanguage === "en") {
-      const english = basePrompt || englishPrompt;
-      const next = japanesePrompt || getDraftJapanesePrompt(english);
-      setEnglishPrompt(english);
-      setJapanesePrompt(next);
+      const english = basePrompt || originalPrompt;
+      const next = translatedPrompt || translatePromptToJapanese(english) || english;
+      setOriginalPrompt(english);
+      setTranslatedPrompt(next);
       setBasePrompt(next);
       setPromptLanguage("ja");
       return;
     }
-    const japanese = basePrompt || japanesePrompt;
-    const next = englishPrompt || japanese || "";
-    setJapanesePrompt(japanese);
-    setEnglishPrompt(next);
+    const japanese = basePrompt || translatedPrompt;
+    const next = originalPrompt || japanese || "";
+    setTranslatedPrompt(japanese);
+    setOriginalPrompt(next);
     setBasePrompt(next);
     setPromptLanguage("en");
   };
@@ -1663,8 +1710,8 @@ function Midjourney({ settings, setSettings, copyText }: any) {
   };
   const clearComposer = () => {
     setBasePrompt("");
-    setEnglishPrompt("");
-    setJapanesePrompt("");
+    setOriginalPrompt("");
+    setTranslatedPrompt("");
     setPromptLanguage("en");
     setSelectedParams([]);
     setFullPrompt("");
@@ -1686,8 +1733,10 @@ function Midjourney({ settings, setSettings, copyText }: any) {
       memo,
       note: memo,
       basePrompt,
-      englishPrompt: promptLanguage === "en" ? basePrompt : englishPrompt,
-      japanesePrompt: promptLanguage === "ja" ? basePrompt : japanesePrompt,
+      originalPrompt: promptLanguage === "en" ? basePrompt : originalPrompt,
+      translatedPrompt: promptLanguage === "ja" ? basePrompt : translatedPrompt,
+      englishPrompt: promptLanguage === "en" ? basePrompt : originalPrompt,
+      japanesePrompt: promptLanguage === "ja" ? basePrompt : translatedPrompt,
       extractedParams: parsed.params.length ? parsed.params : selectedParams,
       fullPrompt: combinePrompt(basePrompt, parsed.params.length ? parsed.params : selectedParams),
       extra: basePrompt,
@@ -1704,6 +1753,36 @@ function Midjourney({ settings, setSettings, copyText }: any) {
       return { ...merged, createdAt: current.createdAt };
     }));
   };
+  const addEmptySavedSetting = () => {
+    if (settings.length >= 50) return;
+    const created = normalizeMjSetting({
+      id: uid(),
+      title: "新しいMJプロンプト",
+      description: "",
+      memo: "",
+      note: "",
+      basePrompt: "",
+      originalPrompt: "",
+      translatedPrompt: "",
+      englishPrompt: "",
+      japanesePrompt: "",
+      extractedParams: [],
+      fullPrompt: "",
+      images: [],
+      imageUrl: "",
+      extra: "",
+      createdAt: new Date().toISOString(),
+    } as MjSetting);
+    setSettings((items: MjSetting[]) => [created, ...items]);
+  };
+  const jumpToCard = (cardId: string) => {
+    setQuery("");
+    setHighlightedId(cardId);
+    window.setTimeout(() => {
+      document.getElementById(`mj-card-${cardId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    window.setTimeout(() => setHighlightedId(""), 1800);
+  };
   return (
     <section className="page mj-board-page">
       <PageHead title="Midjourneyパラメータ制作ボード" action={<button className="primary" onClick={save} disabled={!canSave}>完成プロンプトを保存</button>} />
@@ -1711,7 +1790,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
         <aside className="mj-builder-panel">
           <section className="mj-input-panel">
             <div className="mj-field-head">
-              <h3>ベースプロンプト</h3>
+              <h3>プロンプト</h3>
               <button onClick={toggleTranslation}>{promptLanguage === "en" ? "和訳" : "英語に戻す"}</button>
             </div>
             <textarea
@@ -1740,16 +1819,26 @@ function Midjourney({ settings, setSettings, copyText }: any) {
         <section className="mj-saved-shelf">
           <div className="mj-shelf-head">
             <div>
-              <h3>保存済みプロンプト</h3>
-              <p>画像付きのMJプロンプトをここにストックします。</p>
+              <h3>クイック検索</h3>
+              <p>保存したMJプロンプトを、ワードや画像から探せます。</p>
             </div>
-            <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="保存済みカードを検索" /></Filters>
+            <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="プロンプトやメモを検索..." /></Filters>
+            <div className="mj-image-search">
+              <strong>画像から探す</strong>
+              <div className="mj-image-search-grid">
+                {imageSearchItems.length ? imageSearchItems.map((item) => (
+                  <button key={`${item.cardId}-${item.index}-${item.image}`} onClick={() => jumpToCard(item.cardId)}>
+                    <img src={item.image} alt="" />
+                  </button>
+                )) : <small>画像を登録すると、ここから探せます。</small>}
+              </div>
+            </div>
           </div>
           <div className="mj-card-grid">
             {shelfSlots.map((raw: MjSetting | null, index) => {
               if (!raw) {
                 return settings.length < 50 ? (
-                  <button className="mj-empty-card" key={`mj-empty-${index}`} onClick={clearComposer}>
+                  <button className="mj-empty-card" key={`mj-empty-${index}`} onClick={addEmptySavedSetting}>
                     <span>＋</span>
                     <strong>新しいMJプロンプト</strong>
                   </button>
@@ -1760,6 +1849,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
                 <MJEditableCard
                   key={item.id}
                   item={item}
+                  highlighted={highlightedId === item.id}
                   onUpdate={(patch: Partial<MjSetting>) => updateSavedSetting(item.id, patch)}
                   onDelete={() => setSettings((items: MjSetting[]) => items.filter((setting) => setting.id !== item.id))}
                   onCopyPrompt={() => copyText(mjCommand(item), item.id)}
@@ -1789,6 +1879,24 @@ function splitImageUrls(value: string) {
   return value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean).slice(0, 5);
 }
 
+function isSupportedImageFile(file: File) {
+  return ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function promptCardHeading(prompt: string) {
+  const text = prompt.replace(/\s+/g, " ").trim();
+  return text ? text.slice(0, 30) : "新しいMJプロンプト";
+}
+
 function MJImageSlider({ images, onOpen, onEmptyClick }: any) {
   const [index, setIndex] = React.useState(0);
   React.useEffect(() => {
@@ -1815,95 +1923,84 @@ function MJImageSlider({ images, onOpen, onEmptyClick }: any) {
   );
 }
 
-function MJEditableCard({ item, onUpdate, onDelete, onCopyPrompt, onCopyParams, onParamClick, onOpenImage }: any) {
-  const [imageEditorOpen, setImageEditorOpen] = React.useState(false);
-  const [imageDraft, setImageDraft] = React.useState((item.images || []).join("\n"));
-  React.useEffect(() => {
-    setImageDraft((item.images || []).join("\n"));
-  }, [item.id, (item.images || []).join("|")]);
+function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, onCopyParams, onParamClick, onOpenImage }: any) {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [imageMessage, setImageMessage] = React.useState("");
   const params = item.extractedParams || [];
-  const paramsText = params.join(" ");
-  const saveImages = (value: string) => {
-    const images = splitImageUrls(value);
+  const promptText = mjCommand(item);
+  const addImageFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    if (!files.length) return;
+    const remaining = 5 - (item.images || []).length;
+    if (remaining <= 0) {
+      setImageMessage("画像は最大5枚までです");
+      return;
+    }
+    if (files.length > remaining) setImageMessage("画像は最大5枚までです");
+    const nextImages = await Promise.all(files.slice(0, remaining).map(fileToDataUrl));
+    const images = [...(item.images || []), ...nextImages].slice(0, 5);
     onUpdate({ images, imageUrl: images[0] || "" });
   };
   const removeImage = (index: number) => {
     const images = (item.images || []).filter((_: string, imageIndex: number) => imageIndex !== index);
-    const nextDraft = images.join("\n");
-    setImageDraft(nextDraft);
     onUpdate({ images, imageUrl: images[0] || "" });
   };
-  const updateBasePrompt = (value: string) => {
+  const updatePrompt = (value: string) => {
+    const parsed = parseMidjourneyPrompt(value);
     onUpdate({
-      basePrompt: value,
+      title: promptCardHeading(value),
+      basePrompt: parsed.basePrompt,
+      originalPrompt: value,
       englishPrompt: value,
-      extra: value,
-      fullPrompt: combinePrompt(value, params),
-    });
-  };
-  const updateParams = (value: string) => {
-    const nextParams = parseMidjourneyPrompt(value).params;
-    onUpdate({
-      extractedParams: nextParams,
-      fullPrompt: combinePrompt(item.basePrompt || "", nextParams),
+      extra: parsed.basePrompt,
+      extractedParams: parsed.params,
+      fullPrompt: value,
     });
   };
   return (
-    <article className="mj-card editable-mj-card">
-      <div className="mj-image-edit-zone">
-        <MJImageSlider images={item.images || []} onOpen={onOpenImage} onEmptyClick={() => setImageEditorOpen(true)} />
-        <button className="image-edit-toggle" onClick={() => setImageEditorOpen((open) => !open)}>
-          画像URLを編集
+    <article id={`mj-card-${item.id}`} className={`mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`}>
+      <div
+        className="mj-image-edit-zone"
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          addImageFiles(event.dataTransfer.files);
+        }}
+      >
+        <MJImageSlider images={item.images || []} onOpen={onOpenImage} onEmptyClick={() => fileInputRef.current?.click()} />
+        <input
+          ref={fileInputRef}
+          className="visually-hidden-file"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          onChange={(event) => {
+            if (event.target.files) addImageFiles(event.target.files);
+            event.currentTarget.value = "";
+          }}
+        />
+        <button className="image-edit-toggle" onClick={() => fileInputRef.current?.click()}>
+          画像を追加
         </button>
       </div>
-      {imageEditorOpen && (
-        <div className="mj-image-editor">
-          <textarea
-            value={imageDraft}
-            onChange={(event) => setImageDraft(event.target.value)}
-            onBlur={() => saveImages(imageDraft)}
-            placeholder="画像URLを最大5件まで入力（改行またはカンマ区切り）"
-          />
-          {(item.images || []).length > 0 && (
-            <div className="image-url-list">
-              {(item.images || []).map((image: string, index: number) => (
-                <button key={`${image}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
-              ))}
-            </div>
-          )}
-          <div className="mj-image-editor-actions">
-            <button onClick={() => saveImages(imageDraft)}>画像を保存</button>
-            <button onClick={() => {
-              setImageDraft("");
-              onUpdate({ images: [], imageUrl: "" });
-            }}>すべて削除</button>
-          </div>
+      {(item.images || []).length > 0 && (
+        <div className="image-url-list image-delete-list">
+          {(item.images || []).map((image: string, index: number) => (
+            <button key={`${image}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
+          ))}
         </div>
       )}
+      {imageMessage && <small className="image-message">{imageMessage}</small>}
       <div className="mj-card-body">
-        <input
-          className="mj-card-input title"
-          value={item.title}
-          onChange={(event) => onUpdate({ title: event.target.value || "無題のMJ設定" })}
-          placeholder="タイトル"
-        />
+        <strong className="mj-derived-title">{promptCardHeading(promptText)}</strong>
         <small className="mj-date">保存日：{formatSavedAt(item.createdAt)}</small>
         <label className="mj-edit-field">
-          <span>ベースプロンプト</span>
+          <span>プロンプト</span>
           <textarea
-            className="mj-card-textarea"
-            value={item.basePrompt || ""}
-            onChange={(event) => updateBasePrompt(event.target.value)}
-            placeholder="ベースプロンプト"
-          />
-        </label>
-        <label className="mj-edit-field">
-          <span>パラメータ</span>
-          <textarea
-            className="mj-card-textarea param"
-            value={paramsText}
-            onChange={(event) => updateParams(event.target.value)}
-            placeholder="--ar 1:1 --stylize 50 --raw"
+            className="mj-card-textarea prompt"
+            value={promptText}
+            onChange={(event) => updatePrompt(event.target.value)}
+            placeholder="MJプロンプトを入力すると、パラメータを自動抽出します"
           />
         </label>
         <label className="mj-edit-field">
@@ -1915,10 +2012,13 @@ function MJEditableCard({ item, onUpdate, onDelete, onCopyPrompt, onCopyParams, 
             placeholder="メモ"
           />
         </label>
-        <div className="mj-param-pills compact">
-          {params.length ? params.map((param: string) => (
-            <button key={param} onClick={() => onParamClick(param)}>{param}</button>
-          )) : <small>パラメータなし</small>}
+        <div>
+          <span className="mj-param-label">抽出済みパラメータ</span>
+          <div className="mj-param-pills compact">
+            {params.length ? params.map((param: string) => (
+              <button key={param} onClick={() => onParamClick(param)}>{param}</button>
+            )) : <small>パラメータなし</small>}
+          </div>
         </div>
         <div className="mj-card-actions">
           <button className="primary" onClick={onCopyPrompt}>📋 プロンプトをコピー</button>
@@ -1956,6 +2056,9 @@ function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
   const fullPrompt = item.fullPrompt || legacyPrompt;
   const parsed = parseMidjourneyPrompt(fullPrompt);
   const params = item.extractedParams?.length ? item.extractedParams : parsed.params;
+  const basePrompt = item.basePrompt || parsed.basePrompt || item.extra || "";
+  const originalPrompt = item.originalPrompt || item.englishPrompt || fullPrompt || basePrompt;
+  const translatedPrompt = item.translatedPrompt || item.japanesePrompt || "";
   return {
     id: item.id || uid(),
     title: item.title || "無題のMJ設定",
@@ -1963,18 +2066,20 @@ function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
     images: item.images?.length ? item.images.slice(0, 5) : item.imageUrl ? [item.imageUrl] : [],
     imageUrl: item.images?.[0] || item.imageUrl || "",
     memo: item.memo || item.note || item.description || "",
-    basePrompt: item.basePrompt || parsed.basePrompt || item.extra || "",
-    englishPrompt: item.englishPrompt || item.basePrompt || parsed.basePrompt || item.extra || "",
-    japanesePrompt: item.japanesePrompt || "",
+    basePrompt,
+    originalPrompt,
+    translatedPrompt,
+    englishPrompt: item.englishPrompt || originalPrompt || basePrompt,
+    japanesePrompt: item.japanesePrompt || translatedPrompt,
     extractedParams: params,
-    fullPrompt: item.fullPrompt || combinePrompt(item.basePrompt || parsed.basePrompt || item.extra || "", params),
+    fullPrompt: item.fullPrompt || combinePrompt(basePrompt, params),
     ar: item.ar || "",
     stylize: item.stylize || "",
     chaos: item.chaos || "",
     profile: item.profile || "",
     seed: item.seed || "",
     raw: Boolean(item.raw),
-    extra: item.extra || item.basePrompt || parsed.basePrompt || "",
+    extra: item.extra || basePrompt,
     note: item.note || item.memo || "",
     createdAt: item.createdAt || "",
   };
