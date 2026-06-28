@@ -63,7 +63,19 @@ type Project = {
   tags: string[];
 };
 
-type Screen = "home" | "library" | "prompts" | "mj" | "projects";
+type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize";
+
+type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "continue" | "favorites" | "recent";
+type HomeFeatureId = "library" | "prompts" | "mj" | "projects";
+
+type HomeSettings = {
+  themeId: string;
+  bannerImageUrl: string;
+  bannerVisible: boolean;
+  bannerSize: "small" | "medium" | "large";
+  visible: Record<string, boolean>;
+  order: HomeSectionId[];
+};
 
 const categories: Category[] = [
   "ステッカーモックアップ",
@@ -74,6 +86,67 @@ const categories: Category[] = [
   "アートプリントモックアップ",
   "アクリルキーホルダーモックアップ",
 ];
+
+const homeSections: { id: HomeSectionId; label: string }[] = [
+  { id: "dashboard", label: "制作ダッシュボード" },
+  { id: "quickActions", label: "クイックアクション" },
+  { id: "search", label: "検索バー" },
+  { id: "featureCards", label: "メイン機能カード" },
+  { id: "continue", label: "続きから作業" },
+  { id: "favorites", label: "お気に入り" },
+  { id: "recent", label: "最近使ったプロンプト" },
+];
+
+const homeFeatures: { id: HomeFeatureId; label: string }[] = [
+  { id: "library", label: "モックアップライブラリ" },
+  { id: "prompts", label: "プロンプト帳" },
+  { id: "mj", label: "MJ設定" },
+  { id: "projects", label: "プロジェクト" },
+];
+
+const homeThemes = [
+  { id: "cute", name: "キュート", colors: ["#f7e8e3", "#fffaf4", "#efe4d4"], vars: { ink: "#4a3935", muted: "#806f67", paper: "#fffaf4", ivory: "#fbf6ed", shell: "#f7e8e3", sage: "#dce7d7", sand: "#efe4d4", line: "#eadbd0", accent: "#c88f8d" } },
+  { id: "cool", name: "クール", colors: ["#d9e1e8", "#ffffff", "#42464d"], vars: { ink: "#343841", muted: "#68717d", paper: "#ffffff", ivory: "#f4f7f8", shell: "#d9e1e8", sage: "#dce5e4", sand: "#e9edf0", line: "#d8e0e6", accent: "#72889a" } },
+  { id: "natural", name: "ナチュラル", colors: ["#dce7d7", "#fbf6ed", "#7c624d"], vars: { ink: "#46382d", muted: "#766859", paper: "#fffaf2", ivory: "#f6f1e8", shell: "#e8eadc", sage: "#dce7d7", sand: "#e8dccb", line: "#ded3c1", accent: "#71866d" } },
+  { id: "lavender", name: "ラベンダー", colors: ["#e7dff1", "#eff0ec", "#ffffff"], vars: { ink: "#40384c", muted: "#786f82", paper: "#fffdfd", ivory: "#f7f4fa", shell: "#e7dff1", sage: "#e4ece8", sand: "#ebe5ef", line: "#ded7e8", accent: "#9a85b6" } },
+  { id: "cafe", name: "カフェ", colors: ["#ead8c3", "#b99b83", "#fffaf4"], vars: { ink: "#4a382e", muted: "#806b5b", paper: "#fff8ef", ivory: "#f6eee4", shell: "#ead8c3", sage: "#e2e5d8", sand: "#e6d2bc", line: "#dfcdb9", accent: "#a98270" } },
+  { id: "kstationery", name: "韓国文具", colors: ["#fff4dc", "#f6d9de", "#d7eadf"], vars: { ink: "#493c39", muted: "#7d7167", paper: "#fffdf7", ivory: "#fff8ea", shell: "#f6d9de", sage: "#d7eadf", sand: "#f2e6cf", line: "#eadfcb", accent: "#d49aa5" } },
+  { id: "simple", name: "シンプル", colors: ["#ffffff", "#eeeeee", "#333333"], vars: { ink: "#303030", muted: "#6a6a6a", paper: "#ffffff", ivory: "#f7f7f7", shell: "#eeeeee", sage: "#e9e9e9", sand: "#efefef", line: "#dddddd", accent: "#555555" } },
+  { id: "girly", name: "ガーリー", colors: ["#e9b7c2", "#fff4dc", "#d8b9a2"], vars: { ink: "#55383e", muted: "#896d71", paper: "#fff9f2", ivory: "#fff4e6", shell: "#f3d7dc", sage: "#e3e8d9", sand: "#ead6c5", line: "#ead4d8", accent: "#c97d91" } },
+  { id: "antique", name: "アンティーク", colors: ["#e5d6bd", "#8a7463", "#89906f"], vars: { ink: "#45382c", muted: "#766959", paper: "#fff8ed", ivory: "#f0e5d2", shell: "#e5d6bd", sage: "#d5d9c4", sand: "#d8c6aa", line: "#d4c3aa", accent: "#89906f" } },
+  { id: "pastel", name: "パステル", colors: ["#f7d9e3", "#d8efe5", "#e8ddf4", "#fff4dc"], vars: { ink: "#463d46", muted: "#7b7280", paper: "#fffdf9", ivory: "#fff8ed", shell: "#f7d9e3", sage: "#d8efe5", sand: "#e8ddf4", line: "#eadfeb", accent: "#b995cf" } },
+];
+
+const defaultHomeSettings: HomeSettings = {
+  themeId: "cute",
+  bannerImageUrl: "",
+  bannerVisible: true,
+  bannerSize: "medium",
+  visible: {
+    library: true,
+    prompts: true,
+    mj: true,
+    projects: true,
+    favorites: true,
+    recent: true,
+    continue: true,
+    dashboard: true,
+    quickActions: true,
+    search: true,
+    featureCards: true,
+  },
+  order: ["dashboard", "quickActions", "search", "featureCards", "continue", "favorites", "recent"],
+};
+
+const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => ({
+  ...defaultHomeSettings,
+  ...settings,
+  visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
+  order: [
+    ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
+    ...defaultHomeSettings.order.filter((id) => !(settings?.order || []).includes(id)),
+  ],
+});
 
 const art = (label: string, a: string, b: string) =>
   `data:image/svg+xml,${encodeURIComponent(`
@@ -408,7 +481,22 @@ function App() {
   const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("prompt-atelier-mj-ja-v2", sampleMj);
   const [projects, setProjects] = useStoredState<Project[]>("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
+  const [rawHomeSettings, setRawHomeSettings] = useStoredState<HomeSettings>("promptAtelierHomeSettings", defaultHomeSettings);
   const [toast, setToast] = React.useState("");
+  const homeSettings = normalizeHomeSettings(rawHomeSettings);
+  const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
+  const appStyle = {
+    "--ink": activeTheme.vars.ink,
+    "--muted": activeTheme.vars.muted,
+    "--paper": activeTheme.vars.paper,
+    "--ivory": activeTheme.vars.ivory,
+    "--shell": activeTheme.vars.shell,
+    "--sage": activeTheme.vars.sage,
+    "--sand": activeTheme.vars.sand,
+    "--line": activeTheme.vars.line,
+    "--accent": activeTheme.vars.accent,
+    "--sage-deep": activeTheme.vars.accent,
+  } as any;
 
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
@@ -422,7 +510,7 @@ function App() {
   };
 
   return (
-    <div>
+    <div className="app-shell" style={appStyle}>
       <header className="app-header">
         <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>
@@ -438,6 +526,7 @@ function App() {
             ["prompts", "マイプロンプト"],
             ["mj", "ミッドジャーニー設定"],
             ["projects", "プロジェクト"],
+            ["customize", "カスタマイズ"],
           ].map(([id, label]) => (
             <button key={id} className={screen === id ? "active" : ""} onClick={() => setScreen(id as Screen)}>
               {label}
@@ -456,8 +545,10 @@ function App() {
             myPrompts={myPrompts}
             mjSettings={mjSettings}
             copyText={copyText}
+            settings={homeSettings}
           />
         )}
+        {screen === "customize" && <HomeCustomize settings={homeSettings} setSettings={setRawHomeSettings} setScreen={setScreen} />}
         {screen === "library" && <Library copyText={copyText} />}
         {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} />}
         {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} />}
@@ -476,8 +567,9 @@ function App() {
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, copyText }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, copyText, settings }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
+  const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
     ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
     ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"],
@@ -498,14 +590,11 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     ...projects.slice(0, 2).map((project: Project) => ({ type: "プロジェクト", title: project.name, note: project.description, tags: project.tags, screen: "projects" })),
     ...myPrompts.slice(0, 2).map((prompt: MyPrompt) => ({ type: "プロンプト", title: prompt.title, note: prompt.note || prompt.description, tags: prompt.tags, screen: "prompts" })),
   ].slice(0, 3);
-  return (
-    <section className="page home-page">
-      <div className="home-hero">
-        <span className="hero-decoration hero-star-one">✦</span>
-        <span className="hero-decoration hero-star-two">✧</span>
-        <span className="hero-decoration hero-dot-one"></span>
-        <span className="hero-decoration hero-paper-one"></span>
-        <div className="dashboard-panel">
+  const renderSection = (sectionId: HomeSectionId) => {
+    if (!isVisible(sectionId)) return null;
+    if (sectionId === "dashboard") {
+      return (
+        <section className="dashboard-panel home-module" key={sectionId}>
           <span className="soft-label">今日の制作状況</span>
           <div className="dashboard-head">
             <h1>制作ダッシュボード</h1>
@@ -520,8 +609,12 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
               </button>
             ))}
           </div>
-        </div>
-        <div className="quick-action-card">
+        </section>
+      );
+    }
+    if (sectionId === "quickActions") {
+      return (
+        <section className="quick-action-card home-module" key={sectionId}>
           <span className="quick-label">すぐ作る</span>
           <h2>クイックアクション</h2>
           <p>思いついたアイデアを、すぐアトリエに保存できます。</p>
@@ -530,64 +623,232 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
             <button className="round-button pale-button" onClick={() => setScreen("projects")}>＋ 新しいプロジェクト</button>
             <button className="round-button pale-button" onClick={() => setScreen("mj")}>＋ MJ設定を追加</button>
           </div>
-        </div>
-      </div>
-
-      <div className="home-search">
-        <span>⌕</span>
-        <input value={homeQuery} onChange={(e) => setHomeQuery(e.target.value)} placeholder="プロンプトやプロジェクトを検索..." />
-      </div>
-      {homeQuery && (
-        <div className="home-search-results">
-          {searchable.length ? searchable.map((item: any) => (
-            <button key={item.id} onClick={() => setScreen(item.name ? "projects" : "prompts")}>
-              {item.title || item.name}
+        </section>
+      );
+    }
+    if (sectionId === "search") {
+      return (
+        <section key={sectionId}>
+          <div className="home-search">
+            <span>⌕</span>
+            <input value={homeQuery} onChange={(e) => setHomeQuery(e.target.value)} placeholder="プロンプトやプロジェクトを検索..." />
+          </div>
+          {homeQuery && (
+            <div className="home-search-results">
+              {searchable.length ? searchable.map((item: any) => (
+                <button key={item.id} onClick={() => setScreen(item.name ? "projects" : "prompts")}>
+                  {item.title || item.name}
+                </button>
+              )) : <small>一致する項目がありません。</small>}
+            </div>
+          )}
+        </section>
+      );
+    }
+    if (sectionId === "featureCards") {
+      const visibleEntries = entries.filter(([id]) => isVisible(id as string));
+      if (!visibleEntries.length) return null;
+      return (
+        <section className="home-feature-grid" key={sectionId}>
+          {visibleEntries.map(([id, title, body, icon]) => (
+            <button className="home-feature-card" key={id} onClick={() => setScreen(id as Screen)}>
+              <span className="feature-corner-spark">✦</span>
+              <span className="feature-washi"></span>
+              <span className="feature-icon"><FeatureIcon name={icon as string} /></span>
+              <span className="feature-title">{title}</span>
+              <small>{body}</small>
             </button>
-          )) : <small>一致する項目がありません。</small>}
+          ))}
+        </section>
+      );
+    }
+    if (sectionId === "continue") {
+      return (
+        <section key={sectionId}>
+          <SectionTitle title="続きから作業" />
+          <div className="continue-grid">
+            {continueItems.length ? continueItems.map((item: any) => (
+              <button className="continue-card" key={`${item.type}-${item.title}`} onClick={() => setScreen(item.screen)}>
+                <span>{item.type}</span>
+                <strong>{item.title}</strong>
+                <small>{item.note || "次の作品づくりをここから再開できます。"}</small>
+              </button>
+            )) : (
+              <button className="continue-card" onClick={() => setScreen("projects")}>
+                <span>サンプル</span>
+                <strong>季節の素材セット</strong>
+                <small>プロジェクトを作ると、ここからすぐ再開できます。</small>
+              </button>
+            )}
+          </div>
+        </section>
+      );
+    }
+    if (sectionId === "favorites") {
+      return (
+        <section key={sectionId}>
+          <SectionTitle title="お気に入り" />
+          <div className="home-prompt-row">
+            {favorites.length ? favorites.map((prompt: MyPrompt) => (
+              <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} favorite />
+            )) : <Empty text="お気に入りにしたプロンプトがここに表示されます。" />}
+          </div>
+        </section>
+      );
+    }
+    return (
+      <section key={sectionId}>
+        <SectionTitle title="最近使ったプロンプト" />
+        <div className="home-prompt-row recent-row">
+          {recent.length ? recent.map((prompt: LibraryPrompt) => (
+            <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} />
+          )) : <Empty text="まだコピー履歴がありません。" />}
+        </div>
+      </section>
+    );
+  };
+  return (
+    <section className="page home-page">
+      <div className="home-topbar">
+        <span>Prompt Atelier Home</span>
+        <button className="primary" onClick={() => setScreen("customize")}>ホームをカスタマイズ</button>
+      </div>
+      {settings.bannerVisible && (
+        <div
+          className={`home-banner ${settings.bannerSize}`}
+          style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined}
+        >
+          {!settings.bannerImageUrl && (
+            <>
+              <span>✦</span>
+              <i></i>
+              <b></b>
+            </>
+          )}
         </div>
       )}
+      {settings.order.map((sectionId: HomeSectionId) => renderSection(sectionId))}
+    </section>
+  );
+}
 
-      <div className="home-feature-grid">
-        {entries.map(([id, title, body, icon]) => (
-          <button className="home-feature-card" key={id} onClick={() => setScreen(id)}>
-            <span className="feature-corner-spark">✦</span>
-            <span className="feature-washi"></span>
-            <span className="feature-icon"><FeatureIcon name={icon as string} /></span>
-            <span className="feature-title">{title}</span>
-            <small>{body}</small>
-          </button>
-        ))}
-      </div>
+function HomeCustomize({ settings, setSettings, setScreen }: any) {
+  const updateSettings = (patch: Partial<HomeSettings>) => setSettings(normalizeHomeSettings({ ...settings, ...patch }));
+  const updateVisible = (id: string, value: boolean) => updateSettings({ visible: { ...settings.visible, [id]: value } });
+  const moveSection = (id: HomeSectionId, direction: -1 | 1) => {
+    const index = settings.order.indexOf(id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= settings.order.length) return;
+    const next = [...settings.order];
+    [next[index], next[target]] = [next[target], next[index]];
+    updateSettings({ order: next });
+  };
+  const reset = () => {
+    if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
+  };
+  const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
+  return (
+    <section className="page customize-page">
+      <PageHead
+        title="ホームカスタマイズ"
+        action={<button className="primary" onClick={() => setScreen("home")}>ホームへ戻る</button>}
+      />
+      <div className="customize-layout">
+        <div className="customize-settings">
+          <section className="customize-card">
+            <h3>テーマ</h3>
+            <p>ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。</p>
+            <div className="theme-grid">
+              {homeThemes.map((theme) => (
+                <button
+                  key={theme.id}
+                  className={`theme-card ${settings.themeId === theme.id ? "selected" : ""}`}
+                  onClick={() => updateSettings({ themeId: theme.id })}
+                >
+                  <span>{theme.name}</span>
+                  <small>
+                    {theme.colors.map((color) => <i key={color} style={{ background: color }} />)}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </section>
 
-      <SectionTitle title="続きから作業" />
-      <div className="continue-grid">
-        {continueItems.length ? continueItems.map((item: any) => (
-          <button className="continue-card" key={`${item.type}-${item.title}`} onClick={() => setScreen(item.screen)}>
-            <span>{item.type}</span>
-            <strong>{item.title}</strong>
-            <small>{item.note || "次の作品づくりをここから再開できます。"}</small>
-          </button>
-        )) : (
-          <button className="continue-card" onClick={() => setScreen("projects")}>
-            <span>サンプル</span>
-            <strong>季節の素材セット</strong>
-            <small>プロジェクトを作ると、ここからすぐ再開できます。</small>
-          </button>
-        )}
-      </div>
+          <section className="customize-card">
+            <h3>バナー</h3>
+            <p>ホーム上部に表示する横長画像を設定できます。</p>
+            <label className="switch-row">
+              <span>バナー表示</span>
+              <input type="checkbox" checked={settings.bannerVisible} onChange={(event) => updateSettings({ bannerVisible: event.target.checked })} />
+            </label>
+            <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value })} placeholder="バナー画像URL" />
+            <div className="inline-buttons">
+              {(["small", "medium", "large"] as const).map((size) => (
+                <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => updateSettings({ bannerSize: size })}>
+                  {size === "small" ? "小" : size === "medium" ? "中" : "大"}
+                </button>
+              ))}
+              <button onClick={() => updateSettings({ bannerImageUrl: "" })}>画像を削除</button>
+            </div>
+          </section>
 
-      <SectionTitle title="お気に入り" />
-      <div className="home-prompt-row">
-        {favorites.length ? favorites.map((prompt: MyPrompt) => (
-          <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} favorite />
-        )) : <Empty text="お気に入りにしたプロンプトがここに表示されます。" />}
-      </div>
+          <section className="customize-card">
+            <h3>表示項目</h3>
+            <p>ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。</p>
+            <div className="toggle-list">
+              {[...homeFeatures, ...homeSections].map((item) => (
+                <label className="switch-row" key={item.id}>
+                  <span>{item.label}</span>
+                  <input type="checkbox" checked={settings.visible[item.id] !== false} onChange={(event) => updateVisible(item.id, event.target.checked)} />
+                </label>
+              ))}
+            </div>
+          </section>
 
-      <SectionTitle title="最近使ったプロンプト" />
-      <div className="home-prompt-row recent-row">
-        {recent.length ? recent.map((prompt: LibraryPrompt) => (
-          <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} />
-        )) : <Empty text="まだコピー履歴がありません。" />}
+          <section className="customize-card">
+            <h3>並び順</h3>
+            <p>ホームの表示順を「上へ」「下へ」で調整できます。</p>
+            <div className="order-list">
+              {settings.order.map((id: HomeSectionId) => {
+                const section = homeSections.find((item) => item.id === id);
+                return (
+                  <div className="order-row" key={id}>
+                    <span>{section?.label}</span>
+                    <div>
+                      <button onClick={() => moveSection(id, -1)}>上へ</button>
+                      <button onClick={() => moveSection(id, 1)}>下へ</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="customize-card danger-zone">
+            <h3>初期化</h3>
+            <p>テーマ、バナー、表示項目、並び順を初期設定に戻します。</p>
+            <button className="danger" onClick={reset}>初期設定に戻す</button>
+          </section>
+        </div>
+
+        <aside className="customize-preview">
+          <span>プレビュー</span>
+          <div className="preview-shell" style={{
+            "--ink": activeTheme.vars.ink,
+            "--paper": activeTheme.vars.paper,
+            "--ivory": activeTheme.vars.ivory,
+            "--shell": activeTheme.vars.shell,
+            "--sage": activeTheme.vars.sage,
+            "--line": activeTheme.vars.line,
+            "--accent": activeTheme.vars.accent,
+          } as any}>
+            {settings.bannerVisible && <div className={`preview-banner ${settings.bannerSize}`} style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined} />}
+            <div className="preview-card large"></div>
+            <div className="preview-grid">
+              <i></i><i></i><i></i><i></i>
+            </div>
+          </div>
+        </aside>
       </div>
     </section>
   );

@@ -1,4 +1,219 @@
 const categories = ["ステッカーモックアップ", "招待状モックアップ", "ポストカードモックアップ", "グリーティングカードモックアップ", "Etsyサムネイル", "アートプリントモックアップ", "アクリルキーホルダーモックアップ"];
+const homeSections = [{
+  id: "dashboard",
+  label: "制作ダッシュボード"
+}, {
+  id: "quickActions",
+  label: "クイックアクション"
+}, {
+  id: "search",
+  label: "検索バー"
+}, {
+  id: "featureCards",
+  label: "メイン機能カード"
+}, {
+  id: "continue",
+  label: "続きから作業"
+}, {
+  id: "favorites",
+  label: "お気に入り"
+}, {
+  id: "recent",
+  label: "最近使ったプロンプト"
+}];
+const homeFeatures = [{
+  id: "library",
+  label: "モックアップライブラリ"
+}, {
+  id: "prompts",
+  label: "プロンプト帳"
+}, {
+  id: "mj",
+  label: "MJ設定"
+}, {
+  id: "projects",
+  label: "プロジェクト"
+}];
+const homeThemes = [{
+  id: "cute",
+  name: "キュート",
+  colors: ["#f7e8e3", "#fffaf4", "#efe4d4"],
+  vars: {
+    ink: "#4a3935",
+    muted: "#806f67",
+    paper: "#fffaf4",
+    ivory: "#fbf6ed",
+    shell: "#f7e8e3",
+    sage: "#dce7d7",
+    sand: "#efe4d4",
+    line: "#eadbd0",
+    accent: "#c88f8d"
+  }
+}, {
+  id: "cool",
+  name: "クール",
+  colors: ["#d9e1e8", "#ffffff", "#42464d"],
+  vars: {
+    ink: "#343841",
+    muted: "#68717d",
+    paper: "#ffffff",
+    ivory: "#f4f7f8",
+    shell: "#d9e1e8",
+    sage: "#dce5e4",
+    sand: "#e9edf0",
+    line: "#d8e0e6",
+    accent: "#72889a"
+  }
+}, {
+  id: "natural",
+  name: "ナチュラル",
+  colors: ["#dce7d7", "#fbf6ed", "#7c624d"],
+  vars: {
+    ink: "#46382d",
+    muted: "#766859",
+    paper: "#fffaf2",
+    ivory: "#f6f1e8",
+    shell: "#e8eadc",
+    sage: "#dce7d7",
+    sand: "#e8dccb",
+    line: "#ded3c1",
+    accent: "#71866d"
+  }
+}, {
+  id: "lavender",
+  name: "ラベンダー",
+  colors: ["#e7dff1", "#eff0ec", "#ffffff"],
+  vars: {
+    ink: "#40384c",
+    muted: "#786f82",
+    paper: "#fffdfd",
+    ivory: "#f7f4fa",
+    shell: "#e7dff1",
+    sage: "#e4ece8",
+    sand: "#ebe5ef",
+    line: "#ded7e8",
+    accent: "#9a85b6"
+  }
+}, {
+  id: "cafe",
+  name: "カフェ",
+  colors: ["#ead8c3", "#b99b83", "#fffaf4"],
+  vars: {
+    ink: "#4a382e",
+    muted: "#806b5b",
+    paper: "#fff8ef",
+    ivory: "#f6eee4",
+    shell: "#ead8c3",
+    sage: "#e2e5d8",
+    sand: "#e6d2bc",
+    line: "#dfcdb9",
+    accent: "#a98270"
+  }
+}, {
+  id: "kstationery",
+  name: "韓国文具",
+  colors: ["#fff4dc", "#f6d9de", "#d7eadf"],
+  vars: {
+    ink: "#493c39",
+    muted: "#7d7167",
+    paper: "#fffdf7",
+    ivory: "#fff8ea",
+    shell: "#f6d9de",
+    sage: "#d7eadf",
+    sand: "#f2e6cf",
+    line: "#eadfcb",
+    accent: "#d49aa5"
+  }
+}, {
+  id: "simple",
+  name: "シンプル",
+  colors: ["#ffffff", "#eeeeee", "#333333"],
+  vars: {
+    ink: "#303030",
+    muted: "#6a6a6a",
+    paper: "#ffffff",
+    ivory: "#f7f7f7",
+    shell: "#eeeeee",
+    sage: "#e9e9e9",
+    sand: "#efefef",
+    line: "#dddddd",
+    accent: "#555555"
+  }
+}, {
+  id: "girly",
+  name: "ガーリー",
+  colors: ["#e9b7c2", "#fff4dc", "#d8b9a2"],
+  vars: {
+    ink: "#55383e",
+    muted: "#896d71",
+    paper: "#fff9f2",
+    ivory: "#fff4e6",
+    shell: "#f3d7dc",
+    sage: "#e3e8d9",
+    sand: "#ead6c5",
+    line: "#ead4d8",
+    accent: "#c97d91"
+  }
+}, {
+  id: "antique",
+  name: "アンティーク",
+  colors: ["#e5d6bd", "#8a7463", "#89906f"],
+  vars: {
+    ink: "#45382c",
+    muted: "#766959",
+    paper: "#fff8ed",
+    ivory: "#f0e5d2",
+    shell: "#e5d6bd",
+    sage: "#d5d9c4",
+    sand: "#d8c6aa",
+    line: "#d4c3aa",
+    accent: "#89906f"
+  }
+}, {
+  id: "pastel",
+  name: "パステル",
+  colors: ["#f7d9e3", "#d8efe5", "#e8ddf4", "#fff4dc"],
+  vars: {
+    ink: "#463d46",
+    muted: "#7b7280",
+    paper: "#fffdf9",
+    ivory: "#fff8ed",
+    shell: "#f7d9e3",
+    sage: "#d8efe5",
+    sand: "#e8ddf4",
+    line: "#eadfeb",
+    accent: "#b995cf"
+  }
+}];
+const defaultHomeSettings = {
+  themeId: "cute",
+  bannerImageUrl: "",
+  bannerVisible: true,
+  bannerSize: "medium",
+  visible: {
+    library: true,
+    prompts: true,
+    mj: true,
+    projects: true,
+    favorites: true,
+    recent: true,
+    continue: true,
+    dashboard: true,
+    quickActions: true,
+    search: true,
+    featureCards: true
+  },
+  order: ["dashboard", "quickActions", "search", "featureCards", "continue", "favorites", "recent"]
+};
+const normalizeHomeSettings = settings => ({
+  ...defaultHomeSettings,
+  ...settings,
+  visible: {
+    ...defaultHomeSettings.visible,
+    ...(settings?.visible || {})
+  },
+  order: [...(settings?.order || defaultHomeSettings.order).filter(id => homeSections.some(section => section.id === id)), ...defaultHomeSettings.order.filter(id => !(settings?.order || []).includes(id))]
+});
 const art = (label, a, b) => `data:image/svg+xml,${encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" width="900" height="650" viewBox="0 0 900 650">
     <defs>
@@ -286,7 +501,22 @@ function App() {
   const [mjSettings, setMjSettings] = useStoredState("prompt-atelier-mj-ja-v2", sampleMj);
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
+  const [rawHomeSettings, setRawHomeSettings] = useStoredState("promptAtelierHomeSettings", defaultHomeSettings);
   const [toast, setToast] = React.useState("");
+  const homeSettings = normalizeHomeSettings(rawHomeSettings);
+  const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
+  const appStyle = {
+    "--ink": activeTheme.vars.ink,
+    "--muted": activeTheme.vars.muted,
+    "--paper": activeTheme.vars.paper,
+    "--ivory": activeTheme.vars.ivory,
+    "--shell": activeTheme.vars.shell,
+    "--sage": activeTheme.vars.sage,
+    "--sand": activeTheme.vars.sand,
+    "--line": activeTheme.vars.line,
+    "--accent": activeTheme.vars.accent,
+    "--sage-deep": activeTheme.vars.accent
+  };
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
@@ -296,7 +526,10 @@ function App() {
     setToast("コピーしました");
     window.setTimeout(() => setToast(""), 1600);
   };
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("header", {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app-shell",
+    style: appStyle
+  }, /*#__PURE__*/React.createElement("header", {
     className: "app-header"
   }, /*#__PURE__*/React.createElement("button", {
     className: "brand",
@@ -304,7 +537,7 @@ function App() {
     "aria-label": "ホームへ"
   }, /*#__PURE__*/React.createElement("span", {
     className: "brand-mark"
-  }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "デジタル素材クリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+  }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "デジタル素材クリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: screen === id ? "active" : "",
     onClick: () => setScreen(id)
@@ -315,7 +548,12 @@ function App() {
     projects: projects,
     myPrompts: myPrompts,
     mjSettings: mjSettings,
-    copyText: copyText
+    copyText: copyText,
+    settings: homeSettings
+  }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
+    settings: homeSettings,
+    setSettings: setRawHomeSettings,
+    setScreen: setScreen
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
@@ -343,9 +581,11 @@ function Home({
   projects,
   myPrompts,
   mjSettings,
-  copyText
+  copyText,
+  settings
 }) {
   const [homeQuery, setHomeQuery] = React.useState("");
+  const isVisible = id => settings.visible[id] !== false;
   const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
   const dashboardItems = [{
     screen: "library",
@@ -385,111 +625,284 @@ function Home({
     tags: prompt.tags,
     screen: "prompts"
   }))].slice(0, 3);
+  const renderSection = sectionId => {
+    if (!isVisible(sectionId)) return null;
+    if (sectionId === "dashboard") {
+      return /*#__PURE__*/React.createElement("section", {
+        className: "dashboard-panel home-module",
+        key: sectionId
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "soft-label"
+      }, "今日の制作状況"), /*#__PURE__*/React.createElement("div", {
+        className: "dashboard-head"
+      }, /*#__PURE__*/React.createElement("h1", null, "制作ダッシュボード"), /*#__PURE__*/React.createElement("p", null, "作品づくりに必要な素材と設定を、ひと目で確認できます。")), /*#__PURE__*/React.createElement("div", {
+        className: "dashboard-grid"
+      }, dashboardItems.map(item => /*#__PURE__*/React.createElement("button", {
+        className: "stat-card",
+        key: item.screen,
+        onClick: () => setScreen(item.screen)
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "stat-icon"
+      }, /*#__PURE__*/React.createElement(FeatureIcon, {
+        name: item.icon
+      })), /*#__PURE__*/React.createElement("span", {
+        className: "stat-title"
+      }, item.title), /*#__PURE__*/React.createElement("strong", null, item.count, /*#__PURE__*/React.createElement("small", null, "件"))))));
+    }
+    if (sectionId === "quickActions") {
+      return /*#__PURE__*/React.createElement("section", {
+        className: "quick-action-card home-module",
+        key: sectionId
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "quick-label"
+      }, "すぐ作る"), /*#__PURE__*/React.createElement("h2", null, "クイックアクション"), /*#__PURE__*/React.createElement("p", null, "思いついたアイデアを、すぐアトリエに保存できます。"), /*#__PURE__*/React.createElement("div", {
+        className: "quick-actions"
+      }, /*#__PURE__*/React.createElement("button", {
+        className: "primary round-button",
+        onClick: () => setScreen("prompts")
+      }, "＋ 新しいプロンプト"), /*#__PURE__*/React.createElement("button", {
+        className: "round-button pale-button",
+        onClick: () => setScreen("projects")
+      }, "＋ 新しいプロジェクト"), /*#__PURE__*/React.createElement("button", {
+        className: "round-button pale-button",
+        onClick: () => setScreen("mj")
+      }, "＋ MJ設定を追加")));
+    }
+    if (sectionId === "search") {
+      return /*#__PURE__*/React.createElement("section", {
+        key: sectionId
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "home-search"
+      }, /*#__PURE__*/React.createElement("span", null, "⌕"), /*#__PURE__*/React.createElement("input", {
+        value: homeQuery,
+        onChange: e => setHomeQuery(e.target.value),
+        placeholder: "プロンプトやプロジェクトを検索..."
+      })), homeQuery && /*#__PURE__*/React.createElement("div", {
+        className: "home-search-results"
+      }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
+        key: item.id,
+        onClick: () => setScreen(item.name ? "projects" : "prompts")
+      }, item.title || item.name)) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
+    }
+    if (sectionId === "featureCards") {
+      const visibleEntries = entries.filter(([id]) => isVisible(id));
+      if (!visibleEntries.length) return null;
+      return /*#__PURE__*/React.createElement("section", {
+        className: "home-feature-grid",
+        key: sectionId
+      }, visibleEntries.map(([id, title, body, icon]) => /*#__PURE__*/React.createElement("button", {
+        className: "home-feature-card",
+        key: id,
+        onClick: () => setScreen(id)
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "feature-corner-spark"
+      }, "✦"), /*#__PURE__*/React.createElement("span", {
+        className: "feature-washi"
+      }), /*#__PURE__*/React.createElement("span", {
+        className: "feature-icon"
+      }, /*#__PURE__*/React.createElement(FeatureIcon, {
+        name: icon
+      })), /*#__PURE__*/React.createElement("span", {
+        className: "feature-title"
+      }, title), /*#__PURE__*/React.createElement("small", null, body))));
+    }
+    if (sectionId === "continue") {
+      return /*#__PURE__*/React.createElement("section", {
+        key: sectionId
+      }, /*#__PURE__*/React.createElement(SectionTitle, {
+        title: "続きから作業"
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "continue-grid"
+      }, continueItems.length ? continueItems.map(item => /*#__PURE__*/React.createElement("button", {
+        className: "continue-card",
+        key: `${item.type}-${item.title}`,
+        onClick: () => setScreen(item.screen)
+      }, /*#__PURE__*/React.createElement("span", null, item.type), /*#__PURE__*/React.createElement("strong", null, item.title), /*#__PURE__*/React.createElement("small", null, item.note || "次の作品づくりをここから再開できます。"))) : /*#__PURE__*/React.createElement("button", {
+        className: "continue-card",
+        onClick: () => setScreen("projects")
+      }, /*#__PURE__*/React.createElement("span", null, "サンプル"), /*#__PURE__*/React.createElement("strong", null, "季節の素材セット"), /*#__PURE__*/React.createElement("small", null, "プロジェクトを作ると、ここからすぐ再開できます。"))));
+    }
+    if (sectionId === "favorites") {
+      return /*#__PURE__*/React.createElement("section", {
+        key: sectionId
+      }, /*#__PURE__*/React.createElement(SectionTitle, {
+        title: "お気に入り"
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "home-prompt-row"
+      }, favorites.length ? favorites.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
+        key: prompt.id,
+        prompt: prompt,
+        onCopy: copyText,
+        favorite: true
+      })) : /*#__PURE__*/React.createElement(Empty, {
+        text: "お気に入りにしたプロンプトがここに表示されます。"
+      })));
+    }
+    return /*#__PURE__*/React.createElement("section", {
+      key: sectionId
+    }, /*#__PURE__*/React.createElement(SectionTitle, {
+      title: "最近使ったプロンプト"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "home-prompt-row recent-row"
+    }, recent.length ? recent.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
+      key: prompt.id,
+      prompt: prompt,
+      onCopy: copyText
+    })) : /*#__PURE__*/React.createElement(Empty, {
+      text: "まだコピー履歴がありません。"
+    })));
+  };
   return /*#__PURE__*/React.createElement("section", {
     className: "page home-page"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "home-hero"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "hero-decoration hero-star-one"
-  }, "✦"), /*#__PURE__*/React.createElement("span", {
-    className: "hero-decoration hero-star-two"
-  }, "✧"), /*#__PURE__*/React.createElement("span", {
-    className: "hero-decoration hero-dot-one"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "hero-decoration hero-paper-one"
+    className: "home-topbar"
+  }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home"), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => setScreen("customize")
+  }, "ホームをカスタマイズ")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+    className: `home-banner ${settings.bannerSize}`,
+    style: settings.bannerImageUrl ? {
+      backgroundImage: `url(${settings.bannerImageUrl})`
+    } : undefined
+  }, !settings.bannerImageUrl && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)));
+}
+function HomeCustomize({
+  settings,
+  setSettings,
+  setScreen
+}) {
+  const updateSettings = patch => setSettings(normalizeHomeSettings({
+    ...settings,
+    ...patch
+  }));
+  const updateVisible = (id, value) => updateSettings({
+    visible: {
+      ...settings.visible,
+      [id]: value
+    }
+  });
+  const moveSection = (id, direction) => {
+    const index = settings.order.indexOf(id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= settings.order.length) return;
+    const next = [...settings.order];
+    [next[index], next[target]] = [next[target], next[index]];
+    updateSettings({
+      order: next
+    });
+  };
+  const reset = () => {
+    if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
+  };
+  const activeTheme = homeThemes.find(theme => theme.id === settings.themeId) || homeThemes[0];
+  return /*#__PURE__*/React.createElement("section", {
+    className: "page customize-page"
+  }, /*#__PURE__*/React.createElement(PageHead, {
+    title: "ホームカスタマイズ",
+    action: /*#__PURE__*/React.createElement("button", {
+      className: "primary",
+      onClick: () => setScreen("home")
+    }, "ホームへ戻る")
   }), /*#__PURE__*/React.createElement("div", {
-    className: "dashboard-panel"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "soft-label"
-  }, "今日の制作状況"), /*#__PURE__*/React.createElement("div", {
-    className: "dashboard-head"
-  }, /*#__PURE__*/React.createElement("h1", null, "制作ダッシュボード"), /*#__PURE__*/React.createElement("p", null, "作品づくりに必要な素材と設定を、ひと目で確認できます。")), /*#__PURE__*/React.createElement("div", {
-    className: "dashboard-grid"
-  }, dashboardItems.map(item => /*#__PURE__*/React.createElement("button", {
-    className: "stat-card",
-    key: item.screen,
-    onClick: () => setScreen(item.screen)
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "stat-icon"
-  }, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: item.icon
-  })), /*#__PURE__*/React.createElement("span", {
-    className: "stat-title"
-  }, item.title), /*#__PURE__*/React.createElement("strong", null, item.count, /*#__PURE__*/React.createElement("small", null, "件")))))), /*#__PURE__*/React.createElement("div", {
-    className: "quick-action-card"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "quick-label"
-  }, "すぐ作る"), /*#__PURE__*/React.createElement("h2", null, "クイックアクション"), /*#__PURE__*/React.createElement("p", null, "思いついたアイデアを、すぐアトリエに保存できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "quick-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary round-button",
-    onClick: () => setScreen("prompts")
-  }, "＋ 新しいプロンプト"), /*#__PURE__*/React.createElement("button", {
-    className: "round-button pale-button",
-    onClick: () => setScreen("projects")
-  }, "＋ 新しいプロジェクト"), /*#__PURE__*/React.createElement("button", {
-    className: "round-button pale-button",
-    onClick: () => setScreen("mj")
-  }, "＋ MJ設定を追加")))), /*#__PURE__*/React.createElement("div", {
-    className: "home-search"
-  }, /*#__PURE__*/React.createElement("span", null, "⌕"), /*#__PURE__*/React.createElement("input", {
-    value: homeQuery,
-    onChange: e => setHomeQuery(e.target.value),
-    placeholder: "プロンプトやプロジェクトを検索..."
-  })), homeQuery && /*#__PURE__*/React.createElement("div", {
-    className: "home-search-results"
-  }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    onClick: () => setScreen(item.name ? "projects" : "prompts")
-  }, item.title || item.name)) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")), /*#__PURE__*/React.createElement("div", {
-    className: "home-feature-grid"
-  }, entries.map(([id, title, body, icon]) => /*#__PURE__*/React.createElement("button", {
-    className: "home-feature-card",
-    key: id,
-    onClick: () => setScreen(id)
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "feature-corner-spark"
-  }, "✦"), /*#__PURE__*/React.createElement("span", {
-    className: "feature-washi"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "feature-icon"
-  }, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: icon
-  })), /*#__PURE__*/React.createElement("span", {
-    className: "feature-title"
-  }, title), /*#__PURE__*/React.createElement("small", null, body)))), /*#__PURE__*/React.createElement(SectionTitle, {
-    title: "続きから作業"
+    className: "customize-layout"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "customize-settings"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "テーマ"), /*#__PURE__*/React.createElement("p", null, "ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。"), /*#__PURE__*/React.createElement("div", {
+    className: "theme-grid"
+  }, homeThemes.map(theme => /*#__PURE__*/React.createElement("button", {
+    key: theme.id,
+    className: `theme-card ${settings.themeId === theme.id ? "selected" : ""}`,
+    onClick: () => updateSettings({
+      themeId: theme.id
+    })
+  }, /*#__PURE__*/React.createElement("span", null, theme.name), /*#__PURE__*/React.createElement("small", null, theme.colors.map(color => /*#__PURE__*/React.createElement("i", {
+    key: color,
+    style: {
+      background: color
+    }
+  }))))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "バナー"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する横長画像を設定できます。"), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "バナー表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: settings.bannerVisible,
+    onChange: event => updateSettings({
+      bannerVisible: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("input", {
+    value: settings.bannerImageUrl,
+    onChange: event => updateSettings({
+      bannerImageUrl: event.target.value
+    }),
+    placeholder: "バナー画像URL"
   }), /*#__PURE__*/React.createElement("div", {
-    className: "continue-grid"
-  }, continueItems.length ? continueItems.map(item => /*#__PURE__*/React.createElement("button", {
-    className: "continue-card",
-    key: `${item.type}-${item.title}`,
-    onClick: () => setScreen(item.screen)
-  }, /*#__PURE__*/React.createElement("span", null, item.type), /*#__PURE__*/React.createElement("strong", null, item.title), /*#__PURE__*/React.createElement("small", null, item.note || "次の作品づくりをここから再開できます。"))) : /*#__PURE__*/React.createElement("button", {
-    className: "continue-card",
-    onClick: () => setScreen("projects")
-  }, /*#__PURE__*/React.createElement("span", null, "サンプル"), /*#__PURE__*/React.createElement("strong", null, "季節の素材セット"), /*#__PURE__*/React.createElement("small", null, "プロジェクトを作ると、ここからすぐ再開できます。"))), /*#__PURE__*/React.createElement(SectionTitle, {
-    title: "お気に入り"
+    className: "inline-buttons"
+  }, ["small", "medium", "large"].map(size => /*#__PURE__*/React.createElement("button", {
+    key: size,
+    className: settings.bannerSize === size ? "active-soft" : "",
+    onClick: () => updateSettings({
+      bannerSize: size
+    })
+  }, size === "small" ? "小" : size === "medium" ? "中" : "大")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => updateSettings({
+      bannerImageUrl: ""
+    })
+  }, "画像を削除"))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "表示項目"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"), /*#__PURE__*/React.createElement("div", {
+    className: "toggle-list"
+  }, [...homeFeatures, ...homeSections].map(item => /*#__PURE__*/React.createElement("label", {
+    className: "switch-row",
+    key: item.id
+  }, /*#__PURE__*/React.createElement("span", null, item.label), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: settings.visible[item.id] !== false,
+    onChange: event => updateVisible(item.id, event.target.checked)
+  }))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "order-list"
+  }, settings.order.map(id => {
+    const section = homeSections.find(item => item.id === id);
+    return /*#__PURE__*/React.createElement("div", {
+      className: "order-row",
+      key: id
+    }, /*#__PURE__*/React.createElement("span", null, section?.label), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+      onClick: () => moveSection(id, -1)
+    }, "上へ"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => moveSection(id, 1)
+    }, "下へ")));
+  }))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card danger-zone"
+  }, /*#__PURE__*/React.createElement("h3", null, "初期化"), /*#__PURE__*/React.createElement("p", null, "テーマ、バナー、表示項目、並び順を初期設定に戻します。"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: reset
+  }, "初期設定に戻す"))), /*#__PURE__*/React.createElement("aside", {
+    className: "customize-preview"
+  }, /*#__PURE__*/React.createElement("span", null, "プレビュー"), /*#__PURE__*/React.createElement("div", {
+    className: "preview-shell",
+    style: {
+      "--ink": activeTheme.vars.ink,
+      "--paper": activeTheme.vars.paper,
+      "--ivory": activeTheme.vars.ivory,
+      "--shell": activeTheme.vars.shell,
+      "--sage": activeTheme.vars.sage,
+      "--line": activeTheme.vars.line,
+      "--accent": activeTheme.vars.accent
+    }
+  }, settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+    className: `preview-banner ${settings.bannerSize}`,
+    style: settings.bannerImageUrl ? {
+      backgroundImage: `url(${settings.bannerImageUrl})`
+    } : undefined
   }), /*#__PURE__*/React.createElement("div", {
-    className: "home-prompt-row"
-  }, favorites.length ? favorites.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
-    key: prompt.id,
-    prompt: prompt,
-    onCopy: copyText,
-    favorite: true
-  })) : /*#__PURE__*/React.createElement(Empty, {
-    text: "お気に入りにしたプロンプトがここに表示されます。"
-  })), /*#__PURE__*/React.createElement(SectionTitle, {
-    title: "最近使ったプロンプト"
+    className: "preview-card large"
   }), /*#__PURE__*/React.createElement("div", {
-    className: "home-prompt-row recent-row"
-  }, recent.length ? recent.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
-    key: prompt.id,
-    prompt: prompt,
-    onCopy: copyText
-  })) : /*#__PURE__*/React.createElement(Empty, {
-    text: "まだコピー履歴がありません。"
-  })));
+    className: "preview-grid"
+  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null))))));
 }
 function FeatureIcon({
   name
