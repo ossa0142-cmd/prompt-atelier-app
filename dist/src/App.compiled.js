@@ -553,7 +553,9 @@ const sampleProjects = [{
   promptIds: ["my-1"],
   mjIds: ["mj-1"],
   note: "9月上旬までに30点作成。",
-  tags: ["季節商品", "ハロウィン"]
+  tags: ["季節商品", "ハロウィン"],
+  dueDate: "2026-09-01",
+  remindOnHome: true
 }];
 const blankPrompt = (textOnly = false) => ({
   id: "",
@@ -589,12 +591,23 @@ const blankProject = () => ({
   promptIds: [],
   mjIds: [],
   note: "",
-  tags: []
+  tags: [],
+  dueDate: "",
+  remindOnHome: false
 });
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolean);
 const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
+function projectDueText(value) {
+  if (!value) return "";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return "";
+  const diff = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+  return diff < 0 ? "⚠ 達成予定日を過ぎています" : `達成予定まで あと ${diff}日`;
+}
 function useStoredState(key, fallback) {
   const [value, setValue] = React.useState(() => {
     try {
@@ -735,6 +748,7 @@ function Home({
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
     return homeQuery && lowerIncludes(text, homeQuery);
   }).slice(0, 3);
+  const reminders = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate))).slice(0, 4);
   const normalizedTools = workTools.slice(0, 10);
   const renderSection = sectionId => {
     if (!isVisible(sectionId)) return null;
@@ -758,7 +772,13 @@ function Home({
         name: item.icon
       })), /*#__PURE__*/React.createElement("span", {
         className: "stat-title"
-      }, item.title), /*#__PURE__*/React.createElement("strong", null, item.count, /*#__PURE__*/React.createElement("small", null, "件"))))));
+      }, item.title), /*#__PURE__*/React.createElement("strong", null, item.count, /*#__PURE__*/React.createElement("small", null, "件"))))), reminders.length > 0 && /*#__PURE__*/React.createElement("div", {
+        className: "project-reminders"
+      }, reminders.map(project => /*#__PURE__*/React.createElement("button", {
+        className: "project-reminder-card",
+        key: project.id,
+        onClick: () => setScreen("projects")
+      }, /*#__PURE__*/React.createElement("strong", null, "🎯 ", project.name || "無題のプロジェクト"), /*#__PURE__*/React.createElement("span", null, projectDueText(project.dueDate || ""))))));
     }
     if (sectionId === "quickActions") {
       return /*#__PURE__*/React.createElement("section", {
@@ -2834,7 +2854,9 @@ function Projects({
       onClick: () => setProjects(items => items.filter(p => p.id !== project.id))
     }, "削除"))), /*#__PURE__*/React.createElement(TagRow, {
       tags: project.tags
-    }), project.note && /*#__PURE__*/React.createElement("p", {
+    }), project.dueDate && /*#__PURE__*/React.createElement("p", {
+      className: "project-due-line"
+    }, projectDueText(project.dueDate)), project.note && /*#__PURE__*/React.createElement("p", {
       className: "note"
     }, project.note), /*#__PURE__*/React.createElement("h4", null, "関連プロンプト"), /*#__PURE__*/React.createElement("div", {
       className: "mini-list"
@@ -3035,6 +3057,8 @@ function ProjectModal({
     ...item,
     tagInput: tagText(item.tags)
   });
+  const promptChoices = [...prompts].sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)));
+  const mjChoices = [...settings].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   const toggle = (key, id) => {
     const exists = draft[key].includes(id);
     setDraft({
@@ -3045,45 +3069,77 @@ function ProjectModal({
   return /*#__PURE__*/React.createElement(Modal, {
     title: item.id ? "プロジェクトを編集" : "プロジェクトを追加",
     onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(FormGrid, {
+    className: "project-edit-form"
+  }, /*#__PURE__*/React.createElement(ProjectField, {
+    label: "プロジェクト名"
+  }, /*#__PURE__*/React.createElement("input", {
     value: draft.name,
     onChange: e => setDraft({
       ...draft,
       name: e.target.value
     }),
-    placeholder: "プロジェクト名"
-  }), /*#__PURE__*/React.createElement("textarea", {
+    placeholder: "例：Christmas Sticker Set"
+  })), /*#__PURE__*/React.createElement(ProjectField, {
+    label: "概要"
+  }, /*#__PURE__*/React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,
       description: e.target.value
     }),
-    placeholder: "説明"
-  }), /*#__PURE__*/React.createElement("textarea", {
+    placeholder: "制作する素材セットの内容を書きます"
+  })), /*#__PURE__*/React.createElement(ProjectField, {
+    label: "目標・ゴール"
+  }, /*#__PURE__*/React.createElement("textarea", {
     value: draft.note,
     onChange: e => setDraft({
       ...draft,
       note: e.target.value
     }),
-    placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement("input", {
+    placeholder: "点数、販売開始日、やることなど"
+  })), /*#__PURE__*/React.createElement(ProjectField, {
+    label: "タグ"
+  }, /*#__PURE__*/React.createElement("input", {
     value: draft.tagInput,
     onChange: e => setDraft({
       ...draft,
       tagInput: e.target.value
     }),
-    placeholder: "タグ（カンマ区切り）"
-  }), /*#__PURE__*/React.createElement(SelectList, {
+    placeholder: "季節商品, ステッカー, Etsy"
+  })), /*#__PURE__*/React.createElement(ProjectField, {
+    label: "達成予定日"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: draft.dueDate || "",
+    onChange: e => setDraft({
+      ...draft,
+      dueDate: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "check project-remind-check"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: Boolean(draft.remindOnHome),
+    onChange: e => setDraft({
+      ...draft,
+      remindOnHome: e.target.checked
+    })
+  }), "ホーム画面でリマインドする"), /*#__PURE__*/React.createElement(SelectList, {
     title: "関連プロンプト",
-    items: prompts,
+    description: "お気に入りを優先して10件表示します。もっと探すときは検索できます。",
+    items: promptChoices,
     selected: draft.promptIds,
-    labelKey: "title",
+    getLabel: choice => choice.title || "無題のプロンプト",
+    getText: choice => `${choice.title} ${choice.description} ${choice.prompt} ${choice.note} ${(choice.tags || []).join(" ")}`,
     onToggle: id => toggle("promptIds", id)
   }), /*#__PURE__*/React.createElement(SelectList, {
-    title: "関連ミッドジャーニー設定",
-    items: settings,
+    title: "関連Midjourney設定",
+    description: "保存日の新しいものを優先して10件表示します。",
+    items: mjChoices,
     selected: draft.mjIds,
-    labelKey: "title",
+    getLabel: choice => choice.title || promptTitleFromText(choice.prompt || choice.fullPrompt || choice.basePrompt || choice.extra || ""),
+    getText: choice => `${choice.title || ""} ${choice.prompt || choice.fullPrompt || choice.basePrompt || ""} ${choice.parameters || choice.extra || ""} ${choice.memo || choice.note || ""}`,
     onToggle: id => toggle("mjIds", id)
   })), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
@@ -3093,23 +3149,48 @@ function ProjectModal({
     })
   }));
 }
+function ProjectField({
+  label,
+  children
+}) {
+  return /*#__PURE__*/React.createElement("label", {
+    className: "project-field"
+  }, /*#__PURE__*/React.createElement("span", null, label), children);
+}
 function SelectList({
   title,
+  description,
   items,
   selected,
-  labelKey,
+  getLabel,
+  getText,
   onToggle
 }) {
+  const [query, setQuery] = React.useState("");
+  const [expanded, setExpanded] = React.useState(false);
+  const filtered = items.filter(item => lowerIncludes(getText(item), query));
+  const shown = expanded || query ? filtered : filtered.slice(0, 10);
   return /*#__PURE__*/React.createElement("div", {
     className: "select-list"
-  }, /*#__PURE__*/React.createElement("strong", null, title), items.length ? items.map(item => /*#__PURE__*/React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "select-list-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, title), description && /*#__PURE__*/React.createElement("small", null, description))), /*#__PURE__*/React.createElement("input", {
+    className: "select-search",
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: `${title}を検索...`
+  }), items.length ? shown.map(item => /*#__PURE__*/React.createElement("label", {
     key: item.id,
-    className: "check"
+    className: "check select-row"
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
     checked: selected.includes(item.id),
     onChange: () => onToggle(item.id)
-  }), " ", item[labelKey])) : /*#__PURE__*/React.createElement("small", null, "先に項目を追加してください。"));
+  }), " ", getLabel(item))) : /*#__PURE__*/React.createElement("small", null, "先に項目を追加してください。"), items.length > 10 && !expanded && !query && /*#__PURE__*/React.createElement("button", {
+    className: "ghost more-button",
+    type: "button",
+    onClick: () => setExpanded(true)
+  }, "もっと見る"), items.length > 0 && !shown.length && /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。"));
 }
 function mjCommand(item) {
   if (item.prompt) return item.prompt;
@@ -3156,10 +3237,11 @@ function Empty({
   }, text);
 }
 function FormGrid({
-  children
+  children,
+  className = ""
 }) {
   return /*#__PURE__*/React.createElement("div", {
-    className: "form-grid"
+    className: `form-grid ${className}`.trim()
   }, children);
 }
 function Modal({

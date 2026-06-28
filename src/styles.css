@@ -382,6 +382,37 @@ main {
   gap: 14px;
 }
 
+.project-reminders {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.project-reminder-card {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(231, 218, 203, 0.9);
+  border-radius: 20px;
+  background: rgba(255, 253, 249, 0.72);
+  box-shadow: 0 10px 28px rgba(79, 60, 44, 0.05);
+  padding: 14px;
+  text-align: left;
+}
+
+.project-reminder-card strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-reminder-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .stat-card {
   display: grid;
   min-height: 136px;
@@ -2807,6 +2838,16 @@ summary {
   padding-left: 10px;
 }
 
+.project-due-line {
+  width: fit-content;
+  border-radius: 999px;
+  background: #f5eee4;
+  color: #7d6655;
+  font-size: 12px;
+  font-weight: 850;
+  padding: 7px 11px;
+}
+
 .mini-list {
   display: flex;
   flex-wrap: wrap;
@@ -2907,6 +2948,36 @@ summary {
   gap: 12px;
 }
 
+.project-edit-form {
+  gap: 18px;
+}
+
+.project-field {
+  display: grid;
+  gap: 8px;
+}
+
+.project-field > span,
+.select-list-head strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.project-field input,
+.project-field textarea,
+.select-search {
+  width: 100%;
+}
+
+.project-remind-check {
+  width: fit-content;
+  border: 1px solid rgba(227, 219, 207, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.82);
+  padding: 10px 14px;
+}
+
 .tall {
   min-height: 140px;
 }
@@ -2919,10 +2990,46 @@ summary {
 
 .select-list {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   border: 1px solid #e3dbcf;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 253, 249, 0.68);
+  padding: 16px;
+}
+
+.select-list-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.select-list-head > div {
+  display: grid;
+  gap: 4px;
+}
+
+.select-list-head small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.select-list-head button,
+.more-button {
+  flex: 0 0 auto;
+}
+
+.select-search {
+  min-height: 42px;
+  border-radius: 14px;
+}
+
+.select-row {
+  border: 1px solid rgba(227, 219, 207, 0.68);
+  border-radius: 14px;
+  background: rgba(255, 250, 244, 0.72);
+  padding: 9px 10px;
 }
 
 .toast {

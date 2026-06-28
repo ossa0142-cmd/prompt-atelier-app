@@ -76,6 +76,8 @@ type Project = {
   mjIds: string[];
   note: string;
   tags: string[];
+  dueDate?: string;
+  remindOnHome?: boolean;
 };
 
 type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize";
@@ -479,6 +481,8 @@ const sampleProjects: Project[] = [
     mjIds: ["mj-1"],
     note: "9月上旬までに30点作成。",
     tags: ["季節商品", "ハロウィン"],
+    dueDate: "2026-09-01",
+    remindOnHome: true,
   },
 ];
 
@@ -519,12 +523,24 @@ const blankProject = (): Project => ({
   mjIds: [],
   note: "",
   tags: [],
+  dueDate: "",
+  remindOnHome: false,
 });
 
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = (value: string) => value.split(",").map((tag) => tag.trim()).filter(Boolean);
 const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
+
+function projectDueText(value: string) {
+  if (!value) return "";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return "";
+  const diff = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+  return diff < 0 ? "⚠ 達成予定日を過ぎています" : `達成予定まで あと ${diff}日`;
+}
 
 function useStoredState<T>(key: string, fallback: T) {
   const [value, setValue] = React.useState<T>(() => {
@@ -666,6 +682,10 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
     return homeQuery && lowerIncludes(text, homeQuery);
   }).slice(0, 3);
+  const reminders = (projects as Project[])
+    .filter((project) => project.remindOnHome && project.dueDate)
+    .sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))
+    .slice(0, 4);
   const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
@@ -686,6 +706,16 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
               </button>
             ))}
           </div>
+          {reminders.length > 0 && (
+            <div className="project-reminders">
+              {reminders.map((project) => (
+                <button className="project-reminder-card" key={project.id} onClick={() => setScreen("projects")}>
+                  <strong>🎯 {project.name || "無題のプロジェクト"}</strong>
+                  <span>{projectDueText(project.dueDate || "")}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       );
     }
@@ -2308,6 +2338,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
                 </div>
               </div>
               <TagRow tags={project.tags} />
+              {project.dueDate && <p className="project-due-line">{projectDueText(project.dueDate)}</p>}
               {project.note && <p className="note">{project.note}</p>}
               <h4>関連プロンプト</h4>
               <div className="mini-list">
@@ -2396,32 +2427,86 @@ function MjModal({ item, onClose, onSave }: any) {
 
 function ProjectModal({ item, prompts, settings, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item, tagInput: tagText(item.tags) });
+  const promptChoices = [...prompts].sort((a: MyPrompt, b: MyPrompt) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)));
+  const mjChoices = [...settings].sort((a: any, b: any) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   const toggle = (key: "promptIds" | "mjIds", id: string) => {
     const exists = draft[key].includes(id);
     setDraft({ ...draft, [key]: exists ? draft[key].filter((item: string) => item !== id) : [...draft[key], id] });
   };
   return (
     <Modal title={item.id ? "プロジェクトを編集" : "プロジェクトを追加"} onClose={onClose}>
-      <FormGrid>
-        <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="プロジェクト名" />
-        <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
-        <textarea value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="メモ" />
-        <input value={draft.tagInput} onChange={(e) => setDraft({ ...draft, tagInput: e.target.value })} placeholder="タグ（カンマ区切り）" />
-        <SelectList title="関連プロンプト" items={prompts} selected={draft.promptIds} labelKey="title" onToggle={(id: string) => toggle("promptIds", id)} />
-        <SelectList title="関連ミッドジャーニー設定" items={settings} selected={draft.mjIds} labelKey="title" onToggle={(id: string) => toggle("mjIds", id)} />
+      <FormGrid className="project-edit-form">
+        <ProjectField label="プロジェクト名">
+          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="例：Christmas Sticker Set" />
+        </ProjectField>
+        <ProjectField label="概要">
+          <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="制作する素材セットの内容を書きます" />
+        </ProjectField>
+        <ProjectField label="目標・ゴール">
+          <textarea value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="点数、販売開始日、やることなど" />
+        </ProjectField>
+        <ProjectField label="タグ">
+          <input value={draft.tagInput} onChange={(e) => setDraft({ ...draft, tagInput: e.target.value })} placeholder="季節商品, ステッカー, Etsy" />
+        </ProjectField>
+        <ProjectField label="達成予定日">
+          <input type="date" value={draft.dueDate || ""} onChange={(e) => setDraft({ ...draft, dueDate: e.target.value })} />
+        </ProjectField>
+        <label className="check project-remind-check">
+          <input type="checkbox" checked={Boolean(draft.remindOnHome)} onChange={(e) => setDraft({ ...draft, remindOnHome: e.target.checked })} />
+          ホーム画面でリマインドする
+        </label>
+        <SelectList
+          title="関連プロンプト"
+          description="お気に入りを優先して10件表示します。もっと探すときは検索できます。"
+          items={promptChoices}
+          selected={draft.promptIds}
+          getLabel={(choice: MyPrompt) => choice.title || "無題のプロンプト"}
+          getText={(choice: MyPrompt) => `${choice.title} ${choice.description} ${choice.prompt} ${choice.note} ${(choice.tags || []).join(" ")}`}
+          onToggle={(id: string) => toggle("promptIds", id)}
+        />
+        <SelectList
+          title="関連Midjourney設定"
+          description="保存日の新しいものを優先して10件表示します。"
+          items={mjChoices}
+          selected={draft.mjIds}
+          getLabel={(choice: any) => choice.title || promptTitleFromText(choice.prompt || choice.fullPrompt || choice.basePrompt || choice.extra || "")}
+          getText={(choice: any) => `${choice.title || ""} ${choice.prompt || choice.fullPrompt || choice.basePrompt || ""} ${choice.parameters || choice.extra || ""} ${choice.memo || choice.note || ""}`}
+          onToggle={(id: string) => toggle("mjIds", id)}
+        />
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave({ ...draft, tags: splitTags(draft.tagInput) })} />
     </Modal>
   );
 }
 
-function SelectList({ title, items, selected, labelKey, onToggle }: any) {
+function ProjectField({ label, children }: any) {
+  return (
+    <label className="project-field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function SelectList({ title, description, items, selected, getLabel, getText, onToggle }: any) {
+  const [query, setQuery] = React.useState("");
+  const [expanded, setExpanded] = React.useState(false);
+  const filtered = items.filter((item: any) => lowerIncludes(getText(item), query));
+  const shown = (expanded || query ? filtered : filtered.slice(0, 10));
   return (
     <div className="select-list">
-      <strong>{title}</strong>
-      {items.length ? items.map((item: any) => (
-        <label key={item.id} className="check"><input type="checkbox" checked={selected.includes(item.id)} onChange={() => onToggle(item.id)} /> {item[labelKey]}</label>
+      <div className="select-list-head">
+        <div>
+          <strong>{title}</strong>
+          {description && <small>{description}</small>}
+        </div>
+      </div>
+      <input className="select-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${title}を検索...`} />
+      {items.length ? shown.map((item: any) => (
+        <label key={item.id} className="check select-row"><input type="checkbox" checked={selected.includes(item.id)} onChange={() => onToggle(item.id)} /> {getLabel(item)}</label>
       )) : <small>先に項目を追加してください。</small>}
+      {items.length > 10 && !expanded && !query && <button className="ghost more-button" type="button" onClick={() => setExpanded(true)}>もっと見る</button>}
+      {items.length > 0 && !shown.length && <small>一致する項目がありません。</small>}
     </div>
   );
 }
@@ -2453,8 +2538,8 @@ function Empty({ text }: any) {
   return <div className="empty">{text}</div>;
 }
 
-function FormGrid({ children }: any) {
-  return <div className="form-grid">{children}</div>;
+function FormGrid({ children, className = "" }: any) {
+  return <div className={`form-grid ${className}`.trim()}>{children}</div>;
 }
 
 function Modal({ title, children, onClose, hideClose }: any) {
