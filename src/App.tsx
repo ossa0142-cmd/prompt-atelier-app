@@ -45,6 +45,7 @@ type MjSetting = {
   description: string;
   imageUrl?: string;
   images?: string[];
+  prompt?: string;
   memo?: string;
   basePrompt?: string;
   originalPrompt?: string;
@@ -1730,6 +1731,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
       description: memo,
       imageUrl: images[0] || "",
       images,
+      prompt: combinePrompt(basePrompt, parsed.params.length ? parsed.params : selectedParams),
       memo,
       note: memo,
       basePrompt,
@@ -1761,6 +1763,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
       description: "",
       memo: "",
       note: "",
+      prompt: "",
       basePrompt: "",
       originalPrompt: "",
       translatedPrompt: "",
@@ -1906,28 +1909,44 @@ function MJImageSlider({ images, onOpen, onEmptyClick }: any) {
   }, [images?.length]);
   if (!images?.length) {
     return (
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         className="mj-card-image image-only-button"
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
           onEmptyClick?.();
         }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            onEmptyClick?.();
+          }
+        }}
         aria-label="画像を追加"
       >
         <PromptThumbnail imageUrl="" />
-      </button>
+      </div>
     );
   }
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       className="mj-card-image image-only-button"
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
         onOpen(index);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          onOpen(index);
+        }
       }}
       aria-label="画像を拡大"
     >
@@ -1937,7 +1956,7 @@ function MJImageSlider({ images, onOpen, onEmptyClick }: any) {
           {images.map((_: string, dotIndex: number) => <i key={dotIndex} className={dotIndex === index ? "active" : ""} />)}
         </span>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -1961,8 +1980,11 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
       setImageMessage("画像は最大5枚までです");
       return;
     }
-    if (files.length > remaining) setImageMessage("画像は最大5枚までです");
-    const nextImages = await Promise.all(files.slice(0, remaining).map(fileToDataUrl));
+    if (files.length > remaining) {
+      setImageMessage("画像は最大5枚までです");
+      return;
+    }
+    const nextImages = await Promise.all(files.map(fileToDataUrl));
     const images = [...(item.images || []), ...nextImages].slice(0, 5);
     setImageMessage("");
     onUpdate({ images, imageUrl: images[0] || "" });
@@ -1975,6 +1997,7 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
     const parsed = parseMidjourneyPrompt(value);
     onUpdate({
       title: item.title || promptCardHeading(value),
+      prompt: value,
       basePrompt: parsed.basePrompt,
       originalPrompt: value,
       englishPrompt: value,
@@ -2019,7 +2042,7 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
           ref={fileInputRef}
           className="visually-hidden-file"
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/webp"
           multiple
           onChange={(event) => {
             if (event.target.files) addImageFiles(event.target.files);
@@ -2128,18 +2151,20 @@ function combinePrompt(basePrompt: string, params: string[]) {
 
 function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
   const legacyPrompt = mjCommandLegacy(item as MjSetting);
-  const fullPrompt = item.fullPrompt || legacyPrompt;
+  const fullPrompt = item.prompt || item.fullPrompt || legacyPrompt;
   const parsed = parseMidjourneyPrompt(fullPrompt);
   const params = item.extractedParams?.length ? item.extractedParams : parsed.params;
   const basePrompt = item.basePrompt || parsed.basePrompt || item.extra || "";
   const originalPrompt = item.originalPrompt || item.englishPrompt || fullPrompt || basePrompt;
   const translatedPrompt = item.translatedPrompt || item.japanesePrompt || "";
+  const images = Array.isArray(item.images) ? item.images.slice(0, 5) : item.imageUrl ? [item.imageUrl] : [];
   return {
     id: item.id || uid(),
     title: item.title || "無題のMJ設定",
     description: item.description || item.memo || item.note || "",
-    images: item.images?.length ? item.images.slice(0, 5) : item.imageUrl ? [item.imageUrl] : [],
-    imageUrl: item.images?.[0] || item.imageUrl || "",
+    images,
+    imageUrl: images[0] || item.imageUrl || "",
+    prompt: fullPrompt || combinePrompt(basePrompt, params),
     memo: item.memo || item.note || item.description || "",
     basePrompt,
     originalPrompt,
@@ -2329,6 +2354,7 @@ function SelectList({ title, items, selected, labelKey, onToggle }: any) {
 }
 
 function mjCommand(item: MjSetting) {
+  if (item.prompt) return item.prompt;
   if (item.fullPrompt) return item.fullPrompt;
   const parsed = parseMidjourneyPrompt(mjCommandLegacy(item));
   return combinePrompt(item.basePrompt || parsed.basePrompt || item.extra || "", item.extractedParams?.length ? item.extractedParams : parsed.params);
