@@ -939,12 +939,74 @@ main {
 
 .text-prompt-area {
   border-top: 1px dashed rgba(216, 201, 182, 0.9);
-  padding-top: 6px;
+  padding-top: 10px;
 }
 
 .text-prompt-list {
   display: grid;
+  gap: 14px;
+}
+
+.text-stock-frame {
+  display: grid;
   gap: 12px;
+  border: 1px solid rgba(226, 218, 209, 0.95);
+  border-radius: 16px;
+  background: #fff;
+  padding: 18px;
+}
+
+.text-stock-frame input,
+.text-stock-frame textarea {
+  border: 1px solid rgba(226, 218, 209, 0.86);
+  border-radius: 12px;
+  background: #fffdf9;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 12px 14px;
+}
+
+.text-stock-frame input {
+  font-weight: 800;
+}
+
+.text-stock-frame textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.text-stock-frame input:focus,
+.text-stock-frame textarea:focus {
+  border-color: #cdbba6;
+  box-shadow: 0 0 0 4px rgba(229, 211, 192, 0.28);
+  outline: none;
+}
+
+.text-stock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.text-stock-actions button {
+  min-height: 40px;
+  padding: 9px 13px;
+  font-size: 13px;
+}
+
+.text-stock-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.add-stock-button {
+  width: fit-content;
+  border: 1px dashed rgba(184, 154, 131, 0.8);
+  background: #fffdf9;
+  color: #725b49;
+  font-weight: 900;
+  padding: 12px 18px;
 }
 
 .text-prompt-card {

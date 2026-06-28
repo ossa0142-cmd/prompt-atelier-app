@@ -28,6 +28,7 @@ type LibraryBoardPrompt = LibraryPrompt & {
   categoryId: string;
   japaneseTranslation?: string;
   memo?: string;
+  isTextStock?: boolean;
 };
 
 type MyPrompt = LibraryPrompt & {
@@ -657,6 +658,7 @@ function Library({ copyText }: any) {
   const [translationPrompt, setTranslationPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [memoPrompt, setMemoPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
+  const [stockFrameCounts, setStockFrameCounts] = React.useState<Record<string, number>>({});
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const currentCategory = selectedCategory ? boardCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
@@ -665,10 +667,14 @@ function Library({ copyText }: any) {
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
-  const categoryPromptCount = currentCategory ? boardPrompts.filter((item) => item.categoryId === currentCategory.id).length : 0;
-  const canAddPrompt = categoryPromptCount < 100;
-  const imagePrompts = filteredPrompts.slice(0, 20);
-  const textPrompts = filteredPrompts.slice(20);
+  const categoryPrompts = currentCategory ? boardPrompts.filter((item) => item.categoryId === currentCategory.id) : [];
+  const imagePrompts = filteredPrompts.filter((item) => !item.isTextStock).slice(0, 20);
+  const textPrompts = filteredPrompts.filter((item) => item.isTextStock);
+  const textStockCount = categoryPrompts.filter((item) => item.isTextStock).length;
+  const canAddImagePrompt = imagePrompts.length < 20;
+  const canAddTextStock = textStockCount < 100;
+  const stockFrameCount = currentCategory ? Math.min(100, Math.max(5, stockFrameCounts[currentCategory.id] || 5, textPrompts.length)) : 5;
+  const textStockSlots = currentCategory ? Array.from({ length: stockFrameCount }, (_, index) => textPrompts[index] || null) : [];
   const imageSlotCount = imagePrompts.length < 20
     ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4)
     : 20;
@@ -682,8 +688,9 @@ function Library({ copyText }: any) {
     prompt: "",
     memo: "",
     tags: [],
-    imageUrl: textOnly ? "__text_only__" : "",
+    imageUrl: "",
     japaneseTranslation: "",
+    isTextStock: textOnly,
   });
   const saveCategory = (item: MockupCategory) => {
     const next = { ...item, id: item.id || uid(), coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7") };
@@ -692,8 +699,9 @@ function Library({ copyText }: any) {
   };
   const savePrompt = (item: LibraryBoardPrompt) => {
     const category = boardCategories.find((category) => category.id === item.categoryId) || currentCategory || boardCategories[0];
-    const countForCategory = boardPrompts.filter((prompt) => prompt.categoryId === category.id).length;
-    if (!item.id && countForCategory >= 100) {
+    const countForKind = boardPrompts.filter((prompt) => prompt.categoryId === category.id && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
+    const limit = item.isTextStock ? 100 : 20;
+    if (!item.id && countForKind >= limit) {
       setEditingPrompt(null);
       return;
     }
@@ -702,10 +710,11 @@ function Library({ copyText }: any) {
       id: item.id || uid(),
       categoryId: item.categoryId || category.id,
       category: "ステッカーモックアップ" as Category,
-      imageUrl: item.imageUrl === "__text_only__" ? "" : item.imageUrl || "",
+      imageUrl: item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || "",
       tags: item.tags || [],
+      isTextStock: Boolean(item.isTextStock),
     };
     setBoardPrompts((items: LibraryBoardPrompt[]) => item.id ? items.map((prompt) => prompt.id === item.id ? next : prompt) : [...items, next]);
     setEditingPrompt(null);
@@ -714,12 +723,20 @@ function Library({ copyText }: any) {
     setBoardCategories((items: MockupCategory[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
   };
   const duplicatePrompt = (item: LibraryBoardPrompt) => {
-    const countForCategory = boardPrompts.filter((prompt) => prompt.categoryId === item.categoryId).length;
-    if (countForCategory >= 100) return;
+    const countForKind = boardPrompts.filter((prompt) => prompt.categoryId === item.categoryId && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
+    if (countForKind >= (item.isTextStock ? 100 : 20)) return;
     setBoardPrompts((items: LibraryBoardPrompt[]) => [...items, { ...item, id: uid(), title: `${item.title} コピー` }]);
   };
   const updatePrompt = (id: string, patch: Partial<LibraryBoardPrompt>) => {
     setBoardPrompts((items: LibraryBoardPrompt[]) => items.map((prompt) => prompt.id === id ? { ...prompt, ...patch } : prompt));
+  };
+  const saveTextStockFrame = (item: LibraryBoardPrompt) => {
+    if (!item.title.trim() && !item.prompt.trim()) return;
+    savePrompt({ ...item, isTextStock: true, imageUrl: "" });
+  };
+  const addTextStockFrame = () => {
+    if (!currentCategory || !canAddTextStock) return;
+    setStockFrameCounts((counts) => ({ ...counts, [currentCategory.id]: Math.min(100, stockFrameCount + 1) }));
   };
   return (
     <section className="page library-page">
@@ -761,7 +778,7 @@ function Library({ copyText }: any) {
               <h2>{currentCategory.title}</h2>
               <p>{currentCategory.description}</p>
             </div>
-            <span className="prompt-count-pill">{categoryPromptCount} / 100件</span>
+            <span className="prompt-count-pill">画像 {imagePrompts.length} / 20・ストック {textStockCount} / 100</span>
           </div>
           <Filters>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${currentCategory.title}内を検索...`} />
@@ -787,7 +804,7 @@ function Library({ copyText }: any) {
                   showTranslation={() => setTranslationPrompt(prompt)}
                   showMemo={() => setMemoPrompt(prompt)}
                 />
-              ) : canAddPrompt ? (
+              ) : canAddImagePrompt ? (
                 <button className="add-prompt-card" key={`empty-prompt-${index}`} onClick={() => setEditingPrompt(createBlankLibraryPrompt())}>
                   <span>＋</span>
                   <strong>新しいプロンプト</strong>
@@ -798,33 +815,28 @@ function Library({ copyText }: any) {
           <section className="prompt-area text-prompt-area">
             <div className="prompt-area-head">
               <div>
-                <h3>プロンプトのみ</h3>
-                <p>21個目以降はこちらに保存されます。最大100個まで保存できます。</p>
+                <h3>プロンプトストック</h3>
+                <p>画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
               </div>
-              {canAddPrompt && categoryPromptCount >= 20 && (
-                <button className="primary" onClick={() => setEditingPrompt(createBlankLibraryPrompt(true))}>＋ テキストプロンプトを追加</button>
-              )}
             </div>
-            {textPrompts.length ? (
-              <div className="text-prompt-list">
-                {textPrompts.map((prompt) => (
-                  <TextPromptCard
-                    key={prompt.id}
-                    prompt={prompt}
-                    inlineEdit={inlineEdit}
-                    setInlineEdit={setInlineEdit}
-                    updatePrompt={updatePrompt}
-                    copyText={copyText}
-                    showTranslation={() => setTranslationPrompt(prompt)}
-                    showMemo={() => setMemoPrompt(prompt)}
-                    onDelete={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-prompt-empty">画像付きプロンプトが20個を超えると、こちらにテキストだけのプロンプトが表示されます。</p>
+            <div className="text-prompt-list">
+              {textStockSlots.map((prompt, index) => (
+                <TextStockFrame
+                  key={prompt?.id || `stock-frame-${index}`}
+                  prompt={prompt}
+                  blankPrompt={createBlankLibraryPrompt(true)}
+                  onCreate={saveTextStockFrame}
+                  onUpdate={updatePrompt}
+                  copyText={copyText}
+                  showTranslation={() => prompt && setTranslationPrompt(prompt)}
+                  showMemo={() => prompt && setMemoPrompt(prompt)}
+                />
+              ))}
+            </div>
+            {canAddTextStock && textStockCount >= stockFrameCount && (
+              <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
             )}
-            {!canAddPrompt && <p className="limit-message">このカテゴリの保存上限に達しました</p>}
+            {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
           </section>
           <button className="back-to-library" onClick={() => { setSelectedCategory(null); setQuery(""); }}>← ライブラリへ戻る</button>
         </>
@@ -889,48 +901,44 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
   );
 }
 
-function TextPromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, copyText, showTranslation, showMemo, onDelete }: any) {
-  const editField = (field: string) => setInlineEdit({ id: prompt.id, field });
-  const saveField = (field: string, value: string) => {
-    updatePrompt(prompt.id, { [field]: value });
-    setInlineEdit(null);
+function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showTranslation, showMemo }: any) {
+  const [title, setTitle] = React.useState(prompt?.title || "");
+  const [promptText, setPromptText] = React.useState(prompt?.prompt || "");
+  React.useEffect(() => {
+    setTitle(prompt?.title || "");
+    setPromptText(prompt?.prompt || "");
+  }, [prompt?.id, prompt?.title, prompt?.prompt]);
+  const isSaved = Boolean(prompt?.id);
+  const save = (patch: Partial<LibraryBoardPrompt>) => {
+    const next = { ...blankPrompt, ...prompt, title, prompt: promptText, ...patch, isTextStock: true, imageUrl: "" };
+    if (isSaved) {
+      onUpdate(prompt.id, patch);
+      return;
+    }
+    if ((next.title || "").trim() || (next.prompt || "").trim()) onCreate(next);
+  };
+  const copyStockPrompt = (event: any) => {
+    event.stopPropagation();
+    copyText(promptText, prompt?.id);
   };
   return (
-    <article className="text-prompt-card">
-      <div className="text-prompt-main">
-        <InlineEditable
-          className="inline-title text-title"
-          value={prompt.title}
-          placeholder="タイトル"
-          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "title"}
-          onEdit={() => editField("title")}
-          onSave={(title: string) => saveField("title", title)}
-        />
-        <InlineEditable
-          className="inline-prompt text-only-prompt"
-          multiline
-          value={prompt.prompt}
-          placeholder="プロンプト本文"
-          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "prompt"}
-          onEdit={() => editField("prompt")}
-          onSave={(promptText: string) => saveField("prompt", promptText)}
-        />
-        <InlineEditable
-          className="inline-prompt text-translation-edit"
-          multiline
-          value={prompt.japaneseTranslation || ""}
-          placeholder="和訳本文"
-          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "japaneseTranslation"}
-          onEdit={() => editField("japaneseTranslation")}
-          onSave={(translation: string) => saveField("japaneseTranslation", translation)}
-        />
-      </div>
-      <div className="text-prompt-actions">
-        <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
-        <button onClick={(event) => { event.stopPropagation(); showTranslation(); }}>和訳</button>
-        <button onClick={(event) => { event.stopPropagation(); showMemo(); }}>メモ</button>
-        <button onClick={(event) => { event.stopPropagation(); editField("title"); }}>編集</button>
-        <button className="danger" onClick={(event) => { event.stopPropagation(); onDelete(); }}>削除</button>
+    <article className="text-stock-frame">
+      <input
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        onBlur={() => save({ title })}
+        placeholder="タイトル"
+      />
+      <textarea
+        value={promptText}
+        onChange={(event) => setPromptText(event.target.value)}
+        onBlur={() => save({ prompt: promptText })}
+        placeholder="プロンプト本文"
+      />
+      <div className="text-stock-actions">
+        <button className="primary" onClick={copyStockPrompt} disabled={!promptText.trim()}>📋 プロンプトをコピー</button>
+        <button onClick={(event) => { event.stopPropagation(); showTranslation(); }} disabled={!isSaved}>和訳</button>
+        <button onClick={(event) => { event.stopPropagation(); showMemo(); }} disabled={!isSaved}>メモ</button>
       </div>
     </article>
   );
