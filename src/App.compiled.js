@@ -192,6 +192,7 @@ const mjParamValue = (params, key) => {
   return found ? found.replace(key, "").trim() : "";
 };
 const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
+const getDraftJapanesePrompt = englishPrompt => englishPrompt;
 const defaultHomeSettings = {
   themeId: "cute",
   bannerImageUrl: "",
@@ -1947,7 +1948,7 @@ function Midjourney({
   const [basePrompt, setBasePrompt] = React.useState("");
   const [englishPrompt, setEnglishPrompt] = React.useState("");
   const [japanesePrompt, setJapanesePrompt] = React.useState("");
-  const [promptLang, setPromptLang] = React.useState("en");
+  const [promptLanguage, setPromptLanguage] = React.useState("en");
   const [selectedParams, setSelectedParams] = React.useState([]);
   const [fullPrompt, setFullPrompt] = React.useState("");
   const [title, setTitle] = React.useState("");
@@ -1966,21 +1967,25 @@ function Midjourney({
   }, (_, index) => filtered[index] || null);
   const updateBasePrompt = value => {
     setBasePrompt(value);
-    if (promptLang === "en") setEnglishPrompt(value);
-    if (promptLang === "ja") setJapanesePrompt(value);
+    if (promptLanguage === "en") setEnglishPrompt(value);
+    if (promptLanguage === "ja") setJapanesePrompt(value);
   };
   const toggleTranslation = () => {
-    if (promptLang === "en") {
-      setEnglishPrompt(basePrompt);
-      const next = japanesePrompt || basePrompt;
+    if (promptLanguage === "en") {
+      const english = basePrompt || englishPrompt;
+      const next = japanesePrompt || getDraftJapanesePrompt(english);
+      setEnglishPrompt(english);
+      setJapanesePrompt(next);
       setBasePrompt(next);
-      setPromptLang("ja");
+      setPromptLanguage("ja");
       return;
     }
-    setJapanesePrompt(basePrompt);
-    const next = englishPrompt || basePrompt;
+    const japanese = basePrompt || japanesePrompt;
+    const next = englishPrompt || japanese || "";
+    setJapanesePrompt(japanese);
+    setEnglishPrompt(next);
     setBasePrompt(next);
-    setPromptLang("en");
+    setPromptLanguage("en");
   };
   const applyParamFromCard = param => {
     const key = mjParamKey(param);
@@ -2006,7 +2011,7 @@ function Midjourney({
     setBasePrompt("");
     setEnglishPrompt("");
     setJapanesePrompt("");
-    setPromptLang("en");
+    setPromptLanguage("en");
     setSelectedParams([]);
     setFullPrompt("");
     setTitle("");
@@ -2027,8 +2032,8 @@ function Midjourney({
       memo,
       note: memo,
       basePrompt,
-      englishPrompt: promptLang === "en" ? basePrompt : englishPrompt,
-      japanesePrompt: promptLang === "ja" ? basePrompt : japanesePrompt,
+      englishPrompt: promptLanguage === "en" ? basePrompt : englishPrompt,
+      japanesePrompt: promptLanguage === "ja" ? basePrompt : japanesePrompt,
       extractedParams: parsed.params.length ? parsed.params : selectedParams,
       fullPrompt: combinePrompt(basePrompt, parsed.params.length ? parsed.params : selectedParams),
       extra: basePrompt,
@@ -2037,18 +2042,21 @@ function Midjourney({
     setSettings(items => editingId ? items.map(item => item.id === editingId ? normalized : item) : [normalized, ...items]);
     clearComposer();
   };
-  const editCard = item => {
-    const normalized = normalizeMjSetting(item);
-    setEditingId(normalized.id);
-    setTitle(normalized.title);
-    setImageUrl((normalized.images || []).join("\n"));
-    setMemo(normalized.memo || normalized.note || "");
-    setBasePrompt(normalized.basePrompt || "");
-    setEnglishPrompt(normalized.englishPrompt || normalized.basePrompt || "");
-    setJapanesePrompt(normalized.japanesePrompt || "");
-    setPromptLang("en");
-    setSelectedParams(normalized.extractedParams || []);
-    setFullPrompt((normalized.extractedParams || []).join(" "));
+  const updateSavedSetting = (id, patch) => {
+    setSettings(items => items.map(setting => {
+      if (setting.id !== id) return setting;
+      const current = normalizeMjSetting(setting);
+      const merged = normalizeMjSetting({
+        ...current,
+        ...patch,
+        id,
+        createdAt: current.createdAt
+      });
+      return {
+        ...merged,
+        createdAt: current.createdAt
+      };
+    }));
   };
   return /*#__PURE__*/React.createElement("section", {
     className: "page mj-board-page"
@@ -2069,7 +2077,7 @@ function Midjourney({
     className: "mj-field-head"
   }, /*#__PURE__*/React.createElement("h3", null, "ベースプロンプト"), /*#__PURE__*/React.createElement("button", {
     onClick: toggleTranslation
-  }, "和訳")), /*#__PURE__*/React.createElement("textarea", {
+  }, promptLanguage === "en" ? "和訳" : "英語に戻す")), /*#__PURE__*/React.createElement("textarea", {
     className: "mj-base-input",
     value: basePrompt,
     onChange: event => updateBasePrompt(event.target.value),
@@ -2128,45 +2136,19 @@ function Midjourney({
       }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいMJプロンプト")) : null;
     }
     const item = normalizeMjSetting(raw);
-    return /*#__PURE__*/React.createElement("article", {
-      className: "mj-card",
-      key: item.id
-    }, /*#__PURE__*/React.createElement(MJImageSlider, {
-      images: item.images || [],
-      onOpen: imageIndex => setImageModal({
+    return /*#__PURE__*/React.createElement(MJEditableCard, {
+      key: item.id,
+      item: item,
+      onUpdate: patch => updateSavedSetting(item.id, patch),
+      onDelete: () => setSettings(items => items.filter(setting => setting.id !== item.id)),
+      onCopyPrompt: () => copyText(mjCommand(item), item.id),
+      onCopyParams: () => copyText((item.extractedParams || []).join(" "), item.id),
+      onParamClick: applyParamFromCard,
+      onOpenImage: imageIndex => setImageModal({
         images: item.images || [],
         index: imageIndex
       })
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "mj-card-body"
-    }, /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("small", {
-      className: "mj-date"
-    }, "保存日：", formatSavedAt(item.createdAt)), item.memo && /*#__PURE__*/React.createElement("p", null, item.memo), /*#__PURE__*/React.createElement("div", {
-      className: "mj-card-section"
-    }, /*#__PURE__*/React.createElement("span", null, "ベースプロンプト"), /*#__PURE__*/React.createElement("p", null, item.basePrompt || "未設定")), /*#__PURE__*/React.createElement("div", {
-      className: "mj-card-section"
-    }, /*#__PURE__*/React.createElement("span", null, "完成プロンプト"), /*#__PURE__*/React.createElement("p", {
-      className: "mj-prompt-snippet"
-    }, mjCommand(item))), /*#__PURE__*/React.createElement("span", {
-      className: "mj-param-label"
-    }, "選択済みパラメータ"), /*#__PURE__*/React.createElement("div", {
-      className: "mj-param-pills compact"
-    }, (item.extractedParams || []).length ? (item.extractedParams || []).map(param => /*#__PURE__*/React.createElement("button", {
-      key: param,
-      onClick: () => applyParamFromCard(param)
-    }, param)) : /*#__PURE__*/React.createElement("small", null, "パラメータなし")), /*#__PURE__*/React.createElement("div", {
-      className: "mj-card-actions"
-    }, /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: () => copyText(mjCommand(item), item.id)
-    }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => copyText((item.extractedParams || []).join(" "), item.id)
-    }, "📋 パラメータをコピー"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => editCard(item)
-    }, "編集"), /*#__PURE__*/React.createElement("button", {
-      className: "danger",
-      onClick: () => setSettings(items => items.filter(setting => setting.id !== item.id))
-    }, "削除"))));
+    });
   }), settings.length >= 50 && /*#__PURE__*/React.createElement("p", {
     className: "limit-message"
   }, "保存上限（50件）に達しました")))), imageModal && /*#__PURE__*/React.createElement(ImagePreviewModal, {
@@ -2188,7 +2170,8 @@ function splitImageUrls(value) {
 }
 function MJImageSlider({
   images,
-  onOpen
+  onOpen,
+  onEmptyClick
 }) {
   const [index, setIndex] = React.useState(0);
   React.useEffect(() => {
@@ -2199,8 +2182,9 @@ function MJImageSlider({
   if (!images?.length) {
     return /*#__PURE__*/React.createElement("button", {
       className: "mj-card-image image-only-button",
-      "aria-label": "画像を拡大",
-      disabled: true
+      onClick: onEmptyClick,
+      "aria-label": "画像を追加",
+      disabled: !onEmptyClick
     }, /*#__PURE__*/React.createElement(PromptThumbnail, {
       imageUrl: ""
     }));
@@ -2218,6 +2202,141 @@ function MJImageSlider({
     key: dotIndex,
     className: dotIndex === index ? "active" : ""
   }))));
+}
+function MJEditableCard({
+  item,
+  onUpdate,
+  onDelete,
+  onCopyPrompt,
+  onCopyParams,
+  onParamClick,
+  onOpenImage
+}) {
+  const [imageEditorOpen, setImageEditorOpen] = React.useState(false);
+  const [imageDraft, setImageDraft] = React.useState((item.images || []).join("\n"));
+  React.useEffect(() => {
+    setImageDraft((item.images || []).join("\n"));
+  }, [item.id, (item.images || []).join("|")]);
+  const params = item.extractedParams || [];
+  const paramsText = params.join(" ");
+  const saveImages = value => {
+    const images = splitImageUrls(value);
+    onUpdate({
+      images,
+      imageUrl: images[0] || ""
+    });
+  };
+  const removeImage = index => {
+    const images = (item.images || []).filter((_, imageIndex) => imageIndex !== index);
+    const nextDraft = images.join("\n");
+    setImageDraft(nextDraft);
+    onUpdate({
+      images,
+      imageUrl: images[0] || ""
+    });
+  };
+  const updateBasePrompt = value => {
+    onUpdate({
+      basePrompt: value,
+      englishPrompt: value,
+      extra: value,
+      fullPrompt: combinePrompt(value, params)
+    });
+  };
+  const updateParams = value => {
+    const nextParams = parseMidjourneyPrompt(value).params;
+    onUpdate({
+      extractedParams: nextParams,
+      fullPrompt: combinePrompt(item.basePrompt || "", nextParams)
+    });
+  };
+  return /*#__PURE__*/React.createElement("article", {
+    className: "mj-card editable-mj-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mj-image-edit-zone"
+  }, /*#__PURE__*/React.createElement(MJImageSlider, {
+    images: item.images || [],
+    onOpen: onOpenImage,
+    onEmptyClick: () => setImageEditorOpen(true)
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "image-edit-toggle",
+    onClick: () => setImageEditorOpen(open => !open)
+  }, "画像URLを編集")), imageEditorOpen && /*#__PURE__*/React.createElement("div", {
+    className: "mj-image-editor"
+  }, /*#__PURE__*/React.createElement("textarea", {
+    value: imageDraft,
+    onChange: event => setImageDraft(event.target.value),
+    onBlur: () => saveImages(imageDraft),
+    placeholder: "画像URLを最大5件まで入力（改行またはカンマ区切り）"
+  }), (item.images || []).length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "image-url-list"
+  }, (item.images || []).map((image, index) => /*#__PURE__*/React.createElement("button", {
+    key: `${image}-${index}`,
+    onClick: () => removeImage(index)
+  }, "画像", index + 1, "を削除"))), /*#__PURE__*/React.createElement("div", {
+    className: "mj-image-editor-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => saveImages(imageDraft)
+  }, "画像を保存"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setImageDraft("");
+      onUpdate({
+        images: [],
+        imageUrl: ""
+      });
+    }
+  }, "すべて削除"))), /*#__PURE__*/React.createElement("div", {
+    className: "mj-card-body"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "mj-card-input title",
+    value: item.title,
+    onChange: event => onUpdate({
+      title: event.target.value || "無題のMJ設定"
+    }),
+    placeholder: "タイトル"
+  }), /*#__PURE__*/React.createElement("small", {
+    className: "mj-date"
+  }, "保存日：", formatSavedAt(item.createdAt)), /*#__PURE__*/React.createElement("label", {
+    className: "mj-edit-field"
+  }, /*#__PURE__*/React.createElement("span", null, "ベースプロンプト"), /*#__PURE__*/React.createElement("textarea", {
+    className: "mj-card-textarea",
+    value: item.basePrompt || "",
+    onChange: event => updateBasePrompt(event.target.value),
+    placeholder: "ベースプロンプト"
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "mj-edit-field"
+  }, /*#__PURE__*/React.createElement("span", null, "パラメータ"), /*#__PURE__*/React.createElement("textarea", {
+    className: "mj-card-textarea param",
+    value: paramsText,
+    onChange: event => updateParams(event.target.value),
+    placeholder: "--ar 1:1 --stylize 50 --raw"
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "mj-edit-field"
+  }, /*#__PURE__*/React.createElement("span", null, "メモ"), /*#__PURE__*/React.createElement("textarea", {
+    className: "mj-card-textarea memo",
+    value: item.memo || "",
+    onChange: event => onUpdate({
+      memo: event.target.value,
+      note: event.target.value,
+      description: event.target.value
+    }),
+    placeholder: "メモ"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mj-param-pills compact"
+  }, params.length ? params.map(param => /*#__PURE__*/React.createElement("button", {
+    key: param,
+    onClick: () => onParamClick(param)
+  }, param)) : /*#__PURE__*/React.createElement("small", null, "パラメータなし")), /*#__PURE__*/React.createElement("div", {
+    className: "mj-card-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onCopyPrompt
+  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+    onClick: onCopyParams
+  }, "📋 パラメータをコピー"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: onDelete
+  }, "削除"))));
 }
 function ImagePreviewModal({
   modal,

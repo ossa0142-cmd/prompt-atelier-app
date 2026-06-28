@@ -1430,6 +1430,108 @@ main {
   padding: 14px;
 }
 
+.editable-mj-card .mj-card-body {
+  gap: 10px;
+}
+
+.mj-image-edit-zone {
+  position: relative;
+}
+
+.image-edit-toggle {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-height: 30px;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 253, 249, 0.88);
+  box-shadow: 0 8px 18px rgba(73, 58, 45, 0.08);
+  color: var(--ink);
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.mj-image-editor {
+  display: grid;
+  gap: 9px;
+  border-bottom: 1px solid rgba(232, 222, 209, 0.82);
+  background: rgba(255, 253, 249, 0.78);
+  padding: 12px;
+}
+
+.mj-image-editor textarea {
+  min-height: 84px;
+  border-radius: 16px;
+  background: #fffdf9;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.image-url-list,
+.mj-image-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.image-url-list button,
+.mj-image-editor-actions button {
+  min-height: 30px;
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.mj-card-input,
+.mj-card-textarea {
+  width: 100%;
+  border: 1px solid rgba(232, 222, 209, 0.86);
+  border-radius: 16px;
+  background: rgba(255, 253, 249, 0.9);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 10px 11px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.mj-card-input:focus,
+.mj-card-textarea:focus {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+  background: #fffdf9;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+  outline: none;
+}
+
+.mj-card-input.title {
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.mj-edit-field {
+  display: grid;
+  gap: 6px;
+}
+
+.mj-edit-field > span {
+  color: color-mix(in srgb, var(--muted) 84%, var(--ink));
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.mj-card-textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.mj-card-textarea.param {
+  min-height: 54px;
+}
+
+.mj-card-textarea.memo {
+  min-height: 62px;
+}
+
 .mj-card-body h3 {
   display: -webkit-box;
   margin-bottom: 0;
