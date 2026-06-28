@@ -665,13 +665,15 @@ function Library({ copyText }: any) {
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
-  const promptSlotCount = currentCategory
-    ? filteredPrompts.length < 10
-      ? 10
-      : Math.ceil((filteredPrompts.length + 1) / 5) * 5
-    : 0;
-  const promptSlots = currentCategory ? Array.from({ length: promptSlotCount }, (_, index) => filteredPrompts[index] || null) : [];
-  const createBlankLibraryPrompt = () => ({
+  const categoryPromptCount = currentCategory ? boardPrompts.filter((item) => item.categoryId === currentCategory.id).length : 0;
+  const canAddPrompt = categoryPromptCount < 100;
+  const imagePrompts = filteredPrompts.slice(0, 20);
+  const textPrompts = filteredPrompts.slice(20);
+  const imageSlotCount = imagePrompts.length < 20
+    ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4)
+    : 20;
+  const imagePromptSlots = currentCategory ? Array.from({ length: imageSlotCount }, (_, index) => imagePrompts[index] || null) : [];
+  const createBlankLibraryPrompt = (textOnly = false) => ({
     id: "",
     title: "",
     category: "ステッカーモックアップ" as Category,
@@ -680,7 +682,7 @@ function Library({ copyText }: any) {
     prompt: "",
     memo: "",
     tags: [],
-    imageUrl: "",
+    imageUrl: textOnly ? "__text_only__" : "",
     japaneseTranslation: "",
   });
   const saveCategory = (item: MockupCategory) => {
@@ -690,24 +692,31 @@ function Library({ copyText }: any) {
   };
   const savePrompt = (item: LibraryBoardPrompt) => {
     const category = boardCategories.find((category) => category.id === item.categoryId) || currentCategory || boardCategories[0];
+    const countForCategory = boardPrompts.filter((prompt) => prompt.categoryId === category.id).length;
+    if (!item.id && countForCategory >= 100) {
+      setEditingPrompt(null);
+      return;
+    }
     const next = {
       ...item,
       id: item.id || uid(),
       categoryId: item.categoryId || category.id,
       category: "ステッカーモックアップ" as Category,
-      imageUrl: item.imageUrl || "",
+      imageUrl: item.imageUrl === "__text_only__" ? "" : item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || "",
       tags: item.tags || [],
     };
-    setBoardPrompts((items: LibraryBoardPrompt[]) => item.id ? items.map((prompt) => prompt.id === item.id ? next : prompt) : [next, ...items]);
+    setBoardPrompts((items: LibraryBoardPrompt[]) => item.id ? items.map((prompt) => prompt.id === item.id ? next : prompt) : [...items, next]);
     setEditingPrompt(null);
   };
   const duplicateCategory = (item: MockupCategory) => {
     setBoardCategories((items: MockupCategory[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
   };
   const duplicatePrompt = (item: LibraryBoardPrompt) => {
-    setBoardPrompts((items: LibraryBoardPrompt[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
+    const countForCategory = boardPrompts.filter((prompt) => prompt.categoryId === item.categoryId).length;
+    if (countForCategory >= 100) return;
+    setBoardPrompts((items: LibraryBoardPrompt[]) => [...items, { ...item, id: uid(), title: `${item.title} コピー` }]);
   };
   const updatePrompt = (id: string, patch: Partial<LibraryBoardPrompt>) => {
     setBoardPrompts((items: LibraryBoardPrompt[]) => items.map((prompt) => prompt.id === id ? { ...prompt, ...patch } : prompt));
@@ -747,64 +756,77 @@ function Library({ copyText }: any) {
       ) : (
         <>
           <div className="library-detail-head">
-            <button onClick={() => { setSelectedCategory(null); setQuery(""); }}>← ライブラリへ戻る</button>
             <img className="library-detail-cover" src={currentCategory.coverImage} alt="" />
             <div>
               <h2>{currentCategory.title}</h2>
               <p>{currentCategory.description}</p>
             </div>
-            <button className="primary" onClick={() => setEditingPrompt(createBlankLibraryPrompt())}>＋ このカテゴリにプロンプトを追加</button>
+            <span className="prompt-count-pill">{categoryPromptCount} / 100件</span>
           </div>
           <Filters>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${currentCategory.title}内を検索...`} />
           </Filters>
-          <div className="library-prompt-grid">
-            {promptSlots.map((prompt, index) => prompt ? (
-              <article className="library-prompt-card" key={prompt.id}>
-                <PromptMenuButton
-                  onDuplicate={() => duplicatePrompt(prompt)}
-                  onClearImage={() => updatePrompt(prompt.id, { imageUrl: "" })}
-                  onDelete={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
-                />
-                <EditableThumbnail
+          <section className="prompt-area">
+            <div className="prompt-area-head">
+              <div>
+                <h3>画像付きプロンプト</h3>
+                <p>最大20個まで保存できます。</p>
+              </div>
+            </div>
+            <div className="library-prompt-grid">
+              {imagePromptSlots.map((prompt, index) => prompt ? (
+                <LibraryImagePromptCard
+                  key={prompt.id}
                   prompt={prompt}
-                  isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl"}
-                  onEdit={() => setInlineEdit({ id: prompt.id, field: "imageUrl" })}
-                  onCancel={() => setInlineEdit(null)}
-                  onSave={(imageUrl) => { updatePrompt(prompt.id, { imageUrl }); setInlineEdit(null); }}
+                  inlineEdit={inlineEdit}
+                  setInlineEdit={setInlineEdit}
+                  updatePrompt={updatePrompt}
+                  duplicatePrompt={duplicatePrompt}
+                  deletePrompt={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+                  copyText={copyText}
+                  showTranslation={() => setTranslationPrompt(prompt)}
+                  showMemo={() => setMemoPrompt(prompt)}
                 />
-                <div className="prompt-card-content">
-                  <InlineEditable
-                    className="inline-title"
-                    value={prompt.title}
-                    placeholder="タイトル"
-                    isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "title"}
-                    onEdit={() => setInlineEdit({ id: prompt.id, field: "title" })}
-                    onSave={(title) => { updatePrompt(prompt.id, { title }); setInlineEdit(null); }}
+              ) : canAddPrompt ? (
+                <button className="add-prompt-card" key={`empty-prompt-${index}`} onClick={() => setEditingPrompt(createBlankLibraryPrompt())}>
+                  <span>＋</span>
+                  <strong>新しいプロンプト</strong>
+                </button>
+              ) : null)}
+            </div>
+          </section>
+          <section className="prompt-area text-prompt-area">
+            <div className="prompt-area-head">
+              <div>
+                <h3>プロンプトのみ</h3>
+                <p>21個目以降はこちらに保存されます。最大100個まで保存できます。</p>
+              </div>
+              {canAddPrompt && categoryPromptCount >= 20 && (
+                <button className="primary" onClick={() => setEditingPrompt(createBlankLibraryPrompt(true))}>＋ テキストプロンプトを追加</button>
+              )}
+            </div>
+            {textPrompts.length ? (
+              <div className="text-prompt-list">
+                {textPrompts.map((prompt) => (
+                  <TextPromptCard
+                    key={prompt.id}
+                    prompt={prompt}
+                    inlineEdit={inlineEdit}
+                    setInlineEdit={setInlineEdit}
+                    updatePrompt={updatePrompt}
+                    copyText={copyText}
+                    showTranslation={() => setTranslationPrompt(prompt)}
+                    showMemo={() => setMemoPrompt(prompt)}
+                    onDelete={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
                   />
-                  <InlineEditable
-                    className="inline-prompt"
-                    multiline
-                    value={prompt.prompt}
-                    placeholder="プロンプト本文"
-                    isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "prompt"}
-                    onEdit={() => setInlineEdit({ id: prompt.id, field: "prompt" })}
-                    onSave={(promptText) => { updatePrompt(prompt.id, { prompt: promptText }); setInlineEdit(null); }}
-                  />
-                  <div className="prompt-card-actions">
-                    <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
-                    <button onClick={(event) => { event.stopPropagation(); setTranslationPrompt(prompt); }}>和訳</button>
-                    <button onClick={(event) => { event.stopPropagation(); setMemoPrompt(prompt); }}>メモ</button>
-                  </div>
-                </div>
-              </article>
+                ))}
+              </div>
             ) : (
-              <button className="add-prompt-card" key={`empty-prompt-${index}`} onClick={() => setEditingPrompt(createBlankLibraryPrompt())}>
-                <span>＋</span>
-                <strong>新しいプロンプト</strong>
-              </button>
-            ))}
-          </div>
+              <p className="text-prompt-empty">画像付きプロンプトが20個を超えると、こちらにテキストだけのプロンプトが表示されます。</p>
+            )}
+            {!canAddPrompt && <p className="limit-message">このカテゴリの保存上限に達しました</p>}
+          </section>
+          <button className="back-to-library" onClick={() => { setSelectedCategory(null); setQuery(""); }}>← ライブラリへ戻る</button>
         </>
       )}
       {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
@@ -821,6 +843,96 @@ function Library({ copyText }: any) {
         />
       )}
     </section>
+  );
+}
+
+function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showTranslation, showMemo }: any) {
+  return (
+    <article className="library-prompt-card">
+      <PromptMenuButton
+        onDuplicate={() => duplicatePrompt(prompt)}
+        onClearImage={() => updatePrompt(prompt.id, { imageUrl: "" })}
+        onDelete={deletePrompt}
+      />
+      <EditableThumbnail
+        prompt={prompt}
+        isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl"}
+        onEdit={() => setInlineEdit({ id: prompt.id, field: "imageUrl" })}
+        onCancel={() => setInlineEdit(null)}
+        onSave={(imageUrl: string) => { updatePrompt(prompt.id, { imageUrl }); setInlineEdit(null); }}
+      />
+      <div className="prompt-card-content">
+        <InlineEditable
+          className="inline-title"
+          value={prompt.title}
+          placeholder="タイトル"
+          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "title"}
+          onEdit={() => setInlineEdit({ id: prompt.id, field: "title" })}
+          onSave={(title: string) => { updatePrompt(prompt.id, { title }); setInlineEdit(null); }}
+        />
+        <InlineEditable
+          className="inline-prompt"
+          multiline
+          value={prompt.prompt}
+          placeholder="プロンプト本文"
+          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "prompt"}
+          onEdit={() => setInlineEdit({ id: prompt.id, field: "prompt" })}
+          onSave={(promptText: string) => { updatePrompt(prompt.id, { prompt: promptText }); setInlineEdit(null); }}
+        />
+        <div className="prompt-card-actions">
+          <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
+          <button onClick={(event) => { event.stopPropagation(); showTranslation(); }}>和訳</button>
+          <button onClick={(event) => { event.stopPropagation(); showMemo(); }}>メモ</button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TextPromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, copyText, showTranslation, showMemo, onDelete }: any) {
+  const editField = (field: string) => setInlineEdit({ id: prompt.id, field });
+  const saveField = (field: string, value: string) => {
+    updatePrompt(prompt.id, { [field]: value });
+    setInlineEdit(null);
+  };
+  return (
+    <article className="text-prompt-card">
+      <div className="text-prompt-main">
+        <InlineEditable
+          className="inline-title text-title"
+          value={prompt.title}
+          placeholder="タイトル"
+          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "title"}
+          onEdit={() => editField("title")}
+          onSave={(title: string) => saveField("title", title)}
+        />
+        <InlineEditable
+          className="inline-prompt text-only-prompt"
+          multiline
+          value={prompt.prompt}
+          placeholder="プロンプト本文"
+          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "prompt"}
+          onEdit={() => editField("prompt")}
+          onSave={(promptText: string) => saveField("prompt", promptText)}
+        />
+        <InlineEditable
+          className="inline-prompt text-translation-edit"
+          multiline
+          value={prompt.japaneseTranslation || ""}
+          placeholder="和訳本文"
+          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "japaneseTranslation"}
+          onEdit={() => editField("japaneseTranslation")}
+          onSave={(translation: string) => saveField("japaneseTranslation", translation)}
+        />
+      </div>
+      <div className="text-prompt-actions">
+        <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
+        <button onClick={(event) => { event.stopPropagation(); showTranslation(); }}>和訳</button>
+        <button onClick={(event) => { event.stopPropagation(); showMemo(); }}>メモ</button>
+        <button onClick={(event) => { event.stopPropagation(); editField("title"); }}>編集</button>
+        <button className="danger" onClick={(event) => { event.stopPropagation(); onDelete(); }}>削除</button>
+      </div>
+    </article>
   );
 }
 

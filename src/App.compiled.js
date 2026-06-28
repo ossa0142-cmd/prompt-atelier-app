@@ -612,11 +612,15 @@ function Library({
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
-  const promptSlotCount = currentCategory ? filteredPrompts.length < 10 ? 10 : Math.ceil((filteredPrompts.length + 1) / 5) * 5 : 0;
-  const promptSlots = currentCategory ? Array.from({
-    length: promptSlotCount
-  }, (_, index) => filteredPrompts[index] || null) : [];
-  const createBlankLibraryPrompt = () => ({
+  const categoryPromptCount = currentCategory ? boardPrompts.filter(item => item.categoryId === currentCategory.id).length : 0;
+  const canAddPrompt = categoryPromptCount < 100;
+  const imagePrompts = filteredPrompts.slice(0, 20);
+  const textPrompts = filteredPrompts.slice(20);
+  const imageSlotCount = imagePrompts.length < 20 ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4) : 20;
+  const imagePromptSlots = currentCategory ? Array.from({
+    length: imageSlotCount
+  }, (_, index) => imagePrompts[index] || null) : [];
+  const createBlankLibraryPrompt = (textOnly = false) => ({
     id: "",
     title: "",
     category: "ステッカーモックアップ",
@@ -625,7 +629,7 @@ function Library({
     prompt: "",
     memo: "",
     tags: [],
-    imageUrl: "",
+    imageUrl: textOnly ? "__text_only__" : "",
     japaneseTranslation: ""
   });
   const saveCategory = item => {
@@ -639,17 +643,22 @@ function Library({
   };
   const savePrompt = item => {
     const category = boardCategories.find(category => category.id === item.categoryId) || currentCategory || boardCategories[0];
+    const countForCategory = boardPrompts.filter(prompt => prompt.categoryId === category.id).length;
+    if (!item.id && countForCategory >= 100) {
+      setEditingPrompt(null);
+      return;
+    }
     const next = {
       ...item,
       id: item.id || uid(),
       categoryId: item.categoryId || category.id,
       category: "ステッカーモックアップ",
-      imageUrl: item.imageUrl || "",
+      imageUrl: item.imageUrl === "__text_only__" ? "" : item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || "",
       tags: item.tags || []
     };
-    setBoardPrompts(items => item.id ? items.map(prompt => prompt.id === item.id ? next : prompt) : [next, ...items]);
+    setBoardPrompts(items => item.id ? items.map(prompt => prompt.id === item.id ? next : prompt) : [...items, next]);
     setEditingPrompt(null);
   };
   const duplicateCategory = item => {
@@ -660,11 +669,13 @@ function Library({
     }, ...items]);
   };
   const duplicatePrompt = item => {
-    setBoardPrompts(items => [{
+    const countForCategory = boardPrompts.filter(prompt => prompt.categoryId === item.categoryId).length;
+    if (countForCategory >= 100) return;
+    setBoardPrompts(items => [...items, {
       ...item,
       id: uid(),
       title: `${item.title} コピー`
-    }, ...items]);
+    }]);
   };
   const updatePrompt = (id, patch) => {
     setBoardPrompts(items => items.map(prompt => prompt.id === id ? {
@@ -712,33 +723,109 @@ function Library({
     alt: ""
   }), /*#__PURE__*/React.createElement("span", null, category.title), /*#__PURE__*/React.createElement("small", null, category.description)))))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "library-detail-head"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("img", {
+    className: "library-detail-cover",
+    src: currentCategory.coverImage,
+    alt: ""
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, currentCategory.title), /*#__PURE__*/React.createElement("p", null, currentCategory.description)), /*#__PURE__*/React.createElement("span", {
+    className: "prompt-count-pill"
+  }, categoryPromptCount, " / 100件")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: `${currentCategory.title}内を検索...`
+  })), /*#__PURE__*/React.createElement("section", {
+    className: "prompt-area"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "prompt-area-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "画像付きプロンプト"), /*#__PURE__*/React.createElement("p", null, "最大20個まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+    className: "library-prompt-grid"
+  }, imagePromptSlots.map((prompt, index) => prompt ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
+    key: prompt.id,
+    prompt: prompt,
+    inlineEdit: inlineEdit,
+    setInlineEdit: setInlineEdit,
+    updatePrompt: updatePrompt,
+    duplicatePrompt: duplicatePrompt,
+    deletePrompt: () => setBoardPrompts(items => items.filter(item => item.id !== prompt.id)),
+    copyText: copyText,
+    showTranslation: () => setTranslationPrompt(prompt),
+    showMemo: () => setMemoPrompt(prompt)
+  }) : canAddPrompt ? /*#__PURE__*/React.createElement("button", {
+    className: "add-prompt-card",
+    key: `empty-prompt-${index}`,
+    onClick: () => setEditingPrompt(createBlankLibraryPrompt())
+  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト")) : null))), /*#__PURE__*/React.createElement("section", {
+    className: "prompt-area text-prompt-area"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "prompt-area-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトのみ"), /*#__PURE__*/React.createElement("p", null, "21個目以降はこちらに保存されます。最大100個まで保存できます。")), canAddPrompt && categoryPromptCount >= 20 && /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => setEditingPrompt(createBlankLibraryPrompt(true))
+  }, "＋ テキストプロンプトを追加")), textPrompts.length ? /*#__PURE__*/React.createElement("div", {
+    className: "text-prompt-list"
+  }, textPrompts.map(prompt => /*#__PURE__*/React.createElement(TextPromptCard, {
+    key: prompt.id,
+    prompt: prompt,
+    inlineEdit: inlineEdit,
+    setInlineEdit: setInlineEdit,
+    updatePrompt: updatePrompt,
+    copyText: copyText,
+    showTranslation: () => setTranslationPrompt(prompt),
+    showMemo: () => setMemoPrompt(prompt),
+    onDelete: () => setBoardPrompts(items => items.filter(item => item.id !== prompt.id))
+  }))) : /*#__PURE__*/React.createElement("p", {
+    className: "text-prompt-empty"
+  }, "画像付きプロンプトが20個を超えると、こちらにテキストだけのプロンプトが表示されます。"), !canAddPrompt && /*#__PURE__*/React.createElement("p", {
+    className: "limit-message"
+  }, "このカテゴリの保存上限に達しました")), /*#__PURE__*/React.createElement("button", {
+    className: "back-to-library",
     onClick: () => {
       setSelectedCategory(null);
       setQuery("");
     }
-  }, "← ライブラリへ戻る"), /*#__PURE__*/React.createElement("img", {
-    className: "library-detail-cover",
-    src: currentCategory.coverImage,
-    alt: ""
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, currentCategory.title), /*#__PURE__*/React.createElement("p", null, currentCategory.description)), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => setEditingPrompt(createBlankLibraryPrompt())
-  }, "＋ このカテゴリにプロンプトを追加")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
-    value: query,
-    onChange: e => setQuery(e.target.value),
-    placeholder: `${currentCategory.title}内を検索...`
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "library-prompt-grid"
-  }, promptSlots.map((prompt, index) => prompt ? /*#__PURE__*/React.createElement("article", {
-    className: "library-prompt-card",
-    key: prompt.id
+  }, "← ライブラリへ戻る")), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
+    item: editingCategory,
+    onClose: () => setEditingCategory(null),
+    onSave: saveCategory
+  }), editingPrompt && /*#__PURE__*/React.createElement(LibraryPromptModal, {
+    item: editingPrompt,
+    categories: boardCategories,
+    onClose: () => setEditingPrompt(null),
+    onSave: savePrompt
+  }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
+    prompt: translationPrompt,
+    onClose: () => setTranslationPrompt(null),
+    copyText: copyText
+  }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
+    prompt: memoPrompt,
+    onClose: () => setMemoPrompt(null),
+    onSave: memo => {
+      updatePrompt(memoPrompt.id, {
+        memo
+      });
+      setMemoPrompt(null);
+    }
+  }));
+}
+function LibraryImagePromptCard({
+  prompt,
+  inlineEdit,
+  setInlineEdit,
+  updatePrompt,
+  duplicatePrompt,
+  deletePrompt,
+  copyText,
+  showTranslation,
+  showMemo
+}) {
+  return /*#__PURE__*/React.createElement("article", {
+    className: "library-prompt-card"
   }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
     onClearImage: () => updatePrompt(prompt.id, {
       imageUrl: ""
     }),
-    onDelete: () => setBoardPrompts(items => items.filter(item => item.id !== prompt.id))
+    onDelete: deletePrompt
   }), /*#__PURE__*/React.createElement(EditableThumbnail, {
     prompt: prompt,
     isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl",
@@ -797,40 +884,92 @@ function Library({
   }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
     onClick: event => {
       event.stopPropagation();
-      setTranslationPrompt(prompt);
+      showTranslation();
     }
   }, "和訳"), /*#__PURE__*/React.createElement("button", {
     onClick: event => {
       event.stopPropagation();
-      setMemoPrompt(prompt);
+      showMemo();
     }
-  }, "メモ")))) : /*#__PURE__*/React.createElement("button", {
-    className: "add-prompt-card",
-    key: `empty-prompt-${index}`,
-    onClick: () => setEditingPrompt(createBlankLibraryPrompt())
-  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト"))))), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
-    item: editingCategory,
-    onClose: () => setEditingCategory(null),
-    onSave: saveCategory
-  }), editingPrompt && /*#__PURE__*/React.createElement(LibraryPromptModal, {
-    item: editingPrompt,
-    categories: boardCategories,
-    onClose: () => setEditingPrompt(null),
-    onSave: savePrompt
-  }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
-    prompt: translationPrompt,
-    onClose: () => setTranslationPrompt(null),
-    copyText: copyText
-  }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
-    prompt: memoPrompt,
-    onClose: () => setMemoPrompt(null),
-    onSave: memo => {
-      updatePrompt(memoPrompt.id, {
-        memo
-      });
-      setMemoPrompt(null);
+  }, "メモ"))));
+}
+function TextPromptCard({
+  prompt,
+  inlineEdit,
+  setInlineEdit,
+  updatePrompt,
+  copyText,
+  showTranslation,
+  showMemo,
+  onDelete
+}) {
+  const editField = field => setInlineEdit({
+    id: prompt.id,
+    field
+  });
+  const saveField = (field, value) => {
+    updatePrompt(prompt.id, {
+      [field]: value
+    });
+    setInlineEdit(null);
+  };
+  return /*#__PURE__*/React.createElement("article", {
+    className: "text-prompt-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-prompt-main"
+  }, /*#__PURE__*/React.createElement(InlineEditable, {
+    className: "inline-title text-title",
+    value: prompt.title,
+    placeholder: "タイトル",
+    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "title",
+    onEdit: () => editField("title"),
+    onSave: title => saveField("title", title)
+  }), /*#__PURE__*/React.createElement(InlineEditable, {
+    className: "inline-prompt text-only-prompt",
+    multiline: true,
+    value: prompt.prompt,
+    placeholder: "プロンプト本文",
+    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "prompt",
+    onEdit: () => editField("prompt"),
+    onSave: promptText => saveField("prompt", promptText)
+  }), /*#__PURE__*/React.createElement(InlineEditable, {
+    className: "inline-prompt text-translation-edit",
+    multiline: true,
+    value: prompt.japaneseTranslation || "",
+    placeholder: "和訳本文",
+    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "japaneseTranslation",
+    onEdit: () => editField("japaneseTranslation"),
+    onSave: translation => saveField("japaneseTranslation", translation)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "text-prompt-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: event => {
+      event.stopPropagation();
+      copyText(prompt.prompt, prompt.id);
     }
-  }));
+  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+    onClick: event => {
+      event.stopPropagation();
+      showTranslation();
+    }
+  }, "和訳"), /*#__PURE__*/React.createElement("button", {
+    onClick: event => {
+      event.stopPropagation();
+      showMemo();
+    }
+  }, "メモ"), /*#__PURE__*/React.createElement("button", {
+    onClick: event => {
+      event.stopPropagation();
+      editField("title");
+    }
+  }, "編集"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: event => {
+      event.stopPropagation();
+      onDelete();
+    }
+  }, "削除")));
 }
 function PromptThumbnail({
   imageUrl
