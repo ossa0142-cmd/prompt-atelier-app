@@ -83,12 +83,14 @@ type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize";
 type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "continue" | "favorites" | "recent";
 type HomeFeatureId = "library" | "prompts" | "mj" | "projects";
 
+type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark";
+
 type HomeSettings = {
   themeId: string;
   bannerImageUrl: string;
   bannerVisible: boolean;
   bannerSize: "small" | "medium" | "large";
-  workToolIconStyle: "simple" | "pastel" | "frame";
+  workToolIconStyle: WorkToolIconStyle;
   visible: Record<string, boolean>;
   order: HomeSectionId[];
 };
@@ -672,7 +674,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     ...projects.slice(0, 2).map((project: Project) => ({ type: "プロジェクト", title: project.name, note: project.description, tags: project.tags, screen: "projects" })),
     ...myPrompts.slice(0, 2).map((prompt: MyPrompt) => ({ type: "プロンプト", title: prompt.title, note: prompt.note || prompt.description, tags: prompt.tags, screen: "prompts" })),
   ].slice(0, 3);
-  const normalizedTools = (workTools as WorkTool[]).slice(0, 5);
+  const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
@@ -854,7 +856,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   const reset = () => {
     if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
   };
-  const normalizedTools = (workTools as WorkTool[]).slice(0, 5);
+  const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const saveWorkTool = (tool: WorkTool) => {
     const rawUrl = tool.url.trim();
     const safeUrl = rawUrl ? (/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`) : "https://";
@@ -867,7 +869,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       iconImage: tool.iconImage || "",
       memo: tool.memo || "",
     };
-    setWorkTools((items: WorkTool[]) => tool.id ? items.map((item) => item.id === tool.id ? next : item).slice(0, 5) : [...items, next].slice(0, 5));
+    setWorkTools((items: WorkTool[]) => tool.id ? items.map((item) => item.id === tool.id ? next : item).slice(0, 10) : [...items, next].slice(0, 10));
     setEditingTool(null);
   };
   const moveWorkTool = (id: string, direction: -1 | 1) => {
@@ -933,20 +935,22 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
 
           <section className="customize-card">
             <h3>作業ツール</h3>
-            <p>ホームに表示する外部サービスのショートカットを編集できます。最大5件まで登録できます。</p>
+            <p>ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。</p>
             <div className="icon-style-choices">
               <strong>アイコンテイスト</strong>
               {[
                 ["simple", "シンプル"],
                 ["pastel", "パステル"],
                 ["frame", "フレーム"],
+                ["cool", "クール"],
+                ["dark", "ダーク"],
               ].map(([id, label]) => (
-                <button key={id} className={settings.workToolIconStyle === id ? "active-soft" : ""} onClick={() => updateSettings({ workToolIconStyle: id as HomeSettings["workToolIconStyle"] })}>
+                <button key={id} className={settings.workToolIconStyle === id ? "active-soft" : ""} onClick={() => updateSettings({ workToolIconStyle: id as WorkToolIconStyle })}>
                   {label}
                 </button>
               ))}
             </div>
-            <div className="work-tool-edit-list">
+            <div className={`work-tool-edit-list ${settings.workToolIconStyle || "pastel"}`}>
               {normalizedTools.map((tool: WorkTool, index: number) => (
                 <article className="work-tool-edit-row" key={tool.id}>
                   <span className="work-tool-edit-icon">{tool.iconImage ? <img src={tool.iconImage} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
@@ -963,11 +967,11 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 </article>
               ))}
             </div>
-            {normalizedTools.length < 5 && (
+            {normalizedTools.length < 10 ? (
               <button className="add-work-tool-button" onClick={() => setEditingTool({ id: "", name: "", url: "", iconText: "", iconImage: "", memo: "" })}>
                 ＋ 作業ツールを追加
               </button>
-            )}
+            ) : <p className="limit-message">作業ツールは最大10件まで登録できます</p>}
             {editingTool && <WorkToolEditor tool={editingTool} onClose={() => setEditingTool(null)} onSave={saveWorkTool} />}
           </section>
 

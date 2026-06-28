@@ -756,7 +756,7 @@ function Home({
     tags: prompt.tags,
     screen: "prompts"
   }))].slice(0, 3);
-  const normalizedTools = workTools.slice(0, 5);
+  const normalizedTools = workTools.slice(0, 10);
   const renderSection = sectionId => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
@@ -982,7 +982,7 @@ function HomeCustomize({
   const reset = () => {
     if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
   };
-  const normalizedTools = workTools.slice(0, 5);
+  const normalizedTools = workTools.slice(0, 10);
   const saveWorkTool = tool => {
     const rawUrl = tool.url.trim();
     const safeUrl = rawUrl ? /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}` : "https://";
@@ -995,7 +995,7 @@ function HomeCustomize({
       iconImage: tool.iconImage || "",
       memo: tool.memo || ""
     };
-    setWorkTools(items => tool.id ? items.map(item => item.id === tool.id ? next : item).slice(0, 5) : [...items, next].slice(0, 5));
+    setWorkTools(items => tool.id ? items.map(item => item.id === tool.id ? next : item).slice(0, 10) : [...items, next].slice(0, 10));
     setEditingTool(null);
   };
   const moveWorkTool = (id, direction) => {
@@ -1071,16 +1071,16 @@ function HomeCustomize({
     })
   }, "画像を削除"))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大5件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
     className: "icon-style-choices"
-  }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: settings.workToolIconStyle === id ? "active-soft" : "",
     onClick: () => updateSettings({
       workToolIconStyle: id
     })
   }, label))), /*#__PURE__*/React.createElement("div", {
-    className: "work-tool-edit-list"
+    className: `work-tool-edit-list ${settings.workToolIconStyle || "pastel"}`
   }, normalizedTools.map((tool, index) => /*#__PURE__*/React.createElement("article", {
     className: "work-tool-edit-row",
     key: tool.id
@@ -1102,7 +1102,7 @@ function HomeCustomize({
   }, "右へ"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
     onClick: () => deleteWorkTool(tool.id)
-  }, "削除"))))), normalizedTools.length < 5 && /*#__PURE__*/React.createElement("button", {
+  }, "削除"))))), normalizedTools.length < 10 ? /*#__PURE__*/React.createElement("button", {
     className: "add-work-tool-button",
     onClick: () => setEditingTool({
       id: "",
@@ -1112,7 +1112,9 @@ function HomeCustomize({
       iconImage: "",
       memo: ""
     })
-  }, "＋ 作業ツールを追加"), editingTool && /*#__PURE__*/React.createElement(WorkToolEditor, {
+  }, "＋ 作業ツールを追加") : /*#__PURE__*/React.createElement("p", {
+    className: "limit-message"
+  }, "作業ツールは最大10件まで登録できます"), editingTool && /*#__PURE__*/React.createElement(WorkToolEditor, {
     tool: editingTool,
     onClose: () => setEditingTool(null),
     onSave: saveWorkTool

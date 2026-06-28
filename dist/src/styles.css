@@ -521,30 +521,31 @@ main {
 }
 
 .work-tools-launcher {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 10px;
   margin-top: 12px;
 }
 
 .work-tool-launcher-item {
   display: grid;
   place-items: center;
-  gap: 11px;
-  min-width: 104px;
+  gap: 10px;
+  min-width: 0;
   color: var(--ink);
   text-align: center;
   text-decoration: none;
+  overflow: hidden;
 }
 
 .work-tool-launcher-item span {
   display: grid;
-  width: 88px;
-  height: 88px;
+  width: clamp(72px, 6.4vw, 100px);
+  height: clamp(72px, 6.4vw, 100px);
   overflow: hidden;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 28px;
+  border-radius: 30px;
   background: linear-gradient(145deg, var(--shell), var(--sage));
   box-shadow: 0 16px 30px rgba(73, 58, 45, 0.1);
 }
@@ -562,7 +563,11 @@ main {
 }
 
 .work-tool-launcher-item strong {
+  max-width: 100%;
+  overflow: hidden;
   font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .work-tool-launcher-item:hover {
@@ -589,6 +594,26 @@ main {
 
 .work-tools-card.pastel .work-tool-launcher-item span {
   background: linear-gradient(145deg, var(--shell), var(--sage), var(--sand));
+}
+
+.work-tools-card.cool .work-tool-launcher-item span {
+  border-color: #d9e1e8;
+  background: linear-gradient(145deg, #ffffff, #e7edf3);
+  box-shadow: 0 14px 24px rgba(48, 63, 82, 0.08);
+}
+
+.work-tools-card.cool .work-tool-launcher-item b {
+  color: #2f3c4d;
+}
+
+.work-tools-card.dark .work-tool-launcher-item span {
+  border-color: #4a433d;
+  background: linear-gradient(145deg, #2a2725, #3d3936);
+  box-shadow: 0 16px 28px rgba(31, 29, 28, 0.2);
+}
+
+.work-tools-card.dark .work-tool-launcher-item b {
+  color: #f3eadf;
 }
 
 .quick-link-item,
@@ -726,6 +751,32 @@ main {
   color: #6f5f51;
   font-size: 13px;
   font-weight: 950;
+}
+
+.work-tool-edit-list.simple .work-tool-edit-icon {
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.work-tool-edit-list.pastel .work-tool-edit-icon {
+  background: linear-gradient(145deg, var(--shell), var(--sage), var(--sand));
+}
+
+.work-tool-edit-list.frame .work-tool-edit-icon {
+  border: 2px solid color-mix(in srgb, var(--accent) 46%, var(--line));
+  background: var(--paper);
+}
+
+.work-tool-edit-list.cool .work-tool-edit-icon {
+  border: 1px solid #d9e1e8;
+  background: linear-gradient(145deg, #ffffff, #e7edf3);
+  color: #2f3c4d;
+}
+
+.work-tool-edit-list.dark .work-tool-edit-icon {
+  border: 1px solid #4a433d;
+  background: linear-gradient(145deg, #2a2725, #3d3936);
+  color: #f3eadf;
 }
 
 .work-tool-edit-icon img {
@@ -2878,6 +2929,10 @@ summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .work-tools-launcher {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
   .library-prompt-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2952,6 +3007,10 @@ summary {
   .library-category-grid,
   .library-prompt-grid {
     grid-template-columns: 1fr;
+  }
+
+  .work-tools-launcher {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .prompt-area-head,
