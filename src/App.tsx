@@ -1880,7 +1880,7 @@ function splitImageUrls(value: string) {
 }
 
 function isSupportedImageFile(file: File) {
-  return ["image/jpeg", "image/png", "image/webp"].includes(file.type);
+  return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
 }
 
 function fileToDataUrl(file: File) {
@@ -1906,13 +1906,31 @@ function MJImageSlider({ images, onOpen, onEmptyClick }: any) {
   }, [images?.length]);
   if (!images?.length) {
     return (
-      <button className="mj-card-image image-only-button" onClick={onEmptyClick} aria-label="画像を追加" disabled={!onEmptyClick}>
+      <button
+        type="button"
+        className="mj-card-image image-only-button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onEmptyClick?.();
+        }}
+        aria-label="画像を追加"
+      >
         <PromptThumbnail imageUrl="" />
       </button>
     );
   }
   return (
-    <button className="mj-card-image image-only-button" onClick={() => onOpen(index)} aria-label="画像を拡大">
+    <button
+      type="button"
+      className="mj-card-image image-only-button"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onOpen(index);
+      }}
+      aria-label="画像を拡大"
+    >
       <img src={images[index]} alt="" />
       {images.length > 1 && (
         <span className="image-dots">
@@ -1926,8 +1944,15 @@ function MJImageSlider({ images, onOpen, onEmptyClick }: any) {
 function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, onCopyParams, onParamClick, onOpenImage }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [imageMessage, setImageMessage] = React.useState("");
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isEditingTitle, setIsEditingTitle] = React.useState(false);
+  const [titleDraft, setTitleDraft] = React.useState(item.title || "");
+  React.useEffect(() => {
+    setTitleDraft(item.title || "");
+  }, [item.id, item.title]);
   const params = item.extractedParams || [];
   const promptText = mjCommand(item);
+  const openFilePicker = () => fileInputRef.current?.click();
   const addImageFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -1939,6 +1964,7 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
     if (files.length > remaining) setImageMessage("画像は最大5枚までです");
     const nextImages = await Promise.all(files.slice(0, remaining).map(fileToDataUrl));
     const images = [...(item.images || []), ...nextImages].slice(0, 5);
+    setImageMessage("");
     onUpdate({ images, imageUrl: images[0] || "" });
   };
   const removeImage = (index: number) => {
@@ -1948,7 +1974,7 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
   const updatePrompt = (value: string) => {
     const parsed = parseMidjourneyPrompt(value);
     onUpdate({
-      title: promptCardHeading(value),
+      title: item.title || promptCardHeading(value),
       basePrompt: parsed.basePrompt,
       originalPrompt: value,
       englishPrompt: value,
@@ -1957,42 +1983,91 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
       fullPrompt: value,
     });
   };
+  const saveTitle = () => {
+    const nextTitle = titleDraft.trim() || promptCardHeading(promptText);
+    setTitleDraft(nextTitle);
+    setIsEditingTitle(false);
+    onUpdate({ title: nextTitle });
+  };
   return (
     <article id={`mj-card-${item.id}`} className={`mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`}>
       <div
-        className="mj-image-edit-zone"
-        onDragOver={(event) => event.preventDefault()}
+        className={`mj-image-edit-zone ${isDragging ? "dragging" : ""}`}
+        onClick={() => {
+          if (!(item.images || []).length) openFilePicker();
+        }}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={(event) => {
+          event.preventDefault();
+          setIsDragging(false);
+        }}
         onDrop={(event) => {
           event.preventDefault();
+          setIsDragging(false);
           addImageFiles(event.dataTransfer.files);
         }}
       >
-        <MJImageSlider images={item.images || []} onOpen={onOpenImage} onEmptyClick={() => fileInputRef.current?.click()} />
+        <MJImageSlider images={item.images || []} onOpen={onOpenImage} onEmptyClick={openFilePicker} />
         <input
           ref={fileInputRef}
           className="visually-hidden-file"
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*"
           multiple
           onChange={(event) => {
             if (event.target.files) addImageFiles(event.target.files);
             event.currentTarget.value = "";
           }}
         />
-        <button className="image-edit-toggle" onClick={() => fileInputRef.current?.click()}>
+        <span className="drop-hint">ここへドロップ</span>
+        <button
+          type="button"
+          className="image-edit-toggle"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openFilePicker();
+          }}
+        >
           画像を追加
         </button>
       </div>
       {(item.images || []).length > 0 && (
         <div className="image-url-list image-delete-list">
           {(item.images || []).map((image: string, index: number) => (
-            <button key={`${image}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
+            <button type="button" key={`${image}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
           ))}
         </div>
       )}
       {imageMessage && <small className="image-message">{imageMessage}</small>}
       <div className="mj-card-body">
-        <strong className="mj-derived-title">{promptCardHeading(promptText)}</strong>
+        {isEditingTitle ? (
+          <input
+            className="mj-title-edit-input"
+            value={titleDraft}
+            autoFocus
+            onChange={(event) => setTitleDraft(event.target.value)}
+            onBlur={saveTitle}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") saveTitle();
+              if (event.key === "Escape") {
+                setTitleDraft(item.title || "");
+                setIsEditingTitle(false);
+              }
+            }}
+          />
+        ) : (
+          <button type="button" className="mj-derived-title" onClick={() => setIsEditingTitle(true)}>
+            {item.title || promptCardHeading(promptText)}
+          </button>
+        )}
         <small className="mj-date">保存日：{formatSavedAt(item.createdAt)}</small>
         <label className="mj-edit-field">
           <span>プロンプト</span>
@@ -2016,14 +2091,14 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
           <span className="mj-param-label">抽出済みパラメータ</span>
           <div className="mj-param-pills compact">
             {params.length ? params.map((param: string) => (
-              <button key={param} onClick={() => onParamClick(param)}>{param}</button>
+              <button type="button" key={param} onClick={() => onParamClick(param)}>{param}</button>
             )) : <small>パラメータなし</small>}
           </div>
         </div>
         <div className="mj-card-actions">
-          <button className="primary" onClick={onCopyPrompt}>📋 プロンプトをコピー</button>
-          <button onClick={onCopyParams}>📋 パラメータをコピー</button>
-          <button className="danger" onClick={onDelete}>削除</button>
+          <button type="button" className="primary" onClick={onCopyPrompt}>📋 プロンプトをコピー</button>
+          <button type="button" onClick={onCopyParams}>📋 パラメータをコピー</button>
+          <button type="button" className="danger" onClick={onDelete}>削除</button>
         </div>
       </div>
     </article>

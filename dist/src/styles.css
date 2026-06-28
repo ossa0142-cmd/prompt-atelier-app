@@ -1484,6 +1484,13 @@ main {
 
 .mj-image-edit-zone {
   position: relative;
+  background: rgba(255, 253, 249, 0.7);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mj-image-edit-zone.dragging {
+  background: color-mix(in srgb, var(--sage) 42%, white);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--accent) 58%, white);
 }
 
 .image-edit-toggle {
@@ -1497,6 +1504,26 @@ main {
   color: var(--ink);
   font-size: 12px;
   padding: 6px 10px;
+}
+
+.drop-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: none;
+  border: 1px dashed color-mix(in srgb, var(--accent) 72%, white);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.92);
+  box-shadow: 0 10px 22px rgba(73, 58, 45, 0.08);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  padding: 9px 14px;
+  transform: translate(-50%, -50%);
+}
+
+.mj-image-edit-zone.dragging .drop-hint {
+  display: inline-flex;
 }
 
 .visually-hidden-file {
@@ -1582,9 +1609,41 @@ main {
 
 .mj-derived-title {
   display: block;
+  width: 100%;
+  min-height: auto;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
   color: var(--ink);
   font-size: 15px;
+  font-weight: 900;
   line-height: 1.45;
+  padding: 2px 0;
+  text-align: left;
+  white-space: normal;
+}
+
+.mj-derived-title:hover {
+  background: color-mix(in srgb, var(--shell) 24%, transparent);
+  transform: none;
+}
+
+.mj-title-edit-input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.45;
+  padding: 2px 0 5px;
+}
+
+.mj-title-edit-input:focus {
+  box-shadow: none;
+  outline: none;
 }
 
 .mj-edit-field {
