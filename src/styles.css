@@ -1445,11 +1445,16 @@ main {
 }
 
 .mj-card-image img,
-.mj-card-image .image-placeholder {
+.mj-card-image .image-placeholder,
+.mj-image-edit-zone > .image-placeholder {
   display: block;
   width: 100%;
   aspect-ratio: 1.55;
   object-fit: cover;
+}
+
+.mj-image-edit-zone {
+  cursor: pointer;
 }
 
 .image-dots {

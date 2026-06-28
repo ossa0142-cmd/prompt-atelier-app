@@ -510,7 +510,13 @@ function useStoredState(key, fallback) {
       return fallback;
     }
   });
-  React.useEffect(() => localStorage.setItem(key, JSON.stringify(value)), [key, value]);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
+    }
+  }, [key, value]);
   return [value, setValue];
 }
 function App() {
@@ -2250,66 +2256,6 @@ function promptCardHeading(prompt) {
   const text = prompt.replace(/\s+/g, " ").trim();
   return text ? text.slice(0, 30) : "新しいMJプロンプト";
 }
-function MJImageSlider({
-  images,
-  onOpen,
-  onEmptyClick
-}) {
-  const [index, setIndex] = React.useState(0);
-  React.useEffect(() => {
-    if (!images || images.length < 2) return;
-    const timer = window.setInterval(() => setIndex(current => (current + 1) % images.length), 3200);
-    return () => window.clearInterval(timer);
-  }, [images?.length]);
-  if (!images?.length) {
-    return /*#__PURE__*/React.createElement("div", {
-      role: "button",
-      tabIndex: 0,
-      className: "mj-card-image image-only-button",
-      onClick: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        onEmptyClick?.();
-      },
-      onKeyDown: event => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          event.stopPropagation();
-          onEmptyClick?.();
-        }
-      },
-      "aria-label": "画像を追加"
-    }, /*#__PURE__*/React.createElement(PromptThumbnail, {
-      imageUrl: ""
-    }));
-  }
-  return /*#__PURE__*/React.createElement("div", {
-    role: "button",
-    tabIndex: 0,
-    className: "mj-card-image image-only-button",
-    onClick: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      onOpen(index);
-    },
-    onKeyDown: event => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        event.stopPropagation();
-        onOpen(index);
-      }
-    },
-    "aria-label": "画像を拡大"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: images[index],
-    alt: ""
-  }), images.length > 1 && /*#__PURE__*/React.createElement("span", {
-    className: "image-dots"
-  }, images.map((_, dotIndex) => /*#__PURE__*/React.createElement("i", {
-    key: dotIndex,
-    className: dotIndex === index ? "active" : ""
-  }))));
-}
 function MJEditableCard({
   item,
   highlighted,
@@ -2324,17 +2270,35 @@ function MJEditableCard({
   const [imageMessage, setImageMessage] = React.useState("");
   const [isDragging, setIsDragging] = React.useState(false);
   const [isEditingTitle, setIsEditingTitle] = React.useState(false);
+  const [slideIndex, setSlideIndex] = React.useState(0);
   const [titleDraft, setTitleDraft] = React.useState(item.title || "");
   React.useEffect(() => {
     setTitleDraft(item.title || "");
   }, [item.id, item.title]);
+  React.useEffect(() => {
+    const images = item.images || [];
+    if (slideIndex >= images.length) setSlideIndex(0);
+  }, [item.id, (item.images || []).length, slideIndex]);
+  React.useEffect(() => {
+    const images = item.images || [];
+    if (images.length < 2) return;
+    const timer = window.setInterval(() => setSlideIndex(current => (current + 1) % images.length), 3200);
+    return () => window.clearInterval(timer);
+  }, [item.id, (item.images || []).length]);
   const params = item.extractedParams || [];
   const promptText = mjCommand(item);
-  const openFilePicker = () => fileInputRef.current?.click();
+  const images = item.images || [];
+  const openFilePicker = event => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    console.log("[MJ画像追加] input exists:", Boolean(fileInputRef.current), "cardId:", item.id);
+    fileInputRef.current?.click();
+  };
   const addImageFiles = async fileList => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
+    console.log("[MJ画像追加] selected files:", files.length, files.map(file => file.name), "cardId:", item.id);
     if (!files.length) return;
-    const remaining = 5 - (item.images || []).length;
+    const remaining = 5 - images.length;
     if (remaining <= 0) {
       setImageMessage("画像は最大5枚までです");
       return;
@@ -2344,18 +2308,20 @@ function MJEditableCard({
       return;
     }
     const nextImages = await Promise.all(files.map(fileToDataUrl));
-    const images = [...(item.images || []), ...nextImages].slice(0, 5);
+    nextImages.forEach((image, index) => console.log("[MJ画像追加] base64 prefix:", image.slice(0, 30), "file:", files[index]?.name, "cardId:", item.id));
+    const updatedImages = [...images, ...nextImages].slice(0, 5);
+    console.log("[MJ画像追加] updated images length:", updatedImages.length, "cardId:", item.id);
     setImageMessage("");
     onUpdate({
-      images,
-      imageUrl: images[0] || ""
+      images: updatedImages,
+      imageUrl: updatedImages[0] || ""
     });
   };
   const removeImage = index => {
-    const images = (item.images || []).filter((_, imageIndex) => imageIndex !== index);
+    const updatedImages = images.filter((_, imageIndex) => imageIndex !== index);
     onUpdate({
-      images,
-      imageUrl: images[0] || ""
+      images: updatedImages,
+      imageUrl: updatedImages[0] || ""
     });
   };
   const updatePrompt = value => {
@@ -2382,55 +2348,86 @@ function MJEditableCard({
   return /*#__PURE__*/React.createElement("article", {
     id: `mj-card-${item.id}`,
     className: `mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("input", {
+    ref: fileInputRef,
+    style: {
+      display: "none"
+    },
+    type: "file",
+    accept: "image/png,image/jpeg,image/webp",
+    multiple: true,
+    onClick: event => event.stopPropagation(),
+    onChange: event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.currentTarget.files) addImageFiles(event.currentTarget.files);
+      event.currentTarget.value = "";
+    }
+  }), /*#__PURE__*/React.createElement("div", {
     className: `mj-image-edit-zone ${isDragging ? "dragging" : ""}`,
-    onClick: () => {
-      if (!(item.images || []).length) openFilePicker();
+    role: "button",
+    tabIndex: 0,
+    onClick: event => {
+      if (images.length) {
+        event.preventDefault();
+        event.stopPropagation();
+        onOpenImage(slideIndex);
+        return;
+      }
+      openFilePicker(event);
+    },
+    onKeyDown: event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      if (images.length) {
+        event.preventDefault();
+        event.stopPropagation();
+        onOpenImage(slideIndex);
+        return;
+      }
+      openFilePicker(event);
     },
     onDragEnter: event => {
       event.preventDefault();
+      event.stopPropagation();
       setIsDragging(true);
     },
     onDragOver: event => {
       event.preventDefault();
+      event.stopPropagation();
       setIsDragging(true);
     },
     onDragLeave: event => {
       event.preventDefault();
+      event.stopPropagation();
       setIsDragging(false);
     },
     onDrop: event => {
       event.preventDefault();
+      event.stopPropagation();
       setIsDragging(false);
       addImageFiles(event.dataTransfer.files);
     }
-  }, /*#__PURE__*/React.createElement(MJImageSlider, {
-    images: item.images || [],
-    onOpen: onOpenImage,
-    onEmptyClick: openFilePicker
-  }), /*#__PURE__*/React.createElement("input", {
-    ref: fileInputRef,
-    className: "visually-hidden-file",
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    multiple: true,
-    onChange: event => {
-      if (event.target.files) addImageFiles(event.target.files);
-      event.currentTarget.value = "";
-    }
+  }, images.length ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "mj-card-image image-only-button"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: images[slideIndex] || images[0],
+    alt: ""
+  }), images.length > 1 && /*#__PURE__*/React.createElement("span", {
+    className: "image-dots"
+  }, images.map((_, dotIndex) => /*#__PURE__*/React.createElement("i", {
+    key: dotIndex,
+    className: dotIndex === slideIndex ? "active" : ""
+  }))))) : /*#__PURE__*/React.createElement(PromptThumbnail, {
+    imageUrl: ""
   }), /*#__PURE__*/React.createElement("span", {
     className: "drop-hint"
   }, "ここへドロップ"), /*#__PURE__*/React.createElement("button", {
     type: "button",
     className: "image-edit-toggle",
-    onClick: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      openFilePicker();
-    }
-  }, "画像を追加")), (item.images || []).length > 0 && /*#__PURE__*/React.createElement("div", {
+    onClick: openFilePicker
+  }, "画像を追加")), images.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "image-url-list image-delete-list"
-  }, (item.images || []).map((image, index) => /*#__PURE__*/React.createElement("button", {
+  }, images.map((image, index) => /*#__PURE__*/React.createElement("button", {
     type: "button",
     key: `${image}-${index}`,
     onClick: () => removeImage(index)
