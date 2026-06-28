@@ -1202,6 +1202,13 @@ main {
   margin-top: 0;
 }
 
+.mj-help-text {
+  margin: -4px 0 10px;
+  color: color-mix(in srgb, var(--muted) 72%, #b8b8b8);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
 .mj-field-head {
   display: flex;
   align-items: center;

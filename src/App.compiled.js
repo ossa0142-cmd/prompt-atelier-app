@@ -2133,14 +2133,14 @@ function Midjourney({
     className: "mj-input-panel"
   }, /*#__PURE__*/React.createElement("div", {
     className: "mj-field-head"
-  }, /*#__PURE__*/React.createElement("h3", null, "プロンプト"), /*#__PURE__*/React.createElement("button", {
-    onClick: switchPromptLanguage
-  }, activeLanguage === "en" ? "和訳" : "英語に戻す")), /*#__PURE__*/React.createElement("textarea", {
+  }, /*#__PURE__*/React.createElement("h3", null, "プロンプト")), /*#__PURE__*/React.createElement("textarea", {
     className: "mj-base-input",
     value: displayedPrompt,
     onChange: event => updatePromptField(event.target.value),
     placeholder: activeLanguage === "en" ? "例：cute pastel clipart, white background, no shadow" : "ここに日本語訳を入力してください"
-  }), /*#__PURE__*/React.createElement("h3", null, "パラメータ"), /*#__PURE__*/React.createElement("textarea", {
+  }), /*#__PURE__*/React.createElement("h3", null, "パラメータ"), /*#__PURE__*/React.createElement("p", {
+    className: "mj-help-text"
+  }, "✨ 右側の抽出済みパラメータをクリックすると、ここへ追加できます。"), /*#__PURE__*/React.createElement("textarea", {
     className: "mj-final-input",
     value: fullPrompt,
     onChange: event => setFullPrompt(event.target.value),

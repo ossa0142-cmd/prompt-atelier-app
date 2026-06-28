@@ -1770,7 +1770,6 @@ function Midjourney({ settings, setSettings, copyText }: any) {
           <section className="mj-input-panel">
             <div className="mj-field-head">
               <h3>プロンプト</h3>
-              <button onClick={switchPromptLanguage}>{activeLanguage === "en" ? "和訳" : "英語に戻す"}</button>
             </div>
             <textarea
               className="mj-base-input"
@@ -1779,6 +1778,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
               placeholder={activeLanguage === "en" ? "例：cute pastel clipart, white background, no shadow" : "ここに日本語訳を入力してください"}
             />
             <h3>パラメータ</h3>
+            <p className="mj-help-text">✨ 右側の抽出済みパラメータをクリックすると、ここへ追加できます。</p>
             <textarea className="mj-final-input" value={fullPrompt} onChange={(event) => setFullPrompt(event.target.value)} placeholder="例：--ar 1:1 --stylize 50 --chaos 10 --raw" />
             <div className="mj-save-grid">
               <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="保存タイトル" />
