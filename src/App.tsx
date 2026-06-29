@@ -105,6 +105,7 @@ type JournalItem = {
   y: number;
   width: number;
   rotate: number;
+  stickerEffect?: boolean;
   sticker?: boolean;
 };
 
@@ -775,26 +776,39 @@ function normalizeImageData(image: any): OptimizedImageData {
   };
 }
 
-function estimateStorageUsage() {
+function getPromptAtelierStorageUsage() {
   let total = 0;
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index) || "";
-    if (!key.startsWith("promptAtelier")) continue;
+  for (let index = 0; index < localStorage.length; index++) {
+    const key = localStorage.key(index);
+    if (!key || !key.startsWith("promptAtelier")) continue;
     const value = localStorage.getItem(key) || "";
     total += new Blob([key + value]).size;
   }
   return total;
 }
 
-function warnIfImageStorageLarge() {
-  const usage = estimateStorageUsage();
+function shouldShowStorageWarning() {
+  const usage = getPromptAtelierStorageUsage();
   const ratio = usage / STORAGE_LIMIT_BYTES;
+  return {
+    usage,
+    ratio,
+    level: ratio >= 0.9 ? "strong" : ratio >= 0.7 ? "light" : "none",
+  };
+}
+
+function formatStoragePercent(ratio: number) {
+  return `${Math.round(ratio * 100)}%`;
+}
+
+function showStorageWarningIfNeeded() {
+  const result = shouldShowStorageWarning();
   const shownLevel = sessionStorage.getItem(IMAGE_WARNING_KEY);
-  if (ratio < 0.7) {
+  if (result.level === "none") {
     sessionStorage.removeItem(IMAGE_WARNING_KEY);
     return;
   }
-  if (ratio >= 0.9) {
+  if (result.level === "strong") {
     if (shownLevel === "strong") return;
     sessionStorage.setItem(IMAGE_WARNING_KEY, "strong");
     window.alert("保存容量が残り少なくなっています。バックアップ後、不要な画像を削除してください。");
@@ -803,6 +817,25 @@ function warnIfImageStorageLarge() {
   if (shownLevel) return;
   sessionStorage.setItem(IMAGE_WARNING_KEY, "light");
   window.alert("画像データが増えています。バックアップや不要画像の整理をおすすめします。");
+}
+
+function isStickerEffectOn(item?: Partial<JournalItem> | null) {
+  if (!item) return false;
+  return item.stickerEffect ?? item.sticker ?? true;
+}
+
+/*
+ * ジャーナル画面の下部に一時的な確認表示を出しています。
+ * 動作確認が終わったら .journal-debug-panel とあわせて削除できます。
+ */
+function JournalDebugPanel({ selected }: { selected?: JournalItem | null }) {
+  const storage = shouldShowStorageWarning();
+  const sticker = isStickerEffectOn(selected);
+  return (
+    <div className="journal-debug-panel">
+      storage: {formatStoragePercent(storage.ratio)} / warning: {storage.level} / sticker: {String(sticker)} / class: {sticker ? "sticker-active" : "none"}
+    </div>
+  );
 }
 
 function isSupportedImageFile(file: File) {
@@ -847,7 +880,7 @@ async function optimizeImage(file: File): Promise<OptimizedImageData> {
   const image = await loadImageFromFile(file);
   const full = canvasDataUrl(image, 1200, 0.82);
   const thumbnail = canvasDataUrl(image, 360, 0.76);
-  warnIfImageStorageLarge();
+  showStorageWarningIfNeeded();
   return {
     id: uid(),
     src: full.dataUrl,
@@ -866,7 +899,7 @@ async function createThumbnail(file: File) {
 }
 
 function saveImageToStorage(image: OptimizedImageData) {
-  warnIfImageStorageLarge();
+  showStorageWarningIfNeeded();
   return image;
 }
 
@@ -2814,7 +2847,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
       y: 96,
       width: 190,
       rotate: -4,
-      sticker: true,
+      stickerEffect: true,
     };
     setJournal((current: JournalState) => ({ ...current, items: [...(current.items || []), item] }));
     setScreen("journal");
@@ -2907,7 +2940,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
       y: 80 + journal.items.length * 14,
       width: 170,
       rotate: (journal.items.length % 5) * 4 - 8,
-      sticker: true,
+      stickerEffect: true,
     };
     setJournal((current: JournalState) => ({ ...current, items: [...current.items, item] }));
     setSelectedId(item.id);
@@ -3061,7 +3094,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
             <div className="journal-edit-panel">
               <label>サイズ<input type="range" min="80" max="360" value={selected.width} onChange={(event) => updateItem(selected.id, { width: Number(event.target.value) })} /></label>
               <label>回転<input type="range" min="-35" max="35" value={selected.rotate} onChange={(event) => updateItem(selected.id, { rotate: Number(event.target.value) })} /></label>
-              <label className="check"><input type="checkbox" checked={selected.sticker !== false} onChange={(event) => updateItem(selected.id, { sticker: event.target.checked })} /> シール風</label>
+              <label className="check"><input type="checkbox" checked={isStickerEffectOn(selected)} onChange={(event) => updateItem(selected.id, { stickerEffect: event.target.checked })} /> シール風</label>
               <button className="danger" onClick={() => setJournal((current: JournalState) => ({ ...current, items: current.items.filter((item) => item.id !== selected.id) }))}>選択画像を削除</button>
             </div>
           )}
@@ -3099,13 +3132,14 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
                 setDraggingId(item.id);
               }}
             >
-              <span className={item.sticker !== false ? "sticker-frame sticker-frame-on" : "sticker-frame"}>
-                <img className={item.sticker !== false ? "sticker-image sticker-cutout" : "sticker-image"} src={item.src} alt="" draggable={false} />
+              <span className="journal-sticker-frame">
+                <img className={isStickerEffectOn(item) ? "journal-sticker-image sticker-active" : "journal-sticker-image"} src={item.src} alt="" draggable={false} />
               </span>
             </div>
           )) : <div className="journal-empty">画像を追加して、シール帳のように並べられます。</div>}
         </div>
       </div>
+      <JournalDebugPanel selected={selected} />
     </section>
   );
 }

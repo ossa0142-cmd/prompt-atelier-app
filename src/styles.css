@@ -3458,46 +3458,48 @@ p {
   background: transparent;
 }
 
-.sticker-frame {
+.journal-sticker-frame {
   display: block;
   width: 100%;
-  border-radius: 18px;
-  background: transparent;
-  transition: padding 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
-.sticker-frame-on {
-  padding: 6px;
-  background: #fff;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
-}
-
-.sticker-image {
+.journal-sticker-image {
   display: block;
   width: 100%;
   border-radius: 14px;
   user-select: none;
+  transition: padding 140ms ease, background 140ms ease, box-shadow 140ms ease, filter 140ms ease;
 }
 
-.sticker-frame-on .sticker-image {
-  outline: 1px solid rgba(120, 105, 90, 0.14);
+.journal-sticker-image.sticker-active {
+  background: #fff;
+  padding: 6px;
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 3px #fff,
+    0 6px 14px rgba(0, 0, 0, 0.18);
 }
 
-.sticker-frame-on .sticker-cutout {
+.journal-sticker-image.sticker-active img,
+img.journal-sticker-image.sticker-active {
   filter:
     drop-shadow(2px 0 0 #fff)
     drop-shadow(-2px 0 0 #fff)
     drop-shadow(0 2px 0 #fff)
     drop-shadow(0 -2px 0 #fff)
-    drop-shadow(2px 2px 0 #fff)
-    drop-shadow(-2px 2px 0 #fff)
-    drop-shadow(2px -2px 0 #fff)
-    drop-shadow(-2px -2px 0 #fff)
-    drop-shadow(0 5px 8px rgba(0, 0, 0, 0.18));
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.16));
 }
 
 .journal-sticker.selected {
   outline: 3px solid color-mix(in srgb, var(--accent) 58%, transparent);
+}
+
+.journal-debug-panel {
+  margin-top: 10px;
+  color: var(--text-sub);
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.78;
 }
 
 .journal-empty {

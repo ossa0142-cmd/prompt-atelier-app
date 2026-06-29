@@ -791,25 +791,36 @@ function normalizeImageData(image) {
     createdAt: new Date().toISOString()
   };
 }
-function estimateStorageUsage() {
+function getPromptAtelierStorageUsage() {
   let total = 0;
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index) || "";
-    if (!key.startsWith("promptAtelier")) continue;
+  for (let index = 0; index < localStorage.length; index++) {
+    const key = localStorage.key(index);
+    if (!key || !key.startsWith("promptAtelier")) continue;
     const value = localStorage.getItem(key) || "";
     total += new Blob([key + value]).size;
   }
   return total;
 }
-function warnIfImageStorageLarge() {
-  const usage = estimateStorageUsage();
+function shouldShowStorageWarning() {
+  const usage = getPromptAtelierStorageUsage();
   const ratio = usage / STORAGE_LIMIT_BYTES;
+  return {
+    usage,
+    ratio,
+    level: ratio >= 0.9 ? "strong" : ratio >= 0.7 ? "light" : "none"
+  };
+}
+function formatStoragePercent(ratio) {
+  return `${Math.round(ratio * 100)}%`;
+}
+function showStorageWarningIfNeeded() {
+  const result = shouldShowStorageWarning();
   const shownLevel = sessionStorage.getItem(IMAGE_WARNING_KEY);
-  if (ratio < 0.7) {
+  if (result.level === "none") {
     sessionStorage.removeItem(IMAGE_WARNING_KEY);
     return;
   }
-  if (ratio >= 0.9) {
+  if (result.level === "strong") {
     if (shownLevel === "strong") return;
     sessionStorage.setItem(IMAGE_WARNING_KEY, "strong");
     window.alert("保存容量が残り少なくなっています。バックアップ後、不要な画像を削除してください。");
@@ -818,6 +829,24 @@ function warnIfImageStorageLarge() {
   if (shownLevel) return;
   sessionStorage.setItem(IMAGE_WARNING_KEY, "light");
   window.alert("画像データが増えています。バックアップや不要画像の整理をおすすめします。");
+}
+function isStickerEffectOn(item) {
+  if (!item) return false;
+  return item.stickerEffect ?? item.sticker ?? true;
+}
+
+/*
+ * ジャーナル画面の下部に一時的な確認表示を出しています。
+ * 動作確認が終わったら .journal-debug-panel とあわせて削除できます。
+ */
+function JournalDebugPanel({
+  selected
+}) {
+  const storage = shouldShowStorageWarning();
+  const sticker = isStickerEffectOn(selected);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "journal-debug-panel"
+  }, "storage: ", formatStoragePercent(storage.ratio), " / warning: ", storage.level, " / sticker: ", String(sticker), " / class: ", sticker ? "sticker-active" : "none");
 }
 function isSupportedImageFile(file) {
   return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
@@ -863,7 +892,7 @@ async function optimizeImage(file) {
   const image = await loadImageFromFile(file);
   const full = canvasDataUrl(image, 1200, 0.82);
   const thumbnail = canvasDataUrl(image, 360, 0.76);
-  warnIfImageStorageLarge();
+  showStorageWarningIfNeeded();
   return {
     id: uid(),
     src: full.dataUrl,
@@ -880,7 +909,7 @@ async function createThumbnail(file) {
   return canvasDataUrl(image, 360, 0.76).dataUrl;
 }
 function saveImageToStorage(image) {
-  warnIfImageStorageLarge();
+  showStorageWarningIfNeeded();
   return image;
 }
 function clipboardImageFiles(event) {
@@ -3268,7 +3297,7 @@ function GalleryPage({
       y: 96,
       width: 190,
       rotate: -4,
-      sticker: true
+      stickerEffect: true
     };
     setJournal(current => ({
       ...current,
@@ -3406,7 +3435,7 @@ function JournalPage({
       y: 80 + journal.items.length * 14,
       width: 170,
       rotate: journal.items.length % 5 * 4 - 8,
-      sticker: true
+      stickerEffect: true
     };
     setJournal(current => ({
       ...current,
@@ -3634,9 +3663,9 @@ function JournalPage({
     className: "check"
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
-    checked: selected.sticker !== false,
+    checked: isStickerEffectOn(selected),
     onChange: event => updateItem(selected.id, {
-      sticker: event.target.checked
+      stickerEffect: event.target.checked
     })
   }), " シール風"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
@@ -3682,15 +3711,17 @@ function JournalPage({
       setDraggingId(item.id);
     }
   }, /*#__PURE__*/React.createElement("span", {
-    className: item.sticker !== false ? "sticker-frame sticker-frame-on" : "sticker-frame"
+    className: "journal-sticker-frame"
   }, /*#__PURE__*/React.createElement("img", {
-    className: item.sticker !== false ? "sticker-image sticker-cutout" : "sticker-image",
+    className: isStickerEffectOn(item) ? "journal-sticker-image sticker-active" : "journal-sticker-image",
     src: item.src,
     alt: "",
     draggable: false
   })))) : /*#__PURE__*/React.createElement("div", {
     className: "journal-empty"
-  }, "画像を追加して、シール帳のように並べられます。"))));
+  }, "画像を追加して、シール帳のように並べられます。"))), /*#__PURE__*/React.createElement(JournalDebugPanel, {
+    selected: selected
+  }));
 }
 function Projects({
   projects,
