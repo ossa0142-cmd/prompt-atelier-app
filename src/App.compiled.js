@@ -3710,14 +3710,12 @@ function JournalPage({
       setSelectedId(item.id);
       setDraggingId(item.id);
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: isStickerEffectOn(item) ? "journal-sticker-wrapper sticker-active" : "journal-sticker-wrapper"
   }, /*#__PURE__*/React.createElement("img", {
-    className: "journal-sticker-image",
+    className: isStickerEffectOn(item) ? "journal-sticker-image sticker-active" : "journal-sticker-image",
     src: item.src,
     alt: "",
     draggable: false
-  })))) : /*#__PURE__*/React.createElement("div", {
+  }))) : /*#__PURE__*/React.createElement("div", {
     className: "journal-empty"
   }, "画像を追加して、シール帳のように並べられます。"))), /*#__PURE__*/React.createElement(JournalDebugPanel, {
     selected: selected

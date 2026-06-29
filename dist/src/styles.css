@@ -3458,38 +3458,31 @@ p {
   background: transparent;
 }
 
-.journal-sticker-wrapper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.journal-sticker-wrapper.sticker-active {
-  background: #fff;
-  padding: 5px;
-  border-radius: 18px;
-  box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.9),
-    0 6px 14px rgba(0, 0, 0, 0.16);
-}
-
 .journal-sticker-image {
   display: block;
   width: 100%;
-  border-radius: 12px;
   user-select: none;
 }
 
-.journal-sticker-wrapper.sticker-active img {
-  display: block;
-  border-radius: 12px;
+.journal-sticker-image.sticker-active {
   filter:
+    drop-shadow(1px 0 0 #fff)
+    drop-shadow(-1px 0 0 #fff)
+    drop-shadow(0 1px 0 #fff)
+    drop-shadow(0 -1px 0 #fff)
     drop-shadow(2px 0 0 #fff)
     drop-shadow(-2px 0 0 #fff)
     drop-shadow(0 2px 0 #fff)
     drop-shadow(0 -2px 0 #fff)
-    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.16));
+    drop-shadow(3px 0 0 #fff)
+    drop-shadow(-3px 0 0 #fff)
+    drop-shadow(0 3px 0 #fff)
+    drop-shadow(0 -3px 0 #fff)
+    drop-shadow(2px 2px 0 #fff)
+    drop-shadow(-2px 2px 0 #fff)
+    drop-shadow(2px -2px 0 #fff)
+    drop-shadow(-2px -2px 0 #fff)
+    drop-shadow(0 5px 7px rgba(0, 0, 0, 0.18));
 }
 
 .journal-sticker.selected {
