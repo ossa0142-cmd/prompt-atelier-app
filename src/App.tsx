@@ -570,6 +570,13 @@ const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
 
 const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
+const readableTextOn = (hex: string) => {
+  const normalized = hex.replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return "#fffdf9";
+  const [r, g, b] = [0, 2, 4].map((start) => parseInt(normalized.slice(start, start + 2), 16) / 255);
+  const [lr, lg, lb] = [r, g, b].map((value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb > 0.58 ? "#2f2924" : "#fffdf9";
+};
 
 function themeClassName(id: string) {
   if (["cute", "girly", "kstationery", "pastel", "lavender"].includes(id)) return "theme-cute";
@@ -582,6 +589,8 @@ function themeClassName(id: string) {
 
 function themeStyle(theme: any) {
   const dark = isDarkTheme(theme.id);
+  const accentText = readableTextOn(theme.vars.accent);
+  const buttonText = readableTextOn(dark ? theme.vars.accent : theme.vars.paper);
   const decorativeMap: Record<string, string> = {
     cute: "color-mix(in srgb, #f8cdd5 42%, var(--card-bg))",
     cool: "color-mix(in srgb, #b9c8d5 38%, transparent)",
@@ -623,10 +632,10 @@ function themeStyle(theme: any) {
     "--card-border": theme.vars.line,
     "--border": theme.vars.line,
     "--button-bg": dark ? theme.vars.accent : theme.vars.paper,
-    "--button-text": dark ? theme.vars.ivory : theme.vars.ink,
-    "--button-ink": dark ? theme.vars.ivory : theme.vars.ink,
+    "--button-text": buttonText,
+    "--button-ink": buttonText,
     "--primary-bg": theme.vars.accent,
-    "--primary-ink": dark ? theme.vars.ivory : "#fffdf9",
+    "--primary-ink": accentText,
     "--input-bg": dark ? theme.vars.shell : "#fffdf9",
     "--input-ink": theme.vars.ink,
     "--icon-bg": dark ? theme.vars.shell : theme.vars.paper,
@@ -946,7 +955,6 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
         <section className="atelier-corner home-module" key={sectionId}>
           <div className="atelier-head">
             <div>
-              <span className="soft-label">Atelier Shelf</span>
               <h2>アトリエコーナー</h2>
             </div>
             <div className="atelier-actions">

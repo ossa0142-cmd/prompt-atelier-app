@@ -609,6 +609,13 @@ const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolea
 const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const isDarkTheme = id => ["dark", "night-lavender"].includes(id);
+const readableTextOn = hex => {
+  const normalized = hex.replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return "#fffdf9";
+  const [r, g, b] = [0, 2, 4].map(start => parseInt(normalized.slice(start, start + 2), 16) / 255);
+  const [lr, lg, lb] = [r, g, b].map(value => value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb > 0.58 ? "#2f2924" : "#fffdf9";
+};
 function themeClassName(id) {
   if (["cute", "girly", "kstationery", "pastel", "lavender"].includes(id)) return "theme-cute";
   if (["cool", "simple", "pop-blue"].includes(id)) return "theme-cool";
@@ -619,6 +626,8 @@ function themeClassName(id) {
 }
 function themeStyle(theme) {
   const dark = isDarkTheme(theme.id);
+  const accentText = readableTextOn(theme.vars.accent);
+  const buttonText = readableTextOn(dark ? theme.vars.accent : theme.vars.paper);
   const decorativeMap = {
     cute: "color-mix(in srgb, #f8cdd5 42%, var(--card-bg))",
     cool: "color-mix(in srgb, #b9c8d5 38%, transparent)",
@@ -658,10 +667,10 @@ function themeStyle(theme) {
     "--card-border": theme.vars.line,
     "--border": theme.vars.line,
     "--button-bg": dark ? theme.vars.accent : theme.vars.paper,
-    "--button-text": dark ? theme.vars.ivory : theme.vars.ink,
-    "--button-ink": dark ? theme.vars.ivory : theme.vars.ink,
+    "--button-text": buttonText,
+    "--button-ink": buttonText,
     "--primary-bg": theme.vars.accent,
-    "--primary-ink": dark ? theme.vars.ivory : "#fffdf9",
+    "--primary-ink": accentText,
     "--input-bg": dark ? theme.vars.shell : "#fffdf9",
     "--input-ink": theme.vars.ink,
     "--icon-bg": dark ? theme.vars.shell : theme.vars.paper,
@@ -998,9 +1007,7 @@ function Home({
         key: sectionId
       }, /*#__PURE__*/React.createElement("div", {
         className: "atelier-head"
-      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-        className: "soft-label"
-      }, "Atelier Shelf"), /*#__PURE__*/React.createElement("h2", null, "アトリエコーナー")), /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, "アトリエコーナー")), /*#__PURE__*/React.createElement("div", {
         className: "atelier-actions"
       }, /*#__PURE__*/React.createElement("button", {
         onClick: () => setScreen("journal")

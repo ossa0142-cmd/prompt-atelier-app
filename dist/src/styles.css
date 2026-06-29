@@ -780,7 +780,7 @@ main {
 
 .icon-style-choices strong {
   width: 100%;
-  color: var(--ink);
+  color: var(--customize-ink, var(--ink));
   font-size: 13px;
 }
 
@@ -801,9 +801,10 @@ main {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 12px;
   align-items: center;
-  border: 1px solid rgba(232, 222, 209, 0.88);
+  border: 1px solid var(--customize-line, rgba(232, 222, 209, 0.88));
   border-radius: 18px;
-  background: rgba(255, 253, 249, 0.82);
+  background: var(--customize-card, rgba(255, 253, 249, 0.82));
+  color: var(--customize-ink, var(--ink));
   padding: 12px;
 }
 
@@ -868,7 +869,7 @@ main {
 .work-tool-edit-row small {
   display: block;
   overflow: hidden;
-  color: var(--muted);
+  color: var(--customize-muted, var(--muted));
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2291,8 +2292,17 @@ main {
 }
 
 .customize-page {
+  --customize-bg: #fffaf4;
+  --customize-card: #fffdf9;
+  --customize-card-soft: #f7f1e9;
+  --customize-ink: #2f2924;
+  --customize-muted: #675e55;
+  --customize-line: #e3d8ca;
+  --customize-input: #ffffff;
+  --customize-danger: #9e3f3a;
   display: grid;
   gap: 22px;
+  color: var(--customize-ink);
 }
 
 .customize-layout {
@@ -2309,21 +2319,67 @@ main {
 
 .customize-card,
 .customize-preview {
-  border: 1px solid var(--line);
+  border: 1px solid var(--customize-line);
   border-radius: 26px;
-  background: color-mix(in srgb, var(--paper) 92%, white);
+  background: var(--customize-card);
   box-shadow: 0 14px 34px rgba(73, 58, 45, 0.06);
+  color: var(--customize-ink);
   padding: 22px;
 }
 
 .customize-card h3 {
   margin-bottom: 6px;
-  color: var(--ink);
+  color: var(--customize-ink);
 }
 
 .customize-card p {
-  color: var(--muted);
+  color: var(--customize-muted);
   line-height: 1.6;
+}
+
+.customize-page label,
+.customize-page strong,
+.customize-page span {
+  color: var(--customize-ink);
+}
+
+.customize-page small,
+.customize-page .soft-label {
+  color: var(--customize-muted);
+}
+
+.customize-page input,
+.customize-page textarea,
+.customize-page select {
+  border-color: var(--customize-line);
+  background: var(--customize-input);
+  color: var(--customize-ink);
+}
+
+.customize-page input::placeholder,
+.customize-page textarea::placeholder {
+  color: color-mix(in srgb, var(--customize-muted) 72%, white);
+}
+
+.customize-page button:not(.primary):not(.danger) {
+  border-color: var(--customize-line);
+  background: var(--customize-card);
+  color: var(--customize-ink);
+}
+
+.customize-page button:not(.primary):not(.danger):hover {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--customize-line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--customize-card));
+}
+
+.customize-page .primary {
+  border-color: var(--primary-bg);
+  background: var(--primary-bg);
+  color: var(--primary-ink);
+}
+
+.customize-page .danger {
+  color: var(--customize-danger);
 }
 
 .theme-grid {
@@ -2335,8 +2391,10 @@ main {
 .theme-card {
   display: grid;
   gap: 10px;
+  border: 1px solid var(--customize-line);
   border-radius: 18px;
-  background: #fffdf9;
+  background: var(--customize-card);
+  color: var(--customize-ink);
   padding: 14px;
   text-align: left;
 }
@@ -2368,9 +2426,10 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid rgba(232, 222, 209, 0.8);
+  border: 1px solid var(--customize-line);
   border-radius: 18px;
-  background: #fffdf9;
+  background: var(--customize-card);
+  color: var(--customize-ink);
   padding: 12px 14px;
 }
 
@@ -2395,7 +2454,8 @@ main {
 
 .active-soft {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 18%, var(--paper));
+  background: color-mix(in srgb, var(--accent) 16%, var(--customize-card));
+  color: var(--customize-ink);
 }
 
 .order-row span {
@@ -2408,7 +2468,7 @@ main {
 }
 
 .danger-zone {
-  background: linear-gradient(145deg, #fffdf9, color-mix(in srgb, #f3d9d7 42%, var(--paper)));
+  background: linear-gradient(145deg, var(--customize-card), color-mix(in srgb, #f3d9d7 42%, var(--customize-card)));
 }
 
 .customize-preview {
@@ -3376,18 +3436,32 @@ p {
 .journal-sticker.sticker-style {
   padding: 0;
   background: transparent;
-  filter: drop-shadow(0 7px 8px rgba(73, 58, 45, 0.18));
+  filter: drop-shadow(0 4px 4px rgba(73, 58, 45, 0.16));
 }
 
 .journal-sticker.sticker-style img {
   filter:
-    drop-shadow(0 0 2px white)
-    drop-shadow(0 0 5px white)
-    drop-shadow(2px 0 2px white)
-    drop-shadow(-2px 0 2px white)
-    drop-shadow(0 2px 2px white)
-    drop-shadow(0 -2px 2px white)
-    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+    drop-shadow(1px 0 0 #fff)
+    drop-shadow(-1px 0 0 #fff)
+    drop-shadow(0 1px 0 #fff)
+    drop-shadow(0 -1px 0 #fff)
+    drop-shadow(2px 0 0 #fff)
+    drop-shadow(-2px 0 0 #fff)
+    drop-shadow(0 2px 0 #fff)
+    drop-shadow(0 -2px 0 #fff)
+    drop-shadow(3px 0 0 #fff)
+    drop-shadow(-3px 0 0 #fff)
+    drop-shadow(0 3px 0 #fff)
+    drop-shadow(0 -3px 0 #fff)
+    drop-shadow(4px 0 0 #fff)
+    drop-shadow(-4px 0 0 #fff)
+    drop-shadow(0 4px 0 #fff)
+    drop-shadow(0 -4px 0 #fff)
+    drop-shadow(3px 3px 0 #fff)
+    drop-shadow(-3px 3px 0 #fff)
+    drop-shadow(3px -3px 0 #fff)
+    drop-shadow(-3px -3px 0 #fff)
+    drop-shadow(0 6px 5px rgba(0, 0, 0, 0.16));
 }
 
 .journal-sticker.selected {
