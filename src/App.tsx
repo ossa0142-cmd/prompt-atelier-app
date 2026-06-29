@@ -44,7 +44,7 @@ type MjSetting = {
   title: string;
   description: string;
   imageUrl?: string;
-  images?: string[];
+  images?: any[];
   prompt?: string;
   promptEn?: string;
   promptJa?: string;
@@ -84,6 +84,11 @@ type Project = {
 type AtelierImage = {
   id: string;
   src: string;
+  thumbnail?: string;
+  originalName?: string;
+  mimeType?: string;
+  width?: number;
+  height?: number;
   title: string;
   memo: string;
   createdAt: string;
@@ -95,11 +100,23 @@ type JournalItem = {
   id: string;
   imageId: string;
   src: string;
+  thumbnail?: string;
   x: number;
   y: number;
   width: number;
   rotate: number;
   sticker?: boolean;
+};
+
+type OptimizedImageData = {
+  id: string;
+  src: string;
+  thumbnail: string;
+  originalName: string;
+  mimeType: string;
+  width: number;
+  height: number;
+  createdAt: string;
 };
 
 type JournalState = {
@@ -568,6 +585,7 @@ const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = (value: string) => value.split(",").map((tag) => tag.trim()).filter(Boolean);
 const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
+const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningShown";
 
 const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
 const readableTextOn = (hex: string) => {
@@ -690,6 +708,7 @@ function collectAtelierImages(prompts: MyPrompt[], mjSettings: MjSetting[], gall
     .map((prompt) => ({
       id: `prompt-${prompt.id}`,
       src: prompt.imageUrl,
+      thumbnail: prompt.imageUrl,
       title: prompt.title || "プロンプト画像",
       memo: prompt.note || prompt.description || "",
       createdAt: prompt.id,
@@ -698,14 +717,16 @@ function collectAtelierImages(prompts: MyPrompt[], mjSettings: MjSetting[], gall
     }));
   const mjImages = mjSettings.flatMap((setting) => (setting.images || (setting.imageUrl ? [setting.imageUrl] : [])).map((src, index) => ({
     id: `mj-${setting.id}-${index}`,
-    src,
+    src: imageSrc(src),
+    thumbnail: imageThumbnail(src),
     title: setting.title || "MJ画像",
     memo: setting.memo || setting.note || "",
     createdAt: setting.createdAt || setting.id,
     source: "midjourney",
     favorite: false,
   })));
-  const merged = [...promptImages, ...mjImages, ...galleryImages].filter((item) => item.src);
+  const normalizedGalleryImages = galleryImages.map((item) => ({ ...item, src: imageSrc(item), thumbnail: imageThumbnail(item) }));
+  const merged = [...promptImages, ...mjImages, ...normalizedGalleryImages].filter((item) => item.src);
   const seen = new Set<string>();
   return merged
     .filter((item) => {
@@ -715,6 +736,131 @@ function collectAtelierImages(prompts: MyPrompt[], mjSettings: MjSetting[], gall
     })
     .sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.createdAt).localeCompare(String(a.createdAt)))
     .slice(0, 24);
+}
+
+function imageSrc(image: any) {
+  if (!image) return "";
+  return typeof image === "string" ? image : image.src || "";
+}
+
+function imageThumbnail(image: any) {
+  if (!image) return "";
+  return typeof image === "string" ? image : image.thumbnail || image.src || "";
+}
+
+function normalizeImageData(image: any): OptimizedImageData {
+  if (image && typeof image === "object" && image.src) {
+    return {
+      id: image.id || uid(),
+      src: image.src,
+      thumbnail: image.thumbnail || image.src,
+      originalName: image.originalName || image.title || "image",
+      mimeType: image.mimeType || "image/*",
+      width: Number(image.width || 0),
+      height: Number(image.height || 0),
+      createdAt: image.createdAt || new Date().toISOString(),
+    };
+  }
+  const src = String(image || "");
+  return {
+    id: uid(),
+    src,
+    thumbnail: src,
+    originalName: "existing-image",
+    mimeType: src.startsWith("data:") ? src.slice(5, src.indexOf(";")) : "image/url",
+    width: 0,
+    height: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function estimateStorageUsage() {
+  let total = 0;
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index) || "";
+    const value = localStorage.getItem(key) || "";
+    total += key.length + value.length;
+  }
+  return total * 2;
+}
+
+function warnIfImageStorageLarge() {
+  const usage = estimateStorageUsage();
+  if (usage < 3_800_000 || sessionStorage.getItem(IMAGE_WARNING_KEY)) return;
+  sessionStorage.setItem(IMAGE_WARNING_KEY, "1");
+  window.alert("画像データが増えています。バックアップを書き出すか、不要な画像を削除してください。");
+}
+
+function isSupportedImageFile(file: File) {
+  return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+}
+
+function loadImageFromFile(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("画像を読み込めませんでした"));
+    };
+    image.src = url;
+  });
+}
+
+function canvasDataUrl(image: HTMLImageElement, maxSide: number, quality = 0.82) {
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(1, Math.round(sourceWidth * ratio));
+  const height = Math.max(1, Math.round(sourceHeight * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("画像処理を開始できませんでした");
+  context.drawImage(image, 0, 0, width, height);
+  const webp = canvas.toDataURL("image/webp", quality);
+  const dataUrl = webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", quality);
+  return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
+}
+
+async function optimizeImage(file: File): Promise<OptimizedImageData> {
+  if (!isSupportedImageFile(file)) throw new Error("対応していない画像形式です");
+  const image = await loadImageFromFile(file);
+  const full = canvasDataUrl(image, 1200, 0.82);
+  const thumbnail = canvasDataUrl(image, 360, 0.76);
+  warnIfImageStorageLarge();
+  return {
+    id: uid(),
+    src: full.dataUrl,
+    thumbnail: thumbnail.dataUrl,
+    originalName: file.name,
+    mimeType: full.mimeType,
+    width: full.width,
+    height: full.height,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+async function createThumbnail(file: File) {
+  const image = await loadImageFromFile(file);
+  return canvasDataUrl(image, 360, 0.76).dataUrl;
+}
+
+function saveImageToStorage(image: OptimizedImageData) {
+  warnIfImageStorageLarge();
+  return image;
+}
+
+function clipboardImageFiles(event: React.ClipboardEvent) {
+  return Array.from(event.clipboardData?.items || [])
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file) && isSupportedImageFile(file));
 }
 
 function useStoredState<T>(key: string, fallback: T) {
@@ -1022,7 +1168,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
               <div className="atelier-track">
                 {[...atelierImages, ...atelierImages].map((image: AtelierImage, index: number) => (
                   <figure key={`${image.id}-${index}`}>
-                    <img src={image.src} alt="" />
+                    <img src={image.thumbnail || image.src} alt="" />
                   </figure>
                 ))}
               </div>
@@ -1177,6 +1323,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <input type="checkbox" checked={settings.bannerVisible} onChange={(event) => updateSettings({ bannerVisible: event.target.checked })} />
             </label>
             <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value })} placeholder="バナー画像URL" />
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (bannerImageUrl) => updateSettings({ bannerImageUrl }))} />
             <div className="inline-buttons">
               {(["small", "medium", "large"] as const).map((size) => (
                 <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => updateSettings({ bannerSize: size })}>
@@ -1680,13 +1827,35 @@ function PromptThumbnail({ imageUrl }: { imageUrl?: string }) {
 function EditableThumbnail({ prompt, isEditing, onEdit, onCancel, onSave }: any) {
   const [draft, setDraft] = React.useState(prompt.imageUrl || "");
   React.useEffect(() => setDraft(prompt.imageUrl || ""), [prompt.imageUrl, isEditing]);
+  const importFiles = async (files: FileList | File[]) => {
+    const file = Array.from(files).find(isSupportedImageFile);
+    if (!file) return;
+    const image = saveImageToStorage(await optimizeImage(file));
+    setDraft(image.src);
+  };
   if (isEditing) {
     return (
-      <div className="thumbnail-editor" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="thumbnail-editor"
+        onClick={(event) => event.stopPropagation()}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          importFiles(event.dataTransfer.files);
+        }}
+        onPaste={(event) => {
+          const files = clipboardImageFiles(event);
+          if (!files.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          importFiles(files);
+        }}
+      >
         <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="サムネイル画像URL" autoFocus />
         <label className="mini-upload">
           画像を選ぶ
-          <input type="file" accept="image/*" onChange={(event) => readImage(event, (imageUrl) => setDraft(imageUrl))} />
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (imageUrl) => setDraft(imageUrl))} />
         </label>
         <div>
           <button className="primary" onClick={() => onSave(draft)}>保存</button>
@@ -1815,12 +1984,18 @@ function PromptMenuButton({ onDuplicate, onClearImage, onDelete }: any) {
   );
 }
 
-function readImage(event: any, onLoad: (value: string) => void) {
+async function readImage(event: any, onLoad: (value: string) => void) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
   const file = event.target.files?.[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => onLoad(String(reader.result || ""));
-  reader.readAsDataURL(file);
+  try {
+    const image = saveImageToStorage(await optimizeImage(file));
+    onLoad(image.src);
+  } catch (error) {
+    console.error("[Prompt Atelier] 画像の最適化に失敗しました", error);
+    window.alert("画像を追加できませんでした。jpg / png / webp を選んでください。");
+  }
 }
 
 function MockupCategoryModal({ item, onClose, onSave }: any) {
@@ -2022,7 +2197,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
   const [memo, setMemo] = React.useState("");
   const [editingId, setEditingId] = React.useState("");
   const [copied, setCopied] = React.useState(false);
-  const [imageModal, setImageModal] = React.useState<{ images: string[]; index: number } | null>(null);
+  const [imageModal, setImageModal] = React.useState<{ images: any[]; index: number } | null>(null);
   const [highlightedId, setHighlightedId] = React.useState("");
   const normalizedSettings = settings.map((item: MjSetting) => normalizeMjSetting(item));
   const filtered = normalizedSettings.filter((item: MjSetting) => lowerIncludes(`${item.memo || ""} ${item.note || ""} ${mjCommand(item)} ${(item.extractedParams || []).join(" ")}`, query));
@@ -2210,8 +2385,8 @@ function Midjourney({ settings, setSettings, copyText }: any) {
               <strong>画像から探す</strong>
               <div className="mj-image-search-grid">
                 {imageSearchItems.length ? imageSearchItems.map((item) => (
-                  <button key={`${item.cardId}-${item.index}-${item.image}`} onClick={() => jumpToCard(item.cardId)}>
-                    <img src={item.image} alt="" />
+                  <button key={`${item.cardId}-${item.index}-${imageSrc(item.image)}`} onClick={() => jumpToCard(item.cardId)}>
+                    <img src={imageThumbnail(item.image)} alt="" />
                   </button>
                 )) : <small>画像を登録すると、ここから探せます。</small>}
               </div>
@@ -2262,17 +2437,9 @@ function splitImageUrls(value: string) {
   return value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean).slice(0, 5);
 }
 
-function isSupportedImageFile(file: File) {
-  return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
-}
-
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
+async function fileToDataUrl(file: File) {
+  const image = saveImageToStorage(await optimizeImage(file));
+  return image.src;
 }
 
 function promptCardHeading(prompt: string) {
@@ -2322,16 +2489,16 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
       setImageMessage("画像は最大5枚までです");
       return;
     }
-    const nextImages = await Promise.all(files.map(fileToDataUrl));
-    nextImages.forEach((image, index) => console.log("[MJ画像追加] base64 prefix:", image.slice(0, 30), "file:", files[index]?.name, "cardId:", item.id));
+    const nextImages = await Promise.all(files.map(optimizeImage));
+    nextImages.forEach((image, index) => console.log("[MJ画像追加] base64 prefix:", image.src.slice(0, 30), "file:", files[index]?.name, "cardId:", item.id));
     const updatedImages = [...images, ...nextImages].slice(0, 5);
     console.log("[MJ画像追加] updated images length:", updatedImages.length, "cardId:", item.id);
     setImageMessage("");
-    onUpdate({ images: updatedImages, imageUrl: updatedImages[0] || "" });
+    onUpdate({ images: updatedImages, imageUrl: imageSrc(updatedImages[0]) || "" });
   };
   const removeImage = (index: number) => {
-    const updatedImages = images.filter((_: string, imageIndex: number) => imageIndex !== index);
-    onUpdate({ images: updatedImages, imageUrl: updatedImages[0] || "" });
+    const updatedImages = images.filter((_: any, imageIndex: number) => imageIndex !== index);
+    onUpdate({ images: updatedImages, imageUrl: imageSrc(updatedImages[0]) || "" });
   };
   const updatePrompt = (value: string) => {
     const parsed = parseMidjourneyPrompt(value);
@@ -2414,14 +2581,21 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
           setIsDragging(false);
           addImageFiles(event.dataTransfer.files);
         }}
+        onPaste={(event) => {
+          const files = clipboardImageFiles(event);
+          if (!files.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          addImageFiles(files);
+        }}
       >
         {images.length ? (
           <>
             <div className="mj-card-image image-only-button">
-              <img src={images[slideIndex] || images[0]} alt="" />
+              <img src={imageThumbnail(images[slideIndex] || images[0])} alt="" />
               {images.length > 1 && (
                 <span className="image-dots">
-                  {images.map((_: string, dotIndex: number) => <i key={dotIndex} className={dotIndex === slideIndex ? "active" : ""} />)}
+                  {images.map((_: any, dotIndex: number) => <i key={dotIndex} className={dotIndex === slideIndex ? "active" : ""} />)}
                 </span>
               )}
             </div>
@@ -2438,8 +2612,8 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
       </div>
       {images.length > 0 && (
         <div className="image-url-list image-delete-list">
-          {images.map((image: string, index: number) => (
-            <button type="button" key={`${image}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
+          {images.map((image: any, index: number) => (
+            <button type="button" key={`${imageSrc(image)}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
           ))}
         </div>
       )}
@@ -2508,7 +2682,7 @@ function ImagePreviewModal({ modal, setModal }: any) {
   return (
     <Modal title="画像プレビュー" onClose={() => setModal(null)}>
       <div className="image-preview-modal">
-        <img src={images[index]} alt="" />
+        <img src={imageSrc(images[index])} alt="" />
         <div className="modal-actions">
           {images.length > 1 && <button onClick={() => move(-1)}>前へ</button>}
           {images.length > 1 && <button onClick={() => move(1)}>次へ</button>}
@@ -2534,13 +2708,13 @@ function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
   const promptEn = item.promptEn || originalPrompt || fullPrompt || "";
   const promptJa = item.promptJa || translatedPrompt || "";
   const activeLanguage = item.activeLanguage === "ja" ? "ja" : "en";
-  const images = Array.isArray(item.images) ? item.images.slice(0, 5) : item.imageUrl ? [item.imageUrl] : [];
+  const images = (Array.isArray(item.images) ? item.images : item.imageUrl ? [item.imageUrl] : []).slice(0, 5).map(normalizeImageData);
   return {
     id: item.id || uid(),
     title: item.title || "無題のMJ設定",
     description: item.description || item.memo || item.note || "",
     images,
-    imageUrl: images[0] || item.imageUrl || "",
+    imageUrl: imageSrc(images[0]) || item.imageUrl || "",
     prompt: fullPrompt || combinePrompt(basePrompt, params),
     promptEn,
     promptJa,
@@ -2592,15 +2766,21 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
   const addFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
-    const nextImages = await Promise.all(files.map(async (file) => ({
-      id: uid(),
-      src: await fileToDataUrl(file),
-      title: file.name.replace(/\.[^.]+$/, ""),
+    const remaining = 200 - images.length;
+    if (remaining <= 0) {
+      window.alert("ギャラリー画像は最大200枚までです");
+      return;
+    }
+    const optimizedImages = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    if (files.length > remaining) window.alert("ギャラリー画像は最大200枚までです");
+    const nextImages = optimizedImages.map((image, index) => ({
+      ...image,
+      title: files[index].name.replace(/\.[^.]+$/, ""),
       memo: "",
-      createdAt: new Date().toISOString(),
+      originalName: files[index].name,
       source: "gallery",
       favorite: false,
-    })));
+    }));
     setImages((items: AtelierImage[]) => [...nextImages, ...items]);
   };
   const updateImage = (id: string, patch: Partial<AtelierImage>) => {
@@ -2615,6 +2795,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
       id: uid(),
       imageId: image.id,
       src: image.src,
+      thumbnail: image.thumbnail || image.src,
       x: 96,
       y: 96,
       width: 190,
@@ -2625,7 +2806,23 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
     setScreen("journal");
   };
   return (
-    <section className="page gallery-page">
+    <section
+      className="page gallery-page"
+      tabIndex={0}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        addFiles(event.dataTransfer.files);
+      }}
+      onPaste={(event) => {
+        const files = clipboardImageFiles(event);
+        if (!files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        addFiles(files);
+      }}
+    >
       <PageHead
         title="ギャラリー"
         action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button onClick={() => setScreen("journal")}>ジャーナルへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
@@ -2649,7 +2846,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
                 {image.favorite ? "♥" : "♡"}
               </button>
               <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
-                <img src={image.src} alt="" />
+                <img src={image.thumbnail || image.src} alt="" />
               </button>
             </article>
           ))}
@@ -2686,10 +2883,12 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   const customBackgrounds = journal.customBackgrounds || [];
   const selectedCustomBackground = customBackgrounds.find((item: AtelierImage) => journal.background === `custom-${item.id}`);
   const addJournalItem = (image: AtelierImage) => {
+    const normalized = { ...image, src: imageSrc(image), thumbnail: imageThumbnail(image) };
     const item: JournalItem = {
       id: uid(),
-      imageId: image.id,
-      src: image.src,
+      imageId: normalized.id,
+      src: normalized.src,
+      thumbnail: normalized.thumbnail,
       x: 80 + journal.items.length * 18,
       y: 80 + journal.items.length * 14,
       width: 170,
@@ -2702,30 +2901,42 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   const addFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
-    const nextImages = await Promise.all(files.map(async (file) => ({
-      id: uid(),
-      src: await fileToDataUrl(file),
-      title: file.name.replace(/\.[^.]+$/, ""),
+    const currentCount = journal.items.length || 0;
+    const remaining = 100 - currentCount;
+    if (remaining <= 0) {
+      window.alert("ジャーナル1ページの画像は最大100枚までです");
+      return;
+    }
+    const optimizedImages = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    if (files.length > remaining) window.alert("ジャーナル1ページの画像は最大100枚までです");
+    const nextImages = optimizedImages.map((image, index) => ({
+      ...image,
+      title: files[index].name.replace(/\.[^.]+$/, ""),
       memo: "ジャーナルから追加",
-      createdAt: new Date().toISOString(),
       source: "journal",
       favorite: false,
-    })));
+    }));
     setGalleryImages((items: AtelierImage[]) => [...nextImages, ...items]);
     nextImages.forEach(addJournalItem);
   };
   const addBackgroundFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
-    const nextBackgrounds = await Promise.all(files.map(async (file, index) => ({
-      id: uid(),
-      src: await fileToDataUrl(file),
-      title: file.name.replace(/\.[^.]+$/, "") || `お気に入り背景${index + 1}`,
+    const currentBackgrounds = customBackgrounds.length;
+    const remaining = 20 - currentBackgrounds;
+    if (remaining <= 0) {
+      window.alert("背景画像は最大20枚までです");
+      return;
+    }
+    const optimizedBackgrounds = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    if (files.length > remaining) window.alert("背景画像は最大20枚までです");
+    const nextBackgrounds = optimizedBackgrounds.map((image, index) => ({
+      ...image,
+      title: files[index].name.replace(/\.[^.]+$/, "") || `お気に入り背景${index + 1}`,
       memo: "",
-      createdAt: new Date().toISOString(),
       source: "journal-background",
       favorite: false,
-    })));
+    }));
     setJournal((current: JournalState) => ({
       ...current,
       customBackgrounds: [...nextBackgrounds, ...(current.customBackgrounds || [])],
@@ -2829,7 +3040,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
           <strong>画像ストック</strong>
           <div className="journal-stock">
             {images.slice(0, 18).map((image: AtelierImage) => (
-              <button key={image.id} onClick={() => addJournalItem(image)}><img src={image.src} alt="" /></button>
+              <button key={image.id} onClick={() => addJournalItem(image)}><img src={image.thumbnail || image.src} alt="" /></button>
             ))}
           </div>
           {selected && (
@@ -2844,10 +3055,24 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
         <div
           ref={boardRef}
           className={`journal-board ${journal.background}`}
+          tabIndex={0}
           style={selectedCustomBackground ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${selectedCustomBackground.src})` } : undefined}
           onPointerMove={moveItem}
           onPointerUp={() => setDraggingId("")}
           onPointerLeave={() => setDraggingId("")}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            addFiles(event.dataTransfer.files);
+          }}
+          onPaste={(event) => {
+            const files = clipboardImageFiles(event);
+            if (!files.length) return;
+            event.preventDefault();
+            event.stopPropagation();
+            addFiles(files);
+          }}
         >
           {journal.items.length ? journal.items.map((item: JournalItem) => (
             <div
