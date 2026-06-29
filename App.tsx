@@ -17,15 +17,47 @@ type LibraryPrompt = {
   imageUrl: string;
 };
 
+type MockupCategory = {
+  id: string;
+  title: string;
+  description: string;
+  coverImage: string;
+};
+
+type LibraryBoardPrompt = LibraryPrompt & {
+  categoryId: string;
+  japaneseTranslation?: string;
+  memo?: string;
+  isTextStock?: boolean;
+};
+
 type MyPrompt = LibraryPrompt & {
   note: string;
   favorite: boolean;
+  japaneseTranslation?: string;
+  memo?: string;
+  isTextStock?: boolean;
 };
 
 type MjSetting = {
   id: string;
   title: string;
   description: string;
+  imageUrl?: string;
+  images?: string[];
+  prompt?: string;
+  promptEn?: string;
+  promptJa?: string;
+  activeLanguage?: "en" | "ja";
+  memo?: string;
+  basePrompt?: string;
+  originalPrompt?: string;
+  translatedPrompt?: string;
+  englishPrompt?: string;
+  japanesePrompt?: string;
+  extractedParams?: string[];
+  fullPrompt?: string;
+  createdAt?: string;
   ar: string;
   stylize: string;
   chaos: string;
@@ -44,9 +76,36 @@ type Project = {
   mjIds: string[];
   note: string;
   tags: string[];
+  dueDate?: string;
+  remindOnHome?: boolean;
+  updatedAt?: string;
 };
 
-type Screen = "home" | "library" | "prompts" | "mj" | "projects";
+type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize";
+
+type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites";
+type HomeFeatureId = "library" | "prompts" | "mj" | "projects";
+
+type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
+
+type HomeSettings = {
+  themeId: string;
+  bannerImageUrl: string;
+  bannerVisible: boolean;
+  bannerSize: "small" | "medium" | "large";
+  workToolIconStyle: WorkToolIconStyle;
+  visible: Record<string, boolean>;
+  order: HomeSectionId[];
+};
+
+type WorkTool = {
+  id: string;
+  name: string;
+  url: string;
+  iconText: string;
+  iconImage: string;
+  memo: string;
+};
 
 const categories: Category[] = [
   "ステッカーモックアップ",
@@ -57,6 +116,104 @@ const categories: Category[] = [
   "アートプリントモックアップ",
   "アクリルキーホルダーモックアップ",
 ];
+
+const homeSections: { id: HomeSectionId; label: string }[] = [
+  { id: "dashboard", label: "制作状況カード" },
+  { id: "quickActions", label: "作業ツール" },
+  { id: "search", label: "検索バー" },
+  { id: "featureCards", label: "メイン機能カード" },
+  { id: "favorites", label: "お気に入り" },
+];
+
+const homeFeatures: { id: HomeFeatureId; label: string }[] = [
+  { id: "library", label: "モックアップライブラリ" },
+  { id: "prompts", label: "プロンプト帳" },
+  { id: "mj", label: "MJ設定" },
+  { id: "projects", label: "プロジェクト" },
+];
+
+const homeThemes = [
+  { id: "cute", name: "キュート", colors: ["#f7e8e3", "#fffaf4", "#efe4d4"], vars: { ink: "#4a3935", muted: "#806f67", paper: "#fffaf4", ivory: "#fbf6ed", shell: "#f7e8e3", sage: "#dce7d7", sand: "#efe4d4", line: "#eadbd0", accent: "#c88f8d" } },
+  { id: "cool", name: "クール", colors: ["#d9e1e8", "#ffffff", "#42464d"], vars: { ink: "#343841", muted: "#68717d", paper: "#ffffff", ivory: "#f4f7f8", shell: "#d9e1e8", sage: "#dce5e4", sand: "#e9edf0", line: "#d8e0e6", accent: "#72889a" } },
+  { id: "natural", name: "ナチュラル", colors: ["#dce7d7", "#fbf6ed", "#7c624d"], vars: { ink: "#46382d", muted: "#766859", paper: "#fffaf2", ivory: "#f6f1e8", shell: "#e8eadc", sage: "#dce7d7", sand: "#e8dccb", line: "#ded3c1", accent: "#71866d" } },
+  { id: "lavender", name: "ラベンダー", colors: ["#e7dff1", "#eff0ec", "#ffffff"], vars: { ink: "#40384c", muted: "#786f82", paper: "#fffdfd", ivory: "#f7f4fa", shell: "#e7dff1", sage: "#e4ece8", sand: "#ebe5ef", line: "#ded7e8", accent: "#9a85b6" } },
+  { id: "cafe", name: "カフェ", colors: ["#ead8c3", "#b99b83", "#fffaf4"], vars: { ink: "#4a382e", muted: "#806b5b", paper: "#fff8ef", ivory: "#f6eee4", shell: "#ead8c3", sage: "#e2e5d8", sand: "#e6d2bc", line: "#dfcdb9", accent: "#a98270" } },
+  { id: "kstationery", name: "韓国文具", colors: ["#fff4dc", "#f6d9de", "#d7eadf"], vars: { ink: "#493c39", muted: "#7d7167", paper: "#fffdf7", ivory: "#fff8ea", shell: "#f6d9de", sage: "#d7eadf", sand: "#f2e6cf", line: "#eadfcb", accent: "#d49aa5" } },
+  { id: "simple", name: "シンプル", colors: ["#ffffff", "#eeeeee", "#333333"], vars: { ink: "#303030", muted: "#6a6a6a", paper: "#ffffff", ivory: "#f7f7f7", shell: "#eeeeee", sage: "#e9e9e9", sand: "#efefef", line: "#dddddd", accent: "#555555" } },
+  { id: "girly", name: "ガーリー", colors: ["#e9b7c2", "#fff4dc", "#d8b9a2"], vars: { ink: "#55383e", muted: "#896d71", paper: "#fff9f2", ivory: "#fff4e6", shell: "#f3d7dc", sage: "#e3e8d9", sand: "#ead6c5", line: "#ead4d8", accent: "#c97d91" } },
+  { id: "antique", name: "アンティーク", colors: ["#e5d6bd", "#8a7463", "#89906f"], vars: { ink: "#45382c", muted: "#766959", paper: "#fff8ed", ivory: "#f0e5d2", shell: "#e5d6bd", sage: "#d5d9c4", sand: "#d8c6aa", line: "#d4c3aa", accent: "#89906f" } },
+  { id: "pastel", name: "パステル", colors: ["#f7d9e3", "#d8efe5", "#e8ddf4", "#fff4dc"], vars: { ink: "#463d46", muted: "#7b7280", paper: "#fffdf9", ivory: "#fff8ed", shell: "#f7d9e3", sage: "#d8efe5", sand: "#e8ddf4", line: "#eadfeb", accent: "#b995cf" } },
+  { id: "dark", name: "ダークモード", colors: ["#262321", "#3a3430", "#d8c7ae"], vars: { ink: "#f3eadf", muted: "#c6b8aa", paper: "#2a2725", ivory: "#1f1d1c", shell: "#3a3430", sage: "#4d4941", sand: "#d8c7ae", line: "#4a433d", accent: "#d8b98c" } },
+  { id: "night-lavender", name: "ナイトラベンダー", colors: ["#34234d", "#a98bd8", "#fff7ea"], vars: { ink: "#fff7ea", muted: "#d8c8ee", paper: "#3a2854", ivory: "#261936", shell: "#4d3670", sage: "#8069a8", sand: "#efe3ff", line: "#5c4678", accent: "#c7a6ff" } },
+  { id: "vivid-pink", name: "ビビッドピンク", colors: ["#ff4fa3", "#ffffff", "#222222"], vars: { ink: "#221d21", muted: "#6d5964", paper: "#ffffff", ivory: "#fff3f8", shell: "#ffd2e6", sage: "#f0eef5", sand: "#ffe6f1", line: "#f5b5d2", accent: "#ff4fa3" } },
+  { id: "pop-blue", name: "ポップブルー", colors: ["#2477ff", "#ffffff", "#e8edf5"], vars: { ink: "#1d2636", muted: "#59677a", paper: "#ffffff", ivory: "#f4f8ff", shell: "#dce9ff", sage: "#e8edf5", sand: "#edf3ff", line: "#c8dcff", accent: "#2477ff" } },
+  { id: "emerald", name: "エメラルド", colors: ["#00a878", "#fffaf0", "#26312d"], vars: { ink: "#26312d", muted: "#5f746b", paper: "#fffaf0", ivory: "#f2fbf4", shell: "#d8f2e6", sage: "#bfe9d8", sand: "#fff0ce", line: "#bde2d2", accent: "#00a878" } },
+  { id: "retro-orange", name: "レトロオレンジ", colors: ["#f28c28", "#fff1d6", "#704628"], vars: { ink: "#4a2f20", muted: "#80624b", paper: "#fff7ea", ivory: "#fff1d6", shell: "#ffd59d", sage: "#e6d8b9", sand: "#f4c178", line: "#e6b070", accent: "#f28c28" } },
+];
+
+const mjParameterOptions = [
+  "--ar 1:1",
+  "--ar 4:5",
+  "--ar 3:4",
+  "--ar 2:3",
+  "--ar 16:9",
+  "--stylize 50",
+  "--stylize 80",
+  "--stylize 100",
+  "--chaos 5",
+  "--chaos 10",
+  "--chaos 20",
+  "--raw",
+  "--hd",
+  "--seed",
+  "--profile",
+  "--v 6",
+  "--niji 6",
+  "--quality 1",
+  "--weird 50",
+];
+
+const mjParamKey = (param: string) => param.trim().split(/\s+/)[0];
+const mjParamValue = (params: string[], key: string) => {
+  const found = params.find((param) => mjParamKey(param) === key);
+  return found ? found.replace(key, "").trim() : "";
+};
+const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
+const defaultWorkTools: WorkTool[] = [
+  { id: "tool-midjourney", name: "Midjourney", url: "https://www.midjourney.com/", iconText: "MJ", iconImage: "", memo: "画像生成" },
+  { id: "tool-pinterest", name: "Pinterest", url: "https://www.pinterest.com/", iconText: "P", iconImage: "", memo: "参考画像" },
+  { id: "tool-chatgpt", name: "ChatGPT", url: "https://chatgpt.com/", iconText: "GPT", iconImage: "", memo: "文章づくり" },
+];
+
+const defaultHomeSettings: HomeSettings = {
+  themeId: "cute",
+  bannerImageUrl: "",
+  bannerVisible: true,
+  bannerSize: "medium",
+  workToolIconStyle: "pastel",
+  visible: {
+    library: true,
+    prompts: true,
+    mj: true,
+    projects: true,
+    favorites: true,
+    dashboard: true,
+    quickActions: true,
+    search: true,
+    featureCards: true,
+  },
+  order: ["dashboard", "quickActions", "search", "featureCards", "favorites"],
+};
+
+const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => ({
+  ...defaultHomeSettings,
+  ...settings,
+  visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
+  order: [
+    ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
+    ...defaultHomeSettings.order.filter((id) => !(settings?.order || []).includes(id)),
+  ],
+});
 
 const art = (label: string, a: string, b: string) =>
   `data:image/svg+xml,${encodeURIComponent(`
@@ -139,6 +296,135 @@ const libraryPrompts: LibraryPrompt[] = [
   },
 ];
 
+const mockupCategoryIdByTitle: Record<Category, string> = {
+  "ステッカーモックアップ": "sticker",
+  "招待状モックアップ": "invitation",
+  "ポストカードモックアップ": "postcard",
+  "グリーティングカードモックアップ": "greeting-card",
+  "Etsyサムネイル": "etsy-thumbnail",
+  "アートプリントモックアップ": "art-print",
+  "アクリルキーホルダーモックアップ": "keychain",
+};
+
+const defaultMockupCategories: MockupCategory[] = [
+  {
+    id: "sticker",
+    title: "ステッカー",
+    description: "シート、透明、ライフスタイルなど販売画像に使いやすいモックアップ。",
+    coverImage: art("Sticker Board", "#f8e6e1", "#dce7d7"),
+  },
+  {
+    id: "invitation",
+    title: "招待状",
+    description: "結婚式やイベント招待状を上品に見せるカードと封筒の表紙。",
+    coverImage: art("Invitation", "#efe1d2", "#fff6e9"),
+  },
+  {
+    id: "postcard",
+    title: "ポストカード",
+    description: "旅、紙もの、雑貨感のあるポストカード用モックアップ。",
+    coverImage: art("Postcard", "#eee6d9", "#d9e4e8"),
+  },
+  {
+    id: "greeting-card",
+    title: "グリーティングカード",
+    description: "立てかけ、棚、ギフトシーンに合わせたカード用ボード。",
+    coverImage: art("Card", "#f7eadf", "#e5e5dd"),
+  },
+  {
+    id: "etsy-thumbnail",
+    title: "Etsyサムネイル",
+    description: "検索結果で目に留まりやすい商品画像の見せ方。",
+    coverImage: art("Etsy", "#f8efe6", "#eadfcf"),
+  },
+  {
+    id: "art-print",
+    title: "アートプリント",
+    description: "額縁、壁掛け、インテリアに合わせたアート販売用ボード。",
+    coverImage: art("Art Print", "#e4e7df", "#f8efe2"),
+  },
+  {
+    id: "keychain",
+    title: "キーホルダー",
+    description: "アクリルチャームや小物商品のかわいい撮影イメージ。",
+    coverImage: art("Keychain", "#f6e6ec", "#e8edf5"),
+  },
+];
+
+const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
+  ...libraryPrompts.map((prompt) => ({
+    ...prompt,
+    categoryId: mockupCategoryIdByTitle[prompt.category],
+    japaneseTranslation: prompt.prompt,
+  })),
+  {
+    id: "sticker-simple",
+    title: "シンプル",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "白背景でステッカーの形と色を見せる、いちばん使いやすい基本モックアップ。",
+    prompt: "simple sticker mockup on a clean white background, neatly arranged sticker designs, soft natural light, subtle shadows, Etsy listing photo, generous whitespace",
+    japaneseTranslation: "白い背景にステッカーをきれいに並べたシンプルな商品写真。やわらかな自然光、薄い影、Etsy販売画像向け、余白多め。",
+    tags: [],
+    imageUrl: "",
+  },
+  {
+    id: "sticker-lifestyle",
+    title: "ライフスタイル",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "手帳や文具と一緒に置いた、暮らしの中で使う雰囲気のモックアップ。",
+    prompt: "lifestyle sticker mockup on a cute creator desk with planner, pen, washi tape, soft pastel Korean stationery mood, natural daylight, cozy handmade shop aesthetic",
+    japaneseTranslation: "手帳、ペン、マスキングテープのそばにステッカーを置いたライフスタイル写真。韓国文具風、淡いパステル、自然光、かわいい作業机。",
+    tags: [],
+    imageUrl: "",
+  },
+  {
+    id: "sticker-clear",
+    title: "透明ステッカー",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "透明素材の縁やつや感が分かる、質感重視の販売画像。",
+    prompt: "close-up clear sticker mockup showing glossy transparent edges, white backing card, soft reflection, clean premium product photography",
+    japaneseTranslation: "透明ステッカーのつやと薄い縁が見える接写モックアップ。白い台紙、やわらかな反射、清潔感のある商品写真。",
+    tags: [],
+    imageUrl: "",
+  },
+  {
+    id: "sticker-laptop",
+    title: "ノートPC",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "ノートPCに貼った使用例として見せる、クリエイター向けモックアップ。",
+    prompt: "cute sticker mockup placed on a minimal laptop cover, bright desk, stationery props, natural soft shadow, realistic product preview for online shop",
+    japaneseTranslation: "シンプルなノートPCの天板にかわいいステッカーを貼ったモックアップ。明るいデスク、文具、ナチュラルな影、販売用プレビュー。",
+    tags: [],
+    imageUrl: "",
+  },
+  {
+    id: "sticker-phone",
+    title: "スマホ",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "スマホケースや小物に貼った雰囲気が伝わるモックアップ。",
+    prompt: "cute sticker mockup on a phone case, soft pastel background, planner and small stationery props, gentle light, clean handmade product photo",
+    japaneseTranslation: "スマホケースにステッカーを貼ったかわいい商品写真。淡い背景、手帳や小物を添えた構図、やわらかな光。",
+    tags: [],
+    imageUrl: "",
+  },
+  {
+    id: "sticker-packaging",
+    title: "パッケージ",
+    category: "ステッカーモックアップ",
+    categoryId: "sticker",
+    description: "台紙や袋に入れた販売時の梱包イメージを見せるモックアップ。",
+    prompt: "sticker packaging mockup with backing card and clear sleeve, small shop card, soft beige background, handmade Etsy seller product presentation",
+    japaneseTranslation: "ステッカーを台紙と透明袋に入れたパッケージモックアップ。ショップカード、淡いベージュ背景、ハンドメイド販売向け。",
+    tags: [],
+    imageUrl: "",
+  },
+];
+
 const samplePrompts: MyPrompt[] = [
   {
     ...libraryPrompts[0],
@@ -196,10 +482,12 @@ const sampleProjects: Project[] = [
     mjIds: ["mj-1"],
     note: "9月上旬までに30点作成。",
     tags: ["季節商品", "ハロウィン"],
+    dueDate: "2026-09-01",
+    remindOnHome: true,
   },
 ];
 
-const blankPrompt = (): MyPrompt => ({
+const blankPrompt = (textOnly = false): MyPrompt => ({
   id: "",
   title: "",
   category: "ステッカーモックアップ",
@@ -209,6 +497,9 @@ const blankPrompt = (): MyPrompt => ({
   tags: [],
   imageUrl: "",
   favorite: false,
+  japaneseTranslation: "",
+  memo: "",
+  isTextStock: textOnly,
 });
 
 const blankMj = (): MjSetting => ({
@@ -233,12 +524,111 @@ const blankProject = (): Project => ({
   mjIds: [],
   note: "",
   tags: [],
+  dueDate: "",
+  remindOnHome: false,
 });
 
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = (value: string) => value.split(",").map((tag) => tag.trim()).filter(Boolean);
 const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
+
+const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
+
+function themeStyle(theme: any) {
+  const dark = isDarkTheme(theme.id);
+  const decorativeMap: Record<string, string> = {
+    cute: "color-mix(in srgb, #f8cdd5 42%, var(--card-bg))",
+    cool: "color-mix(in srgb, #b9c8d5 38%, transparent)",
+    natural: "color-mix(in srgb, #a9bf91 34%, transparent)",
+    lavender: "color-mix(in srgb, #cdb7e8 36%, transparent)",
+    cafe: "color-mix(in srgb, #caa98d 32%, transparent)",
+    kstationery: "color-mix(in srgb, #f7cbd7 34%, transparent)",
+    simple: "color-mix(in srgb, #d8d8d8 32%, transparent)",
+    girly: "color-mix(in srgb, #e7a9bc 38%, transparent)",
+    antique: "color-mix(in srgb, #b59770 34%, transparent)",
+    pastel: "color-mix(in srgb, #d8c7f0 36%, transparent)",
+    dark: "color-mix(in srgb, #ffffff 14%, transparent)",
+    "night-lavender": "color-mix(in srgb, #c7a6ff 22%, transparent)",
+    "vivid-pink": "color-mix(in srgb, #ff4fa3 34%, transparent)",
+    "pop-blue": "color-mix(in srgb, #2477ff 30%, transparent)",
+    emerald: "color-mix(in srgb, #00a878 28%, transparent)",
+    "retro-orange": "color-mix(in srgb, #f28c28 34%, transparent)",
+  };
+  return {
+    "--app-bg": theme.vars.ivory,
+    "--text-main": theme.vars.ink,
+    "--text-sub": theme.vars.muted,
+    "--ink": theme.vars.ink,
+    "--muted": theme.vars.muted,
+    "--paper": theme.vars.paper,
+    "--ivory": theme.vars.ivory,
+    "--shell": theme.vars.shell,
+    "--sage": theme.vars.sage,
+    "--sand": theme.vars.sand,
+    "--line": theme.vars.line,
+    "--accent": theme.vars.accent,
+    "--accent-soft": dark ? theme.vars.shell : theme.vars.shell,
+    "--sage-deep": theme.vars.accent,
+    "--heading": theme.vars.ink,
+    "--card-bg": dark ? theme.vars.paper : theme.vars.paper,
+    "--card-gradient": dark
+      ? `linear-gradient(145deg, ${theme.vars.paper}, ${theme.vars.shell})`
+      : `linear-gradient(145deg, ${theme.vars.paper} 8%, ${theme.vars.shell} 58%, ${theme.vars.sand})`,
+    "--card-border": theme.vars.line,
+    "--border": theme.vars.line,
+    "--button-bg": dark ? theme.vars.accent : theme.vars.paper,
+    "--button-text": dark ? theme.vars.ivory : theme.vars.ink,
+    "--button-ink": dark ? theme.vars.ivory : theme.vars.ink,
+    "--primary-bg": theme.vars.accent,
+    "--primary-ink": dark ? theme.vars.ivory : "#fffdf9",
+    "--input-bg": dark ? theme.vars.shell : "#fffdf9",
+    "--input-ink": theme.vars.ink,
+    "--icon-bg": dark ? theme.vars.shell : theme.vars.paper,
+    "--icon-color": theme.vars.accent,
+    "--decorative-shape": decorativeMap[theme.id] || "color-mix(in srgb, var(--accent) 24%, transparent)",
+    "--nav-bg": dark ? theme.vars.paper : "color-mix(in srgb, var(--paper) 88%, transparent)",
+    "--nav-ink": theme.vars.ink,
+  } as any;
+}
+
+function projectDueInfo(value: string) {
+  if (!value) return { diff: 999999, expired: false, text: "" };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return { diff: 999999, expired: false, text: "" };
+  const diff = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+  return {
+    diff,
+    expired: diff < 0,
+    text: diff < 0 ? `${Math.abs(diff)}日過ぎています` : diff === 0 ? "今日" : `あと${diff}日`,
+  };
+}
+
+function projectDueText(value: string) {
+  const info = projectDueInfo(value);
+  return info.expired ? "⚠ 達成予定日を過ぎています" : `達成予定まで ${info.text}`;
+}
+
+function projectSortRank(project: Project) {
+  if (!project.dueDate) return 1;
+  return projectDueInfo(project.dueDate).expired ? 2 : 0;
+}
+
+function sortProjectsForDisplay(items: Project[]) {
+  return [...items].sort((a, b) => {
+    const rankDiff = projectSortRank(a) - projectSortRank(b);
+    if (rankDiff) return rankDiff;
+    if (projectSortRank(a) === 0) {
+      const dateDiff = String(a.dueDate).localeCompare(String(b.dueDate));
+      if (dateDiff) return dateDiff;
+    }
+    const updatedDiff = String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+    if (updatedDiff) return updatedDiff;
+    return String(b.id || "").localeCompare(String(a.id || ""));
+  });
+}
 
 function useStoredState<T>(key: string, fallback: T) {
   const [value, setValue] = React.useState<T>(() => {
@@ -249,17 +639,28 @@ function useStoredState<T>(key: string, fallback: T) {
       return fallback;
     }
   });
-  React.useEffect(() => localStorage.setItem(key, JSON.stringify(value)), [key, value]);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
+    }
+  }, [key, value]);
   return [value, setValue] as const;
 }
 
 function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
-  const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("prompt-atelier-mj-ja-v2", sampleMj);
+  const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState<Project[]>("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
+  const [rawHomeSettings, setRawHomeSettings] = useStoredState<HomeSettings>("promptAtelierHomeSettings", defaultHomeSettings);
+  const [workTools, setWorkTools] = useStoredState<WorkTool[]>("promptAtelierWorkTools", defaultWorkTools);
   const [toast, setToast] = React.useState("");
+  const homeSettings = normalizeHomeSettings(rawHomeSettings);
+  const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
+  const appStyle = themeStyle(activeTheme);
 
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
@@ -273,7 +674,7 @@ function App() {
   };
 
   return (
-    <div>
+    <div className="app-shell" style={appStyle}>
       <header className="app-header">
         <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>
@@ -289,6 +690,7 @@ function App() {
             ["prompts", "マイプロンプト"],
             ["mj", "ミッドジャーニー設定"],
             ["projects", "プロジェクト"],
+            ["customize", "カスタマイズ"],
           ].map(([id, label]) => (
             <button key={id} className={screen === id ? "active" : ""} onClick={() => setScreen(id as Screen)}>
               {label}
@@ -305,7 +707,19 @@ function App() {
             favorites={favorites}
             projects={projects}
             myPrompts={myPrompts}
+            mjSettings={mjSettings}
             copyText={copyText}
+            settings={homeSettings}
+            workTools={workTools}
+          />
+        )}
+        {screen === "customize" && (
+          <HomeCustomize
+            settings={homeSettings}
+            setSettings={setRawHomeSettings}
+            setScreen={setScreen}
+            workTools={workTools}
+            setWorkTools={setWorkTools}
           />
         )}
         {screen === "library" && <Library copyText={copyText} />}
@@ -326,92 +740,412 @@ function App() {
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, copyText }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, copyText, settings, workTools }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
+  const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
-    ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "本"],
-    ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "帖"],
-    ["mj", "MJ設定", "Midjourneyパラメータ管理", "MJ"],
-    ["projects", "プロジェクト", "素材セットごとにまとめる", "箱"],
+    ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
+    ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"],
+    ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"],
+    ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"],
   ];
   const searchable = [...myPrompts, ...projects].filter((item: any) => {
     const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
     return homeQuery && lowerIncludes(text, homeQuery);
   }).slice(0, 3);
-  const continueItems = [
-    ...projects.slice(0, 2).map((project: Project) => ({ type: "プロジェクト", title: project.name, note: project.description, tags: project.tags, screen: "projects" })),
-    ...myPrompts.slice(0, 2).map((prompt: MyPrompt) => ({ type: "プロンプト", title: prompt.title, note: prompt.note || prompt.description, tags: prompt.tags, screen: "prompts" })),
-  ].slice(0, 3);
+  const nextReminder = (projects as Project[])
+    .filter((project) => project.remindOnHome && project.dueDate)
+    .sort((a, b) => {
+      const aInfo = projectDueInfo(a.dueDate || "");
+      const bInfo = projectDueInfo(b.dueDate || "");
+      if (aInfo.expired !== bInfo.expired) return aInfo.expired ? -1 : 1;
+      return Math.abs(aInfo.diff) - Math.abs(bInfo.diff);
+    })[0];
+  const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
+  const dashboardItems = [
+    { screen: "library", title: "モックアップ", value: `${Math.max(libraryPrompts.length, 128)}件`, icon: "mockup" },
+    { screen: "prompts", title: "プロンプト帳", value: `${Math.max(myPrompts.length, 42)}件`, icon: "notebook" },
+    { screen: "mj", title: "MJ設定", value: `${Math.max(mjSettings.length, 18)}件`, icon: "magic" },
+    { screen: "projects", title: "プロジェクト", value: `${Math.min(projects.length, 30)}件`, icon: "folder" },
+    {
+      screen: "projects",
+      title: reminderInfo?.expired ? "期限超過" : "達成予定",
+      value: nextReminder ? reminderInfo?.text || "" : "リマインドなし",
+      icon: "alarm",
+      note: nextReminder?.name || "",
+    },
+  ];
+  const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
+  const renderSection = (sectionId: HomeSectionId) => {
+    if (!isVisible(sectionId)) return null;
+    if (sectionId === "dashboard") {
+      return (
+        <section className="dashboard-panel home-module" key={sectionId}>
+          <div className="dashboard-grid">
+            {dashboardItems.map((item) => (
+              <button className="stat-card" key={`${item.title}-${item.icon}`} onClick={() => setScreen(item.screen as Screen)}>
+                <span className="stat-icon"><FeatureIcon name={item.icon} /></span>
+                <span className="stat-title">{item.title}</span>
+                <strong>{item.value}</strong>
+                {item.note && <small>{item.note}</small>}
+              </button>
+            ))}
+          </div>
+        </section>
+      );
+    }
+    if (sectionId === "quickActions") {
+      return (
+        <section className={`work-tools-card home-module ${settings.workToolIconStyle || "pastel"}`} key={sectionId}>
+          <h2>作業ツール</h2>
+          <div className="work-tools-launcher">
+            {normalizedTools.map((tool: WorkTool) => (
+              <a className="work-tool-launcher-item" href={tool.url} target="_blank" rel="noopener noreferrer" key={tool.id} aria-label={`${tool.name}を開く`}>
+                <span>{tool.iconImage ? <img src={tool.iconImage} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
+                <strong>{tool.name}</strong>
+              </a>
+            ))}
+          </div>
+        </section>
+      );
+    }
+    if (sectionId === "search") {
+      return (
+        <section key={sectionId}>
+          <div className="home-search">
+            <span>⌕</span>
+            <input value={homeQuery} onChange={(e) => setHomeQuery(e.target.value)} placeholder="プロンプトやプロジェクトを検索..." />
+          </div>
+          {homeQuery && (
+            <div className="home-search-results">
+              {searchable.length ? searchable.map((item: any) => (
+                <button key={item.id} onClick={() => setScreen(item.name ? "projects" : "prompts")}>
+                  {item.title || item.name}
+                </button>
+              )) : <small>一致する項目がありません。</small>}
+            </div>
+          )}
+        </section>
+      );
+    }
+    if (sectionId === "featureCards") {
+      const visibleEntries = entries.filter(([id]) => isVisible(id as string));
+      if (!visibleEntries.length) return null;
+      return (
+        <section className="home-feature-grid" key={sectionId}>
+          {visibleEntries.map(([id, title, body, icon]) => (
+            <button className="home-feature-card" key={id} onClick={() => setScreen(id as Screen)}>
+              <span className="feature-corner-spark">✦</span>
+              <span className="feature-washi"></span>
+              <span className="feature-icon"><FeatureIcon name={icon as string} /></span>
+              <span className="feature-title">{title}</span>
+              <small>{body}</small>
+            </button>
+          ))}
+        </section>
+      );
+    }
+    if (sectionId === "favorites") {
+      return (
+        <section className="home-favorites-section" key={sectionId}>
+          <SectionTitle title="お気に入り" />
+          <div className="home-prompt-row">
+            {favorites.length ? favorites.map((prompt: MyPrompt) => (
+              <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} favorite />
+            )) : <Empty text="お気に入りにしたプロンプトがここに表示されます。" />}
+          </div>
+        </section>
+      );
+    }
+    return null;
+  };
   return (
     <section className="page home-page">
-      <div className="home-hero">
-        <div className="hero-copy">
-          <span className="soft-label">今日のアトリエ</span>
-          <h1>こんにちは！<br />今日は何を作りますか？</h1>
-          <p>モックアッププロンプトやMJ設定を、作品づくりに合わせて整理できます。</p>
-        </div>
-        <div className="hero-action-card">
-          <span className="hero-spark">＋</span>
-          <p>思いついた言葉を、すぐ作品づくりの材料に。</p>
-          <button className="primary round-button" onClick={() => setScreen("prompts")}>＋ プロンプトを追加</button>
-        </div>
+      <div className="home-topbar">
+        <span>Prompt Atelier Home</span>
       </div>
-
-      <div className="home-search">
-        <span>⌕</span>
-        <input value={homeQuery} onChange={(e) => setHomeQuery(e.target.value)} placeholder="プロンプトやプロジェクトを検索..." />
-      </div>
-      {homeQuery && (
-        <div className="home-search-results">
-          {searchable.length ? searchable.map((item: any) => (
-            <button key={item.id} onClick={() => setScreen(item.name ? "projects" : "prompts")}>
-              {item.title || item.name}
-            </button>
-          )) : <small>一致する項目がありません。</small>}
+      {settings.bannerVisible && (
+        <div
+          className={`home-banner ${settings.bannerSize}`}
+          style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined}
+        >
+          {!settings.bannerImageUrl && (
+            <>
+              <span>✦</span>
+              <i></i>
+              <b></b>
+            </>
+          )}
         </div>
       )}
+      {settings.order.map((sectionId: HomeSectionId) => renderSection(sectionId))}
+    </section>
+  );
+}
 
-      <div className="home-feature-grid">
-        {entries.map(([id, title, body, icon]) => (
-          <button className="home-feature-card" key={id} onClick={() => setScreen(id)}>
-            <span className="feature-icon">{icon}</span>
-            <span className="feature-title">{title}</span>
-            <small>{body}</small>
-          </button>
-        ))}
+function WorkToolEditor({ tool, onClose, onSave }: any) {
+  const [draft, setDraft] = React.useState({ ...tool });
+  const update = (key: keyof WorkTool, value: string) => setDraft({ ...draft, [key]: value });
+  return (
+    <div className="quick-link-editor">
+      <div className="quick-link-editor-head">
+        <strong>{tool.id ? "作業ツールを編集" : "作業ツールを追加"}</strong>
+        <button onClick={onClose}>閉じる</button>
       </div>
-
-      <SectionTitle title="続きから作業" />
-      <div className="continue-grid">
-        {continueItems.length ? continueItems.map((item: any) => (
-          <button className="continue-card" key={`${item.type}-${item.title}`} onClick={() => setScreen(item.screen)}>
-            <span>{item.type}</span>
-            <strong>{item.title}</strong>
-            <small>{item.note || "次の作品づくりをここから再開できます。"}</small>
-          </button>
-        )) : (
-          <button className="continue-card" onClick={() => setScreen("projects")}>
-            <span>サンプル</span>
-            <strong>季節の素材セット</strong>
-            <small>プロジェクトを作ると、ここからすぐ再開できます。</small>
-          </button>
-        )}
+      <input value={draft.name} onChange={(event) => update("name", event.target.value)} placeholder="表示名" />
+      <input value={draft.url} onChange={(event) => update("url", event.target.value)} placeholder="URL" />
+      <input value={draft.iconText} onChange={(event) => update("iconText", event.target.value)} placeholder="アイコン文字（例：MJ / P / GPT）" />
+      <input value={draft.iconImage} onChange={(event) => update("iconImage", event.target.value)} placeholder="アイコン画像URL" />
+      <input type="file" accept="image/*" onChange={(event) => readImage(event, (iconImage) => setDraft({ ...draft, iconImage }))} />
+      <input value={draft.memo || ""} onChange={(event) => update("memo", event.target.value)} placeholder="メモ（任意）" />
+      <div className="quick-link-editor-actions">
+        <button onClick={onClose}>キャンセル</button>
+        <button className="primary" onClick={() => onSave(draft)}>保存する</button>
       </div>
+    </div>
+  );
+}
 
-      <SectionTitle title="お気に入り" />
-      <div className="home-prompt-row">
-        {favorites.length ? favorites.map((prompt: MyPrompt) => (
-          <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} favorite />
-        )) : <Empty text="お気に入りにしたプロンプトがここに表示されます。" />}
-      </div>
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools }: any) {
+  const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
+  const updateSettings = (patch: Partial<HomeSettings>) => setSettings(normalizeHomeSettings({ ...settings, ...patch }));
+  const updateVisible = (id: string, value: boolean) => updateSettings({ visible: { ...settings.visible, [id]: value } });
+  const moveSection = (id: HomeSectionId, direction: -1 | 1) => {
+    const index = settings.order.indexOf(id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= settings.order.length) return;
+    const next = [...settings.order];
+    [next[index], next[target]] = [next[target], next[index]];
+    updateSettings({ order: next });
+  };
+  const reset = () => {
+    if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
+  };
+  const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
+  const saveWorkTool = (tool: WorkTool) => {
+    const rawUrl = tool.url.trim();
+    const safeUrl = rawUrl ? (/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`) : "https://";
+    const next = {
+      ...tool,
+      id: tool.id || uid(),
+      name: tool.name || "新しい作業ツール",
+      url: safeUrl,
+      iconText: tool.iconText || (tool.name || "TL").slice(0, 3).toUpperCase(),
+      iconImage: tool.iconImage || "",
+      memo: tool.memo || "",
+    };
+    setWorkTools((items: WorkTool[]) => tool.id ? items.map((item) => item.id === tool.id ? next : item).slice(0, 10) : [...items, next].slice(0, 10));
+    setEditingTool(null);
+  };
+  const moveWorkTool = (id: string, direction: -1 | 1) => {
+    setWorkTools((items: WorkTool[]) => {
+      const next = [...items];
+      const index = next.findIndex((item) => item.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= next.length) return items;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+  const deleteWorkTool = (id: string) => {
+    if (window.confirm("この作業ツールを削除しますか？")) {
+      setWorkTools((items: WorkTool[]) => items.filter((item) => item.id !== id));
+    }
+  };
+  const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
+  return (
+    <section className="page customize-page">
+      <PageHead
+        title="ホームカスタマイズ"
+        action={<button className="primary" onClick={() => setScreen("home")}>ホームへ戻る</button>}
+      />
+      <div className="customize-layout">
+        <div className="customize-settings">
+          <section className="customize-card">
+            <h3>テーマ</h3>
+            <p>ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。</p>
+            <div className="theme-grid">
+              {homeThemes.map((theme) => (
+                <button
+                  key={theme.id}
+                  className={`theme-card ${settings.themeId === theme.id ? "selected" : ""}`}
+                  onClick={() => updateSettings({ themeId: theme.id })}
+                >
+                  <span>{theme.name}</span>
+                  <small>
+                    {theme.colors.map((color) => <i key={color} style={{ background: color }} />)}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </section>
 
-      <SectionTitle title="最近使ったプロンプト" />
-      <div className="home-prompt-row recent-row">
-        {recent.length ? recent.map((prompt: LibraryPrompt) => (
-          <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} />
-        )) : <Empty text="まだコピー履歴がありません。" />}
+          <section className="customize-card">
+            <h3>バナー</h3>
+            <p>ホーム上部に表示する横長画像を設定できます。</p>
+            <label className="switch-row">
+              <span>バナー表示</span>
+              <input type="checkbox" checked={settings.bannerVisible} onChange={(event) => updateSettings({ bannerVisible: event.target.checked })} />
+            </label>
+            <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value })} placeholder="バナー画像URL" />
+            <div className="inline-buttons">
+              {(["small", "medium", "large"] as const).map((size) => (
+                <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => updateSettings({ bannerSize: size })}>
+                  {size === "small" ? "小" : size === "medium" ? "中" : "大"}
+                </button>
+              ))}
+              <button onClick={() => updateSettings({ bannerImageUrl: "" })}>画像を削除</button>
+            </div>
+          </section>
+
+          <section className="customize-card">
+            <h3>作業ツール</h3>
+            <p>ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。</p>
+            <div className="icon-style-choices">
+              <strong>アイコンテイスト</strong>
+              {[
+                ["simple", "シンプル"],
+                ["pastel", "パステル"],
+                ["frame", "フレーム"],
+                ["cool", "クール"],
+                ["dark", "ダーク"],
+                ["vivid", "ビビッド"],
+                ["cute", "キュート"],
+              ].map(([id, label]) => (
+                <button key={id} className={settings.workToolIconStyle === id ? "active-soft" : ""} onClick={() => updateSettings({ workToolIconStyle: id as WorkToolIconStyle })}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className={`work-tool-edit-list ${settings.workToolIconStyle || "pastel"}`}>
+              {normalizedTools.map((tool: WorkTool, index: number) => (
+                <article className="work-tool-edit-row" key={tool.id}>
+                  <span className="work-tool-edit-icon">{tool.iconImage ? <img src={tool.iconImage} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
+                  <div>
+                    <strong>{tool.name}</strong>
+                    <small>{tool.url}</small>
+                  </div>
+                  <div className="work-tool-edit-actions">
+                    <button onClick={() => setEditingTool(tool)}>編集</button>
+                    <button onClick={() => moveWorkTool(tool.id, -1)} disabled={index === 0}>左へ</button>
+                    <button onClick={() => moveWorkTool(tool.id, 1)} disabled={index === normalizedTools.length - 1}>右へ</button>
+                    <button className="danger" onClick={() => deleteWorkTool(tool.id)}>削除</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {normalizedTools.length < 10 ? (
+              <button className="add-work-tool-button" onClick={() => setEditingTool({ id: "", name: "", url: "", iconText: "", iconImage: "", memo: "" })}>
+                ＋ 作業ツールを追加
+              </button>
+            ) : <p className="limit-message">作業ツールは最大10件まで登録できます</p>}
+            {editingTool && <WorkToolEditor tool={editingTool} onClose={() => setEditingTool(null)} onSave={saveWorkTool} />}
+          </section>
+
+          <section className="customize-card">
+            <h3>表示項目</h3>
+            <p>ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。</p>
+            <div className="toggle-list">
+              {[...homeFeatures, ...homeSections].map((item) => (
+                <label className="switch-row" key={item.id}>
+                  <span>{item.label}</span>
+                  <input type="checkbox" checked={settings.visible[item.id] !== false} onChange={(event) => updateVisible(item.id, event.target.checked)} />
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="customize-card">
+            <h3>並び順</h3>
+            <p>ホームの表示順を「上へ」「下へ」で調整できます。</p>
+            <div className="order-list">
+              {settings.order.map((id: HomeSectionId) => {
+                const section = homeSections.find((item) => item.id === id);
+                return (
+                  <div className="order-row" key={id}>
+                    <span>{section?.label}</span>
+                    <div>
+                      <button onClick={() => moveSection(id, -1)}>上へ</button>
+                      <button onClick={() => moveSection(id, 1)}>下へ</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="customize-card danger-zone">
+            <h3>初期化</h3>
+            <p>テーマ、バナー、表示項目、並び順を初期設定に戻します。</p>
+            <button className="danger" onClick={reset}>初期設定に戻す</button>
+          </section>
+        </div>
+
+        <aside className="customize-preview">
+          <span>プレビュー</span>
+          <div className="preview-shell" style={themeStyle(activeTheme)}>
+            {settings.bannerVisible && <div className={`preview-banner ${settings.bannerSize}`} style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined} />}
+            <div className="preview-card large"></div>
+            <div className="preview-grid">
+              <i></i><i></i><i></i><i></i>
+            </div>
+          </div>
+        </aside>
       </div>
     </section>
+  );
+}
+
+function FeatureIcon({ name }: { name: string }) {
+  if (name === "mockup") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="13" y="16" width="38" height="32" rx="7" />
+        <path d="M19 39l8-8 7 7 5-5 8 8" />
+        <circle cx="42" cy="25" r="3.5" />
+        <path d="M10 13l3-5 3 5 5 3-5 3-3 5-3-5-5-3 5-3z" className="icon-fill" />
+      </svg>
+    );
+  }
+  if (name === "notebook") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M18 12h27a6 6 0 016 6v31a5 5 0 01-5 5H18a5 5 0 01-5-5V17a5 5 0 015-5z" />
+        <path d="M22 12v42" />
+        <path d="M29 24h13M29 32h10" />
+        <path d="M44 12v15l-5-3-5 3V12" className="icon-fill" />
+        <path d="M10 22h7M10 32h7M10 42h7" />
+      </svg>
+    );
+  }
+  if (name === "magic") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M18 48l28-28" />
+        <path d="M39 17l8 8" />
+        <path d="M18 18l3-6 3 6 6 3-6 3-3 6-3-6-6-3 6-3z" className="icon-fill" />
+        <path d="M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
+        <path d="M31 47h21M34 54h13" />
+      </svg>
+    );
+  }
+  if (name === "alarm") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="34" r="18" />
+        <path d="M22 10l-9 8M42 10l9 8M32 22v13l9 5M24 54l-4 5M40 54l4 5" />
+        <path d="M25 5h14" className="icon-fill" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M11 22h17l5-6h20v31a6 6 0 01-6 6H17a6 6 0 01-6-6V22z" />
+      <path d="M11 28h42" />
+      <rect x="20" y="34" width="24" height="12" rx="4" className="icon-fill" />
+      <path d="M24 40h16" />
+      <path d="M49 14l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
+    </svg>
   );
 }
 
@@ -436,26 +1170,498 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
 
 function Library({ copyText }: any) {
   const [query, setQuery] = React.useState("");
-  const [category, setCategory] = React.useState("すべて");
-  const filtered = libraryPrompts.filter((item) => {
-    const categoryOk = category === "すべて" || item.category === category;
-    const haystack = `${item.title} ${item.description} ${item.prompt} ${item.tags.join(" ")}`;
-    return categoryOk && lowerIncludes(haystack, query);
+  const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
+  const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
+  const [editingPrompt, setEditingPrompt] = React.useState<LibraryBoardPrompt | null>(null);
+  const [translationPrompt, setTranslationPrompt] = React.useState<LibraryBoardPrompt | null>(null);
+  const [memoPrompt, setMemoPrompt] = React.useState<LibraryBoardPrompt | null>(null);
+  const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
+  const [stockFrameCounts, setStockFrameCounts] = React.useState<Record<string, number>>({});
+  const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
+  const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
+  const currentCategory = selectedCategory ? boardCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
+  const filteredCategories = boardCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
+  const filteredPrompts = boardPrompts.filter((item) => {
+    const haystack = `${item.title} ${item.description} ${item.prompt}`;
+    return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
+  const categoryPrompts = currentCategory ? boardPrompts.filter((item) => item.categoryId === currentCategory.id) : [];
+  const imagePrompts = filteredPrompts.filter((item) => !item.isTextStock).slice(0, 20);
+  const textPrompts = filteredPrompts.filter((item) => item.isTextStock);
+  const textStockCount = categoryPrompts.filter((item) => item.isTextStock).length;
+  const canAddImagePrompt = imagePrompts.length < 20;
+  const canAddTextStock = textStockCount < 100;
+  const stockFrameCount = currentCategory ? Math.min(100, Math.max(5, stockFrameCounts[currentCategory.id] || 5, textPrompts.length)) : 5;
+  const textStockSlots = currentCategory ? Array.from({ length: stockFrameCount }, (_, index) => textPrompts[index] || null) : [];
+  const imageSlotCount = imagePrompts.length < 20
+    ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4)
+    : 20;
+  const imagePromptSlots = currentCategory ? Array.from({ length: imageSlotCount }, (_, index) => imagePrompts[index] || null) : [];
+  const createBlankLibraryPrompt = (textOnly = false) => ({
+    id: "",
+    title: "",
+    category: "ステッカーモックアップ" as Category,
+    categoryId: currentCategory?.id || boardCategories[0]?.id || "",
+    description: "",
+    prompt: "",
+    memo: "",
+    tags: [],
+    imageUrl: "",
+    japaneseTranslation: "",
+    isTextStock: textOnly,
+  });
+  const saveCategory = (item: MockupCategory) => {
+    const next = { ...item, id: item.id || uid(), coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7") };
+    setBoardCategories((items: MockupCategory[]) => item.id ? items.map((category) => category.id === item.id ? next : category) : [next, ...items]);
+    setEditingCategory(null);
+  };
+  const savePrompt = (item: LibraryBoardPrompt) => {
+    const category = boardCategories.find((category) => category.id === item.categoryId) || currentCategory || boardCategories[0];
+    const countForKind = boardPrompts.filter((prompt) => prompt.categoryId === category.id && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
+    const limit = item.isTextStock ? 100 : 20;
+    if (!item.id && countForKind >= limit) {
+      setEditingPrompt(null);
+      return;
+    }
+    const next = {
+      ...item,
+      id: item.id || uid(),
+      categoryId: item.categoryId || category.id,
+      category: "ステッカーモックアップ" as Category,
+      imageUrl: item.imageUrl || "",
+      japaneseTranslation: item.japaneseTranslation || item.prompt,
+      memo: item.memo || "",
+      tags: item.tags || [],
+      isTextStock: Boolean(item.isTextStock),
+    };
+    setBoardPrompts((items: LibraryBoardPrompt[]) => item.id ? items.map((prompt) => prompt.id === item.id ? next : prompt) : [...items, next]);
+    setEditingPrompt(null);
+  };
+  const duplicateCategory = (item: MockupCategory) => {
+    setBoardCategories((items: MockupCategory[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
+  };
+  const duplicatePrompt = (item: LibraryBoardPrompt) => {
+    const countForKind = boardPrompts.filter((prompt) => prompt.categoryId === item.categoryId && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
+    if (countForKind >= (item.isTextStock ? 100 : 20)) return;
+    setBoardPrompts((items: LibraryBoardPrompt[]) => [...items, { ...item, id: uid(), title: `${item.title} コピー` }]);
+  };
+  const updatePrompt = (id: string, patch: Partial<LibraryBoardPrompt>) => {
+    setBoardPrompts((items: LibraryBoardPrompt[]) => items.map((prompt) => prompt.id === id ? { ...prompt, ...patch } : prompt));
+  };
+  const saveTextStockFrame = (item: LibraryBoardPrompt) => {
+    if (!item.title.trim() && !item.prompt.trim()) return;
+    savePrompt({ ...item, isTextStock: true, imageUrl: "" });
+  };
+  const addTextStockFrame = () => {
+    if (!currentCategory || !canAddTextStock) return;
+    setStockFrameCounts((counts) => ({ ...counts, [currentCategory.id]: Math.min(100, stockFrameCount + 1) }));
+  };
   return (
-    <section className="page">
-      <PageHead title="モックアッププロンプトライブラリ" action={null} />
-      <Filters>
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="タイトル、タグ、本文で検索" />
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option>すべて</option>
-          {categories.map((cat) => <option key={cat}>{cat}</option>)}
-        </select>
-      </Filters>
-      <div className="card-grid">
-        {filtered.map((prompt) => <PromptCard key={prompt.id} prompt={prompt} onCopy={copyText} />)}
-      </div>
+    <section className="page library-page">
+      {!currentCategory ? (
+        <>
+          <PageHead
+            title="モックアップライブラリ"
+            action={<button className="primary" onClick={() => setEditingCategory({ id: "", title: "", description: "", coverImage: "" })}>＋ カテゴリを追加</button>}
+          />
+          <div className="library-intro">
+            <p>販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。</p>
+          </div>
+          <Filters>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="カテゴリを検索..." />
+          </Filters>
+          <div className="library-category-grid">
+            {filteredCategories.map((category) => (
+              <article className="library-category-card" key={category.id}>
+                <MenuButton
+                  onEdit={() => setEditingCategory(category)}
+                  onDuplicate={() => duplicateCategory(category)}
+                  onImage={() => setEditingCategory(category)}
+                  onDelete={() => setBoardCategories((items: MockupCategory[]) => items.filter((item) => item.id !== category.id))}
+                />
+                <button className="category-open" onClick={() => { setSelectedCategory(category); setQuery(""); }}>
+                  <img src={category.coverImage} alt="" />
+                  <span>{category.title}</span>
+                  <small>{category.description}</small>
+                </button>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="library-detail-head">
+            <img className="library-detail-cover" src={currentCategory.coverImage} alt="" />
+            <div>
+              <h2>{currentCategory.title}</h2>
+              <p>{currentCategory.description}</p>
+            </div>
+            <span className="prompt-count-pill">画像 {imagePrompts.length} / 20・ストック {textStockCount} / 100</span>
+          </div>
+          <Filters>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${currentCategory.title}内を検索...`} />
+          </Filters>
+          <section className="prompt-area">
+            <div className="prompt-area-head">
+              <div>
+                <h3>画像付きプロンプト</h3>
+                <p>最大20個まで保存できます。</p>
+              </div>
+            </div>
+            <div className="library-prompt-grid">
+              {imagePromptSlots.map((prompt, index) => prompt ? (
+                <LibraryImagePromptCard
+                  key={prompt.id}
+                  prompt={prompt}
+                  inlineEdit={inlineEdit}
+                  setInlineEdit={setInlineEdit}
+                  updatePrompt={updatePrompt}
+                  duplicatePrompt={duplicatePrompt}
+                  deletePrompt={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+                  copyText={copyText}
+                  showTranslation={() => setTranslationPrompt(prompt)}
+                  showMemo={() => setMemoPrompt(prompt)}
+                />
+              ) : canAddImagePrompt ? (
+                <button className="add-prompt-card" key={`empty-prompt-${index}`} onClick={() => setEditingPrompt(createBlankLibraryPrompt())}>
+                  <span>＋</span>
+                  <strong>新しいプロンプト</strong>
+                </button>
+              ) : null)}
+            </div>
+          </section>
+          <section className="prompt-area text-prompt-area">
+            <div className="prompt-area-head">
+              <div>
+                <h3>プロンプトストック</h3>
+                <p>画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+              </div>
+            </div>
+            <div className="text-prompt-list">
+              {textStockSlots.map((prompt, index) => (
+                <TextStockFrame
+                  key={prompt?.id || `stock-frame-${index}`}
+                  prompt={prompt}
+                  blankPrompt={createBlankLibraryPrompt(true)}
+                  onCreate={saveTextStockFrame}
+                  onUpdate={updatePrompt}
+                  copyText={copyText}
+                  showTranslation={() => prompt && setTranslationPrompt(prompt)}
+                  showMemo={() => prompt && setMemoPrompt(prompt)}
+                />
+              ))}
+            </div>
+            {canAddTextStock && textStockCount >= stockFrameCount && (
+              <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
+            )}
+            {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+          </section>
+          <button className="back-to-library" onClick={() => { setSelectedCategory(null); setQuery(""); }}>← ライブラリへ戻る</button>
+        </>
+      )}
+      {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
+      {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={boardCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
+      {translationPrompt && <TranslationModal prompt={translationPrompt} onClose={() => setTranslationPrompt(null)} copyText={copyText} />}
+      {memoPrompt && (
+        <MemoModal
+          prompt={memoPrompt}
+          onClose={() => setMemoPrompt(null)}
+          onSave={(memo) => {
+            updatePrompt(memoPrompt.id, { memo });
+            setMemoPrompt(null);
+          }}
+        />
+      )}
     </section>
+  );
+}
+
+function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showTranslation, showMemo }: any) {
+  return (
+    <article className="library-prompt-card">
+      <PromptMenuButton
+        onDuplicate={() => duplicatePrompt(prompt)}
+        onClearImage={() => updatePrompt(prompt.id, { imageUrl: "" })}
+        onDelete={deletePrompt}
+      />
+      <EditableThumbnail
+        prompt={prompt}
+        isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl"}
+        onEdit={() => setInlineEdit({ id: prompt.id, field: "imageUrl" })}
+        onCancel={() => setInlineEdit(null)}
+        onSave={(imageUrl: string) => { updatePrompt(prompt.id, { imageUrl }); setInlineEdit(null); }}
+      />
+      <div className="prompt-card-content">
+        <InlineEditable
+          className="inline-title"
+          value={prompt.title}
+          placeholder="タイトル"
+          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "title"}
+          onEdit={() => setInlineEdit({ id: prompt.id, field: "title" })}
+          onSave={(title: string) => { updatePrompt(prompt.id, { title }); setInlineEdit(null); }}
+        />
+        <InlineEditable
+          className="inline-prompt"
+          multiline
+          value={prompt.prompt}
+          placeholder="プロンプト本文"
+          isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "prompt"}
+          onEdit={() => setInlineEdit({ id: prompt.id, field: "prompt" })}
+          onSave={(promptText: string) => { updatePrompt(prompt.id, { prompt: promptText }); setInlineEdit(null); }}
+        />
+        <div className="prompt-card-actions">
+          <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
+          <button onClick={(event) => { event.stopPropagation(); showTranslation(); }}>和訳</button>
+          <button onClick={(event) => { event.stopPropagation(); showMemo(); }}>メモ</button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showTranslation, showMemo }: any) {
+  const [title, setTitle] = React.useState(prompt?.title || "");
+  const [promptText, setPromptText] = React.useState(prompt?.prompt || "");
+  React.useEffect(() => {
+    setTitle(prompt?.title || "");
+    setPromptText(prompt?.prompt || "");
+  }, [prompt?.id, prompt?.title, prompt?.prompt]);
+  const isSaved = Boolean(prompt?.id);
+  const save = (patch: Partial<LibraryBoardPrompt>) => {
+    const next = { ...blankPrompt, ...prompt, title, prompt: promptText, ...patch, isTextStock: true, imageUrl: "" };
+    if (isSaved) {
+      onUpdate(prompt.id, patch);
+      return;
+    }
+    if ((next.title || "").trim() || (next.prompt || "").trim()) onCreate(next);
+  };
+  const copyStockPrompt = (event: any) => {
+    event.stopPropagation();
+    copyText(promptText, prompt?.id);
+  };
+  return (
+    <article className="text-stock-frame">
+      <input
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        onBlur={() => save({ title })}
+        placeholder="タイトル"
+      />
+      <textarea
+        value={promptText}
+        onChange={(event) => setPromptText(event.target.value)}
+        onBlur={() => save({ prompt: promptText })}
+        placeholder="プロンプト本文"
+      />
+      <div className="text-stock-actions">
+        <button className="primary" onClick={copyStockPrompt} disabled={!promptText.trim()}>📋 プロンプトをコピー</button>
+        <button onClick={(event) => { event.stopPropagation(); showTranslation(); }} disabled={!isSaved}>和訳</button>
+        <button onClick={(event) => { event.stopPropagation(); showMemo(); }} disabled={!isSaved}>メモ</button>
+      </div>
+    </article>
+  );
+}
+
+function PromptThumbnail({ imageUrl }: { imageUrl?: string }) {
+  if (imageUrl) return <img src={imageUrl} alt="" />;
+  return (
+    <div className="image-placeholder" aria-label="画像未設定">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="12" y="16" width="40" height="32" rx="7" />
+        <path d="M18 41l10-10 8 8 5-5 7 7" />
+        <circle cx="42" cy="25" r="4" />
+      </svg>
+    </div>
+  );
+}
+
+function EditableThumbnail({ prompt, isEditing, onEdit, onCancel, onSave }: any) {
+  const [draft, setDraft] = React.useState(prompt.imageUrl || "");
+  React.useEffect(() => setDraft(prompt.imageUrl || ""), [prompt.imageUrl, isEditing]);
+  if (isEditing) {
+    return (
+      <div className="thumbnail-editor" onClick={(event) => event.stopPropagation()}>
+        <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="サムネイル画像URL" autoFocus />
+        <label className="mini-upload">
+          画像を選ぶ
+          <input type="file" accept="image/*" onChange={(event) => readImage(event, (imageUrl) => setDraft(imageUrl))} />
+        </label>
+        <div>
+          <button className="primary" onClick={() => onSave(draft)}>保存</button>
+          <button onClick={onCancel}>閉じる</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <button className="thumbnail-button" onClick={(event) => { event.stopPropagation(); onEdit(); }} aria-label="画像を変更">
+      <PromptThumbnail imageUrl={prompt.imageUrl} />
+    </button>
+  );
+}
+
+function InlineEditable({ value, placeholder, isEditing, onEdit, onSave, multiline, className }: any) {
+  const [draft, setDraft] = React.useState(value || "");
+  React.useEffect(() => setDraft(value || ""), [value, isEditing]);
+  const save = () => onSave(draft.trim() || value || "");
+  if (isEditing) {
+    const commonProps = {
+      value: draft,
+      onChange: (event: any) => setDraft(event.target.value),
+      onBlur: save,
+      onClick: (event: any) => event.stopPropagation(),
+      onKeyDown: (event: any) => {
+        if (event.key === "Enter" && !multiline) save();
+        if (event.key === "Escape") setDraft(value || "");
+      },
+      autoFocus: true,
+      placeholder,
+      className: `inline-input ${className || ""}`,
+    };
+    return multiline ? <textarea {...commonProps} /> : <input {...commonProps} />;
+  }
+  const Tag = className === "inline-title" ? "h3" : "p";
+  return <Tag className={`inline-editable ${className || ""}`} onClick={(event: any) => { event.stopPropagation(); onEdit(); }}>{value || placeholder}</Tag>;
+}
+
+function TranslationModal({ prompt, onClose, copyText }: any) {
+  const translation = prompt.japaneseTranslation || "このプロンプトにはまだ和訳がありません。編集画面から和訳を追加できます。";
+  return (
+    <Modal title="日本語訳" onClose={onClose}>
+      <div className="translation-box">
+        <h3>{prompt.title} の和訳</h3>
+        <p>{translation}</p>
+      </div>
+      <div className="modal-actions">
+        <button onClick={onClose}>閉じる</button>
+        <button className="primary" onClick={() => copyText(translation)}>和訳をコピー</button>
+      </div>
+    </Modal>
+  );
+}
+
+function MemoModal({ prompt, onClose, onSave }: any) {
+  const [memo, setMemo] = React.useState(prompt.memo || "");
+  const [showConfirm, setShowConfirm] = React.useState(false);
+  const savedMemo = prompt.memo || "";
+  const isDirty = memo !== savedMemo;
+  const requestClose = () => {
+    if (isDirty) {
+      setShowConfirm(true);
+      return;
+    }
+    onClose();
+  };
+  return (
+    <Modal title="メモ" onClose={requestClose} hideClose>
+      <div className="translation-box">
+        <h3>{prompt.title} のメモ</h3>
+        <textarea className="memo-textarea" value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="このプロンプトで気づいたこと、使いどころ、商品化メモなど" />
+      </div>
+      {showConfirm && (
+        <div className="unsaved-confirm">
+          <strong>保存せず閉じますか？</strong>
+          <div>
+            <button onClick={() => setShowConfirm(false)}>キャンセル</button>
+            <button className="danger" onClick={onClose}>保存せず閉じる</button>
+            <button className="primary" onClick={() => onSave(memo)}>保存して閉じる</button>
+          </div>
+        </div>
+      )}
+      <div className="memo-modal-footer">
+        <button onClick={requestClose}>閉じる</button>
+        <button className="primary" onClick={() => onSave(memo)}>メモを保存</button>
+      </div>
+    </Modal>
+  );
+}
+
+function MenuButton({ onEdit, onDuplicate, onImage, onDelete }: any) {
+  const runMenuAction = (event: any, action: () => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  };
+  return (
+    <details className="card-menu" onClick={(event) => event.stopPropagation()}>
+      <summary aria-label="メニュー">…</summary>
+      <div>
+        <button onClick={(event) => runMenuAction(event, onEdit)}>編集</button>
+        <button onClick={(event) => runMenuAction(event, onDuplicate)}>複製</button>
+        <button onClick={(event) => runMenuAction(event, onImage)}>画像変更</button>
+        <button className="danger" onClick={(event) => runMenuAction(event, onDelete)}>削除</button>
+      </div>
+    </details>
+  );
+}
+
+function PromptMenuButton({ onDuplicate, onClearImage, onDelete }: any) {
+  const runMenuAction = (event: any, action: () => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  };
+  return (
+    <details className="card-menu" onClick={(event) => event.stopPropagation()}>
+      <summary aria-label="メニュー">…</summary>
+      <div>
+        <button onClick={(event) => runMenuAction(event, onDuplicate)}>複製</button>
+        <button onClick={(event) => runMenuAction(event, onClearImage)}>画像を削除</button>
+        <button className="danger" onClick={(event) => runMenuAction(event, onDelete)}>削除</button>
+      </div>
+    </details>
+  );
+}
+
+function readImage(event: any, onLoad: (value: string) => void) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => onLoad(String(reader.result || ""));
+  reader.readAsDataURL(file);
+}
+
+function MockupCategoryModal({ item, onClose, onSave }: any) {
+  const [draft, setDraft] = React.useState({ ...item });
+  return (
+    <Modal title={item.id ? "カテゴリを編集" : "カテゴリを追加"} onClose={onClose}>
+      <FormGrid>
+        <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
+        <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明文" />
+        <input value={draft.coverImage} onChange={(e) => setDraft({ ...draft, coverImage: e.target.value })} placeholder="カバー画像URL" />
+        <label className="upload-box">
+          <span>画像をアップロード</span>
+          <input type="file" accept="image/*" onChange={(e) => readImage(e, (coverImage) => setDraft({ ...draft, coverImage }))} />
+        </label>
+        {draft.coverImage && <img className="modal-preview-image" src={draft.coverImage} alt="" />}
+      </FormGrid>
+      <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
+    </Modal>
+  );
+}
+
+function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
+  const [draft, setDraft] = React.useState({ ...item });
+  return (
+    <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
+      <FormGrid>
+        <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
+        <select value={draft.categoryId} onChange={(e) => setDraft({ ...draft, categoryId: e.target.value })}>
+          {categories.map((category: MockupCategory) => <option value={category.id} key={category.id}>{category.title}</option>)}
+        </select>
+        <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
+        <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
+        <textarea className="tall" value={draft.japaneseTranslation || ""} onChange={(e) => setDraft({ ...draft, japaneseTranslation: e.target.value })} placeholder="和訳本文" />
+        <textarea value={draft.memo || ""} onChange={(e) => setDraft({ ...draft, memo: e.target.value })} placeholder="メモ" />
+        <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サムネイル画像URL" />
+        <label className="upload-box">
+          <span>画像をアップロード</span>
+          <input type="file" accept="image/*" onChange={(e) => readImage(e, (imageUrl) => setDraft({ ...draft, imageUrl }))} />
+        </label>
+        {draft.imageUrl && <img className="modal-preview-image" src={draft.imageUrl} alt="" />}
+      </FormGrid>
+      <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
+    </Modal>
   );
 }
 
@@ -464,19 +1670,64 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
   const [editing, setEditing] = React.useState<MyPrompt | null>(null);
+  const [translationPrompt, setTranslationPrompt] = React.useState<MyPrompt | null>(null);
+  const [memoPrompt, setMemoPrompt] = React.useState<MyPrompt | null>(null);
+  const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
+  const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const tags = Array.from(new Set(prompts.flatMap((p: MyPrompt) => p.tags))).sort();
   const filtered = prompts.filter((item: MyPrompt) => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
     return lowerIncludes(haystack, query) && (tag === "すべて" || item.tags.includes(tag)) && (!favoritesOnly || item.favorite);
   });
+  const imagePrompts = filtered.filter((item: MyPrompt) => !item.isTextStock).slice(0, 20);
+  const textPrompts = filtered.filter((item: MyPrompt) => item.isTextStock);
+  const imagePromptCount = prompts.filter((item: MyPrompt) => !item.isTextStock).length;
+  const textStockCount = prompts.filter((item: MyPrompt) => item.isTextStock).length;
+  const canAddImagePrompt = imagePromptCount < 20;
+  const canAddTextStock = textStockCount < 100;
+  const imageSlotCount = imagePrompts.length < 20 ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4) : 20;
+  const imagePromptSlots = Array.from({ length: imageSlotCount }, (_, index) => imagePrompts[index] || null);
+  const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, textPrompts.length));
+  const textStockSlots = Array.from({ length: visibleStockFrameCount }, (_, index) => textPrompts[index] || null);
   const save = (item: MyPrompt) => {
-    const next = { ...item, id: item.id || uid(), imageUrl: item.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df") };
-    setPrompts((items: MyPrompt[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items]);
+    const countForKind = prompts.filter((prompt: MyPrompt) => Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
+    const limit = item.isTextStock ? 100 : 20;
+    if (!item.id && countForKind >= limit) {
+      setEditing(null);
+      return;
+    }
+    const next = {
+      ...item,
+      id: item.id || uid(),
+      imageUrl: item.isTextStock ? "" : item.imageUrl || "",
+      japaneseTranslation: item.japaneseTranslation || item.prompt,
+      memo: item.memo || item.note || "",
+      note: item.note || item.memo || "",
+      tags: item.tags || [],
+      favorite: Boolean(item.favorite),
+    };
+    setPrompts((items: MyPrompt[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [...items, next]);
     setEditing(null);
   };
+  const updatePrompt = (id: string, patch: Partial<MyPrompt>) => {
+    setPrompts((items: MyPrompt[]) => items.map((prompt) => prompt.id === id ? { ...prompt, ...patch } : prompt));
+  };
+  const duplicatePrompt = (prompt: MyPrompt) => {
+    const countForKind = prompts.filter((item: MyPrompt) => Boolean(item.isTextStock) === Boolean(prompt.isTextStock)).length;
+    if (countForKind >= (prompt.isTextStock ? 100 : 20)) return;
+    setPrompts((items: MyPrompt[]) => [...items, { ...prompt, id: uid(), title: `${prompt.title} コピー` }]);
+  };
+  const saveTextStockFrame = (item: MyPrompt) => {
+    if (!item.title.trim() && !item.prompt.trim()) return;
+    save({ ...item, isTextStock: true, imageUrl: "" });
+  };
+  const addTextStockFrame = () => {
+    if (!canAddTextStock) return;
+    setStockFrameCount((count) => Math.min(100, count + 1));
+  };
   return (
-    <section className="page">
-      <PageHead title="マイプロンプト帳" action={<button className="primary" onClick={() => setEditing(blankPrompt())}>追加する</button>} />
+    <section className="page prompt-book-page">
+      <PageHead title="プロンプト帳" action={<span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span>} />
       <Filters>
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="検索" />
         <select value={tag} onChange={(e) => setTag(e.target.value)}>
@@ -485,77 +1736,671 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
         </select>
         <label className="check"><input type="checkbox" checked={favoritesOnly} onChange={(e) => setFavoritesOnly(e.target.checked)} /> お気に入りのみ</label>
       </Filters>
-      <div className="card-grid">
-        {filtered.map((prompt: MyPrompt) => (
-          <PromptCard
-            key={prompt.id}
-            prompt={prompt}
-            onCopy={copyText}
-            extra={
-              <>
-                <button onClick={() => setPrompts((items: MyPrompt[]) => items.map((p) => p.id === prompt.id ? { ...p, favorite: !p.favorite } : p))}>
-                  {prompt.favorite ? "お気に入り済み" : "お気に入り"}
-                </button>
-                <button onClick={() => setEditing(prompt)}>編集</button>
-                <button className="danger" onClick={() => setPrompts((items: MyPrompt[]) => items.filter((p) => p.id !== prompt.id))}>削除</button>
-              </>
-            }
-          />
-        ))}
-      </div>
+      <section className="prompt-area">
+        <div className="prompt-area-head">
+          <div>
+            <h3>画像付きプロンプト</h3>
+            <p>お気に入り・よく使うプロンプトを、最大20個まで保存できます。</p>
+          </div>
+        </div>
+        <div className="library-prompt-grid">
+          {imagePromptSlots.map((prompt, index) => prompt ? (
+            <LibraryImagePromptCard
+              key={prompt.id}
+              prompt={prompt}
+              inlineEdit={inlineEdit}
+              setInlineEdit={setInlineEdit}
+              updatePrompt={updatePrompt}
+              duplicatePrompt={duplicatePrompt}
+              deletePrompt={() => setPrompts((items: MyPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+              copyText={copyText}
+              showTranslation={() => setTranslationPrompt(prompt)}
+              showMemo={() => setMemoPrompt(prompt)}
+            />
+          ) : canAddImagePrompt ? (
+            <button className="add-prompt-card" key={`my-empty-prompt-${index}`} onClick={() => setEditing(blankPrompt())}>
+              <span>＋</span>
+              <strong>新しいプロンプト</strong>
+            </button>
+          ) : null)}
+        </div>
+      </section>
+      <section className="prompt-area text-prompt-area">
+        <div className="prompt-area-head">
+          <div>
+            <h3>プロンプトストック</h3>
+            <p>画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+          </div>
+        </div>
+        <div className="text-prompt-list">
+          {textStockSlots.map((prompt, index) => (
+            <TextStockFrame
+              key={prompt?.id || `my-stock-frame-${index}`}
+              prompt={prompt}
+              blankPrompt={blankPrompt(true)}
+              onCreate={saveTextStockFrame}
+              onUpdate={updatePrompt}
+              copyText={copyText}
+              showTranslation={() => prompt && setTranslationPrompt(prompt)}
+              showMemo={() => prompt && setMemoPrompt(prompt)}
+            />
+          ))}
+        </div>
+        {canAddTextStock && textStockCount >= visibleStockFrameCount && (
+          <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
+        )}
+        {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+      </section>
       {editing && <PromptModal item={editing} onClose={() => setEditing(null)} onSave={save} />}
+      {translationPrompt && <TranslationModal prompt={translationPrompt} onClose={() => setTranslationPrompt(null)} copyText={copyText} />}
+      {memoPrompt && (
+        <MemoModal
+          prompt={{ ...memoPrompt, memo: memoPrompt.memo || memoPrompt.note }}
+          onClose={() => setMemoPrompt(null)}
+          onSave={(memo) => {
+            updatePrompt(memoPrompt.id, { memo, note: memo });
+            setMemoPrompt(null);
+          }}
+        />
+      )}
     </section>
   );
 }
 
 function Midjourney({ settings, setSettings, copyText }: any) {
-  const [editing, setEditing] = React.useState<MjSetting | null>(null);
   const [query, setQuery] = React.useState("");
-  const filtered = settings.filter((item: MjSetting) => lowerIncludes(`${item.title} ${item.description} ${item.note} ${mjCommand(item)}`, query));
-  const save = (item: MjSetting) => {
-    const next = { ...item, id: item.id || uid() };
-    setSettings((items: MjSetting[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items]);
-    setEditing(null);
+  const [basePrompt, setBasePrompt] = React.useState("");
+  const [promptEn, setPromptEn] = React.useState("");
+  const [promptJa, setPromptJa] = React.useState("");
+  const [activeLanguage, setActiveLanguage] = React.useState<"en" | "ja">("en");
+  const [selectedParams, setSelectedParams] = React.useState<string[]>([]);
+  const [fullPrompt, setFullPrompt] = React.useState("");
+  const [title, setTitle] = React.useState("");
+  const [imageUrl, setImageUrl] = React.useState("");
+  const [memo, setMemo] = React.useState("");
+  const [editingId, setEditingId] = React.useState("");
+  const [copied, setCopied] = React.useState(false);
+  const [imageModal, setImageModal] = React.useState<{ images: string[]; index: number } | null>(null);
+  const [highlightedId, setHighlightedId] = React.useState("");
+  const normalizedSettings = settings.map((item: MjSetting) => normalizeMjSetting(item));
+  const filtered = normalizedSettings.filter((item: MjSetting) => lowerIncludes(`${item.memo || ""} ${item.note || ""} ${mjCommand(item)} ${(item.extractedParams || []).join(" ")}`, query));
+  const saveLimitReached = settings.length >= 50 && !editingId;
+  const currentParams = parseMidjourneyPrompt(fullPrompt).params;
+  const displayedPrompt = activeLanguage === "en" ? promptEn : promptJa;
+  const completePrompt = combinePrompt(displayedPrompt, currentParams);
+  const canSave = Boolean(completePrompt.trim()) && !saveLimitReached;
+  const showEmptySlots = !query.trim();
+  const shelfSlotCount = showEmptySlots
+    ? (settings.length < 3 ? 3 : Math.min(50, filtered.length + (settings.length < 50 ? 1 : 0)))
+    : filtered.length;
+  const shelfSlots = Array.from({ length: shelfSlotCount }, (_, index) => filtered[index] || null);
+  const imageSearchItems = normalizedSettings.flatMap((item: MjSetting) => (item.images || []).map((image, index) => ({ image, cardId: item.id, index })));
+  const updatePromptField = (value: string) => {
+    setBasePrompt(value);
+    if (activeLanguage === "en") setPromptEn(value);
+    if (activeLanguage === "ja") setPromptJa(value);
+  };
+  const switchPromptLanguage = () => {
+    if (activeLanguage === "en") {
+      const english = displayedPrompt || promptEn;
+      const japanese = promptJa || english;
+      setPromptEn(english);
+      setPromptJa(japanese);
+      setBasePrompt(japanese);
+      setActiveLanguage("ja");
+      return;
+    }
+    const japanese = displayedPrompt || promptJa;
+    const english = promptEn || japanese;
+    setPromptJa(japanese);
+    setPromptEn(english);
+    setBasePrompt(english);
+    setActiveLanguage("en");
+  };
+  const applyParamFromCard = (param: string) => {
+    const key = mjParamKey(param);
+    const parsed = parseMidjourneyPrompt(fullPrompt);
+    const replaceSameKind = mjReplaceKeys.includes(key);
+    const current = parsed.params;
+    const alreadyExists = current.includes(param);
+    const next = alreadyExists
+      ? current
+      : replaceSameKind
+        ? [...current.filter((item) => mjParamKey(item) !== key), param]
+        : [...current.filter((item) => item !== param), param];
+    setSelectedParams(next);
+    setFullPrompt(combinePrompt("", next));
+  };
+  const copyFullPrompt = async () => {
+    await copyText(completePrompt);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+  const copyParams = async () => {
+    await copyText(fullPrompt);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+  const clearComposer = () => {
+    setBasePrompt("");
+    setPromptEn("");
+    setPromptJa("");
+    setActiveLanguage("en");
+    setSelectedParams([]);
+    setFullPrompt("");
+    setTitle("");
+    setImageUrl("");
+    setMemo("");
+    setEditingId("");
+  };
+  const save = () => {
+    if (!canSave) return;
+    const parsed = parseMidjourneyPrompt(fullPrompt);
+    const images = splitImageUrls(imageUrl);
+    const normalized = normalizeMjSetting({
+      id: editingId,
+      title: title || "無題のMJ設定",
+      description: memo,
+      imageUrl: images[0] || "",
+      images,
+      prompt: combinePrompt(displayedPrompt, parsed.params.length ? parsed.params : selectedParams),
+      promptEn: activeLanguage === "en" ? displayedPrompt : promptEn,
+      promptJa: activeLanguage === "ja" ? displayedPrompt : promptJa,
+      activeLanguage,
+      memo,
+      note: memo,
+      basePrompt: displayedPrompt,
+      originalPrompt: activeLanguage === "en" ? displayedPrompt : promptEn,
+      translatedPrompt: activeLanguage === "ja" ? displayedPrompt : promptJa,
+      englishPrompt: activeLanguage === "en" ? displayedPrompt : promptEn,
+      japanesePrompt: activeLanguage === "ja" ? displayedPrompt : promptJa,
+      extractedParams: parsed.params.length ? parsed.params : selectedParams,
+      fullPrompt: combinePrompt(displayedPrompt, parsed.params.length ? parsed.params : selectedParams),
+      extra: displayedPrompt,
+      createdAt: editingId ? settings.find((item: MjSetting) => item.id === editingId)?.createdAt : new Date().toISOString(),
+    } as MjSetting);
+    setSettings((items: MjSetting[]) => editingId ? items.map((item) => item.id === editingId ? normalized : item) : [normalized, ...items]);
+    clearComposer();
+  };
+  const updateSavedSetting = (id: string, patch: Partial<MjSetting>) => {
+    setSettings((items: MjSetting[]) => items.map((setting) => {
+      if (setting.id !== id) return setting;
+      const current = normalizeMjSetting(setting);
+      const merged = normalizeMjSetting({ ...current, ...patch, id, createdAt: current.createdAt });
+      return { ...merged, createdAt: current.createdAt };
+    }));
+  };
+  const addEmptySavedSetting = () => {
+    if (settings.length >= 50) return;
+    const created = normalizeMjSetting({
+      id: uid(),
+      title: "新しいMJプロンプト",
+      description: "",
+      memo: "",
+      note: "",
+      prompt: "",
+      promptEn: "",
+      promptJa: "",
+      activeLanguage: "en",
+      basePrompt: "",
+      originalPrompt: "",
+      translatedPrompt: "",
+      englishPrompt: "",
+      japanesePrompt: "",
+      extractedParams: [],
+      fullPrompt: "",
+      images: [],
+      imageUrl: "",
+      extra: "",
+      createdAt: new Date().toISOString(),
+    } as MjSetting);
+    setSettings((items: MjSetting[]) => [created, ...items]);
+  };
+  const jumpToCard = (cardId: string) => {
+    setQuery("");
+    setHighlightedId(cardId);
+    window.setTimeout(() => {
+      document.getElementById(`mj-card-${cardId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    window.setTimeout(() => setHighlightedId(""), 1800);
   };
   return (
-    <section className="page">
-      <PageHead title="ミッドジャーニー設定管理" action={<button className="primary" onClick={() => setEditing(blankMj())}>追加する</button>} />
-      <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="設定名やパラメータで検索" /></Filters>
-      <div className="list">
-        {filtered.map((item: MjSetting) => (
-          <article className="panel" key={item.id}>
+    <section className="page mj-board-page">
+      <PageHead title="Midjourneyパラメータ制作ボード" action={<button className="primary" onClick={save} disabled={!canSave}>完成プロンプトを保存</button>} />
+      <div className="mj-workspace">
+        <aside className="mj-builder-panel">
+          <section className="mj-input-panel">
+            <div className="mj-field-head">
+              <h3>プロンプト</h3>
+            </div>
+            <textarea
+              className="mj-base-input"
+              value={displayedPrompt}
+              onChange={(event) => updatePromptField(event.target.value)}
+              placeholder={activeLanguage === "en" ? "例：cute pastel clipart, white background, no shadow" : "ここに日本語訳を入力してください"}
+            />
+            <h3>パラメータ</h3>
+            <p className="mj-help-text">✨ 右側の抽出済みパラメータをクリックすると、ここへ追加できます。</p>
+            <textarea className="mj-final-input" value={fullPrompt} onChange={(event) => setFullPrompt(event.target.value)} placeholder="例：--ar 1:1 --stylize 50 --chaos 10 --raw" />
+            <div className="mj-save-grid">
+              <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="保存タイトル" />
+              <textarea value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="サンプル画像URL（最大5件・改行またはカンマ区切り）" />
+              <textarea value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="メモ" />
+            </div>
+            <div className="mj-composer-actions">
+              <button className="primary" onClick={copyFullPrompt} disabled={!completePrompt.trim()}>📋 プロンプトをコピー</button>
+              <button onClick={copyParams} disabled={!fullPrompt.trim()}>📋 パラメータをコピー</button>
+              <button onClick={save} disabled={!canSave}>完成プロンプトを保存</button>
+              {editingId && <button onClick={clearComposer}>新規作成に戻る</button>}
+              {copied && <span>コピーしました</span>}
+            </div>
+            {saveLimitReached && <p className="limit-message">保存上限（50件）に達しました</p>}
+          </section>
+        </aside>
+        <section className="mj-saved-shelf">
+          <div className="mj-shelf-head">
             <div>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <code>{mjCommand(item)}</code>
-              {item.note && <p className="note">{item.note}</p>}
+              <h3>クイック検索</h3>
+              <p>保存したMJプロンプトを、ワードや画像から探せます。</p>
             </div>
-            <div className="actions">
-              <button className="primary" onClick={() => copyText(mjCommand(item))}>コピー</button>
-              <button onClick={() => setEditing(item)}>編集</button>
-              <button className="danger" onClick={() => setSettings((items: MjSetting[]) => items.filter((p) => p.id !== item.id))}>削除</button>
+            <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="プロンプトやメモを検索..." /></Filters>
+            <div className="mj-image-search">
+              <strong>画像から探す</strong>
+              <div className="mj-image-search-grid">
+                {imageSearchItems.length ? imageSearchItems.map((item) => (
+                  <button key={`${item.cardId}-${item.index}-${item.image}`} onClick={() => jumpToCard(item.cardId)}>
+                    <img src={item.image} alt="" />
+                  </button>
+                )) : <small>画像を登録すると、ここから探せます。</small>}
+              </div>
             </div>
-          </article>
-        ))}
+          </div>
+          <div className="mj-card-grid">
+            {shelfSlots.map((raw: MjSetting | null, index) => {
+              if (!raw) {
+                return settings.length < 50 ? (
+                  <button className="mj-empty-card" key={`mj-empty-${index}`} onClick={addEmptySavedSetting}>
+                    <span>＋</span>
+                    <strong>新しいMJプロンプト</strong>
+                  </button>
+                ) : null;
+              }
+              const item = normalizeMjSetting(raw);
+              return (
+                <MJEditableCard
+                  key={item.id}
+                  item={item}
+                  highlighted={highlightedId === item.id}
+                  onUpdate={(patch: Partial<MjSetting>) => updateSavedSetting(item.id, patch)}
+                  onDelete={() => setSettings((items: MjSetting[]) => items.filter((setting) => setting.id !== item.id))}
+                  onCopyPrompt={() => copyText(mjCommand(item), item.id)}
+                  onCopyParams={() => copyText((item.extractedParams || []).join(" "), item.id)}
+                  onParamClick={applyParamFromCard}
+                  onOpenImage={(imageIndex: number) => setImageModal({ images: item.images || [], index: imageIndex })}
+                />
+              );
+            })}
+            {settings.length >= 50 && <p className="limit-message">保存上限（50件）に達しました</p>}
+          </div>
+        </section>
       </div>
-      {editing && <MjModal item={editing} onClose={() => setEditing(null)} onSave={save} />}
+      {imageModal && <ImagePreviewModal modal={imageModal} setModal={setImageModal} />}
     </section>
   );
+}
+
+function parseMidjourneyPrompt(value: string) {
+  const params = Array.from(value.matchAll(/--[a-zA-Z0-9-]+(?:\s+(?!--)[^\s]+)*/g)).map((match) => match[0].trim());
+  const uniqueParams = Array.from(new Set(params));
+  const basePrompt = value.replace(/--[a-zA-Z0-9-]+(?:\s+(?!--)[^\s]+)*/g, " ").replace(/\s+/g, " ").trim();
+  return { basePrompt, params: uniqueParams };
+}
+
+function splitImageUrls(value: string) {
+  return value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean).slice(0, 5);
+}
+
+function isSupportedImageFile(file: File) {
+  return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function promptCardHeading(prompt: string) {
+  const text = prompt.replace(/\s+/g, " ").trim();
+  return text ? text.slice(0, 30) : "新しいMJプロンプト";
+}
+
+function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, onCopyParams, onParamClick, onOpenImage }: any) {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [imageMessage, setImageMessage] = React.useState("");
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isEditingTitle, setIsEditingTitle] = React.useState(false);
+  const [slideIndex, setSlideIndex] = React.useState(0);
+  const [titleDraft, setTitleDraft] = React.useState(item.title || "");
+  React.useEffect(() => {
+    setTitleDraft(item.title || "");
+  }, [item.id, item.title]);
+  React.useEffect(() => {
+    const images = item.images || [];
+    if (slideIndex >= images.length) setSlideIndex(0);
+  }, [item.id, (item.images || []).length, slideIndex]);
+  React.useEffect(() => {
+    const images = item.images || [];
+    if (images.length < 2) return;
+    const timer = window.setInterval(() => setSlideIndex((current) => (current + 1) % images.length), 3200);
+    return () => window.clearInterval(timer);
+  }, [item.id, (item.images || []).length]);
+  const params = item.extractedParams || [];
+  const promptText = mjCommand(item);
+  const images = item.images || [];
+  const openFilePicker = (event?: any) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    console.log("[MJ画像追加] input exists:", Boolean(fileInputRef.current), "cardId:", item.id);
+    fileInputRef.current?.click();
+  };
+  const addImageFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    console.log("[MJ画像追加] selected files:", files.length, files.map((file) => file.name), "cardId:", item.id);
+    if (!files.length) return;
+    const remaining = 5 - images.length;
+    if (remaining <= 0) {
+      setImageMessage("画像は最大5枚までです");
+      return;
+    }
+    if (files.length > remaining) {
+      setImageMessage("画像は最大5枚までです");
+      return;
+    }
+    const nextImages = await Promise.all(files.map(fileToDataUrl));
+    nextImages.forEach((image, index) => console.log("[MJ画像追加] base64 prefix:", image.slice(0, 30), "file:", files[index]?.name, "cardId:", item.id));
+    const updatedImages = [...images, ...nextImages].slice(0, 5);
+    console.log("[MJ画像追加] updated images length:", updatedImages.length, "cardId:", item.id);
+    setImageMessage("");
+    onUpdate({ images: updatedImages, imageUrl: updatedImages[0] || "" });
+  };
+  const removeImage = (index: number) => {
+    const updatedImages = images.filter((_: string, imageIndex: number) => imageIndex !== index);
+    onUpdate({ images: updatedImages, imageUrl: updatedImages[0] || "" });
+  };
+  const updatePrompt = (value: string) => {
+    const parsed = parseMidjourneyPrompt(value);
+    onUpdate({
+      title: item.title || promptCardHeading(value),
+      prompt: value,
+      promptEn: value,
+      activeLanguage: item.activeLanguage || "en",
+      basePrompt: parsed.basePrompt,
+      originalPrompt: value,
+      englishPrompt: value,
+      extra: parsed.basePrompt,
+      extractedParams: parsed.params,
+      fullPrompt: value,
+    });
+  };
+  const saveTitle = () => {
+    const nextTitle = titleDraft.trim() || promptCardHeading(promptText);
+    setTitleDraft(nextTitle);
+    setIsEditingTitle(false);
+    onUpdate({ title: nextTitle });
+  };
+  return (
+    <article id={`mj-card-${item.id}`} className={`mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`}>
+      <input
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        onClick={(event) => event.stopPropagation()}
+        onChange={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.currentTarget.files) addImageFiles(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }}
+      />
+      <div
+        className={`mj-image-edit-zone ${isDragging ? "dragging" : ""}`}
+        role="button"
+        tabIndex={0}
+        onClick={(event) => {
+          if (images.length) {
+            event.preventDefault();
+            event.stopPropagation();
+            onOpenImage(slideIndex);
+            return;
+          }
+          openFilePicker(event);
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          if (images.length) {
+            event.preventDefault();
+            event.stopPropagation();
+            onOpenImage(slideIndex);
+            return;
+          }
+          openFilePicker(event);
+        }}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsDragging(true);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsDragging(true);
+        }}
+        onDragLeave={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsDragging(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsDragging(false);
+          addImageFiles(event.dataTransfer.files);
+        }}
+      >
+        {images.length ? (
+          <>
+            <div className="mj-card-image image-only-button">
+              <img src={images[slideIndex] || images[0]} alt="" />
+              {images.length > 1 && (
+                <span className="image-dots">
+                  {images.map((_: string, dotIndex: number) => <i key={dotIndex} className={dotIndex === slideIndex ? "active" : ""} />)}
+                </span>
+              )}
+            </div>
+          </>
+        ) : <PromptThumbnail imageUrl="" />}
+        <span className="drop-hint">ここへドロップ</span>
+        <button
+          type="button"
+          className="image-edit-toggle"
+          onClick={openFilePicker}
+        >
+          画像を追加
+        </button>
+      </div>
+      {images.length > 0 && (
+        <div className="image-url-list image-delete-list">
+          {images.map((image: string, index: number) => (
+            <button type="button" key={`${image}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
+          ))}
+        </div>
+      )}
+      {imageMessage && <small className="image-message">{imageMessage}</small>}
+      <div className="mj-card-body">
+        {isEditingTitle ? (
+          <input
+            className="mj-title-edit-input"
+            value={titleDraft}
+            autoFocus
+            onChange={(event) => setTitleDraft(event.target.value)}
+            onBlur={saveTitle}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") saveTitle();
+              if (event.key === "Escape") {
+                setTitleDraft(item.title || "");
+                setIsEditingTitle(false);
+              }
+            }}
+          />
+        ) : (
+          <button type="button" className="mj-derived-title" onClick={() => setIsEditingTitle(true)}>
+            {item.title || promptCardHeading(promptText)}
+          </button>
+        )}
+        <small className="mj-date">保存日：{formatSavedAt(item.createdAt)}</small>
+        <label className="mj-edit-field">
+          <span>プロンプト</span>
+          <textarea
+            className="mj-card-textarea prompt"
+            value={promptText}
+            onChange={(event) => updatePrompt(event.target.value)}
+            placeholder="MJプロンプトを入力すると、パラメータを自動抽出します"
+          />
+        </label>
+        <label className="mj-edit-field">
+          <span>メモ</span>
+          <textarea
+            className="mj-card-textarea memo"
+            value={item.memo || ""}
+            onChange={(event) => onUpdate({ memo: event.target.value, note: event.target.value, description: event.target.value })}
+            placeholder="メモ"
+          />
+        </label>
+        <div>
+          <span className="mj-param-label">抽出済みパラメータ</span>
+          <div className="mj-param-pills compact">
+            {params.length ? params.map((param: string) => (
+              <button type="button" key={param} onClick={() => onParamClick(param)}>{param}</button>
+            )) : <small>パラメータなし</small>}
+          </div>
+        </div>
+        <div className="mj-card-actions">
+          <button type="button" className="primary" onClick={onCopyPrompt}>📋 プロンプトをコピー</button>
+          <button type="button" onClick={onCopyParams}>📋 パラメータをコピー</button>
+          <button type="button" className="danger" onClick={onDelete}>削除</button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ImagePreviewModal({ modal, setModal }: any) {
+  const { images, index } = modal;
+  const move = (direction: number) => setModal({ images, index: (index + direction + images.length) % images.length });
+  return (
+    <Modal title="画像プレビュー" onClose={() => setModal(null)}>
+      <div className="image-preview-modal">
+        <img src={images[index]} alt="" />
+        <div className="modal-actions">
+          {images.length > 1 && <button onClick={() => move(-1)}>前へ</button>}
+          {images.length > 1 && <button onClick={() => move(1)}>次へ</button>}
+          <button className="primary" onClick={() => setModal(null)}>閉じる</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function combinePrompt(basePrompt: string, params: string[]) {
+  return [basePrompt, ...params].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+}
+
+function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
+  const legacyPrompt = mjCommandLegacy(item as MjSetting);
+  const fullPrompt = item.prompt || item.fullPrompt || legacyPrompt;
+  const parsed = parseMidjourneyPrompt(fullPrompt);
+  const params = item.extractedParams?.length ? item.extractedParams : parsed.params;
+  const basePrompt = item.basePrompt || parsed.basePrompt || item.extra || "";
+  const originalPrompt = item.originalPrompt || item.englishPrompt || fullPrompt || basePrompt;
+  const translatedPrompt = item.translatedPrompt || item.japanesePrompt || "";
+  const promptEn = item.promptEn || originalPrompt || fullPrompt || "";
+  const promptJa = item.promptJa || translatedPrompt || "";
+  const activeLanguage = item.activeLanguage === "ja" ? "ja" : "en";
+  const images = Array.isArray(item.images) ? item.images.slice(0, 5) : item.imageUrl ? [item.imageUrl] : [];
+  return {
+    id: item.id || uid(),
+    title: item.title || "無題のMJ設定",
+    description: item.description || item.memo || item.note || "",
+    images,
+    imageUrl: images[0] || item.imageUrl || "",
+    prompt: fullPrompt || combinePrompt(basePrompt, params),
+    promptEn,
+    promptJa,
+    activeLanguage,
+    memo: item.memo || item.note || item.description || "",
+    basePrompt,
+    originalPrompt,
+    translatedPrompt,
+    englishPrompt: item.englishPrompt || originalPrompt || basePrompt,
+    japanesePrompt: item.japanesePrompt || translatedPrompt,
+    extractedParams: params,
+    fullPrompt: item.fullPrompt || combinePrompt(basePrompt, params),
+    ar: item.ar || "",
+    stylize: item.stylize || "",
+    chaos: item.chaos || "",
+    profile: item.profile || "",
+    seed: item.seed || "",
+    raw: Boolean(item.raw),
+    extra: item.extra || basePrompt,
+    note: item.note || item.memo || "",
+    createdAt: item.createdAt || "",
+  };
+}
+
+function formatSavedAt(value?: string) {
+  if (!value) return "未設定";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "未設定";
+  const pad = (num: number) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function mjCommandLegacy(item: MjSetting) {
+  return [
+    item.extra,
+    item.ar && `--ar ${item.ar}`,
+    item.stylize && `--stylize ${item.stylize}`,
+    item.chaos && `--chaos ${item.chaos}`,
+    item.raw && "--raw",
+    item.profile && `--profile ${item.profile}`,
+    item.seed && `--seed ${item.seed}`,
+  ].filter(Boolean).join(" ");
 }
 
 function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
   const [editing, setEditing] = React.useState<Project | null>(null);
   const [query, setQuery] = React.useState("");
-  const filtered = projects.filter((item: Project) => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query));
+  const canAddProject = projects.length < 30;
+  const filtered = sortProjectsForDisplay(projects.filter((item: Project) => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query)));
   const save = (item: Project) => {
-    const next = { ...item, id: item.id || uid() };
-    setProjects((items: Project[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items]);
+    const next = { ...item, id: item.id || uid(), updatedAt: new Date().toISOString() };
+    setProjects((items: Project[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
   };
   return (
     <section className="page">
-      <PageHead title="プロジェクト管理" action={<button className="primary" onClick={() => setEditing(blankProject())}>追加する</button>} />
+      <PageHead
+        title="プロジェクト管理"
+        action={canAddProject ? <button className="primary" onClick={() => setEditing(blankProject())}>追加する</button> : <span className="limit-message">プロジェクトは最大30件まで登録できます</span>}
+      />
       <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="プロジェクト名、タグ、メモで検索" /></Filters>
+      {!canAddProject && <p className="limit-note">プロジェクトは最大30件まで登録できます</p>}
       <div className="project-grid">
         {filtered.map((project: Project) => {
           const linkedPrompts = prompts.filter((p: MyPrompt) => project.promptIds.includes(p.id));
@@ -573,6 +2418,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
                 </div>
               </div>
               <TagRow tags={project.tags} />
+              {project.dueDate && <p className="project-due-line">{projectDueText(project.dueDate)}</p>}
               {project.note && <p className="note">{project.note}</p>}
               <h4>関連プロンプト</h4>
               <div className="mini-list">
@@ -661,46 +2507,95 @@ function MjModal({ item, onClose, onSave }: any) {
 
 function ProjectModal({ item, prompts, settings, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item, tagInput: tagText(item.tags) });
+  const promptChoices = [...prompts].sort((a: MyPrompt, b: MyPrompt) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)));
+  const mjChoices = [...settings].sort((a: any, b: any) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
   const toggle = (key: "promptIds" | "mjIds", id: string) => {
     const exists = draft[key].includes(id);
     setDraft({ ...draft, [key]: exists ? draft[key].filter((item: string) => item !== id) : [...draft[key], id] });
   };
   return (
     <Modal title={item.id ? "プロジェクトを編集" : "プロジェクトを追加"} onClose={onClose}>
-      <FormGrid>
-        <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="プロジェクト名" />
-        <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
-        <textarea value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="メモ" />
-        <input value={draft.tagInput} onChange={(e) => setDraft({ ...draft, tagInput: e.target.value })} placeholder="タグ（カンマ区切り）" />
-        <SelectList title="関連プロンプト" items={prompts} selected={draft.promptIds} labelKey="title" onToggle={(id: string) => toggle("promptIds", id)} />
-        <SelectList title="関連ミッドジャーニー設定" items={settings} selected={draft.mjIds} labelKey="title" onToggle={(id: string) => toggle("mjIds", id)} />
+      <FormGrid className="project-edit-form">
+        <ProjectField label="プロジェクト名">
+          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="例：Christmas Sticker Set" />
+        </ProjectField>
+        <ProjectField label="概要">
+          <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="制作する素材セットの内容を書きます" />
+        </ProjectField>
+        <ProjectField label="目標・ゴール">
+          <textarea value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="点数、販売開始日、やることなど" />
+        </ProjectField>
+        <ProjectField label="タグ">
+          <input value={draft.tagInput} onChange={(e) => setDraft({ ...draft, tagInput: e.target.value })} placeholder="季節商品, ステッカー, Etsy" />
+        </ProjectField>
+        <ProjectField label="達成予定日">
+          <input type="date" value={draft.dueDate || ""} onChange={(e) => setDraft({ ...draft, dueDate: e.target.value })} />
+        </ProjectField>
+        <label className="check project-remind-check">
+          <input type="checkbox" checked={Boolean(draft.remindOnHome)} onChange={(e) => setDraft({ ...draft, remindOnHome: e.target.checked })} />
+          ホーム画面でリマインドする
+        </label>
+        <SelectList
+          title="関連プロンプト"
+          description="お気に入りを優先して10件表示します。もっと探すときは検索できます。"
+          items={promptChoices}
+          selected={draft.promptIds}
+          getLabel={(choice: MyPrompt) => choice.title || "無題のプロンプト"}
+          getText={(choice: MyPrompt) => `${choice.title} ${choice.description} ${choice.prompt} ${choice.note} ${(choice.tags || []).join(" ")}`}
+          onToggle={(id: string) => toggle("promptIds", id)}
+        />
+        <SelectList
+          title="関連Midjourney設定"
+          description="保存日の新しいものを優先して10件表示します。"
+          items={mjChoices}
+          selected={draft.mjIds}
+          getLabel={(choice: any) => choice.title || promptTitleFromText(choice.prompt || choice.fullPrompt || choice.basePrompt || choice.extra || "")}
+          getText={(choice: any) => `${choice.title || ""} ${choice.prompt || choice.fullPrompt || choice.basePrompt || ""} ${choice.parameters || choice.extra || ""} ${choice.memo || choice.note || ""}`}
+          onToggle={(id: string) => toggle("mjIds", id)}
+        />
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave({ ...draft, tags: splitTags(draft.tagInput) })} />
     </Modal>
   );
 }
 
-function SelectList({ title, items, selected, labelKey, onToggle }: any) {
+function ProjectField({ label, children }: any) {
+  return (
+    <label className="project-field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function SelectList({ title, description, items, selected, getLabel, getText, onToggle }: any) {
+  const [query, setQuery] = React.useState("");
+  const [expanded, setExpanded] = React.useState(false);
+  const filtered = items.filter((item: any) => lowerIncludes(getText(item), query));
+  const shown = (expanded || query ? filtered : filtered.slice(0, 10));
   return (
     <div className="select-list">
-      <strong>{title}</strong>
-      {items.length ? items.map((item: any) => (
-        <label key={item.id} className="check"><input type="checkbox" checked={selected.includes(item.id)} onChange={() => onToggle(item.id)} /> {item[labelKey]}</label>
+      <div className="select-list-head">
+        <div>
+          <strong>{title}</strong>
+          {description && <small>{description}</small>}
+        </div>
+      </div>
+      <input className="select-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`${title}を検索...`} />
+      {items.length ? shown.map((item: any) => (
+        <label key={item.id} className="check select-row"><input type="checkbox" checked={selected.includes(item.id)} onChange={() => onToggle(item.id)} /> {getLabel(item)}</label>
       )) : <small>先に項目を追加してください。</small>}
+      {items.length > 10 && !expanded && !query && <button className="ghost more-button" type="button" onClick={() => setExpanded(true)}>もっと見る</button>}
+      {items.length > 0 && !shown.length && <small>一致する項目がありません。</small>}
     </div>
   );
 }
 
 function mjCommand(item: MjSetting) {
-  return [
-    item.extra,
-    item.ar && `--ar ${item.ar}`,
-    item.stylize && `--stylize ${item.stylize}`,
-    item.chaos && `--chaos ${item.chaos}`,
-    item.raw && "--raw",
-    item.profile && `--profile ${item.profile}`,
-    item.seed && `--seed ${item.seed}`,
-  ].filter(Boolean).join(" ");
+  if (item.prompt) return item.prompt;
+  if (item.fullPrompt) return item.fullPrompt;
+  const parsed = parseMidjourneyPrompt(mjCommandLegacy(item));
+  return combinePrompt(item.basePrompt || parsed.basePrompt || item.extra || "", item.extractedParams?.length ? item.extractedParams : parsed.params);
 }
 
 function PageHead({ title, action }: any) {
@@ -723,17 +2618,17 @@ function Empty({ text }: any) {
   return <div className="empty">{text}</div>;
 }
 
-function FormGrid({ children }: any) {
-  return <div className="form-grid">{children}</div>;
+function FormGrid({ children, className = "" }: any) {
+  return <div className={`form-grid ${className}`.trim()}>{children}</div>;
 }
 
-function Modal({ title, children, onClose }: any) {
+function Modal({ title, children, onClose, hideClose }: any) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal">
         <div className="modal-head">
           <h2>{title}</h2>
-          <button onClick={onClose}>閉じる</button>
+          {!hideClose && <button onClick={onClose}>閉じる</button>}
         </div>
         {children}
       </div>
