@@ -3434,34 +3434,13 @@ p {
 }
 
 .journal-sticker.sticker-style {
-  padding: 0;
-  background: transparent;
-  filter: drop-shadow(0 4px 4px rgba(73, 58, 45, 0.16));
+  padding: 7px;
+  background: #fff;
+  box-shadow: 0 5px 10px rgba(73, 58, 45, 0.16);
 }
 
 .journal-sticker.sticker-style img {
-  filter:
-    drop-shadow(1px 0 0 #fff)
-    drop-shadow(-1px 0 0 #fff)
-    drop-shadow(0 1px 0 #fff)
-    drop-shadow(0 -1px 0 #fff)
-    drop-shadow(2px 0 0 #fff)
-    drop-shadow(-2px 0 0 #fff)
-    drop-shadow(0 2px 0 #fff)
-    drop-shadow(0 -2px 0 #fff)
-    drop-shadow(3px 0 0 #fff)
-    drop-shadow(-3px 0 0 #fff)
-    drop-shadow(0 3px 0 #fff)
-    drop-shadow(0 -3px 0 #fff)
-    drop-shadow(4px 0 0 #fff)
-    drop-shadow(-4px 0 0 #fff)
-    drop-shadow(0 4px 0 #fff)
-    drop-shadow(0 -4px 0 #fff)
-    drop-shadow(3px 3px 0 #fff)
-    drop-shadow(-3px 3px 0 #fff)
-    drop-shadow(3px -3px 0 #fff)
-    drop-shadow(-3px -3px 0 #fff)
-    drop-shadow(0 6px 5px rgba(0, 0, 0, 0.16));
+  filter: none;
 }
 
 .journal-sticker.selected {
