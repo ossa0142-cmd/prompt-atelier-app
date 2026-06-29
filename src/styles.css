@@ -2772,19 +2772,34 @@ p {
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
+.home-prompt-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 1;
+  height: 36%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 16% 16%, color-mix(in srgb, var(--decorative-shape) 72%, transparent) 0 18px, transparent 19px),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 72%);
+  mix-blend-mode: multiply;
+}
+
 .home-prompt-card img {
   display: block;
   width: 100%;
   aspect-ratio: 1.18;
   object-fit: cover;
-  background: var(--sand);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--sand) 78%, var(--card-bg)), color-mix(in srgb, var(--shell) 62%, var(--card-bg)));
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
 }
 
 .heart-button {
   position: absolute;
   top: 14px;
   right: 14px;
-  z-index: 1;
+  z-index: 2;
   display: grid;
   width: 42px;
   height: 42px;
@@ -2855,6 +2870,12 @@ p {
   box-shadow: 0 18px 38px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
+.theme-cute .home-prompt-card::before {
+  background:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--accent) 24%, white) 0 16px, transparent 17px),
+    radial-gradient(circle at 78% 24%, color-mix(in srgb, var(--shell) 62%, transparent) 0 24px, transparent 25px);
+}
+
 .theme-cute .heart-button {
   border-radius: 16px;
 }
@@ -2862,6 +2883,12 @@ p {
 .theme-cool .home-prompt-card {
   border-radius: 18px;
   box-shadow: 0 10px 24px rgba(45, 58, 72, 0.07);
+}
+
+.theme-cool .home-prompt-card::before {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent),
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--accent) 18%, transparent) 0 20px, transparent 21px);
 }
 
 .theme-cool .heart-button,
@@ -2874,6 +2901,13 @@ p {
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
 }
 
+.theme-dark .home-prompt-card::before {
+  background:
+    radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--accent) 22%, transparent) 0 30px, transparent 31px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+  mix-blend-mode: screen;
+}
+
 .theme-dark .mini-pill,
 .theme-dark .copy-chip {
   background: color-mix(in srgb, var(--accent) 28%, var(--card-bg));
@@ -2883,6 +2917,12 @@ p {
   border-width: 2px;
   border-radius: 24px;
   box-shadow: 0 18px 38px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.theme-vivid .home-prompt-card::before {
+  background:
+    radial-gradient(circle at 20% 22%, color-mix(in srgb, var(--accent) 55%, white) 0 18px, transparent 19px),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, #ffe45c 62%, transparent) 0 16px, transparent 17px);
 }
 
 .theme-vivid .heart-button {
@@ -2903,8 +2943,259 @@ p {
   box-shadow: 0 12px 28px rgba(75, 62, 45, 0.06);
 }
 
+.theme-natural .home-prompt-card::before {
+  background:
+    radial-gradient(ellipse at 20% 18%, color-mix(in srgb, var(--sage) 38%, transparent) 0 22px, transparent 23px),
+    linear-gradient(180deg, color-mix(in srgb, var(--sand) 18%, transparent), transparent 68%);
+}
+
 .theme-natural .mini-pill {
   background: color-mix(in srgb, var(--sage) 34%, var(--card-bg));
+}
+
+.atelier-corner {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--decorative-shape) 64%, transparent), transparent 28%),
+    linear-gradient(145deg, color-mix(in srgb, var(--card-bg) 88%, transparent), color-mix(in srgb, var(--shell) 44%, transparent));
+  box-shadow: 0 18px 44px rgba(73, 58, 45, 0.075);
+  padding: 26px;
+}
+
+.atelier-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.atelier-head h2 {
+  margin-bottom: 0;
+  color: var(--text-main);
+}
+
+.atelier-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.atelier-tape {
+  overflow: hidden;
+  border-radius: 26px;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 68%, transparent);
+  padding: 14px;
+}
+
+.atelier-track {
+  display: flex;
+  width: max-content;
+  gap: 14px;
+  animation: atelier-scroll 34s linear infinite;
+}
+
+.atelier-track figure {
+  width: 154px;
+  margin: 0;
+  border-radius: 22px;
+  background: var(--card-bg);
+  box-shadow: 0 12px 24px rgba(73, 58, 45, 0.08);
+  padding: 8px;
+  transform: rotate(-1.5deg);
+}
+
+.atelier-track figure:nth-child(2n) {
+  transform: rotate(1.4deg);
+}
+
+.atelier-track img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  object-fit: cover;
+  background: var(--sand);
+}
+
+.atelier-track figcaption {
+  overflow: hidden;
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 4px 2px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atelier-empty {
+  border: 1px dashed color-mix(in srgb, var(--accent) 36%, var(--border));
+  border-radius: 24px;
+  color: var(--text-sub);
+  padding: 28px;
+  text-align: center;
+}
+
+@keyframes atelier-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.gallery-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 24px;
+  background: var(--card-bg);
+  box-shadow: 0 14px 30px rgba(73, 58, 45, 0.07);
+  padding: 12px;
+}
+
+.gallery-image-button {
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 0;
+}
+
+.gallery-image-button img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.gallery-card textarea {
+  min-height: 70px;
+}
+
+.gallery-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.journal-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.journal-tools {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 26px;
+  background: var(--card-bg);
+  box-shadow: 0 14px 30px rgba(73, 58, 45, 0.06);
+  padding: 18px;
+}
+
+.journal-tools label {
+  display: grid;
+  gap: 8px;
+  color: var(--text-main);
+  font-weight: 850;
+}
+
+.journal-stock {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.journal-stock button {
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 0;
+}
+
+.journal-stock img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.journal-edit-panel {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.journal-board {
+  position: relative;
+  min-height: 680px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 34px;
+  box-shadow: inset 0 0 0 10px color-mix(in srgb, var(--card-bg) 48%, transparent), 0 18px 44px rgba(73, 58, 45, 0.08);
+}
+
+.journal-board.paper {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.45), transparent 28%),
+    var(--ivory);
+}
+
+.journal-board.grid {
+  background:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px),
+    var(--paper);
+  background-size: 32px 32px;
+}
+
+.journal-board.pink {
+  background: linear-gradient(145deg, #fff6f8, color-mix(in srgb, var(--shell) 72%, white));
+}
+
+.journal-board.dark {
+  background: linear-gradient(145deg, #2a2725, #3a3430);
+}
+
+.journal-sticker {
+  position: absolute;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 18px;
+  box-shadow: 0 16px 28px rgba(73, 58, 45, 0.16);
+  padding: 6px;
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+}
+
+.journal-sticker.selected {
+  outline: 3px solid color-mix(in srgb, var(--accent) 58%, transparent);
+}
+
+.journal-sticker img {
+  display: block;
+  width: 100%;
+  border-radius: 14px;
+  user-select: none;
+}
+
+.journal-empty {
+  position: absolute;
+  inset: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 28px;
+  color: var(--text-sub);
+  text-align: center;
 }
 
 .filters {
@@ -3344,6 +3635,18 @@ summary {
   .mj-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .journal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .journal-board {
+    min-height: 560px;
+  }
 }
 
 @media (max-width: 1180px) and (min-width: 981px) {
@@ -3365,6 +3668,7 @@ summary {
   .card-grid,
   .card-grid.compact,
   .project-grid,
+  .gallery-grid,
   .inline-fields,
   .home-feature-grid,
   .continue-grid,
@@ -3373,6 +3677,21 @@ summary {
   .library-category-grid,
   .library-prompt-grid {
     grid-template-columns: 1fr;
+  }
+
+  .atelier-head,
+  .gallery-card-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .atelier-actions,
+  .page-head .actions {
+    flex-direction: column;
+  }
+
+  .journal-board {
+    min-height: 520px;
   }
 
   .work-tools-launcher {

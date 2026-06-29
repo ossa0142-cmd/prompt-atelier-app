@@ -14,6 +14,9 @@ const homeSections = [{
 }, {
   id: "favorites",
   label: "お気に入り"
+}, {
+  id: "atelier",
+  label: "アトリエコーナー"
 }];
 const homeFeatures = [{
   id: "library",
@@ -298,6 +301,11 @@ const defaultWorkTools = [{
   iconImage: "",
   memo: "文章づくり"
 }];
+const sampleAtelierImages = [];
+const defaultJournal = {
+  background: "paper",
+  items: []
+};
 const defaultHomeSettings = {
   themeId: "cute",
   bannerImageUrl: "",
@@ -310,12 +318,13 @@ const defaultHomeSettings = {
     mj: true,
     projects: true,
     favorites: true,
+    atelier: true,
     dashboard: true,
     quickActions: true,
     search: true,
     featureCards: true
   },
-  order: ["dashboard", "quickActions", "search", "featureCards", "favorites"]
+  order: ["dashboard", "quickActions", "search", "featureCards", "favorites", "atelier"]
 };
 const normalizeHomeSettings = settings => ({
   ...defaultHomeSettings,
@@ -704,6 +713,33 @@ function sortProjectsForDisplay(items) {
     return String(b.id || "").localeCompare(String(a.id || ""));
   });
 }
+function collectAtelierImages(prompts, mjSettings, galleryImages) {
+  const promptImages = prompts.filter(prompt => prompt.imageUrl).map(prompt => ({
+    id: `prompt-${prompt.id}`,
+    src: prompt.imageUrl,
+    title: prompt.title || "プロンプト画像",
+    memo: prompt.note || prompt.description || "",
+    createdAt: prompt.id,
+    source: "prompt",
+    favorite: Boolean(prompt.favorite)
+  }));
+  const mjImages = mjSettings.flatMap(setting => (setting.images || (setting.imageUrl ? [setting.imageUrl] : [])).map((src, index) => ({
+    id: `mj-${setting.id}-${index}`,
+    src,
+    title: setting.title || "MJ画像",
+    memo: setting.memo || setting.note || "",
+    createdAt: setting.createdAt || setting.id,
+    source: "midjourney",
+    favorite: false
+  })));
+  const merged = [...promptImages, ...mjImages, ...galleryImages].filter(item => item.src);
+  const seen = new Set();
+  return merged.filter(item => {
+    if (seen.has(item.src)) return false;
+    seen.add(item.src);
+    return true;
+  }).sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 24);
+}
 function useStoredState(key, fallback) {
   const [value, setValue] = React.useState(() => {
     try {
@@ -730,6 +766,8 @@ function App() {
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
   const [rawHomeSettings, setRawHomeSettings] = useStoredState("promptAtelierHomeSettings", defaultHomeSettings);
   const [workTools, setWorkTools] = useStoredState("promptAtelierWorkTools", defaultWorkTools);
+  const [galleryImages, setGalleryImages] = useStoredState("promptAtelierGallery", sampleAtelierImages);
+  const [journal, setJournal] = useStoredState("promptAtelierJournal", defaultJournal);
   const [toast, setToast] = React.useState("");
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -737,6 +775,7 @@ function App() {
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
+  const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
     if (id) setRecentIds(ids => [id, ...ids.filter(item => item !== id)].slice(0, 8));
@@ -767,7 +806,8 @@ function App() {
     mjSettings: mjSettings,
     copyText: copyText,
     settings: homeSettings,
-    workTools: workTools
+    workTools: workTools,
+    atelierImages: atelierImages
   }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
@@ -790,6 +830,16 @@ function App() {
     prompts: myPrompts,
     settings: mjSettings,
     copyText: copyText
+  }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
+    images: atelierImages,
+    journal: journal,
+    setJournal: setJournal,
+    setGalleryImages: setGalleryImages,
+    setScreen: setScreen
+  }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
+    images: galleryImages,
+    setImages: setGalleryImages,
+    setScreen: setScreen
   })), toast && /*#__PURE__*/React.createElement("div", {
     className: "toast"
   }, toast));
@@ -803,7 +853,8 @@ function Home({
   mjSettings,
   copyText,
   settings,
-  workTools
+  workTools,
+  atelierImages
 }) {
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = id => settings.visible[id] !== false;
@@ -939,6 +990,35 @@ function Home({
       })) : /*#__PURE__*/React.createElement(Empty, {
         text: "お気に入りにしたプロンプトがここに表示されます。"
       })));
+    }
+    if (sectionId === "atelier") {
+      return /*#__PURE__*/React.createElement("section", {
+        className: "atelier-corner home-module",
+        key: sectionId
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "atelier-head"
+      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+        className: "soft-label"
+      }, "Atelier Shelf"), /*#__PURE__*/React.createElement("h2", null, "アトリエコーナー")), /*#__PURE__*/React.createElement("div", {
+        className: "atelier-actions"
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => setScreen("journal")
+      }, "ジャーナルページへ"), /*#__PURE__*/React.createElement("button", {
+        className: "primary",
+        onClick: () => setScreen("gallery")
+      }, "ギャラリーへ"))), atelierImages.length ? /*#__PURE__*/React.createElement("div", {
+        className: "atelier-tape",
+        "aria-label": "アトリエ画像"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "atelier-track"
+      }, [...atelierImages, ...atelierImages].map((image, index) => /*#__PURE__*/React.createElement("figure", {
+        key: `${image.id}-${index}`
+      }, /*#__PURE__*/React.createElement("img", {
+        src: image.src,
+        alt: ""
+      }), /*#__PURE__*/React.createElement("figcaption", null, image.title))))) : /*#__PURE__*/React.createElement("div", {
+        className: "atelier-empty"
+      }, "画像を追加すると、ここにアトリエが表示されます。"));
     }
     return null;
   };
@@ -2895,6 +2975,274 @@ function formatSavedAt(value) {
 }
 function mjCommandLegacy(item) {
   return [item.extra, item.ar && `--ar ${item.ar}`, item.stylize && `--stylize ${item.stylize}`, item.chaos && `--chaos ${item.chaos}`, item.raw && "--raw", item.profile && `--profile ${item.profile}`, item.seed && `--seed ${item.seed}`].filter(Boolean).join(" ");
+}
+function GalleryPage({
+  images,
+  setImages,
+  setScreen
+}) {
+  const fileInputRef = React.useRef(null);
+  const [preview, setPreview] = React.useState(null);
+  const addFiles = async fileList => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    if (!files.length) return;
+    const nextImages = await Promise.all(files.map(async file => ({
+      id: uid(),
+      src: await fileToDataUrl(file),
+      title: file.name.replace(/\.[^.]+$/, ""),
+      memo: "",
+      createdAt: new Date().toISOString(),
+      source: "gallery",
+      favorite: false
+    })));
+    setImages(items => [...nextImages, ...items]);
+  };
+  const updateImage = (id, patch) => {
+    setImages(items => items.map(item => item.id === id ? {
+      ...item,
+      ...patch
+    } : item));
+  };
+  return /*#__PURE__*/React.createElement("section", {
+    className: "page gallery-page"
+  }, /*#__PURE__*/React.createElement(PageHead, {
+    title: "ギャラリー",
+    action: /*#__PURE__*/React.createElement("div", {
+      className: "actions"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setScreen("home")
+    }, "ホームへ"), /*#__PURE__*/React.createElement("button", {
+      className: "primary",
+      onClick: () => fileInputRef.current?.click()
+    }, "＋ 画像を追加"))
+  }), /*#__PURE__*/React.createElement("input", {
+    ref: fileInputRef,
+    type: "file",
+    accept: "image/png,image/jpeg,image/webp",
+    multiple: true,
+    style: {
+      display: "none"
+    },
+    onChange: event => {
+      if (event.currentTarget.files) addFiles(event.currentTarget.files);
+      event.currentTarget.value = "";
+    }
+  }), images.length ? /*#__PURE__*/React.createElement("div", {
+    className: "gallery-grid"
+  }, images.map(image => /*#__PURE__*/React.createElement("article", {
+    className: "gallery-card",
+    key: image.id
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "gallery-image-button",
+    onClick: () => setPreview(image)
+  }, /*#__PURE__*/React.createElement("img", {
+    src: image.src,
+    alt: ""
+  })), /*#__PURE__*/React.createElement("input", {
+    value: image.title,
+    onChange: event => updateImage(image.id, {
+      title: event.target.value
+    }),
+    placeholder: "タイトル"
+  }), /*#__PURE__*/React.createElement("textarea", {
+    value: image.memo,
+    onChange: event => updateImage(image.id, {
+      memo: event.target.value
+    }),
+    placeholder: "メモ"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "gallery-card-actions"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "check"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: image.favorite,
+    onChange: event => updateImage(image.id, {
+      favorite: event.target.checked
+    })
+  }), " お気に入り"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: () => setImages(items => items.filter(item => item.id !== image.id))
+  }, "削除"))))) : /*#__PURE__*/React.createElement(Empty, {
+    text: "画像を追加すると、ここにギャラリーが表示されます。"
+  }), preview && /*#__PURE__*/React.createElement(Modal, {
+    title: preview.title || "画像プレビュー",
+    onClose: () => setPreview(null)
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "image-preview-modal"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: preview.src,
+    alt: ""
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "modal-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => setPreview(null)
+  }, "閉じる")))));
+}
+function JournalPage({
+  images,
+  journal,
+  setJournal,
+  setGalleryImages,
+  setScreen
+}) {
+  const fileInputRef = React.useRef(null);
+  const [draggingId, setDraggingId] = React.useState("");
+  const [selectedId, setSelectedId] = React.useState("");
+  const boardRef = React.useRef(null);
+  const selected = journal.items.find(item => item.id === selectedId);
+  const addJournalItem = image => {
+    const item = {
+      id: uid(),
+      imageId: image.id,
+      src: image.src,
+      x: 80 + journal.items.length * 18,
+      y: 80 + journal.items.length * 14,
+      width: 170,
+      rotate: journal.items.length % 5 * 4 - 8
+    };
+    setJournal(current => ({
+      ...current,
+      items: [...current.items, item]
+    }));
+    setSelectedId(item.id);
+  };
+  const addFiles = async fileList => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    if (!files.length) return;
+    const nextImages = await Promise.all(files.map(async file => ({
+      id: uid(),
+      src: await fileToDataUrl(file),
+      title: file.name.replace(/\.[^.]+$/, ""),
+      memo: "ジャーナルから追加",
+      createdAt: new Date().toISOString(),
+      source: "journal",
+      favorite: false
+    })));
+    setGalleryImages(items => [...nextImages, ...items]);
+    nextImages.forEach(addJournalItem);
+  };
+  const updateItem = (id, patch) => {
+    setJournal(current => ({
+      ...current,
+      items: current.items.map(item => item.id === id ? {
+        ...item,
+        ...patch
+      } : item)
+    }));
+  };
+  const moveItem = event => {
+    if (!draggingId || !boardRef.current) return;
+    const rect = boardRef.current.getBoundingClientRect();
+    updateItem(draggingId, {
+      x: event.clientX - rect.left - 60,
+      y: event.clientY - rect.top - 60
+    });
+  };
+  return /*#__PURE__*/React.createElement("section", {
+    className: "page journal-page"
+  }, /*#__PURE__*/React.createElement(PageHead, {
+    title: "ジャーナル",
+    action: /*#__PURE__*/React.createElement("div", {
+      className: "actions"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => setScreen("home")
+    }, "ホームへ"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setScreen("gallery")
+    }, "ギャラリーへ"), /*#__PURE__*/React.createElement("button", {
+      className: "primary",
+      onClick: () => fileInputRef.current?.click()
+    }, "＋ 画像を追加"))
+  }), /*#__PURE__*/React.createElement("input", {
+    ref: fileInputRef,
+    type: "file",
+    accept: "image/png,image/jpeg,image/webp",
+    multiple: true,
+    style: {
+      display: "none"
+    },
+    onChange: event => {
+      if (event.currentTarget.files) addFiles(event.currentTarget.files);
+      event.currentTarget.value = "";
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "journal-layout"
+  }, /*#__PURE__*/React.createElement("aside", {
+    className: "journal-tools"
+  }, /*#__PURE__*/React.createElement("label", null, "背景", /*#__PURE__*/React.createElement("select", {
+    value: journal.background,
+    onChange: event => setJournal(current => ({
+      ...current,
+      background: event.target.value
+    }))
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "paper"
+  }, "生成り紙"), /*#__PURE__*/React.createElement("option", {
+    value: "grid"
+  }, "方眼"), /*#__PURE__*/React.createElement("option", {
+    value: "pink"
+  }, "ピンクメモ"), /*#__PURE__*/React.createElement("option", {
+    value: "dark"
+  }, "ダーク紙"))), /*#__PURE__*/React.createElement("strong", null, "画像ストック"), /*#__PURE__*/React.createElement("div", {
+    className: "journal-stock"
+  }, images.slice(0, 18).map(image => /*#__PURE__*/React.createElement("button", {
+    key: image.id,
+    onClick: () => addJournalItem(image)
+  }, /*#__PURE__*/React.createElement("img", {
+    src: image.src,
+    alt: ""
+  })))), selected && /*#__PURE__*/React.createElement("div", {
+    className: "journal-edit-panel"
+  }, /*#__PURE__*/React.createElement("label", null, "サイズ", /*#__PURE__*/React.createElement("input", {
+    type: "range",
+    min: "80",
+    max: "360",
+    value: selected.width,
+    onChange: event => updateItem(selected.id, {
+      width: Number(event.target.value)
+    })
+  })), /*#__PURE__*/React.createElement("label", null, "回転", /*#__PURE__*/React.createElement("input", {
+    type: "range",
+    min: "-35",
+    max: "35",
+    value: selected.rotate,
+    onChange: event => updateItem(selected.id, {
+      rotate: Number(event.target.value)
+    })
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: () => setJournal(current => ({
+      ...current,
+      items: current.items.filter(item => item.id !== selected.id)
+    }))
+  }, "選択画像を削除"))), /*#__PURE__*/React.createElement("div", {
+    ref: boardRef,
+    className: `journal-board ${journal.background}`,
+    onPointerMove: moveItem,
+    onPointerUp: () => setDraggingId(""),
+    onPointerLeave: () => setDraggingId("")
+  }, journal.items.length ? journal.items.map(item => /*#__PURE__*/React.createElement("div", {
+    className: `journal-sticker ${selectedId === item.id ? "selected" : ""}`,
+    key: item.id,
+    style: {
+      left: item.x,
+      top: item.y,
+      width: item.width,
+      transform: `rotate(${item.rotate}deg)`
+    },
+    onPointerDown: event => {
+      event.preventDefault();
+      setSelectedId(item.id);
+      setDraggingId(item.id);
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: item.src,
+    alt: "",
+    draggable: false
+  }))) : /*#__PURE__*/React.createElement("div", {
+    className: "journal-empty"
+  }, "画像を追加して、シール帳のように並べられます。"))));
 }
 function Projects({
   projects,
