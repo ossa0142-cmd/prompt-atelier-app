@@ -3465,36 +3465,12 @@ p {
 }
 
 .journal-sticker-image.sticker-active {
-  filter:
-    drop-shadow(1px 0 0 #fff)
-    drop-shadow(-1px 0 0 #fff)
-    drop-shadow(0 1px 0 #fff)
-    drop-shadow(0 -1px 0 #fff)
-    drop-shadow(2px 0 0 #fff)
-    drop-shadow(-2px 0 0 #fff)
-    drop-shadow(0 2px 0 #fff)
-    drop-shadow(0 -2px 0 #fff)
-    drop-shadow(3px 0 0 #fff)
-    drop-shadow(-3px 0 0 #fff)
-    drop-shadow(0 3px 0 #fff)
-    drop-shadow(0 -3px 0 #fff)
-    drop-shadow(2px 2px 0 #fff)
-    drop-shadow(-2px 2px 0 #fff)
-    drop-shadow(2px -2px 0 #fff)
-    drop-shadow(-2px -2px 0 #fff)
-    drop-shadow(0 5px 7px rgba(0, 0, 0, 0.18));
+  outline: 4px solid #fff;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.16);
 }
 
 .journal-sticker.selected {
   outline: 3px solid color-mix(in srgb, var(--accent) 58%, transparent);
-}
-
-.journal-debug-panel {
-  margin-top: 10px;
-  color: var(--text-sub);
-  font-size: 12px;
-  line-height: 1.5;
-  opacity: 0.78;
 }
 
 .journal-empty {

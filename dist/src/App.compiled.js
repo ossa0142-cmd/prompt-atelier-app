@@ -834,20 +834,6 @@ function isStickerEffectOn(item) {
   if (!item) return false;
   return item.stickerEffect ?? item.sticker ?? true;
 }
-
-/*
- * ジャーナル画面の下部に一時的な確認表示を出しています。
- * 動作確認が終わったら .journal-debug-panel とあわせて削除できます。
- */
-function JournalDebugPanel({
-  selected
-}) {
-  const storage = shouldShowStorageWarning();
-  const sticker = isStickerEffectOn(selected);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "journal-debug-panel"
-  }, "storage: ", formatStoragePercent(storage.ratio), " / warning: ", storage.level, " / sticker: ", String(sticker), " / class: ", sticker ? "sticker-active" : "none");
-}
 function isSupportedImageFile(file) {
   return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
 }
@@ -3712,14 +3698,12 @@ function JournalPage({
     }
   }, /*#__PURE__*/React.createElement("img", {
     className: isStickerEffectOn(item) ? "journal-sticker-image sticker-active" : "journal-sticker-image",
-    src: item.src,
+    src: item.thumbnail || item.src,
     alt: "",
     draggable: false
   }))) : /*#__PURE__*/React.createElement("div", {
     className: "journal-empty"
-  }, "画像を追加して、シール帳のように並べられます。"))), /*#__PURE__*/React.createElement(JournalDebugPanel, {
-    selected: selected
-  }));
+  }, "画像を追加して、シール帳のように並べられます。"))));
 }
 function Projects({
   projects,
