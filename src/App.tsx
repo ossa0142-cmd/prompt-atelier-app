@@ -535,6 +535,15 @@ const lowerIncludes = (source: string, query: string) => source.toLowerCase().in
 
 const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
 
+function themeClassName(id: string) {
+  if (["cute", "girly", "kstationery", "pastel", "lavender"].includes(id)) return "theme-cute";
+  if (["cool", "simple", "pop-blue"].includes(id)) return "theme-cool";
+  if (["dark", "night-lavender"].includes(id)) return "theme-dark";
+  if (["vivid-pink", "emerald", "retro-orange"].includes(id)) return "theme-vivid";
+  if (["natural", "cafe", "antique"].includes(id)) return "theme-natural";
+  return "theme-cute";
+}
+
 function themeStyle(theme: any) {
   const dark = isDarkTheme(theme.id);
   const decorativeMap: Record<string, string> = {
@@ -674,7 +683,7 @@ function App() {
   };
 
   return (
-    <div className="app-shell" style={appStyle}>
+    <div className={`app-shell ${themeClassName(activeTheme.id)}`} style={appStyle}>
       <header className="app-header">
         <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>

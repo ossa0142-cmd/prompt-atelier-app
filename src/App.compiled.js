@@ -600,6 +600,14 @@ const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolea
 const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const isDarkTheme = id => ["dark", "night-lavender"].includes(id);
+function themeClassName(id) {
+  if (["cute", "girly", "kstationery", "pastel", "lavender"].includes(id)) return "theme-cute";
+  if (["cool", "simple", "pop-blue"].includes(id)) return "theme-cool";
+  if (["dark", "night-lavender"].includes(id)) return "theme-dark";
+  if (["vivid-pink", "emerald", "retro-orange"].includes(id)) return "theme-vivid";
+  if (["natural", "cafe", "antique"].includes(id)) return "theme-natural";
+  return "theme-cute";
+}
 function themeStyle(theme) {
   const dark = isDarkTheme(theme.id);
   const decorativeMap = {
@@ -736,7 +744,7 @@ function App() {
     window.setTimeout(() => setToast(""), 1600);
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: "app-shell",
+    className: `app-shell ${themeClassName(activeTheme.id)}`,
     style: appStyle
   }, /*#__PURE__*/React.createElement("header", {
     className: "app-header"
