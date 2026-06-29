@@ -537,7 +537,28 @@ const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
 
 function themeStyle(theme: any) {
   const dark = isDarkTheme(theme.id);
+  const decorativeMap: Record<string, string> = {
+    cute: "color-mix(in srgb, #f8cdd5 42%, var(--card-bg))",
+    cool: "color-mix(in srgb, #b9c8d5 38%, transparent)",
+    natural: "color-mix(in srgb, #a9bf91 34%, transparent)",
+    lavender: "color-mix(in srgb, #cdb7e8 36%, transparent)",
+    cafe: "color-mix(in srgb, #caa98d 32%, transparent)",
+    kstationery: "color-mix(in srgb, #f7cbd7 34%, transparent)",
+    simple: "color-mix(in srgb, #d8d8d8 32%, transparent)",
+    girly: "color-mix(in srgb, #e7a9bc 38%, transparent)",
+    antique: "color-mix(in srgb, #b59770 34%, transparent)",
+    pastel: "color-mix(in srgb, #d8c7f0 36%, transparent)",
+    dark: "color-mix(in srgb, #ffffff 14%, transparent)",
+    "night-lavender": "color-mix(in srgb, #c7a6ff 22%, transparent)",
+    "vivid-pink": "color-mix(in srgb, #ff4fa3 34%, transparent)",
+    "pop-blue": "color-mix(in srgb, #2477ff 30%, transparent)",
+    emerald: "color-mix(in srgb, #00a878 28%, transparent)",
+    "retro-orange": "color-mix(in srgb, #f28c28 34%, transparent)",
+  };
   return {
+    "--app-bg": theme.vars.ivory,
+    "--text-main": theme.vars.ink,
+    "--text-sub": theme.vars.muted,
     "--ink": theme.vars.ink,
     "--muted": theme.vars.muted,
     "--paper": theme.vars.paper,
@@ -547,16 +568,25 @@ function themeStyle(theme: any) {
     "--sand": theme.vars.sand,
     "--line": theme.vars.line,
     "--accent": theme.vars.accent,
+    "--accent-soft": dark ? theme.vars.shell : theme.vars.shell,
     "--sage-deep": theme.vars.accent,
     "--heading": theme.vars.ink,
     "--card-bg": dark ? theme.vars.paper : theme.vars.paper,
+    "--card-gradient": dark
+      ? `linear-gradient(145deg, ${theme.vars.paper}, ${theme.vars.shell})`
+      : `linear-gradient(145deg, ${theme.vars.paper} 8%, ${theme.vars.shell} 58%, ${theme.vars.sand})`,
     "--card-border": theme.vars.line,
+    "--border": theme.vars.line,
     "--button-bg": dark ? theme.vars.accent : theme.vars.paper,
+    "--button-text": dark ? theme.vars.ivory : theme.vars.ink,
     "--button-ink": dark ? theme.vars.ivory : theme.vars.ink,
     "--primary-bg": theme.vars.accent,
     "--primary-ink": dark ? theme.vars.ivory : "#fffdf9",
     "--input-bg": dark ? theme.vars.shell : "#fffdf9",
     "--input-ink": theme.vars.ink,
+    "--icon-bg": dark ? theme.vars.shell : theme.vars.paper,
+    "--icon-color": theme.vars.accent,
+    "--decorative-shape": decorativeMap[theme.id] || "color-mix(in srgb, var(--accent) 24%, transparent)",
     "--nav-bg": dark ? theme.vars.paper : "color-mix(in srgb, var(--paper) 88%, transparent)",
     "--nav-ink": theme.vars.ink,
   } as any;
@@ -833,7 +863,6 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     <section className="page home-page">
       <div className="home-topbar">
         <span>Prompt Atelier Home</span>
-        <button className="primary" onClick={() => setScreen("customize")}>ホームをカスタマイズ</button>
       </div>
       {settings.bannerVisible && (
         <div
