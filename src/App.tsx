@@ -585,7 +585,8 @@ const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = (value: string) => value.split(",").map((tag) => tag.trim()).filter(Boolean);
 const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
-const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningShown";
+const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
+const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 
 const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
 const readableTextOn = (hex: string) => {
@@ -778,22 +779,30 @@ function estimateStorageUsage() {
   let total = 0;
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index) || "";
-    if (!key.startsWith("promptAtelier") && !key.startsWith("prompt-atelier")) continue;
+    if (!key.startsWith("promptAtelier")) continue;
     const value = localStorage.getItem(key) || "";
-    total += key.length + value.length;
+    total += new Blob([key + value]).size;
   }
-  return total * 2;
+  return total;
 }
 
 function warnIfImageStorageLarge() {
   const usage = estimateStorageUsage();
-  const limit = 5 * 1024 * 1024;
-  const ratio = usage / limit;
-  if (ratio < 0.7 || sessionStorage.getItem(IMAGE_WARNING_KEY)) return;
-  sessionStorage.setItem(IMAGE_WARNING_KEY, "1");
-  window.alert(ratio >= 0.9
-    ? "保存容量が残り少なくなっています。バックアップ後、不要な画像を削除してください。"
-    : "画像データが増えています。バックアップや不要画像の整理をおすすめします。");
+  const ratio = usage / STORAGE_LIMIT_BYTES;
+  const shownLevel = sessionStorage.getItem(IMAGE_WARNING_KEY);
+  if (ratio < 0.7) {
+    sessionStorage.removeItem(IMAGE_WARNING_KEY);
+    return;
+  }
+  if (ratio >= 0.9) {
+    if (shownLevel === "strong") return;
+    sessionStorage.setItem(IMAGE_WARNING_KEY, "strong");
+    window.alert("保存容量が残り少なくなっています。バックアップ後、不要な画像を削除してください。");
+    return;
+  }
+  if (shownLevel) return;
+  sessionStorage.setItem(IMAGE_WARNING_KEY, "light");
+  window.alert("画像データが増えています。バックアップや不要画像の整理をおすすめします。");
 }
 
 function isSupportedImageFile(file: File) {
@@ -3081,7 +3090,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
         >
           {journal.items.length ? journal.items.map((item: JournalItem) => (
             <div
-              className={`journal-sticker ${item.sticker !== false ? "sticker-style" : ""} ${selectedId === item.id ? "selected" : ""}`}
+              className={`journal-sticker ${selectedId === item.id ? "selected" : ""}`}
               key={item.id}
               style={{ left: item.x, top: item.y, width: item.width, transform: `rotate(${item.rotate}deg)` }}
               onPointerDown={(event) => {
@@ -3090,7 +3099,9 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
                 setDraggingId(item.id);
               }}
             >
-              <img className={item.sticker !== false ? "sticker-effect" : ""} src={item.src} alt="" draggable={false} />
+              <span className={item.sticker !== false ? "sticker-frame sticker-frame-on" : "sticker-frame"}>
+                <img className={item.sticker !== false ? "sticker-image sticker-cutout" : "sticker-image"} src={item.src} alt="" draggable={false} />
+              </span>
             </div>
           )) : <div className="journal-empty">画像を追加して、シール帳のように並べられます。</div>}
         </div>
