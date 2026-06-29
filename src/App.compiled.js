@@ -839,6 +839,7 @@ function App() {
   }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
     images: galleryImages,
     setImages: setGalleryImages,
+    setJournal: setJournal,
     setScreen: setScreen
   })), toast && /*#__PURE__*/React.createElement("div", {
     className: "toast"
@@ -1016,7 +1017,7 @@ function Home({
       }, /*#__PURE__*/React.createElement("img", {
         src: image.src,
         alt: ""
-      }), /*#__PURE__*/React.createElement("figcaption", null, image.title))))) : /*#__PURE__*/React.createElement("div", {
+      }))))) : /*#__PURE__*/React.createElement("div", {
         className: "atelier-empty"
       }, "画像を追加すると、ここにアトリエが表示されます。"));
     }
@@ -2979,6 +2980,7 @@ function mjCommandLegacy(item) {
 function GalleryPage({
   images,
   setImages,
+  setJournal,
   setScreen
 }) {
   const fileInputRef = React.useRef(null);
@@ -3008,6 +3010,23 @@ function GalleryPage({
     setImages(items => items.filter(item => item.id !== id));
     setPreviewId("");
   };
+  const pasteToJournal = image => {
+    const item = {
+      id: uid(),
+      imageId: image.id,
+      src: image.src,
+      x: 96,
+      y: 96,
+      width: 190,
+      rotate: -4,
+      sticker: true
+    };
+    setJournal(current => ({
+      ...current,
+      items: [...(current.items || []), item]
+    }));
+    setScreen("journal");
+  };
   return /*#__PURE__*/React.createElement("section", {
     className: "page gallery-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -3017,6 +3036,8 @@ function GalleryPage({
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setScreen("home")
     }, "ホームへ"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => setScreen("journal")
+    }, "ジャーナルへ"), /*#__PURE__*/React.createElement("button", {
       className: "primary",
       onClick: () => fileInputRef.current?.click()
     }, "＋ 画像を追加"))
@@ -3082,6 +3103,8 @@ function GalleryPage({
   }), " お気に入り"), /*#__PURE__*/React.createElement("div", {
     className: "modal-actions"
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => pasteToJournal(preview)
+  }, "ジャーナルに貼る"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
     onClick: () => deleteImage(preview.id)
   }, "削除"), /*#__PURE__*/React.createElement("button", {
@@ -3097,10 +3120,14 @@ function JournalPage({
   setScreen
 }) {
   const fileInputRef = React.useRef(null);
+  const backgroundInputRef = React.useRef(null);
   const [draggingId, setDraggingId] = React.useState("");
   const [selectedId, setSelectedId] = React.useState("");
+  const [isBackgroundDragging, setIsBackgroundDragging] = React.useState(false);
   const boardRef = React.useRef(null);
   const selected = journal.items.find(item => item.id === selectedId);
+  const customBackgrounds = journal.customBackgrounds || [];
+  const selectedCustomBackground = customBackgrounds.find(item => journal.background === `custom-${item.id}`);
   const addJournalItem = image => {
     const item = {
       id: uid(),
@@ -3132,6 +3159,43 @@ function JournalPage({
     })));
     setGalleryImages(items => [...nextImages, ...items]);
     nextImages.forEach(addJournalItem);
+  };
+  const addBackgroundFiles = async fileList => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    if (!files.length) return;
+    const nextBackgrounds = await Promise.all(files.map(async (file, index) => ({
+      id: uid(),
+      src: await fileToDataUrl(file),
+      title: file.name.replace(/\.[^.]+$/, "") || `お気に入り背景${index + 1}`,
+      memo: "",
+      createdAt: new Date().toISOString(),
+      source: "journal-background",
+      favorite: false
+    })));
+    setJournal(current => ({
+      ...current,
+      customBackgrounds: [...nextBackgrounds, ...(current.customBackgrounds || [])],
+      background: `custom-${nextBackgrounds[0].id}`
+    }));
+  };
+  const updateBackground = (id, patch) => {
+    setJournal(current => ({
+      ...current,
+      customBackgrounds: (current.customBackgrounds || []).map(item => item.id === id ? {
+        ...item,
+        ...patch
+      } : item)
+    }));
+  };
+  const deleteBackground = id => {
+    setJournal(current => {
+      const nextBackgrounds = (current.customBackgrounds || []).filter(item => item.id !== id);
+      return {
+        ...current,
+        customBackgrounds: nextBackgrounds,
+        background: current.background === `custom-${id}` ? "paper" : current.background
+      };
+    });
   };
   const updateItem = (id, patch) => {
     setJournal(current => ({
@@ -3176,6 +3240,18 @@ function JournalPage({
       if (event.currentTarget.files) addFiles(event.currentTarget.files);
       event.currentTarget.value = "";
     }
+  }), /*#__PURE__*/React.createElement("input", {
+    ref: backgroundInputRef,
+    type: "file",
+    accept: "image/png,image/jpeg,image/webp",
+    multiple: true,
+    style: {
+      display: "none"
+    },
+    onChange: event => {
+      if (event.currentTarget.files) addBackgroundFiles(event.currentTarget.files);
+      event.currentTarget.value = "";
+    }
   }), /*#__PURE__*/React.createElement("div", {
     className: "journal-layout"
   }, /*#__PURE__*/React.createElement("aside", {
@@ -3218,7 +3294,36 @@ function JournalPage({
     value: "watercolor"
   }, "水彩にじみ"), /*#__PURE__*/React.createElement("option", {
     value: "dark"
-  }, "ダーク紙"))), /*#__PURE__*/React.createElement("strong", null, "画像ストック"), /*#__PURE__*/React.createElement("div", {
+  }, "ダーク紙"), customBackgrounds.map(background => /*#__PURE__*/React.createElement("option", {
+    key: background.id,
+    value: `custom-${background.id}`
+  }, background.title || "お気に入り背景")))), /*#__PURE__*/React.createElement("div", {
+    className: `journal-background-drop ${isBackgroundDragging ? "dragging" : ""}`,
+    onDragOver: event => event.preventDefault(),
+    onDragEnter: event => {
+      event.preventDefault();
+      setIsBackgroundDragging(true);
+    },
+    onDragLeave: () => setIsBackgroundDragging(false),
+    onDrop: event => {
+      event.preventDefault();
+      setIsBackgroundDragging(false);
+      addBackgroundFiles(event.dataTransfer.files);
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => backgroundInputRef.current?.click()
+  }, "＋ 背景を追加"), /*#__PURE__*/React.createElement("small", null, "画像をドロップして背景にできます")), selectedCustomBackground && /*#__PURE__*/React.createElement("div", {
+    className: "journal-background-editor"
+  }, /*#__PURE__*/React.createElement("label", null, "背景名", /*#__PURE__*/React.createElement("input", {
+    value: selectedCustomBackground.title,
+    onChange: event => updateBackground(selectedCustomBackground.id, {
+      title: event.target.value
+    })
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: () => deleteBackground(selectedCustomBackground.id)
+  }, "背景を削除")), /*#__PURE__*/React.createElement("strong", null, "画像ストック"), /*#__PURE__*/React.createElement("div", {
     className: "journal-stock"
   }, images.slice(0, 18).map(image => /*#__PURE__*/React.createElement("button", {
     key: image.id,
@@ -3261,6 +3366,9 @@ function JournalPage({
   }, "選択画像を削除"))), /*#__PURE__*/React.createElement("div", {
     ref: boardRef,
     className: `journal-board ${journal.background}`,
+    style: selectedCustomBackground ? {
+      backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${selectedCustomBackground.src})`
+    } : undefined,
     onPointerMove: moveItem,
     onPointerUp: () => setDraggingId(""),
     onPointerLeave: () => setDraggingId("")

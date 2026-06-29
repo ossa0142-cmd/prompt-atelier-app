@@ -2996,14 +2996,14 @@ p {
   display: flex;
   width: max-content;
   gap: 14px;
-  animation: atelier-scroll 34s linear infinite;
+  animation: atelier-scroll 72s linear infinite;
 }
 
 .atelier-track figure {
   width: 154px;
   margin: 0;
   border-radius: 22px;
-  background: var(--card-bg);
+  background: color-mix(in srgb, var(--card-bg) 88%, var(--decorative-shape));
   box-shadow: 0 12px 24px rgba(73, 58, 45, 0.08);
   padding: 8px;
   transform: rotate(-1.5deg);
@@ -3022,22 +3022,73 @@ p {
   background: var(--sand);
 }
 
-.atelier-track figcaption {
-  overflow: hidden;
-  color: var(--text-sub);
-  font-size: 12px;
-  font-weight: 800;
-  padding: 8px 4px 2px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .atelier-empty {
   border: 1px dashed color-mix(in srgb, var(--accent) 36%, var(--border));
   border-radius: 24px;
   color: var(--text-sub);
   padding: 28px;
   text-align: center;
+}
+
+.theme-cute .atelier-corner {
+  border-radius: 38px;
+  box-shadow: 0 22px 44px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.theme-cute .atelier-corner::before {
+  content: "♡";
+  position: absolute;
+  top: 22px;
+  right: 30px;
+  color: color-mix(in srgb, var(--accent) 44%, white);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.theme-cool .atelier-corner {
+  border-radius: 20px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--card-bg) 90%, var(--shell)), color-mix(in srgb, var(--shell) 42%, transparent));
+}
+
+.theme-cool .atelier-track figure {
+  border-radius: 16px;
+  transform: none;
+}
+
+.theme-dark .atelier-corner {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--card-bg) 90%, white 4%), color-mix(in srgb, var(--shell) 70%, black));
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.24);
+}
+
+.theme-dark .atelier-track figure {
+  background: color-mix(in srgb, var(--card-bg) 78%, white 8%);
+}
+
+.theme-vivid .atelier-corner {
+  border-width: 2px;
+  border-radius: 26px 42px 26px 42px;
+  box-shadow: 0 24px 44px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.theme-vivid .atelier-corner::before {
+  content: "★";
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  color: color-mix(in srgb, var(--accent) 74%, white);
+  font-size: 24px;
+}
+
+.theme-natural .atelier-corner {
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--sage) 24%, transparent), transparent 24%),
+    linear-gradient(145deg, color-mix(in srgb, var(--sand) 30%, var(--card-bg)), var(--card-bg));
+}
+
+.theme-natural .atelier-track figure {
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--sand) 20%, var(--card-bg));
 }
 
 @keyframes atelier-scroll {
@@ -3144,6 +3195,27 @@ p {
   gap: 8px;
   color: var(--text-main);
   font-weight: 850;
+}
+
+.journal-background-drop,
+.journal-background-editor {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+  padding: 12px;
+}
+
+.journal-background-drop.dragging {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--card-bg));
+}
+
+.journal-background-drop small {
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .journal-stock {
@@ -3266,10 +3338,17 @@ p {
 
 .journal-board.floral {
   background:
-    radial-gradient(circle at 20% 24%, rgba(212,154,165,0.22) 0 8px, transparent 9px),
-    radial-gradient(circle at 24% 28%, rgba(212,154,165,0.16) 0 6px, transparent 7px),
-    radial-gradient(circle at 78% 62%, rgba(113,134,109,0.18) 0 10px, transparent 11px),
-    var(--ivory);
+    radial-gradient(circle at 12px 14px, rgba(212,154,165,0.16) 0 2px, transparent 3px),
+    radial-gradient(circle at 16px 10px, rgba(212,154,165,0.10) 0 2px, transparent 3px),
+    radial-gradient(circle at 20px 14px, rgba(212,154,165,0.12) 0 2px, transparent 3px),
+    radial-gradient(ellipse at 26px 20px, rgba(113,134,109,0.10) 0 3px, transparent 4px),
+    #fbf6ed;
+  background-size: 76px 76px;
+}
+
+.journal-board[class*="custom-"] {
+  background-size: cover;
+  background-position: center;
 }
 
 .journal-board.watercolor {
@@ -3289,24 +3368,26 @@ p {
   cursor: grab;
   touch-action: none;
   border-radius: 18px;
-  box-shadow: 0 16px 28px rgba(73, 58, 45, 0.16);
-  padding: 6px;
-  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
 }
 
 .journal-sticker.sticker-style {
-  padding: 9px;
-  background: white;
-  filter: drop-shadow(0 8px 10px rgba(73, 58, 45, 0.18));
+  padding: 0;
+  background: transparent;
+  filter: drop-shadow(0 7px 8px rgba(73, 58, 45, 0.18));
 }
 
 .journal-sticker.sticker-style img {
   filter:
-    drop-shadow(0 0 0 white)
-    drop-shadow(2px 0 0 white)
-    drop-shadow(-2px 0 0 white)
-    drop-shadow(0 2px 0 white)
-    drop-shadow(0 -2px 0 white);
+    drop-shadow(0 0 2px white)
+    drop-shadow(0 0 5px white)
+    drop-shadow(2px 0 2px white)
+    drop-shadow(-2px 0 2px white)
+    drop-shadow(0 2px 2px white)
+    drop-shadow(0 -2px 2px white)
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
 }
 
 .journal-sticker.selected {

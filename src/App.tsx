@@ -104,6 +104,7 @@ type JournalItem = {
 
 type JournalState = {
   background: string;
+  customBackgrounds?: AtelierImage[];
   items: JournalItem[];
 };
 
@@ -816,7 +817,7 @@ function App() {
           />
         )}
         {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
-        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setScreen={setScreen} />}
+        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} />}
       </main>
       {toast && <div className="toast">{toast}</div>}
     </div>
@@ -959,7 +960,6 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
                 {[...atelierImages, ...atelierImages].map((image: AtelierImage, index: number) => (
                   <figure key={`${image.id}-${index}`}>
                     <img src={image.src} alt="" />
-                    <figcaption>{image.title}</figcaption>
                   </figure>
                 ))}
               </div>
@@ -2496,7 +2496,7 @@ function mjCommandLegacy(item: MjSetting) {
   ].filter(Boolean).join(" ");
 }
 
-function GalleryPage({ images, setImages, setScreen }: any) {
+function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [previewId, setPreviewId] = React.useState("");
   const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
@@ -2521,11 +2521,25 @@ function GalleryPage({ images, setImages, setScreen }: any) {
     setImages((items: AtelierImage[]) => items.filter((item) => item.id !== id));
     setPreviewId("");
   };
+  const pasteToJournal = (image: AtelierImage) => {
+    const item: JournalItem = {
+      id: uid(),
+      imageId: image.id,
+      src: image.src,
+      x: 96,
+      y: 96,
+      width: 190,
+      rotate: -4,
+      sticker: true,
+    };
+    setJournal((current: JournalState) => ({ ...current, items: [...(current.items || []), item] }));
+    setScreen("journal");
+  };
   return (
     <section className="page gallery-page">
       <PageHead
         title="ギャラリー"
-        action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
+        action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button onClick={() => setScreen("journal")}>ジャーナルへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
       />
       <input
         ref={fileInputRef}
@@ -2561,6 +2575,7 @@ function GalleryPage({ images, setImages, setScreen }: any) {
             <small>追加日：{formatSavedAt(preview.createdAt)}</small>
             <label className="check"><input type="checkbox" checked={preview.favorite} onChange={(event) => updateImage(preview.id, { favorite: event.target.checked })} /> お気に入り</label>
             <div className="modal-actions">
+              <button onClick={() => pasteToJournal(preview)}>ジャーナルに貼る</button>
               <button className="danger" onClick={() => deleteImage(preview.id)}>削除</button>
               <button className="primary" onClick={() => setPreviewId("")}>閉じる</button>
             </div>
@@ -2573,10 +2588,14 @@ function GalleryPage({ images, setImages, setScreen }: any) {
 
 function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const backgroundInputRef = React.useRef<HTMLInputElement | null>(null);
   const [draggingId, setDraggingId] = React.useState("");
   const [selectedId, setSelectedId] = React.useState("");
+  const [isBackgroundDragging, setIsBackgroundDragging] = React.useState(false);
   const boardRef = React.useRef<HTMLDivElement | null>(null);
   const selected = journal.items.find((item: JournalItem) => item.id === selectedId);
+  const customBackgrounds = journal.customBackgrounds || [];
+  const selectedCustomBackground = customBackgrounds.find((item: AtelierImage) => journal.background === `custom-${item.id}`);
   const addJournalItem = (image: AtelierImage) => {
     const item: JournalItem = {
       id: uid(),
@@ -2606,6 +2625,36 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
     setGalleryImages((items: AtelierImage[]) => [...nextImages, ...items]);
     nextImages.forEach(addJournalItem);
   };
+  const addBackgroundFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    if (!files.length) return;
+    const nextBackgrounds = await Promise.all(files.map(async (file, index) => ({
+      id: uid(),
+      src: await fileToDataUrl(file),
+      title: file.name.replace(/\.[^.]+$/, "") || `お気に入り背景${index + 1}`,
+      memo: "",
+      createdAt: new Date().toISOString(),
+      source: "journal-background",
+      favorite: false,
+    })));
+    setJournal((current: JournalState) => ({
+      ...current,
+      customBackgrounds: [...nextBackgrounds, ...(current.customBackgrounds || [])],
+      background: `custom-${nextBackgrounds[0].id}`,
+    }));
+  };
+  const updateBackground = (id: string, patch: Partial<AtelierImage>) => {
+    setJournal((current: JournalState) => ({
+      ...current,
+      customBackgrounds: (current.customBackgrounds || []).map((item) => item.id === id ? { ...item, ...patch } : item),
+    }));
+  };
+  const deleteBackground = (id: string) => {
+    setJournal((current: JournalState) => {
+      const nextBackgrounds = (current.customBackgrounds || []).filter((item) => item.id !== id);
+      return { ...current, customBackgrounds: nextBackgrounds, background: current.background === `custom-${id}` ? "paper" : current.background };
+    });
+  };
   const updateItem = (id: string, patch: Partial<JournalItem>) => {
     setJournal((current: JournalState) => ({ ...current, items: current.items.map((item) => item.id === id ? { ...item, ...patch } : item) }));
   };
@@ -2631,6 +2680,17 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
           event.currentTarget.value = "";
         }}
       />
+      <input
+        ref={backgroundInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        style={{ display: "none" }}
+        onChange={(event) => {
+          if (event.currentTarget.files) addBackgroundFiles(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }}
+      />
       <div className="journal-layout">
         <aside className="journal-tools">
           <label>背景
@@ -2651,8 +2711,32 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
               <option value="floral">薄い花柄</option>
               <option value="watercolor">水彩にじみ</option>
               <option value="dark">ダーク紙</option>
+              {customBackgrounds.map((background: AtelierImage) => <option key={background.id} value={`custom-${background.id}`}>{background.title || "お気に入り背景"}</option>)}
             </select>
           </label>
+          <div
+            className={`journal-background-drop ${isBackgroundDragging ? "dragging" : ""}`}
+            onDragOver={(event) => event.preventDefault()}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setIsBackgroundDragging(true);
+            }}
+            onDragLeave={() => setIsBackgroundDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setIsBackgroundDragging(false);
+              addBackgroundFiles(event.dataTransfer.files);
+            }}
+          >
+            <button type="button" onClick={() => backgroundInputRef.current?.click()}>＋ 背景を追加</button>
+            <small>画像をドロップして背景にできます</small>
+          </div>
+          {selectedCustomBackground && (
+            <div className="journal-background-editor">
+              <label>背景名<input value={selectedCustomBackground.title} onChange={(event) => updateBackground(selectedCustomBackground.id, { title: event.target.value })} /></label>
+              <button className="danger" onClick={() => deleteBackground(selectedCustomBackground.id)}>背景を削除</button>
+            </div>
+          )}
           <strong>画像ストック</strong>
           <div className="journal-stock">
             {images.slice(0, 18).map((image: AtelierImage) => (
@@ -2671,6 +2755,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
         <div
           ref={boardRef}
           className={`journal-board ${journal.background}`}
+          style={selectedCustomBackground ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${selectedCustomBackground.src})` } : undefined}
           onPointerMove={moveItem}
           onPointerUp={() => setDraggingId("")}
           onPointerLeave={() => setDraggingId("")}
