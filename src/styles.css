@@ -3465,17 +3465,21 @@ p {
   box-shadow: none;
 }
 
-.journal-sticker.sticker-style img {
+.journal-sticker.sticker-style img,
+.journal-sticker img.sticker-effect {
+  border: 5px solid #fff;
+  outline: 1px solid rgba(120, 105, 90, 0.16);
+  background: #fff;
   filter:
-    drop-shadow(5px 0 0 #fff)
-    drop-shadow(-5px 0 0 #fff)
-    drop-shadow(0 5px 0 #fff)
-    drop-shadow(0 -5px 0 #fff)
-    drop-shadow(4px 4px 0 #fff)
-    drop-shadow(-4px 4px 0 #fff)
-    drop-shadow(4px -4px 0 #fff)
-    drop-shadow(-4px -4px 0 #fff)
-    drop-shadow(0 6px 5px rgba(73, 58, 45, 0.16));
+    drop-shadow(3px 0 0 #fff)
+    drop-shadow(-3px 0 0 #fff)
+    drop-shadow(0 3px 0 #fff)
+    drop-shadow(0 -3px 0 #fff)
+    drop-shadow(2px 2px 0 #fff)
+    drop-shadow(-2px 2px 0 #fff)
+    drop-shadow(2px -2px 0 #fff)
+    drop-shadow(-2px -2px 0 #fff)
+    drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
 }
 
 .journal-sticker.selected {

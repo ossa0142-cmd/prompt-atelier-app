@@ -794,6 +794,7 @@ function estimateStorageUsage() {
   let total = 0;
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index) || "";
+    if (!key.startsWith("promptAtelier") && !key.startsWith("prompt-atelier")) continue;
     const value = localStorage.getItem(key) || "";
     total += key.length + value.length;
   }
@@ -801,9 +802,11 @@ function estimateStorageUsage() {
 }
 function warnIfImageStorageLarge() {
   const usage = estimateStorageUsage();
-  if (usage < 3_800_000 || sessionStorage.getItem(IMAGE_WARNING_KEY)) return;
+  const limit = 5 * 1024 * 1024;
+  const ratio = usage / limit;
+  if (ratio < 0.7 || sessionStorage.getItem(IMAGE_WARNING_KEY)) return;
   sessionStorage.setItem(IMAGE_WARNING_KEY, "1");
-  window.alert("画像データが増えています。バックアップを書き出すか、不要な画像を削除してください。");
+  window.alert(ratio >= 0.9 ? "保存容量が残り少なくなっています。バックアップ後、不要な画像を削除してください。" : "画像データが増えています。バックアップや不要画像の整理をおすすめします。");
 }
 function isSupportedImageFile(file) {
   return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
@@ -3668,6 +3671,7 @@ function JournalPage({
       setDraggingId(item.id);
     }
   }, /*#__PURE__*/React.createElement("img", {
+    className: item.sticker !== false ? "sticker-effect" : "",
     src: item.src,
     alt: "",
     draggable: false
