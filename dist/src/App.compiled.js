@@ -2982,7 +2982,8 @@ function GalleryPage({
   setScreen
 }) {
   const fileInputRef = React.useRef(null);
-  const [preview, setPreview] = React.useState(null);
+  const [previewId, setPreviewId] = React.useState("");
+  const preview = images.find(image => image.id === previewId) || null;
   const addFiles = async fileList => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -3002,6 +3003,10 @@ function GalleryPage({
       ...item,
       ...patch
     } : item));
+  };
+  const deleteImage = id => {
+    setImages(items => items.filter(item => item.id !== id));
+    setPreviewId("");
   };
   return /*#__PURE__*/React.createElement("section", {
     className: "page gallery-page"
@@ -3033,51 +3038,55 @@ function GalleryPage({
     className: "gallery-card",
     key: image.id
   }, /*#__PURE__*/React.createElement("button", {
+    className: "gallery-favorite-button",
+    "aria-label": "お気に入り",
+    onClick: () => updateImage(image.id, {
+      favorite: !image.favorite
+    })
+  }, image.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("button", {
     className: "gallery-image-button",
-    onClick: () => setPreview(image)
+    onClick: () => setPreviewId(image.id)
   }, /*#__PURE__*/React.createElement("img", {
     src: image.src,
     alt: ""
-  })), /*#__PURE__*/React.createElement("input", {
-    value: image.title,
-    onChange: event => updateImage(image.id, {
-      title: event.target.value
-    }),
-    placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: image.memo,
-    onChange: event => updateImage(image.id, {
-      memo: event.target.value
-    }),
-    placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "gallery-card-actions"
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: image.favorite,
-    onChange: event => updateImage(image.id, {
-      favorite: event.target.checked
-    })
-  }), " お気に入り"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: () => setImages(items => items.filter(item => item.id !== image.id))
-  }, "削除"))))) : /*#__PURE__*/React.createElement(Empty, {
+  }))))) : /*#__PURE__*/React.createElement(Empty, {
     text: "画像を追加すると、ここにギャラリーが表示されます。"
   }), preview && /*#__PURE__*/React.createElement(Modal, {
-    title: preview.title || "画像プレビュー",
-    onClose: () => setPreview(null)
+    title: preview.title || "画像詳細",
+    onClose: () => setPreviewId("")
   }, /*#__PURE__*/React.createElement("div", {
-    className: "image-preview-modal"
+    className: "gallery-detail-modal"
   }, /*#__PURE__*/React.createElement("img", {
     src: preview.src,
     alt: ""
-  }), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("label", null, "タイトル", /*#__PURE__*/React.createElement("input", {
+    value: preview.title,
+    onChange: event => updateImage(preview.id, {
+      title: event.target.value
+    }),
+    placeholder: "タイトル"
+  })), /*#__PURE__*/React.createElement("label", null, "メモ", /*#__PURE__*/React.createElement("textarea", {
+    value: preview.memo,
+    onChange: event => updateImage(preview.id, {
+      memo: event.target.value
+    }),
+    placeholder: "メモ"
+  })), /*#__PURE__*/React.createElement("small", null, "追加日：", formatSavedAt(preview.createdAt)), /*#__PURE__*/React.createElement("label", {
+    className: "check"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: preview.favorite,
+    onChange: event => updateImage(preview.id, {
+      favorite: event.target.checked
+    })
+  }), " お気に入り"), /*#__PURE__*/React.createElement("div", {
     className: "modal-actions"
   }, /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: () => deleteImage(preview.id)
+  }, "削除"), /*#__PURE__*/React.createElement("button", {
     className: "primary",
-    onClick: () => setPreview(null)
+    onClick: () => setPreviewId("")
   }, "閉じる")))));
 }
 function JournalPage({
@@ -3100,7 +3109,8 @@ function JournalPage({
       x: 80 + journal.items.length * 18,
       y: 80 + journal.items.length * 14,
       width: 170,
-      rotate: journal.items.length % 5 * 4 - 8
+      rotate: journal.items.length % 5 * 4 - 8,
+      sticker: true
     };
     setJournal(current => ({
       ...current,
@@ -3178,11 +3188,35 @@ function JournalPage({
     }))
   }, /*#__PURE__*/React.createElement("option", {
     value: "paper"
-  }, "生成り紙"), /*#__PURE__*/React.createElement("option", {
+  }, "無地アイボリー"), /*#__PURE__*/React.createElement("option", {
     value: "grid"
-  }, "方眼"), /*#__PURE__*/React.createElement("option", {
+  }, "方眼紙"), /*#__PURE__*/React.createElement("option", {
+    value: "dot-grid"
+  }, "ドット方眼"), /*#__PURE__*/React.createElement("option", {
+    value: "kraft"
+  }, "クラフト紙"), /*#__PURE__*/React.createElement("option", {
+    value: "old-paper"
+  }, "古紙"), /*#__PURE__*/React.createElement("option", {
     value: "pink"
-  }, "ピンクメモ"), /*#__PURE__*/React.createElement("option", {
+  }, "淡いピンク"), /*#__PURE__*/React.createElement("option", {
+    value: "blue"
+  }, "淡いブルー"), /*#__PURE__*/React.createElement("option", {
+    value: "green"
+  }, "淡いグリーン"), /*#__PURE__*/React.createElement("option", {
+    value: "linen"
+  }, "リネン風"), /*#__PURE__*/React.createElement("option", {
+    value: "washi"
+  }, "マスキングテープ風"), /*#__PURE__*/React.createElement("option", {
+    value: "scrapbook"
+  }, "スクラップブック風"), /*#__PURE__*/React.createElement("option", {
+    value: "lined"
+  }, "罫線ノート"), /*#__PURE__*/React.createElement("option", {
+    value: "check"
+  }, "チェック柄"), /*#__PURE__*/React.createElement("option", {
+    value: "floral"
+  }, "薄い花柄"), /*#__PURE__*/React.createElement("option", {
+    value: "watercolor"
+  }, "水彩にじみ"), /*#__PURE__*/React.createElement("option", {
     value: "dark"
   }, "ダーク紙"))), /*#__PURE__*/React.createElement("strong", null, "画像ストック"), /*#__PURE__*/React.createElement("div", {
     className: "journal-stock"
@@ -3210,7 +3244,15 @@ function JournalPage({
     onChange: event => updateItem(selected.id, {
       rotate: Number(event.target.value)
     })
-  })), /*#__PURE__*/React.createElement("button", {
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "check"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: selected.sticker !== false,
+    onChange: event => updateItem(selected.id, {
+      sticker: event.target.checked
+    })
+  }), " シール風"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
     onClick: () => setJournal(current => ({
       ...current,
@@ -3223,7 +3265,7 @@ function JournalPage({
     onPointerUp: () => setDraggingId(""),
     onPointerLeave: () => setDraggingId("")
   }, journal.items.length ? journal.items.map(item => /*#__PURE__*/React.createElement("div", {
-    className: `journal-sticker ${selectedId === item.id ? "selected" : ""}`,
+    className: `journal-sticker ${item.sticker !== false ? "sticker-style" : ""} ${selectedId === item.id ? "selected" : ""}`,
     key: item.id,
     style: {
       left: item.x,

@@ -3052,18 +3052,21 @@ p {
 }
 
 .gallery-card {
+  position: relative;
   display: grid;
-  gap: 10px;
+  overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: 24px;
   background: var(--card-bg);
   box-shadow: 0 14px 30px rgba(73, 58, 45, 0.07);
-  padding: 12px;
+  padding: 0;
 }
 
 .gallery-image-button {
   overflow: hidden;
-  border-radius: 18px;
+  border: 0;
+  border-radius: 0;
+  background: var(--card-bg);
   padding: 0;
 }
 
@@ -3074,15 +3077,49 @@ p {
   object-fit: cover;
 }
 
-.gallery-card textarea {
-  min-height: 70px;
+.gallery-favorite-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, white 72%, var(--border));
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  color: var(--accent);
+  font-size: 20px;
+  padding: 0;
 }
 
-.gallery-card-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.gallery-detail-modal {
+  display: grid;
   gap: 10px;
+}
+
+.gallery-detail-modal > img {
+  width: 100%;
+  max-height: 54vh;
+  border-radius: 22px;
+  object-fit: contain;
+  background: var(--sand);
+}
+
+.gallery-detail-modal label {
+  display: grid;
+  gap: 8px;
+  color: var(--text-main);
+  font-weight: 850;
+}
+
+.gallery-detail-modal textarea {
+  min-height: 92px;
+}
+
+.gallery-detail-modal small {
+  color: var(--text-sub);
+  font-weight: 800;
 }
 
 .journal-layout {
@@ -3162,6 +3199,87 @@ p {
   background: linear-gradient(145deg, #fff6f8, color-mix(in srgb, var(--shell) 72%, white));
 }
 
+.journal-board.dot-grid {
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--muted) 34%, transparent) 0 1.5px, transparent 2px),
+    var(--paper);
+  background-size: 22px 22px;
+}
+
+.journal-board.kraft {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255,255,255,0.22), transparent 24%),
+    linear-gradient(145deg, #caa77a, #a98255);
+}
+
+.journal-board.old-paper {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(112,70,36,0.12), transparent 16%),
+    radial-gradient(circle at 72% 68%, rgba(112,70,36,0.10), transparent 18%),
+    linear-gradient(145deg, #f1dfbd, #d7be91);
+}
+
+.journal-board.blue {
+  background: linear-gradient(145deg, #eef7ff, #dcecff);
+}
+
+.journal-board.green {
+  background: linear-gradient(145deg, #f1faef, #dcefd8);
+}
+
+.journal-board.linen {
+  background:
+    linear-gradient(90deg, rgba(120,100,82,0.06) 50%, transparent 50%),
+    linear-gradient(rgba(120,100,82,0.06) 50%, transparent 50%),
+    #f7f0e4;
+  background-size: 8px 8px;
+}
+
+.journal-board.washi {
+  background:
+    linear-gradient(90deg, rgba(216,185,162,0.46) 0 18%, transparent 18% 24%, rgba(220,231,215,0.52) 24% 42%, transparent 42% 48%, rgba(247,217,227,0.5) 48% 68%, transparent 68%),
+    var(--paper);
+}
+
+.journal-board.scrapbook {
+  background:
+    linear-gradient(135deg, transparent 0 70%, rgba(216,185,162,0.34) 70%),
+    radial-gradient(circle at 24% 18%, rgba(247,217,227,0.38), transparent 20%),
+    radial-gradient(circle at 80% 72%, rgba(220,231,215,0.42), transparent 18%),
+    var(--ivory);
+}
+
+.journal-board.lined {
+  background:
+    repeating-linear-gradient(0deg, var(--paper) 0 31px, color-mix(in srgb, var(--accent) 24%, transparent) 32px),
+    var(--paper);
+}
+
+.journal-board.check {
+  background:
+    linear-gradient(45deg, color-mix(in srgb, var(--accent) 12%, transparent) 25%, transparent 25% 75%, color-mix(in srgb, var(--accent) 12%, transparent) 75%),
+    linear-gradient(45deg, color-mix(in srgb, var(--accent) 12%, transparent) 25%, transparent 25% 75%, color-mix(in srgb, var(--accent) 12%, transparent) 75%),
+    var(--paper);
+  background-position: 0 0, 18px 18px;
+  background-size: 36px 36px;
+}
+
+.journal-board.floral {
+  background:
+    radial-gradient(circle at 20% 24%, rgba(212,154,165,0.22) 0 8px, transparent 9px),
+    radial-gradient(circle at 24% 28%, rgba(212,154,165,0.16) 0 6px, transparent 7px),
+    radial-gradient(circle at 78% 62%, rgba(113,134,109,0.18) 0 10px, transparent 11px),
+    var(--ivory);
+}
+
+.journal-board.watercolor {
+  background:
+    radial-gradient(circle at 24% 26%, rgba(247,217,227,0.62), transparent 28%),
+    radial-gradient(circle at 72% 32%, rgba(216,239,229,0.64), transparent 24%),
+    radial-gradient(circle at 58% 76%, rgba(232,221,244,0.54), transparent 28%),
+    var(--paper);
+}
+
 .journal-board.dark {
   background: linear-gradient(145deg, #2a2725, #3a3430);
 }
@@ -3174,6 +3292,21 @@ p {
   box-shadow: 0 16px 28px rgba(73, 58, 45, 0.16);
   padding: 6px;
   background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+}
+
+.journal-sticker.sticker-style {
+  padding: 9px;
+  background: white;
+  filter: drop-shadow(0 8px 10px rgba(73, 58, 45, 0.18));
+}
+
+.journal-sticker.sticker-style img {
+  filter:
+    drop-shadow(0 0 0 white)
+    drop-shadow(2px 0 0 white)
+    drop-shadow(-2px 0 0 white)
+    drop-shadow(0 2px 0 white)
+    drop-shadow(0 -2px 0 white);
 }
 
 .journal-sticker.selected {

@@ -99,6 +99,7 @@ type JournalItem = {
   y: number;
   width: number;
   rotate: number;
+  sticker?: boolean;
 };
 
 type JournalState = {
@@ -2497,7 +2498,8 @@ function mjCommandLegacy(item: MjSetting) {
 
 function GalleryPage({ images, setImages, setScreen }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const [preview, setPreview] = React.useState<AtelierImage | null>(null);
+  const [previewId, setPreviewId] = React.useState("");
+  const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
   const addFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -2514,6 +2516,10 @@ function GalleryPage({ images, setImages, setScreen }: any) {
   };
   const updateImage = (id: string, patch: Partial<AtelierImage>) => {
     setImages((items: AtelierImage[]) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
+  };
+  const deleteImage = (id: string) => {
+    setImages((items: AtelierImage[]) => items.filter((item) => item.id !== id));
+    setPreviewId("");
   };
   return (
     <section className="page gallery-page">
@@ -2536,24 +2542,28 @@ function GalleryPage({ images, setImages, setScreen }: any) {
         <div className="gallery-grid">
           {images.map((image: AtelierImage) => (
             <article className="gallery-card" key={image.id}>
-              <button className="gallery-image-button" onClick={() => setPreview(image)}>
+              <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
+                {image.favorite ? "♥" : "♡"}
+              </button>
+              <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
                 <img src={image.src} alt="" />
               </button>
-              <input value={image.title} onChange={(event) => updateImage(image.id, { title: event.target.value })} placeholder="タイトル" />
-              <textarea value={image.memo} onChange={(event) => updateImage(image.id, { memo: event.target.value })} placeholder="メモ" />
-              <div className="gallery-card-actions">
-                <label className="check"><input type="checkbox" checked={image.favorite} onChange={(event) => updateImage(image.id, { favorite: event.target.checked })} /> お気に入り</label>
-                <button className="danger" onClick={() => setImages((items: AtelierImage[]) => items.filter((item) => item.id !== image.id))}>削除</button>
-              </div>
             </article>
           ))}
         </div>
       ) : <Empty text="画像を追加すると、ここにギャラリーが表示されます。" />}
       {preview && (
-        <Modal title={preview.title || "画像プレビュー"} onClose={() => setPreview(null)}>
-          <div className="image-preview-modal">
+        <Modal title={preview.title || "画像詳細"} onClose={() => setPreviewId("")}>
+          <div className="gallery-detail-modal">
             <img src={preview.src} alt="" />
-            <div className="modal-actions"><button className="primary" onClick={() => setPreview(null)}>閉じる</button></div>
+            <label>タイトル<input value={preview.title} onChange={(event) => updateImage(preview.id, { title: event.target.value })} placeholder="タイトル" /></label>
+            <label>メモ<textarea value={preview.memo} onChange={(event) => updateImage(preview.id, { memo: event.target.value })} placeholder="メモ" /></label>
+            <small>追加日：{formatSavedAt(preview.createdAt)}</small>
+            <label className="check"><input type="checkbox" checked={preview.favorite} onChange={(event) => updateImage(preview.id, { favorite: event.target.checked })} /> お気に入り</label>
+            <div className="modal-actions">
+              <button className="danger" onClick={() => deleteImage(preview.id)}>削除</button>
+              <button className="primary" onClick={() => setPreviewId("")}>閉じる</button>
+            </div>
           </div>
         </Modal>
       )}
@@ -2576,6 +2586,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
       y: 80 + journal.items.length * 14,
       width: 170,
       rotate: (journal.items.length % 5) * 4 - 8,
+      sticker: true,
     };
     setJournal((current: JournalState) => ({ ...current, items: [...current.items, item] }));
     setSelectedId(item.id);
@@ -2624,9 +2635,21 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
         <aside className="journal-tools">
           <label>背景
             <select value={journal.background} onChange={(event) => setJournal((current: JournalState) => ({ ...current, background: event.target.value }))}>
-              <option value="paper">生成り紙</option>
-              <option value="grid">方眼</option>
-              <option value="pink">ピンクメモ</option>
+              <option value="paper">無地アイボリー</option>
+              <option value="grid">方眼紙</option>
+              <option value="dot-grid">ドット方眼</option>
+              <option value="kraft">クラフト紙</option>
+              <option value="old-paper">古紙</option>
+              <option value="pink">淡いピンク</option>
+              <option value="blue">淡いブルー</option>
+              <option value="green">淡いグリーン</option>
+              <option value="linen">リネン風</option>
+              <option value="washi">マスキングテープ風</option>
+              <option value="scrapbook">スクラップブック風</option>
+              <option value="lined">罫線ノート</option>
+              <option value="check">チェック柄</option>
+              <option value="floral">薄い花柄</option>
+              <option value="watercolor">水彩にじみ</option>
               <option value="dark">ダーク紙</option>
             </select>
           </label>
@@ -2640,6 +2663,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
             <div className="journal-edit-panel">
               <label>サイズ<input type="range" min="80" max="360" value={selected.width} onChange={(event) => updateItem(selected.id, { width: Number(event.target.value) })} /></label>
               <label>回転<input type="range" min="-35" max="35" value={selected.rotate} onChange={(event) => updateItem(selected.id, { rotate: Number(event.target.value) })} /></label>
+              <label className="check"><input type="checkbox" checked={selected.sticker !== false} onChange={(event) => updateItem(selected.id, { sticker: event.target.checked })} /> シール風</label>
               <button className="danger" onClick={() => setJournal((current: JournalState) => ({ ...current, items: current.items.filter((item) => item.id !== selected.id) }))}>選択画像を削除</button>
             </div>
           )}
@@ -2653,7 +2677,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
         >
           {journal.items.length ? journal.items.map((item: JournalItem) => (
             <div
-              className={`journal-sticker ${selectedId === item.id ? "selected" : ""}`}
+              className={`journal-sticker ${item.sticker !== false ? "sticker-style" : ""} ${selectedId === item.id ? "selected" : ""}`}
               key={item.id}
               style={{ left: item.x, top: item.y, width: item.width, transform: `rotate(${item.rotate}deg)` }}
               onPointerDown={(event) => {
