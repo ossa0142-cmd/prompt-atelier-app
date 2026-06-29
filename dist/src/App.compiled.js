@@ -767,6 +767,53 @@ function useStoredState(key, fallback) {
   }, [key, value]);
   return [value, setValue];
 }
+function collectPromptAtelierStorage() {
+  const data = {};
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+    if (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")) {
+      const value = localStorage.getItem(key);
+      if (value !== null) data[key] = value;
+    }
+  }
+  return data;
+}
+function exportPromptAtelierBackup() {
+  const today = new Date().toISOString().slice(0, 10);
+  const payload = {
+    app: "Prompt Atelier",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: collectPromptAtelierStorage()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `prompt-atelier-backup-${today}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+async function restorePromptAtelierBackup(file) {
+  const text = await file.text();
+  const parsed = JSON.parse(text);
+  const data = parsed?.data && typeof parsed.data === "object" ? parsed.data : parsed;
+  if (!data || typeof data !== "object") throw new Error("Invalid backup data");
+  const existingKeys = Array.from({
+    length: localStorage.length
+  }, (_, index) => localStorage.key(index)).filter(key => Boolean(key) && (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")));
+  existingKeys.forEach(key => localStorage.removeItem(key));
+  Object.entries(data).forEach(([key, value]) => {
+    if (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")) {
+      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+    }
+  });
+}
 function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
@@ -791,6 +838,13 @@ function App() {
     setToast("コピーしました");
     window.setTimeout(() => setToast(""), 1600);
   };
+  React.useEffect(() => {
+    const message = sessionStorage.getItem("promptAtelierRestoreMessage");
+    if (!message) return;
+    sessionStorage.removeItem("promptAtelierRestoreMessage");
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2200);
+  }, []);
   return /*#__PURE__*/React.createElement("div", {
     className: `app-shell ${themeClassName(activeTheme.id)}`,
     style: appStyle
@@ -802,7 +856,7 @@ function App() {
     "aria-label": "ホームへ"
   }, /*#__PURE__*/React.createElement("span", {
     className: "brand-mark"
-  }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "デジタル素材クリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+  }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "AIイラストクリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: screen === id ? "active" : "",
     onClick: () => setScreen(id)
@@ -1103,6 +1157,7 @@ function HomeCustomize({
   setWorkTools
 }) {
   const [editingTool, setEditingTool] = React.useState(null);
+  const backupInputRef = React.useRef(null);
   const updateSettings = patch => setSettings(normalizeHomeSettings({
     ...settings,
     ...patch
@@ -1125,6 +1180,18 @@ function HomeCustomize({
   };
   const reset = () => {
     if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
+  };
+  const importBackup = async file => {
+    if (!file) return;
+    if (!window.confirm("現在のデータを上書きしてバックアップを復元しますか？")) return;
+    try {
+      await restorePromptAtelierBackup(file);
+      sessionStorage.setItem("promptAtelierRestoreMessage", "バックアップを復元しました");
+      window.location.reload();
+    } catch (error) {
+      console.error("[Prompt Atelier] バックアップ復元に失敗しました", error);
+      window.alert("バックアップファイルを読み込めませんでした。");
+    }
   };
   const normalizedTools = workTools.slice(0, 10);
   const saveWorkTool = tool => {
@@ -1288,6 +1355,26 @@ function HomeCustomize({
       onClick: () => moveSection(id, 1)
     }, "下へ")));
   }))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card backup-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "バックアップ"), /*#__PURE__*/React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), /*#__PURE__*/React.createElement("div", {
+    className: "backup-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: exportPromptAtelierBackup
+  }, "バックアップを書き出す"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => backupInputRef.current?.click()
+  }, "バックアップを読み込む")), /*#__PURE__*/React.createElement("input", {
+    ref: backupInputRef,
+    type: "file",
+    accept: "application/json,.json",
+    style: {
+      display: "none"
+    },
+    onChange: event => {
+      importBackup(event.currentTarget.files?.[0]);
+      event.currentTarget.value = "";
+    }
+  })), /*#__PURE__*/React.createElement("section", {
     className: "customize-card danger-zone"
   }, /*#__PURE__*/React.createElement("h3", null, "初期化"), /*#__PURE__*/React.createElement("p", null, "テーマ、バナー、表示項目、並び順を初期設定に戻します。"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
@@ -1436,7 +1523,6 @@ function Library({
   const [selectedCategory, setSelectedCategory] = React.useState(null);
   const [editingCategory, setEditingCategory] = React.useState(null);
   const [editingPrompt, setEditingPrompt] = React.useState(null);
-  const [translationPrompt, setTranslationPrompt] = React.useState(null);
   const [memoPrompt, setMemoPrompt] = React.useState(null);
   const [inlineEdit, setInlineEdit] = React.useState(null);
   const [stockFrameCounts, setStockFrameCounts] = React.useState({});
@@ -1608,7 +1694,6 @@ function Library({
     duplicatePrompt: duplicatePrompt,
     deletePrompt: () => setBoardPrompts(items => items.filter(item => item.id !== prompt.id)),
     copyText: copyText,
-    showTranslation: () => setTranslationPrompt(prompt),
     showMemo: () => setMemoPrompt(prompt)
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
@@ -1627,7 +1712,6 @@ function Library({
     onCreate: saveTextStockFrame,
     onUpdate: updatePrompt,
     copyText: copyText,
-    showTranslation: () => prompt && setTranslationPrompt(prompt),
     showMemo: () => prompt && setMemoPrompt(prompt)
   }))), canAddTextStock && textStockCount >= stockFrameCount && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
@@ -1649,10 +1733,6 @@ function Library({
     categories: boardCategories,
     onClose: () => setEditingPrompt(null),
     onSave: savePrompt
-  }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
-    prompt: translationPrompt,
-    onClose: () => setTranslationPrompt(null),
-    copyText: copyText
   }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
     prompt: memoPrompt,
     onClose: () => setMemoPrompt(null),
@@ -1672,7 +1752,6 @@ function LibraryImagePromptCard({
   duplicatePrompt,
   deletePrompt,
   copyText,
-  showTranslation,
   showMemo
 }) {
   return /*#__PURE__*/React.createElement("article", {
@@ -1741,11 +1820,6 @@ function LibraryImagePromptCard({
   }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
     onClick: event => {
       event.stopPropagation();
-      showTranslation();
-    }
-  }, "和訳"), /*#__PURE__*/React.createElement("button", {
-    onClick: event => {
-      event.stopPropagation();
       showMemo();
     }
   }, "メモ"))));
@@ -1756,7 +1830,6 @@ function TextStockFrame({
   onCreate,
   onUpdate,
   copyText,
-  showTranslation,
   showMemo
 }) {
   const [title, setTitle] = React.useState(prompt?.title || "");
@@ -1809,12 +1882,6 @@ function TextStockFrame({
     onClick: copyStockPrompt,
     disabled: !promptText.trim()
   }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
-    onClick: event => {
-      event.stopPropagation();
-      showTranslation();
-    },
-    disabled: !isSaved
-  }, "和訳"), /*#__PURE__*/React.createElement("button", {
     onClick: event => {
       event.stopPropagation();
       showMemo();

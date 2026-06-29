@@ -736,6 +736,53 @@ function useStoredState<T>(key: string, fallback: T) {
   return [value, setValue] as const;
 }
 
+function collectPromptAtelierStorage() {
+  const data: Record<string, string> = {};
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+    if (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")) {
+      const value = localStorage.getItem(key);
+      if (value !== null) data[key] = value;
+    }
+  }
+  return data;
+}
+
+function exportPromptAtelierBackup() {
+  const today = new Date().toISOString().slice(0, 10);
+  const payload = {
+    app: "Prompt Atelier",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: collectPromptAtelierStorage(),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `prompt-atelier-backup-${today}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function restorePromptAtelierBackup(file: File) {
+  const text = await file.text();
+  const parsed = JSON.parse(text);
+  const data = parsed?.data && typeof parsed.data === "object" ? parsed.data : parsed;
+  if (!data || typeof data !== "object") throw new Error("Invalid backup data");
+  const existingKeys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+    .filter((key): key is string => Boolean(key) && (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")));
+  existingKeys.forEach((key) => localStorage.removeItem(key));
+  Object.entries(data).forEach(([key, value]) => {
+    if (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")) {
+      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+    }
+  });
+}
+
 function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
@@ -763,6 +810,14 @@ function App() {
     window.setTimeout(() => setToast(""), 1600);
   };
 
+  React.useEffect(() => {
+    const message = sessionStorage.getItem("promptAtelierRestoreMessage");
+    if (!message) return;
+    sessionStorage.removeItem("promptAtelierRestoreMessage");
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2200);
+  }, []);
+
   return (
     <div className={`app-shell ${themeClassName(activeTheme.id)}`} style={appStyle}>
       <header className="app-header">
@@ -770,7 +825,7 @@ function App() {
           <span className="brand-mark">PA</span>
           <span>
             <strong>Prompt Atelier</strong>
-            <small>デジタル素材クリエイター向け</small>
+            <small>AIイラストクリエイター向け</small>
           </span>
         </button>
         <nav>
@@ -1029,6 +1084,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
 
 function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
+  const backupInputRef = React.useRef<HTMLInputElement | null>(null);
   const updateSettings = (patch: Partial<HomeSettings>) => setSettings(normalizeHomeSettings({ ...settings, ...patch }));
   const updateVisible = (id: string, value: boolean) => updateSettings({ visible: { ...settings.visible, [id]: value } });
   const moveSection = (id: HomeSectionId, direction: -1 | 1) => {
@@ -1041,6 +1097,18 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   };
   const reset = () => {
     if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
+  };
+  const importBackup = async (file?: File) => {
+    if (!file) return;
+    if (!window.confirm("現在のデータを上書きしてバックアップを復元しますか？")) return;
+    try {
+      await restorePromptAtelierBackup(file);
+      sessionStorage.setItem("promptAtelierRestoreMessage", "バックアップを復元しました");
+      window.location.reload();
+    } catch (error) {
+      console.error("[Prompt Atelier] バックアップ復元に失敗しました", error);
+      window.alert("バックアップファイルを読み込めませんでした。");
+    }
   };
   const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const saveWorkTool = (tool: WorkTool) => {
@@ -1195,6 +1263,25 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             </div>
           </section>
 
+          <section className="customize-card backup-card">
+            <h3>バックアップ</h3>
+            <p>大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。</p>
+            <div className="backup-actions">
+              <button className="primary" onClick={exportPromptAtelierBackup}>バックアップを書き出す</button>
+              <button onClick={() => backupInputRef.current?.click()}>バックアップを読み込む</button>
+            </div>
+            <input
+              ref={backupInputRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: "none" }}
+              onChange={(event) => {
+                importBackup(event.currentTarget.files?.[0]);
+                event.currentTarget.value = "";
+              }}
+            />
+          </section>
+
           <section className="customize-card danger-zone">
             <h3>初期化</h3>
             <p>テーマ、バナー、表示項目、並び順を初期設定に戻します。</p>
@@ -1294,7 +1381,6 @@ function Library({ copyText }: any) {
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
   const [editingPrompt, setEditingPrompt] = React.useState<LibraryBoardPrompt | null>(null);
-  const [translationPrompt, setTranslationPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [memoPrompt, setMemoPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [stockFrameCounts, setStockFrameCounts] = React.useState<Record<string, number>>({});
@@ -1440,7 +1526,6 @@ function Library({ copyText }: any) {
                   duplicatePrompt={duplicatePrompt}
                   deletePrompt={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
                   copyText={copyText}
-                  showTranslation={() => setTranslationPrompt(prompt)}
                   showMemo={() => setMemoPrompt(prompt)}
                 />
               ) : canAddImagePrompt ? (
@@ -1467,7 +1552,6 @@ function Library({ copyText }: any) {
                   onCreate={saveTextStockFrame}
                   onUpdate={updatePrompt}
                   copyText={copyText}
-                  showTranslation={() => prompt && setTranslationPrompt(prompt)}
                   showMemo={() => prompt && setMemoPrompt(prompt)}
                 />
               ))}
@@ -1482,7 +1566,6 @@ function Library({ copyText }: any) {
       )}
       {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
       {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={boardCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
-      {translationPrompt && <TranslationModal prompt={translationPrompt} onClose={() => setTranslationPrompt(null)} copyText={copyText} />}
       {memoPrompt && (
         <MemoModal
           prompt={memoPrompt}
@@ -1497,7 +1580,7 @@ function Library({ copyText }: any) {
   );
 }
 
-function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showTranslation, showMemo }: any) {
+function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showMemo }: any) {
   return (
     <article className="library-prompt-card">
       <PromptMenuButton
@@ -1532,7 +1615,6 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
         />
         <div className="prompt-card-actions">
           <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
-          <button onClick={(event) => { event.stopPropagation(); showTranslation(); }}>和訳</button>
           <button onClick={(event) => { event.stopPropagation(); showMemo(); }}>メモ</button>
         </div>
       </div>
@@ -1540,7 +1622,7 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
   );
 }
 
-function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showTranslation, showMemo }: any) {
+function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showMemo }: any) {
   const [title, setTitle] = React.useState(prompt?.title || "");
   const [promptText, setPromptText] = React.useState(prompt?.prompt || "");
   React.useEffect(() => {
@@ -1576,7 +1658,6 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
       />
       <div className="text-stock-actions">
         <button className="primary" onClick={copyStockPrompt} disabled={!promptText.trim()}>📋 プロンプトをコピー</button>
-        <button onClick={(event) => { event.stopPropagation(); showTranslation(); }} disabled={!isSaved}>和訳</button>
         <button onClick={(event) => { event.stopPropagation(); showMemo(); }} disabled={!isSaved}>メモ</button>
       </div>
     </article>

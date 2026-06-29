@@ -2452,6 +2452,32 @@ main {
   margin-top: 12px;
 }
 
+.backup-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.backup-card::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  bottom: -34px;
+  width: 120px;
+  height: 120px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  pointer-events: none;
+}
+
+.backup-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 .active-soft {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 16%, var(--customize-card));
@@ -3434,13 +3460,22 @@ p {
 }
 
 .journal-sticker.sticker-style {
-  padding: 7px;
-  background: #fff;
-  box-shadow: 0 5px 10px rgba(73, 58, 45, 0.16);
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .journal-sticker.sticker-style img {
-  filter: none;
+  filter:
+    drop-shadow(5px 0 0 #fff)
+    drop-shadow(-5px 0 0 #fff)
+    drop-shadow(0 5px 0 #fff)
+    drop-shadow(0 -5px 0 #fff)
+    drop-shadow(4px 4px 0 #fff)
+    drop-shadow(-4px 4px 0 #fff)
+    drop-shadow(4px -4px 0 #fff)
+    drop-shadow(-4px -4px 0 #fff)
+    drop-shadow(0 6px 5px rgba(73, 58, 45, 0.16));
 }
 
 .journal-sticker.selected {
