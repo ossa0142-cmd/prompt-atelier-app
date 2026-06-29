@@ -3710,10 +3710,10 @@ function JournalPage({
       setSelectedId(item.id);
       setDraggingId(item.id);
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "journal-sticker-frame"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: isStickerEffectOn(item) ? "journal-sticker-wrapper sticker-active" : "journal-sticker-wrapper"
   }, /*#__PURE__*/React.createElement("img", {
-    className: isStickerEffectOn(item) ? "journal-sticker-image sticker-active" : "journal-sticker-image",
+    className: "journal-sticker-image",
     src: item.src,
     alt: "",
     draggable: false

@@ -3132,9 +3132,9 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
                 setDraggingId(item.id);
               }}
             >
-              <span className="journal-sticker-frame">
-                <img className={isStickerEffectOn(item) ? "journal-sticker-image sticker-active" : "journal-sticker-image"} src={item.src} alt="" draggable={false} />
-              </span>
+              <div className={isStickerEffectOn(item) ? "journal-sticker-wrapper sticker-active" : "journal-sticker-wrapper"}>
+                <img className="journal-sticker-image" src={item.src} alt="" draggable={false} />
+              </div>
             </div>
           )) : <div className="journal-empty">画像を追加して、シール帳のように並べられます。</div>}
         </div>
