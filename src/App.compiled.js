@@ -3697,7 +3697,7 @@ function JournalPage({
       setDraggingId(item.id);
     }
   }, /*#__PURE__*/React.createElement("img", {
-    className: isStickerEffectOn(item) ? "journal-sticker-image sticker-active" : "journal-sticker-image",
+    className: isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image",
     src: item.thumbnail || item.src,
     alt: "",
     draggable: false
