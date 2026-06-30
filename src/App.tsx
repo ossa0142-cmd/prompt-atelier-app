@@ -137,10 +137,23 @@ type JournalState = {
   items: JournalItem[];
 };
 
-type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery";
+type VideoItem = {
+  id: string;
+  title: string;
+  url: string;
+  thumbnail?: string;
+  prompt: string;
+  memo: string;
+  tags: string[];
+  favorite: boolean;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos";
 
 type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites" | "atelier";
-type HomeFeatureId = "library" | "prompts" | "mj" | "projects";
+type HomeFeatureId = "library" | "prompts" | "videos" | "mj" | "projects";
 
 type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
 
@@ -185,6 +198,7 @@ const homeSections: { id: HomeSectionId; label: string }[] = [
 const homeFeatures: { id: HomeFeatureId; label: string }[] = [
   { id: "library", label: "モックアップライブラリ" },
   { id: "prompts", label: "プロンプト帳" },
+  { id: "videos", label: "動画プロンプト帳" },
   { id: "mj", label: "MJ設定" },
   { id: "projects", label: "プロジェクト" },
 ];
@@ -249,6 +263,8 @@ const defaultJournal: JournalState = {
   items: [],
 };
 
+const sampleVideos: VideoItem[] = [];
+
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
   bannerImageUrl: "",
@@ -258,6 +274,7 @@ const defaultHomeSettings: HomeSettings = {
   visible: {
     library: true,
     prompts: true,
+    videos: true,
     mj: true,
     projects: true,
     favorites: true,
@@ -916,6 +933,23 @@ function canvasDataUrl(image: HTMLImageElement, maxSide: number, quality = 0.82)
   return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
 }
 
+function videoFrameDataUrl(video: HTMLVideoElement, maxSide = 720, quality = 0.8) {
+  const sourceWidth = video.videoWidth || 1280;
+  const sourceHeight = video.videoHeight || 720;
+  const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(1, Math.round(sourceWidth * ratio));
+  const height = Math.max(1, Math.round(sourceHeight * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("動画サムネイルを作成できませんでした");
+  context.drawImage(video, 0, 0, width, height);
+  const webp = canvas.toDataURL("image/webp", quality);
+  const dataUrl = webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", quality);
+  return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
+}
+
 function openImageDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(IMAGE_DB_NAME, IMAGE_DB_VERSION);
@@ -1059,6 +1093,44 @@ async function optimizeImage(file: File, category = "gallery"): Promise<Optimize
     createdAt: new Date().toISOString(),
   };
   return storeOptimizedImage(optimized, category, { title: file.name, memo: "", favorite: false });
+}
+
+async function createVideoThumbnail(file: File) {
+  if (!file.type.startsWith("video/")) throw new Error("動画ファイルを選んでください");
+  const url = URL.createObjectURL(file);
+  try {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    const loaded = new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => resolve();
+      video.onerror = () => reject(new Error("動画を読み込めませんでした"));
+    });
+    video.src = url;
+    await loaded;
+    const targetTime = Math.min(1, Math.max(0, (video.duration || 1) - 0.1));
+    await new Promise<void>((resolve, reject) => {
+      video.onseeked = () => resolve();
+      video.onerror = () => reject(new Error("動画サムネイルを作成できませんでした"));
+      video.currentTime = targetTime;
+    });
+    const full = videoFrameDataUrl(video, 1200, 0.82);
+    const thumbnail = videoFrameDataUrl(video, 300, 0.78);
+    const image: OptimizedImageData = {
+      id: uid(),
+      src: full.dataUrl,
+      thumbnail: thumbnail.dataUrl,
+      originalName: `${file.name}-thumbnail`,
+      mimeType: full.mimeType,
+      width: full.width,
+      height: full.height,
+      createdAt: new Date().toISOString(),
+    };
+    return storeOptimizedImage(image, "video-thumbnail", { title: file.name, memo: "動画から自動生成", favorite: false });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 async function createThumbnail(file: File) {
@@ -1221,6 +1293,7 @@ function App() {
   const [workTools, setWorkTools] = useStoredState<WorkTool[]>("promptAtelierWorkTools", defaultWorkTools);
   const [galleryImages, setGalleryImages] = useStoredState<AtelierImage[]>("promptAtelierGallery", sampleAtelierImages);
   const [journal, setJournal] = useStoredState<JournalState>("promptAtelierJournal", defaultJournal);
+  const [videos, setVideos] = useStoredState<VideoItem[]>("promptAtelierVideos", sampleVideos);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [, setImageCacheVersion] = React.useState(0);
@@ -1292,6 +1365,7 @@ function App() {
             ["prompts", "マイプロンプト"],
             ["mj", "ミッドジャーニー設定"],
             ["projects", "プロジェクト"],
+            ["videos", "動画プロンプト"],
             ["customize", "カスタマイズ"],
           ].map(([id, label]) => (
             <button key={id} className={screen === id ? "active" : ""} onClick={() => setScreen(id as Screen)}>
@@ -1339,6 +1413,7 @@ function App() {
         )}
         {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
         {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} />}
+        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} setScreen={setScreen} />}
       </main>
       {isImageMigrating && (
         <div className="image-migration-overlay">
@@ -1356,6 +1431,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
   const entries = [
     ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
     ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"],
+    ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"],
     ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"],
     ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"],
   ];
@@ -1797,6 +1873,17 @@ function FeatureIcon({ name }: { name: string }) {
         <path d="M18 18l3-6 3 6 6 3-6 3-3 6-3-6-6-3 6-3z" className="icon-fill" />
         <path d="M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
         <path d="M31 47h21M34 54h13" />
+      </svg>
+    );
+  }
+  if (name === "video") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="10" y="16" width="44" height="32" rx="8" />
+        <path d="M27 25l13 7-13 7V25z" className="icon-fill" />
+        <path d="M16 16v32M48 16v32" />
+        <path d="M16 24h-5M16 32h-5M16 40h-5M58 24h-5M58 32h-5M58 40h-5" />
+        <path d="M45 9l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
       </svg>
     );
   }
@@ -3197,6 +3284,204 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
             <div className="modal-actions">
               <button onClick={() => pasteToJournal(preview)}>ジャーナルに貼る</button>
               <button className="danger" onClick={() => deleteImage(preview.id)}>削除</button>
+              <button className="primary" onClick={() => setPreviewId("")}>閉じる</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </section>
+  );
+}
+
+function isPlayableVideoUrl(url: string) {
+  return /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+}
+
+function VideoPlaceholder() {
+  return (
+    <div className="video-placeholder" aria-label="動画サムネイル未設定">
+      <span>▶</span>
+    </div>
+  );
+}
+
+function VideoLibrary({ videos, setVideos, setScreen }: any) {
+  const thumbnailInputRef = React.useRef<HTMLInputElement | null>(null);
+  const videoInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [draft, setDraft] = React.useState<VideoItem>({ id: "", title: "", url: "", thumbnail: "", prompt: "", memo: "", tags: [], favorite: false, createdAt: "" });
+  const [tagDraft, setTagDraft] = React.useState("");
+  const [isThumbnailDragging, setIsThumbnailDragging] = React.useState(false);
+  const [previewId, setPreviewId] = React.useState("");
+  const preview = videos.find((item: VideoItem) => item.id === previewId) || null;
+  const updateDraft = (patch: Partial<VideoItem>) => setDraft((current) => ({ ...current, ...patch }));
+  const resetDraft = () => {
+    setDraft({ id: "", title: "", url: "", thumbnail: "", prompt: "", memo: "", tags: [], favorite: false, createdAt: "" });
+    setTagDraft("");
+  };
+  const saveVideo = () => {
+    const now = new Date().toISOString();
+    const tags = splitTags(tagDraft || tagText(draft.tags || []));
+    const next: VideoItem = {
+      ...draft,
+      id: draft.id || uid(),
+      title: draft.title.trim() || "動画プロンプト",
+      url: draft.url.trim(),
+      prompt: draft.prompt || "",
+      memo: draft.memo || "",
+      tags,
+      favorite: Boolean(draft.favorite),
+      createdAt: draft.createdAt || now,
+      updatedAt: now,
+    };
+    if (!next.url) {
+      window.alert("動画URLを入力してください");
+      return;
+    }
+    setVideos((items: VideoItem[]) => draft.id ? items.map((item) => item.id === draft.id ? next : item) : [next, ...items]);
+    resetDraft();
+  };
+  const editVideo = (item: VideoItem) => {
+    setDraft({ prompt: "", tags: [], favorite: false, ...item });
+    setTagDraft(tagText(item.tags || []));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const deleteVideo = (id: string) => {
+    if (!window.confirm("この動画メモを削除しますか？")) return;
+    setVideos((items: VideoItem[]) => items.filter((item) => item.id !== id));
+    if (previewId === id) setPreviewId("");
+  };
+  const importThumbnail = async (file?: File) => {
+    if (!file) return;
+    try {
+      const image = await optimizeImage(file, "video-thumbnail");
+      updateDraft({ thumbnail: image.thumbnail || image.src });
+      scheduleStorageWarningCheck();
+    } catch {
+      window.alert("サムネイル画像を追加できませんでした。jpg / png / webp を選んでください。");
+    }
+  };
+  const importVideoThumbnail = async (file?: File) => {
+    if (!file) return;
+    try {
+      const image = await createVideoThumbnail(file);
+      updateDraft({
+        title: draft.title || file.name.replace(/\.[^.]+$/, ""),
+        thumbnail: image.thumbnail || image.src,
+      });
+      scheduleStorageWarningCheck();
+    } catch {
+      window.alert("動画からサムネイルを作成できませんでした。別の動画形式を試してください。");
+    }
+  };
+  const openVideo = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+  return (
+    <section className="page video-page">
+      <PageHead
+        title="動画プロンプト帳"
+        action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button onClick={() => setScreen("gallery")}>ギャラリーへ</button></div>}
+      />
+      <div className="video-editor-card">
+        <div>
+          <h3>{draft.id ? "動画プロンプトを編集" : "動画プロンプトを追加"}</h3>
+          <p>Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを、URLとサムネイルで軽く管理します。</p>
+        </div>
+        <div className="video-form-grid">
+          <input value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="タイトル" />
+          <input value={draft.url} onChange={(event) => updateDraft({ url: event.target.value })} placeholder="動画URL" />
+          <textarea value={draft.prompt} onChange={(event) => updateDraft({ prompt: event.target.value })} placeholder="動画プロンプト" />
+          <textarea value={draft.memo} onChange={(event) => updateDraft({ memo: event.target.value })} placeholder="メモ" />
+          <input value={tagDraft} onChange={(event) => setTagDraft(event.target.value)} placeholder="タグ（カンマ区切り）" />
+          <input value={draft.thumbnail || ""} onChange={(event) => updateDraft({ thumbnail: event.target.value })} placeholder="サムネイル画像URL、またはアップロード" />
+        </div>
+        <div className="video-thumbnail-tools">
+          <button type="button" onClick={() => thumbnailInputRef.current?.click()}>サムネイル画像を選ぶ</button>
+          <button type="button" onClick={() => videoInputRef.current?.click()}>動画からサムネイル生成</button>
+          <button type="button" onClick={() => updateDraft({ thumbnail: "" })}>サムネイル削除</button>
+          <input
+            ref={thumbnailInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            style={{ display: "none" }}
+            onChange={(event) => {
+              importThumbnail(event.currentTarget.files?.[0]);
+              event.currentTarget.value = "";
+            }}
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*"
+            style={{ display: "none" }}
+            onChange={(event) => {
+              importVideoThumbnail(event.currentTarget.files?.[0]);
+              event.currentTarget.value = "";
+            }}
+          />
+        </div>
+        <label className="check"><input type="checkbox" checked={Boolean(draft.favorite)} onChange={(event) => updateDraft({ favorite: event.target.checked })} /> お気に入り</label>
+        <div
+          className={`video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`}
+          onClick={() => thumbnailInputRef.current?.click()}
+          onDragEnter={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsThumbnailDragging(true);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsThumbnailDragging(true);
+          }}
+          onDragLeave={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsThumbnailDragging(false);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsThumbnailDragging(false);
+            importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
+          }}
+        >
+          {draft.thumbnail ? <img src={imageThumbnail(draft.thumbnail)} alt="" /> : <VideoPlaceholder />}
+          <small>クリックまたはドロップでサムネイル追加</small>
+        </div>
+        <div className="modal-actions">
+          <button onClick={resetDraft}>クリア</button>
+          <button className="primary" onClick={saveVideo}>{draft.id ? "保存する" : "追加する"}</button>
+        </div>
+      </div>
+      {videos.length ? (
+        <div className="video-grid">
+          {videos.map((item: VideoItem) => (
+            <article className="video-card" key={item.id}>
+              <button className="video-favorite-button" aria-label="お気に入り" onClick={() => setVideos((items: VideoItem[]) => items.map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video))}>
+                {item.favorite ? "♥" : "♡"}
+              </button>
+              <button className="video-thumb-button" onClick={() => setPreviewId(item.id)}>
+                {item.thumbnail ? <img src={imageThumbnail(item.thumbnail)} alt="" /> : <VideoPlaceholder />}
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : <Empty text="動画URLを追加すると、ここに動画メモが表示されます。" />}
+      {preview && (
+        <Modal title={preview.title} onClose={() => setPreviewId("")}>
+          <div className="video-detail-modal">
+            {preview.thumbnail ? <img src={imageSrc(preview.thumbnail)} alt="" /> : <VideoPlaceholder />}
+            {isPlayableVideoUrl(preview.url) && <video src={preview.url} controls preload="metadata" />}
+            <label className="check"><input type="checkbox" checked={Boolean(preview.favorite)} onChange={(event) => setVideos((items: VideoItem[]) => items.map((video) => video.id === preview.id ? { ...video, favorite: event.target.checked } : video))} /> お気に入り</label>
+            {preview.prompt && <textarea value={preview.prompt} readOnly />}
+            <p>{preview.memo || "メモはありません。"}</p>
+            {!!(preview.tags || []).length && <div className="video-tags">{preview.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>}
+            <small>{preview.url}</small>
+            <div className="modal-actions">
+              <button onClick={() => openVideo(preview.url)}>動画URLを開く</button>
+              <button onClick={() => editVideo(preview)}>編集</button>
+              <button className="danger" onClick={() => deleteVideo(preview.id)}>削除</button>
               <button className="primary" onClick={() => setPreviewId("")}>閉じる</button>
             </div>
           </div>
