@@ -85,6 +85,7 @@ type AtelierImage = {
   id: string;
   src: string;
   thumbnail?: string;
+  dbId?: string;
   originalName?: string;
   mimeType?: string;
   width?: number;
@@ -111,6 +112,8 @@ type JournalItem = {
 
 type OptimizedImageData = {
   id: string;
+  dbId?: string;
+  category?: string;
   src: string;
   thumbnail: string;
   originalName: string;
@@ -118,6 +121,14 @@ type OptimizedImageData = {
   width: number;
   height: number;
   createdAt: string;
+};
+
+type IndexedDbImageRecord = OptimizedImageData & {
+  category: string;
+  title?: string;
+  memo?: string;
+  favorite?: boolean;
+  updatedAt: string;
 };
 
 type JournalState = {
@@ -587,7 +598,17 @@ const splitTags = (value: string) => value.split(",").map((tag) => tag.trim()).f
 const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
+const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
+const IMAGE_DB_NAME = "PromptAtelierDB";
+const IMAGE_DB_VERSION = 1;
+const IMAGE_STORE_NAME = "images";
+const indexedDbImageCache = new Map<string, IndexedDbImageRecord>();
+const indexedDbRef = (id: string) => `indexeddb:${id}`;
+const indexedDbThumbRef = (id: string) => `indexeddb-thumb:${id}`;
+const isIndexedDbImageRef = (value: string) => /^indexeddb(?:-thumb)?:/.test(value);
+const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb)?:/, "");
+const isDataImageUrl = (value: unknown) => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 
 const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
 const readableTextOn = (hex: string) => {
@@ -719,15 +740,15 @@ function collectAtelierImages(prompts: MyPrompt[], mjSettings: MjSetting[], gall
     }));
   const mjImages = mjSettings.flatMap((setting) => (setting.images || (setting.imageUrl ? [setting.imageUrl] : [])).map((src, index) => ({
     id: `mj-${setting.id}-${index}`,
-    src: imageSrc(src),
-    thumbnail: imageThumbnail(src),
+    src: typeof src === "string" ? src : src.src || "",
+    thumbnail: typeof src === "string" ? src : src.thumbnail || src.src || "",
     title: setting.title || "MJ画像",
     memo: setting.memo || setting.note || "",
     createdAt: setting.createdAt || setting.id,
     source: "midjourney",
     favorite: false,
   })));
-  const normalizedGalleryImages = galleryImages.map((item) => ({ ...item, src: imageSrc(item), thumbnail: imageThumbnail(item) }));
+  const normalizedGalleryImages = galleryImages.map((item) => ({ ...item, src: item.src, thumbnail: item.thumbnail || item.src }));
   const merged = [...promptImages, ...mjImages, ...normalizedGalleryImages].filter((item) => item.src);
   const seen = new Set<string>();
   return merged
@@ -740,20 +761,48 @@ function collectAtelierImages(prompts: MyPrompt[], mjSettings: MjSetting[], gall
     .slice(0, 24);
 }
 
+function resolveIndexedDbImage(value: string, preferThumbnail = false) {
+  if (!isIndexedDbImageRef(value)) return value;
+  const record = indexedDbImageCache.get(indexedDbIdFromRef(value));
+  if (!record) return "";
+  return preferThumbnail ? record.thumbnail || record.src : record.src || record.thumbnail || "";
+}
+
 function imageSrc(image: any) {
   if (!image) return "";
-  return typeof image === "string" ? image : image.src || "";
+  const value = typeof image === "string" ? image : image.src || image.thumbnail || "";
+  return resolveIndexedDbImage(value, false);
 }
 
 function imageThumbnail(image: any) {
   if (!image) return "";
-  return typeof image === "string" ? image : image.thumbnail || image.src || "";
+  const value = typeof image === "string" ? image : image.thumbnail || image.src || "";
+  return resolveIndexedDbImage(value, true);
+}
+
+function imageReference(id: string, category = "gallery", title = ""): OptimizedImageData {
+  const record = indexedDbImageCache.get(id);
+  return {
+    id,
+    dbId: id,
+    category,
+    src: indexedDbRef(id),
+    thumbnail: indexedDbThumbRef(id),
+    originalName: record?.originalName || title || "image",
+    mimeType: record?.mimeType || "image/*",
+    width: Number(record?.width || 0),
+    height: Number(record?.height || 0),
+    createdAt: record?.createdAt || new Date().toISOString(),
+  };
 }
 
 function normalizeImageData(image: any): OptimizedImageData {
   if (image && typeof image === "object" && image.src) {
+    const id = image.dbId || (isIndexedDbImageRef(image.src) ? indexedDbIdFromRef(image.src) : image.id || uid());
     return {
-      id: image.id || uid(),
+      id: image.id || id,
+      dbId: image.dbId || (isIndexedDbImageRef(image.src) ? indexedDbIdFromRef(image.src) : undefined),
+      category: image.category || image.source || "gallery",
       src: image.src,
       thumbnail: image.thumbnail || image.src,
       originalName: image.originalName || image.title || "image",
@@ -764,8 +813,10 @@ function normalizeImageData(image: any): OptimizedImageData {
     };
   }
   const src = String(image || "");
+  const dbId = isIndexedDbImageRef(src) ? indexedDbIdFromRef(src) : undefined;
   return {
-    id: uid(),
+    id: dbId || uid(),
+    dbId,
     src,
     thumbnail: src,
     originalName: "existing-image",
@@ -865,12 +916,139 @@ function canvasDataUrl(image: HTMLImageElement, maxSide: number, quality = 0.82)
   return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
 }
 
-async function optimizeImage(file: File): Promise<OptimizedImageData> {
+function openImageDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(IMAGE_DB_NAME, IMAGE_DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(IMAGE_STORE_NAME)) {
+        const store = db.createObjectStore(IMAGE_STORE_NAME, { keyPath: "id" });
+        store.createIndex("category", "category", { unique: false });
+        store.createIndex("createdAt", "createdAt", { unique: false });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function putIndexedDbImage(record: IndexedDbImageRecord) {
+  const db = await openImageDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(IMAGE_STORE_NAME, "readwrite");
+    transaction.objectStore(IMAGE_STORE_NAME).put(record);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  indexedDbImageCache.set(record.id, record);
+}
+
+async function getAllIndexedDbImages() {
+  const db = await openImageDb();
+  const records = await new Promise<IndexedDbImageRecord[]>((resolve, reject) => {
+    const request = db.transaction(IMAGE_STORE_NAME, "readonly").objectStore(IMAGE_STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return records;
+}
+
+async function deleteIndexedDbImage(id: string) {
+  const db = await openImageDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(IMAGE_STORE_NAME, "readwrite");
+    transaction.objectStore(IMAGE_STORE_NAME).delete(id);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  indexedDbImageCache.delete(id);
+}
+
+async function refreshIndexedDbImageCache() {
+  const records = await getAllIndexedDbImages();
+  indexedDbImageCache.clear();
+  records.forEach((record) => indexedDbImageCache.set(record.id, record));
+  return records;
+}
+
+async function storeOptimizedImage(image: OptimizedImageData, category = "gallery", patch: Partial<IndexedDbImageRecord> = {}) {
+  const id = image.dbId || image.id || uid();
+  const now = new Date().toISOString();
+  const record: IndexedDbImageRecord = {
+    ...image,
+    ...patch,
+    id,
+    dbId: id,
+    category,
+    src: imageSrc(image.src) || image.src,
+    thumbnail: imageThumbnail(image.thumbnail) || image.thumbnail || image.src,
+    createdAt: image.createdAt || now,
+    updatedAt: now,
+  };
+  await putIndexedDbImage(record);
+  return imageReference(id, category, patch.title || image.originalName || "image");
+}
+
+async function storeExistingImageValue(value: any, category = "gallery", title = "image") {
+  if (!value) return value;
+  if (typeof value === "string") {
+    if (isIndexedDbImageRef(value) || !isDataImageUrl(value)) return value;
+    const id = uid();
+    const now = new Date().toISOString();
+    await putIndexedDbImage({
+      id,
+      dbId: id,
+      category,
+      src: value,
+      thumbnail: value,
+      originalName: title,
+      mimeType: value.slice(5, value.indexOf(";")) || "image/*",
+      width: 0,
+      height: 0,
+      title,
+      memo: "",
+      favorite: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return indexedDbRef(id);
+  }
+  if (typeof value === "object" && value.src && isDataImageUrl(value.src)) {
+    const id = value.dbId || value.id || uid();
+    const now = new Date().toISOString();
+    await putIndexedDbImage({
+      ...value,
+      id,
+      dbId: id,
+      category: value.category || value.source || category,
+      src: value.src,
+      thumbnail: value.thumbnail || value.src,
+      title: value.title || title,
+      memo: value.memo || "",
+      favorite: Boolean(value.favorite),
+      createdAt: value.createdAt || now,
+      updatedAt: now,
+    });
+    return {
+      ...value,
+      id,
+      dbId: id,
+      src: indexedDbRef(id),
+      thumbnail: indexedDbThumbRef(id),
+    };
+  }
+  return value;
+}
+
+async function optimizeImage(file: File, category = "gallery"): Promise<OptimizedImageData> {
   if (!isSupportedImageFile(file)) throw new Error("対応していない画像形式です");
   const image = await loadImageFromFile(file);
   const full = canvasDataUrl(image, 1200, 0.82);
   const thumbnail = canvasDataUrl(image, 360, 0.76);
-  return {
+  const optimized = {
     id: uid(),
     src: full.dataUrl,
     thumbnail: thumbnail.dataUrl,
@@ -880,6 +1058,7 @@ async function optimizeImage(file: File): Promise<OptimizedImageData> {
     height: full.height,
     createdAt: new Date().toISOString(),
   };
+  return storeOptimizedImage(optimized, category, { title: file.name, memo: "", favorite: false });
 }
 
 async function createThumbnail(file: File) {
@@ -918,6 +1097,67 @@ function useStoredState<T>(key: string, fallback: T) {
   return [value, setValue] as const;
 }
 
+function categoryForImageField(key: string) {
+  if (/banner/i.test(key)) return "banner";
+  if (/icon/i.test(key)) return "icon";
+  if (/cover|background/i.test(key)) return "background";
+  if (/project/i.test(key)) return "project";
+  if (/midjourney|mj/i.test(key)) return "midjourney";
+  if (/gallery/i.test(key)) return "gallery";
+  if (/journal/i.test(key)) return "journal";
+  if (/mockup|library/i.test(key)) return "mockup";
+  if (/prompt/i.test(key)) return "prompt";
+  return "gallery";
+}
+
+async function migrateImageFields(value: any, storageKey: string): Promise<any> {
+  if (Array.isArray(value)) {
+    const next = [];
+    for (const item of value) next.push(await migrateImageFields(item, storageKey));
+    return next;
+  }
+  if (!value || typeof value !== "object") return value;
+  if (value.src && isDataImageUrl(value.src)) {
+    return storeExistingImageValue(value, categoryForImageField(storageKey), value.title || value.originalName || storageKey);
+  }
+  const next: any = { ...value };
+  for (const [key, item] of Object.entries(value)) {
+    const looksLikeImageField = /^(src|thumbnail|imageUrl|coverImage|bannerImageUrl|iconImage)$/i.test(key) || /image/i.test(key);
+    if (looksLikeImageField && isDataImageUrl(item)) {
+      next[key] = await storeExistingImageValue(item, categoryForImageField(`${storageKey}-${key}`), key);
+    } else {
+      next[key] = await migrateImageFields(item, `${storageKey}-${key}`);
+    }
+  }
+  return next;
+}
+
+async function migrateLocalStorageImagesToIndexedDb() {
+  if (localStorage.getItem(IMAGE_MIGRATION_KEY) === "done") return false;
+  const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+    .filter((key): key is string => Boolean(key) && (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")));
+  let changed = false;
+  for (const key of keys) {
+    if (key === IMAGE_MIGRATION_KEY) continue;
+    const raw = localStorage.getItem(key);
+    if (!raw || !raw.includes("data:image/")) continue;
+    try {
+      const parsed = JSON.parse(raw);
+      const migrated = await migrateImageFields(parsed, key);
+      localStorage.setItem(key, JSON.stringify(migrated));
+      changed = true;
+    } catch {
+      if (isDataImageUrl(raw)) {
+        const migrated = await storeExistingImageValue(raw, categoryForImageField(key), key);
+        localStorage.setItem(key, migrated);
+        changed = true;
+      }
+    }
+  }
+  localStorage.setItem(IMAGE_MIGRATION_KEY, "done");
+  return changed;
+}
+
 function collectPromptAtelierStorage() {
   const data: Record<string, string> = {};
   for (let index = 0; index < localStorage.length; index += 1) {
@@ -931,13 +1171,14 @@ function collectPromptAtelierStorage() {
   return data;
 }
 
-function exportPromptAtelierBackup() {
+async function exportPromptAtelierBackup() {
   const today = new Date().toISOString().slice(0, 10);
   const payload = {
     app: "Prompt Atelier",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     data: collectPromptAtelierStorage(),
+    images: await getAllIndexedDbImages(),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -963,6 +1204,11 @@ async function restorePromptAtelierBackup(file: File) {
       localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
     }
   });
+  if (Array.isArray(parsed?.images)) {
+    for (const image of parsed.images) {
+      if (image?.id && image?.src) await putIndexedDbImage(image);
+    }
+  }
 }
 
 function App() {
@@ -976,6 +1222,8 @@ function App() {
   const [galleryImages, setGalleryImages] = useStoredState<AtelierImage[]>("promptAtelierGallery", sampleAtelierImages);
   const [journal, setJournal] = useStoredState<JournalState>("promptAtelierJournal", defaultJournal);
   const [toast, setToast] = React.useState("");
+  const [isImageMigrating, setIsImageMigrating] = React.useState(false);
+  const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
   const appStyle = themeStyle(activeTheme);
@@ -998,6 +1246,33 @@ function App() {
     sessionStorage.removeItem("promptAtelierRestoreMessage");
     setToast(message);
     window.setTimeout(() => setToast(""), 2200);
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const prepareImages = async () => {
+      try {
+        setIsImageMigrating(true);
+        await refreshIndexedDbImageCache();
+        const migrated = await migrateLocalStorageImagesToIndexedDb();
+        await refreshIndexedDbImageCache();
+        if (cancelled) return;
+        if (migrated) {
+          sessionStorage.setItem("promptAtelierRestoreMessage", "画像データを最適化しました");
+          window.location.reload();
+          return;
+        }
+        setImageCacheVersion((version) => version + 1);
+      } catch (error) {
+        console.error("[Prompt Atelier] 画像データベースの準備に失敗しました", error);
+      } finally {
+        if (!cancelled) setIsImageMigrating(false);
+      }
+    };
+    prepareImages();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -1065,6 +1340,11 @@ function App() {
         {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
         {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} />}
       </main>
+      {isImageMigrating && (
+        <div className="image-migration-overlay">
+          <div>画像データを最適化しています…</div>
+        </div>
+      )}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );
@@ -1131,7 +1411,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
           <div className="work-tools-launcher">
             {normalizedTools.map((tool: WorkTool) => (
               <a className="work-tool-launcher-item" href={tool.url} target="_blank" rel="noopener noreferrer" key={tool.id} aria-label={`${tool.name}を開く`}>
-                <span>{tool.iconImage ? <img src={tool.iconImage} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
+                <span>{tool.iconImage ? <img src={imageThumbnail(tool.iconImage)} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
                 <strong>{tool.name}</strong>
               </a>
             ))}
@@ -1204,7 +1484,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
               <div className="atelier-track">
                 {[...atelierImages, ...atelierImages].map((image: AtelierImage, index: number) => (
                   <figure key={`${image.id}-${index}`}>
-                    <img src={image.thumbnail || image.src} alt="" />
+                    <img src={imageThumbnail(image)} alt="" />
                   </figure>
                 ))}
               </div>
@@ -1225,7 +1505,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
       {settings.bannerVisible && (
         <div
           className={`home-banner ${settings.bannerSize}`}
-          style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined}
+          style={settings.bannerImageUrl ? { backgroundImage: `url(${imageSrc(settings.bannerImageUrl)})` } : undefined}
         >
           {!settings.bannerImageUrl && (
             <>
@@ -1254,7 +1534,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
       <input value={draft.url} onChange={(event) => update("url", event.target.value)} placeholder="URL" />
       <input value={draft.iconText} onChange={(event) => update("iconText", event.target.value)} placeholder="アイコン文字（例：MJ / P / GPT）" />
       <input value={draft.iconImage} onChange={(event) => update("iconImage", event.target.value)} placeholder="アイコン画像URL" />
-      <input type="file" accept="image/*" onChange={(event) => readImage(event, (iconImage) => setDraft({ ...draft, iconImage }))} />
+      <input type="file" accept="image/*" onChange={(event) => readImage(event, (iconImage) => setDraft({ ...draft, iconImage }), "icon")} />
       <input value={draft.memo || ""} onChange={(event) => update("memo", event.target.value)} placeholder="メモ（任意）" />
       <div className="quick-link-editor-actions">
         <button onClick={onClose}>キャンセル</button>
@@ -1359,7 +1639,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <input type="checkbox" checked={settings.bannerVisible} onChange={(event) => updateSettings({ bannerVisible: event.target.checked })} />
             </label>
             <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value })} placeholder="バナー画像URL" />
-            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (bannerImageUrl) => updateSettings({ bannerImageUrl }))} />
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (bannerImageUrl) => updateSettings({ bannerImageUrl }), "banner")} />
             <div className="inline-buttons">
               {(["small", "medium", "large"] as const).map((size) => (
                 <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => updateSettings({ bannerSize: size })}>
@@ -1392,7 +1672,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             <div className={`work-tool-edit-list ${settings.workToolIconStyle || "pastel"}`}>
               {normalizedTools.map((tool: WorkTool, index: number) => (
                 <article className="work-tool-edit-row" key={tool.id}>
-                  <span className="work-tool-edit-icon">{tool.iconImage ? <img src={tool.iconImage} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
+                  <span className="work-tool-edit-icon">{tool.iconImage ? <img src={imageThumbnail(tool.iconImage)} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
                   <div>
                     <strong>{tool.name}</strong>
                     <small>{tool.url}</small>
@@ -1475,7 +1755,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
         <aside className="customize-preview">
           <span>プレビュー</span>
           <div className="preview-shell" style={themeStyle(activeTheme)}>
-            {settings.bannerVisible && <div className={`preview-banner ${settings.bannerSize}`} style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined} />}
+            {settings.bannerVisible && <div className={`preview-banner ${settings.bannerSize}`} style={settings.bannerImageUrl ? { backgroundImage: `url(${imageSrc(settings.bannerImageUrl)})` } : undefined} />}
             <div className="preview-card large"></div>
             <div className="preview-grid">
               <i></i><i></i><i></i><i></i>
@@ -1544,7 +1824,7 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
   return (
     <article className="home-prompt-card">
       <button className="heart-button" aria-label="お気に入り">{favorite ? "♥" : "♡"}</button>
-      <img src={prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+      <img src={imageThumbnail(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       <div className="home-prompt-body">
         <span className="mini-pill">{prompt.category}</span>
         <h3>{prompt.title}</h3>
@@ -1670,7 +1950,7 @@ function Library({ copyText }: any) {
                   onDelete={() => setBoardCategories((items: MockupCategory[]) => items.filter((item) => item.id !== category.id))}
                 />
                 <button className="category-open" onClick={() => { setSelectedCategory(category); setQuery(""); }}>
-                  <img src={category.coverImage} alt="" />
+                  <img src={imageThumbnail(category.coverImage)} alt="" />
                   <span>{category.title}</span>
                   <small>{category.description}</small>
                 </button>
@@ -1848,7 +2128,7 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
 }
 
 function PromptThumbnail({ imageUrl }: { imageUrl?: string }) {
-  if (imageUrl) return <img src={imageUrl} alt="" />;
+  if (imageUrl) return <img src={imageThumbnail(imageUrl)} alt="" />;
   return (
     <div className="image-placeholder" aria-label="画像未設定">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -1866,7 +2146,7 @@ function EditableThumbnail({ prompt, isEditing, onEdit, onCancel, onSave }: any)
   const importFiles = async (files: FileList | File[]) => {
     const file = Array.from(files).find(isSupportedImageFile);
     if (!file) return;
-    const image = saveImageToStorage(await optimizeImage(file));
+    const image = saveImageToStorage(await optimizeImage(file, "prompt"));
     setDraft(image.src);
   };
   if (isEditing) {
@@ -1891,7 +2171,7 @@ function EditableThumbnail({ prompt, isEditing, onEdit, onCancel, onSave }: any)
         <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="サムネイル画像URL" autoFocus />
         <label className="mini-upload">
           画像を選ぶ
-          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (imageUrl) => setDraft(imageUrl))} />
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (imageUrl) => setDraft(imageUrl), "prompt")} />
         </label>
         <div>
           <button className="primary" onClick={() => onSave(draft)}>保存</button>
@@ -2020,13 +2300,13 @@ function PromptMenuButton({ onDuplicate, onClearImage, onDelete }: any) {
   );
 }
 
-async function readImage(event: any, onLoad: (value: string) => void) {
+async function readImage(event: any, onLoad: (value: string) => void, category = "prompt") {
   event?.preventDefault?.();
   event?.stopPropagation?.();
   const file = event.target.files?.[0];
   if (!file) return;
   try {
-    const image = saveImageToStorage(await optimizeImage(file));
+    const image = saveImageToStorage(await optimizeImage(file, category));
     onLoad(image.src);
   } catch (error) {
     console.error("[Prompt Atelier] 画像の最適化に失敗しました", error);
@@ -2044,7 +2324,7 @@ function MockupCategoryModal({ item, onClose, onSave }: any) {
         <input value={draft.coverImage} onChange={(e) => setDraft({ ...draft, coverImage: e.target.value })} placeholder="カバー画像URL" />
         <label className="upload-box">
           <span>画像をアップロード</span>
-          <input type="file" accept="image/*" onChange={(e) => readImage(e, (coverImage) => setDraft({ ...draft, coverImage }))} />
+          <input type="file" accept="image/*" onChange={(e) => readImage(e, (coverImage) => setDraft({ ...draft, coverImage }), "mockup")} />
         </label>
         {draft.coverImage && <img className="modal-preview-image" src={draft.coverImage} alt="" />}
       </FormGrid>
@@ -2069,9 +2349,9 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
         <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サムネイル画像URL" />
         <label className="upload-box">
           <span>画像をアップロード</span>
-          <input type="file" accept="image/*" onChange={(e) => readImage(e, (imageUrl) => setDraft({ ...draft, imageUrl }))} />
+          <input type="file" accept="image/*" onChange={(e) => readImage(e, (imageUrl) => setDraft({ ...draft, imageUrl }), "mockup")} />
         </label>
-        {draft.imageUrl && <img className="modal-preview-image" src={draft.imageUrl} alt="" />}
+        {draft.imageUrl && <img className="modal-preview-image" src={imageThumbnail(draft.imageUrl)} alt="" />}
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
     </Modal>
@@ -2474,7 +2754,7 @@ function splitImageUrls(value: string) {
 }
 
 async function fileToDataUrl(file: File) {
-  const image = saveImageToStorage(await optimizeImage(file));
+  const image = saveImageToStorage(await optimizeImage(file, "midjourney"));
   return image.src;
 }
 
@@ -2525,17 +2805,17 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
       setImageMessage("画像は最大5枚までです");
       return;
     }
-    const nextImages = await Promise.all(files.map(optimizeImage));
+    const nextImages = await Promise.all(files.map((file) => optimizeImage(file, "midjourney")));
     nextImages.forEach((image, index) => console.log("[MJ画像追加] base64 prefix:", image.src.slice(0, 30), "file:", files[index]?.name, "cardId:", item.id));
     const updatedImages = [...images, ...nextImages].slice(0, 5);
     console.log("[MJ画像追加] updated images length:", updatedImages.length, "cardId:", item.id);
     setImageMessage("");
-    onUpdate({ images: updatedImages, imageUrl: imageSrc(updatedImages[0]) || "" });
+    onUpdate({ images: updatedImages, imageUrl: updatedImages[0]?.src || "" });
     scheduleStorageWarningCheck();
   };
   const removeImage = (index: number) => {
     const updatedImages = images.filter((_: any, imageIndex: number) => imageIndex !== index);
-    onUpdate({ images: updatedImages, imageUrl: imageSrc(updatedImages[0]) || "" });
+    onUpdate({ images: updatedImages, imageUrl: updatedImages[0]?.src || "" });
   };
   const updatePrompt = (value: string) => {
     const parsed = parseMidjourneyPrompt(value);
@@ -2751,7 +3031,7 @@ function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
     title: item.title || "無題のMJ設定",
     description: item.description || item.memo || item.note || "",
     images,
-    imageUrl: imageSrc(images[0]) || item.imageUrl || "",
+    imageUrl: images[0]?.src || item.imageUrl || "",
     prompt: fullPrompt || combinePrompt(basePrompt, params),
     promptEn,
     promptJa,
@@ -2798,8 +3078,23 @@ function mjCommandLegacy(item: MjSetting) {
 
 function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   const [previewId, setPreviewId] = React.useState("");
+  const [visibleCount, setVisibleCount] = React.useState(20);
   const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
+  React.useEffect(() => {
+    setVisibleCount(20);
+  }, [images.length]);
+  React.useEffect(() => {
+    if (!loadMoreRef.current || visibleCount >= images.length) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisibleCount((count) => Math.min(count + 20, images.length));
+      }
+    }, { rootMargin: "320px" });
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [images.length, visibleCount]);
   const addFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -2808,7 +3103,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
       window.alert("ギャラリー画像は最大200枚までです");
       return;
     }
-    const optimizedImages = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    const optimizedImages = await Promise.all(files.slice(0, remaining).map((file) => optimizeImage(file, "gallery")));
     if (files.length > remaining) window.alert("ギャラリー画像は最大200枚までです");
     const nextImages = optimizedImages.map((image, index) => ({
       ...image,
@@ -2878,22 +3173,23 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
       />
       {images.length ? (
         <div className="gallery-grid">
-          {images.map((image: AtelierImage) => (
+          {images.slice(0, visibleCount).map((image: AtelierImage) => (
             <article className="gallery-card" key={image.id}>
               <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
                 {image.favorite ? "♥" : "♡"}
               </button>
               <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
-                <img src={image.thumbnail || image.src} alt="" />
+                <img src={imageThumbnail(image)} alt="" />
               </button>
             </article>
           ))}
         </div>
       ) : <Empty text="画像を追加すると、ここにギャラリーが表示されます。" />}
+      {images.length > visibleCount && <div ref={loadMoreRef} className="lazy-load-sentinel">画像を読み込んでいます…</div>}
       {preview && (
         <Modal title={preview.title || "画像詳細"} onClose={() => setPreviewId("")}>
           <div className="gallery-detail-modal">
-            <img src={preview.src} alt="" />
+            <img src={imageSrc(preview)} alt="" />
             <label>タイトル<input value={preview.title} onChange={(event) => updateImage(preview.id, { title: event.target.value })} placeholder="タイトル" /></label>
             <label>メモ<textarea value={preview.memo} onChange={(event) => updateImage(preview.id, { memo: event.target.value })} placeholder="メモ" /></label>
             <small>追加日：{formatSavedAt(preview.createdAt)}</small>
@@ -2921,7 +3217,11 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   const customBackgrounds = journal.customBackgrounds || [];
   const selectedCustomBackground = customBackgrounds.find((item: AtelierImage) => journal.background === `custom-${item.id}`);
   const addJournalItem = (image: AtelierImage) => {
-    const normalized = { ...image, src: imageSrc(image), thumbnail: imageThumbnail(image) };
+    const normalized = {
+      ...image,
+      src: image.src || imageSrc(image),
+      thumbnail: image.thumbnail || image.src || imageThumbnail(image),
+    };
     const item: JournalItem = {
       id: uid(),
       imageId: normalized.id,
@@ -2945,7 +3245,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
       window.alert("ジャーナル1ページの画像は最大100枚までです");
       return;
     }
-    const optimizedImages = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    const optimizedImages = await Promise.all(files.slice(0, remaining).map((file) => optimizeImage(file, "journal")));
     if (files.length > remaining) window.alert("ジャーナル1ページの画像は最大100枚までです");
     const nextImages = optimizedImages.map((image, index) => ({
       ...image,
@@ -2967,7 +3267,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
       window.alert("背景画像は最大20枚までです");
       return;
     }
-    const optimizedBackgrounds = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    const optimizedBackgrounds = await Promise.all(files.slice(0, remaining).map((file) => optimizeImage(file, "background")));
     if (files.length > remaining) window.alert("背景画像は最大20枚までです");
     const nextBackgrounds = optimizedBackgrounds.map((image, index) => ({
       ...image,
@@ -3080,7 +3380,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
           <strong>画像ストック</strong>
           <div className="journal-stock">
             {images.slice(0, 18).map((image: AtelierImage) => (
-              <button key={image.id} onClick={() => addJournalItem(image)}><img src={image.thumbnail || image.src} alt="" /></button>
+              <button key={image.id} onClick={() => addJournalItem(image)}><img src={imageThumbnail(image)} alt="" /></button>
             ))}
           </div>
           {selected && (
@@ -3096,7 +3396,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
           ref={boardRef}
           className={`journal-board ${journal.background}`}
           tabIndex={0}
-          style={selectedCustomBackground ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${selectedCustomBackground.src})` } : undefined}
+          style={selectedCustomBackground ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${imageSrc(selectedCustomBackground)})` } : undefined}
           onPointerMove={moveItem}
           onPointerUp={() => setDraggingId("")}
           onPointerLeave={() => setDraggingId("")}
@@ -3125,7 +3425,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
                 setDraggingId(item.id);
               }}
             >
-              <img className={isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image"} src={item.thumbnail || item.src} alt="" draggable={false} />
+              <img className={isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image"} src={imageThumbnail(item)} alt="" draggable={false} />
             </div>
           )) : <div className="journal-empty">画像を追加して、シール帳のように並べられます。</div>}
         </div>
@@ -3191,7 +3491,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
 function PromptCard({ prompt, onCopy, extra }: any) {
   return (
     <article className="prompt-card">
-      <img src={prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+      <img src={imageThumbnail(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       <div>
         <span className="pill">{prompt.category}</span>
         <h3>{prompt.title}</h3>

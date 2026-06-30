@@ -609,7 +609,17 @@ const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolea
 const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
+const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
+const IMAGE_DB_NAME = "PromptAtelierDB";
+const IMAGE_DB_VERSION = 1;
+const IMAGE_STORE_NAME = "images";
+const indexedDbImageCache = new Map();
+const indexedDbRef = id => `indexeddb:${id}`;
+const indexedDbThumbRef = id => `indexeddb-thumb:${id}`;
+const isIndexedDbImageRef = value => /^indexeddb(?:-thumb)?:/.test(value);
+const indexedDbIdFromRef = value => value.replace(/^indexeddb(?:-thumb)?:/, "");
+const isDataImageUrl = value => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const isDarkTheme = id => ["dark", "night-lavender"].includes(id);
 const readableTextOn = hex => {
   const normalized = hex.replace("#", "");
@@ -737,8 +747,8 @@ function collectAtelierImages(prompts, mjSettings, galleryImages) {
   }));
   const mjImages = mjSettings.flatMap(setting => (setting.images || (setting.imageUrl ? [setting.imageUrl] : [])).map((src, index) => ({
     id: `mj-${setting.id}-${index}`,
-    src: imageSrc(src),
-    thumbnail: imageThumbnail(src),
+    src: typeof src === "string" ? src : src.src || "",
+    thumbnail: typeof src === "string" ? src : src.thumbnail || src.src || "",
     title: setting.title || "MJ画像",
     memo: setting.memo || setting.note || "",
     createdAt: setting.createdAt || setting.id,
@@ -747,8 +757,8 @@ function collectAtelierImages(prompts, mjSettings, galleryImages) {
   })));
   const normalizedGalleryImages = galleryImages.map(item => ({
     ...item,
-    src: imageSrc(item),
-    thumbnail: imageThumbnail(item)
+    src: item.src,
+    thumbnail: item.thumbnail || item.src
   }));
   const merged = [...promptImages, ...mjImages, ...normalizedGalleryImages].filter(item => item.src);
   const seen = new Set();
@@ -758,18 +768,44 @@ function collectAtelierImages(prompts, mjSettings, galleryImages) {
     return true;
   }).sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 24);
 }
+function resolveIndexedDbImage(value, preferThumbnail = false) {
+  if (!isIndexedDbImageRef(value)) return value;
+  const record = indexedDbImageCache.get(indexedDbIdFromRef(value));
+  if (!record) return "";
+  return preferThumbnail ? record.thumbnail || record.src : record.src || record.thumbnail || "";
+}
 function imageSrc(image) {
   if (!image) return "";
-  return typeof image === "string" ? image : image.src || "";
+  const value = typeof image === "string" ? image : image.src || image.thumbnail || "";
+  return resolveIndexedDbImage(value, false);
 }
 function imageThumbnail(image) {
   if (!image) return "";
-  return typeof image === "string" ? image : image.thumbnail || image.src || "";
+  const value = typeof image === "string" ? image : image.thumbnail || image.src || "";
+  return resolveIndexedDbImage(value, true);
+}
+function imageReference(id, category = "gallery", title = "") {
+  const record = indexedDbImageCache.get(id);
+  return {
+    id,
+    dbId: id,
+    category,
+    src: indexedDbRef(id),
+    thumbnail: indexedDbThumbRef(id),
+    originalName: record?.originalName || title || "image",
+    mimeType: record?.mimeType || "image/*",
+    width: Number(record?.width || 0),
+    height: Number(record?.height || 0),
+    createdAt: record?.createdAt || new Date().toISOString()
+  };
 }
 function normalizeImageData(image) {
   if (image && typeof image === "object" && image.src) {
+    const id = image.dbId || (isIndexedDbImageRef(image.src) ? indexedDbIdFromRef(image.src) : image.id || uid());
     return {
-      id: image.id || uid(),
+      id: image.id || id,
+      dbId: image.dbId || (isIndexedDbImageRef(image.src) ? indexedDbIdFromRef(image.src) : undefined),
+      category: image.category || image.source || "gallery",
       src: image.src,
       thumbnail: image.thumbnail || image.src,
       originalName: image.originalName || image.title || "image",
@@ -780,8 +816,10 @@ function normalizeImageData(image) {
     };
   }
   const src = String(image || "");
+  const dbId = isIndexedDbImageRef(src) ? indexedDbIdFromRef(src) : undefined;
   return {
-    id: uid(),
+    id: dbId || uid(),
+    dbId,
     src,
     thumbnail: src,
     originalName: "existing-image",
@@ -876,12 +914,138 @@ function canvasDataUrl(image, maxSide, quality = 0.82) {
     mimeType: dataUrl.slice(5, dataUrl.indexOf(";"))
   };
 }
-async function optimizeImage(file) {
+function openImageDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(IMAGE_DB_NAME, IMAGE_DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(IMAGE_STORE_NAME)) {
+        const store = db.createObjectStore(IMAGE_STORE_NAME, {
+          keyPath: "id"
+        });
+        store.createIndex("category", "category", {
+          unique: false
+        });
+        store.createIndex("createdAt", "createdAt", {
+          unique: false
+        });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+async function putIndexedDbImage(record) {
+  const db = await openImageDb();
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction(IMAGE_STORE_NAME, "readwrite");
+    transaction.objectStore(IMAGE_STORE_NAME).put(record);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  indexedDbImageCache.set(record.id, record);
+}
+async function getAllIndexedDbImages() {
+  const db = await openImageDb();
+  const records = await new Promise((resolve, reject) => {
+    const request = db.transaction(IMAGE_STORE_NAME, "readonly").objectStore(IMAGE_STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return records;
+}
+async function deleteIndexedDbImage(id) {
+  const db = await openImageDb();
+  await new Promise((resolve, reject) => {
+    const transaction = db.transaction(IMAGE_STORE_NAME, "readwrite");
+    transaction.objectStore(IMAGE_STORE_NAME).delete(id);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  indexedDbImageCache.delete(id);
+}
+async function refreshIndexedDbImageCache() {
+  const records = await getAllIndexedDbImages();
+  indexedDbImageCache.clear();
+  records.forEach(record => indexedDbImageCache.set(record.id, record));
+  return records;
+}
+async function storeOptimizedImage(image, category = "gallery", patch = {}) {
+  const id = image.dbId || image.id || uid();
+  const now = new Date().toISOString();
+  const record = {
+    ...image,
+    ...patch,
+    id,
+    dbId: id,
+    category,
+    src: imageSrc(image.src) || image.src,
+    thumbnail: imageThumbnail(image.thumbnail) || image.thumbnail || image.src,
+    createdAt: image.createdAt || now,
+    updatedAt: now
+  };
+  await putIndexedDbImage(record);
+  return imageReference(id, category, patch.title || image.originalName || "image");
+}
+async function storeExistingImageValue(value, category = "gallery", title = "image") {
+  if (!value) return value;
+  if (typeof value === "string") {
+    if (isIndexedDbImageRef(value) || !isDataImageUrl(value)) return value;
+    const id = uid();
+    const now = new Date().toISOString();
+    await putIndexedDbImage({
+      id,
+      dbId: id,
+      category,
+      src: value,
+      thumbnail: value,
+      originalName: title,
+      mimeType: value.slice(5, value.indexOf(";")) || "image/*",
+      width: 0,
+      height: 0,
+      title,
+      memo: "",
+      favorite: false,
+      createdAt: now,
+      updatedAt: now
+    });
+    return indexedDbRef(id);
+  }
+  if (typeof value === "object" && value.src && isDataImageUrl(value.src)) {
+    const id = value.dbId || value.id || uid();
+    const now = new Date().toISOString();
+    await putIndexedDbImage({
+      ...value,
+      id,
+      dbId: id,
+      category: value.category || value.source || category,
+      src: value.src,
+      thumbnail: value.thumbnail || value.src,
+      title: value.title || title,
+      memo: value.memo || "",
+      favorite: Boolean(value.favorite),
+      createdAt: value.createdAt || now,
+      updatedAt: now
+    });
+    return {
+      ...value,
+      id,
+      dbId: id,
+      src: indexedDbRef(id),
+      thumbnail: indexedDbThumbRef(id)
+    };
+  }
+  return value;
+}
+async function optimizeImage(file, category = "gallery") {
   if (!isSupportedImageFile(file)) throw new Error("対応していない画像形式です");
   const image = await loadImageFromFile(file);
   const full = canvasDataUrl(image, 1200, 0.82);
   const thumbnail = canvasDataUrl(image, 360, 0.76);
-  return {
+  const optimized = {
     id: uid(),
     src: full.dataUrl,
     thumbnail: thumbnail.dataUrl,
@@ -891,6 +1055,11 @@ async function optimizeImage(file) {
     height: full.height,
     createdAt: new Date().toISOString()
   };
+  return storeOptimizedImage(optimized, category, {
+    title: file.name,
+    memo: "",
+    favorite: false
+  });
 }
 async function createThumbnail(file) {
   const image = await loadImageFromFile(file);
@@ -921,6 +1090,67 @@ function useStoredState(key, fallback) {
   }, [key, value]);
   return [value, setValue];
 }
+function categoryForImageField(key) {
+  if (/banner/i.test(key)) return "banner";
+  if (/icon/i.test(key)) return "icon";
+  if (/cover|background/i.test(key)) return "background";
+  if (/project/i.test(key)) return "project";
+  if (/midjourney|mj/i.test(key)) return "midjourney";
+  if (/gallery/i.test(key)) return "gallery";
+  if (/journal/i.test(key)) return "journal";
+  if (/mockup|library/i.test(key)) return "mockup";
+  if (/prompt/i.test(key)) return "prompt";
+  return "gallery";
+}
+async function migrateImageFields(value, storageKey) {
+  if (Array.isArray(value)) {
+    const next = [];
+    for (const item of value) next.push(await migrateImageFields(item, storageKey));
+    return next;
+  }
+  if (!value || typeof value !== "object") return value;
+  if (value.src && isDataImageUrl(value.src)) {
+    return storeExistingImageValue(value, categoryForImageField(storageKey), value.title || value.originalName || storageKey);
+  }
+  const next = {
+    ...value
+  };
+  for (const [key, item] of Object.entries(value)) {
+    const looksLikeImageField = /^(src|thumbnail|imageUrl|coverImage|bannerImageUrl|iconImage)$/i.test(key) || /image/i.test(key);
+    if (looksLikeImageField && isDataImageUrl(item)) {
+      next[key] = await storeExistingImageValue(item, categoryForImageField(`${storageKey}-${key}`), key);
+    } else {
+      next[key] = await migrateImageFields(item, `${storageKey}-${key}`);
+    }
+  }
+  return next;
+}
+async function migrateLocalStorageImagesToIndexedDb() {
+  if (localStorage.getItem(IMAGE_MIGRATION_KEY) === "done") return false;
+  const keys = Array.from({
+    length: localStorage.length
+  }, (_, index) => localStorage.key(index)).filter(key => Boolean(key) && (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")));
+  let changed = false;
+  for (const key of keys) {
+    if (key === IMAGE_MIGRATION_KEY) continue;
+    const raw = localStorage.getItem(key);
+    if (!raw || !raw.includes("data:image/")) continue;
+    try {
+      const parsed = JSON.parse(raw);
+      const migrated = await migrateImageFields(parsed, key);
+      localStorage.setItem(key, JSON.stringify(migrated));
+      changed = true;
+    } catch {
+      if (isDataImageUrl(raw)) {
+        const migrated = await storeExistingImageValue(raw, categoryForImageField(key), key);
+        localStorage.setItem(key, migrated);
+        changed = true;
+      }
+    }
+  }
+  localStorage.setItem(IMAGE_MIGRATION_KEY, "done");
+  return changed;
+}
 function collectPromptAtelierStorage() {
   const data = {};
   for (let index = 0; index < localStorage.length; index += 1) {
@@ -933,13 +1163,14 @@ function collectPromptAtelierStorage() {
   }
   return data;
 }
-function exportPromptAtelierBackup() {
+async function exportPromptAtelierBackup() {
   const today = new Date().toISOString().slice(0, 10);
   const payload = {
     app: "Prompt Atelier",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
-    data: collectPromptAtelierStorage()
+    data: collectPromptAtelierStorage(),
+    images: await getAllIndexedDbImages()
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json"
@@ -967,6 +1198,11 @@ async function restorePromptAtelierBackup(file) {
       localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
     }
   });
+  if (Array.isArray(parsed?.images)) {
+    for (const image of parsed.images) {
+      if (image?.id && image?.src) await putIndexedDbImage(image);
+    }
+  }
 }
 function App() {
   const [screen, setScreen] = React.useState("home");
@@ -979,6 +1215,8 @@ function App() {
   const [galleryImages, setGalleryImages] = useStoredState("promptAtelierGallery", sampleAtelierImages);
   const [journal, setJournal] = useStoredState("promptAtelierJournal", defaultJournal);
   const [toast, setToast] = React.useState("");
+  const [isImageMigrating, setIsImageMigrating] = React.useState(false);
+  const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
   const appStyle = themeStyle(activeTheme);
@@ -998,6 +1236,32 @@ function App() {
     sessionStorage.removeItem("promptAtelierRestoreMessage");
     setToast(message);
     window.setTimeout(() => setToast(""), 2200);
+  }, []);
+  React.useEffect(() => {
+    let cancelled = false;
+    const prepareImages = async () => {
+      try {
+        setIsImageMigrating(true);
+        await refreshIndexedDbImageCache();
+        const migrated = await migrateLocalStorageImagesToIndexedDb();
+        await refreshIndexedDbImageCache();
+        if (cancelled) return;
+        if (migrated) {
+          sessionStorage.setItem("promptAtelierRestoreMessage", "画像データを最適化しました");
+          window.location.reload();
+          return;
+        }
+        setImageCacheVersion(version => version + 1);
+      } catch (error) {
+        console.error("[Prompt Atelier] 画像データベースの準備に失敗しました", error);
+      } finally {
+        if (!cancelled) setIsImageMigrating(false);
+      }
+    };
+    prepareImages();
+    return () => {
+      cancelled = true;
+    };
   }, []);
   return /*#__PURE__*/React.createElement("div", {
     className: `app-shell ${themeClassName(activeTheme.id)}`,
@@ -1058,7 +1322,9 @@ function App() {
     setImages: setGalleryImages,
     setJournal: setJournal,
     setScreen: setScreen
-  })), toast && /*#__PURE__*/React.createElement("div", {
+  })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
+    className: "image-migration-overlay"
+  }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
     className: "toast"
   }, toast));
 }
@@ -1150,7 +1416,7 @@ function Home({
         key: tool.id,
         "aria-label": `${tool.name}を開く`
       }, /*#__PURE__*/React.createElement("span", null, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
-        src: tool.iconImage,
+        src: imageThumbnail(tool.iconImage),
         alt: ""
       }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("strong", null, tool.name)))));
     }
@@ -1230,7 +1496,7 @@ function Home({
       }, [...atelierImages, ...atelierImages].map((image, index) => /*#__PURE__*/React.createElement("figure", {
         key: `${image.id}-${index}`
       }, /*#__PURE__*/React.createElement("img", {
-        src: image.thumbnail || image.src,
+        src: imageThumbnail(image),
         alt: ""
       }))))) : /*#__PURE__*/React.createElement("div", {
         className: "atelier-empty"
@@ -1245,7 +1511,7 @@ function Home({
   }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `home-banner ${settings.bannerSize}`,
     style: settings.bannerImageUrl ? {
-      backgroundImage: `url(${settings.bannerImageUrl})`
+      backgroundImage: `url(${imageSrc(settings.bannerImageUrl)})`
     } : undefined
   }, !settings.bannerImageUrl && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)));
 }
@@ -1289,7 +1555,7 @@ function WorkToolEditor({
     onChange: event => readImage(event, iconImage => setDraft({
       ...draft,
       iconImage
-    }))
+    }), "icon")
   }), /*#__PURE__*/React.createElement("input", {
     value: draft.memo || "",
     onChange: event => update("memo", event.target.value),
@@ -1427,7 +1693,7 @@ function HomeCustomize({
     accept: "image/png,image/jpeg,image/webp",
     onChange: event => readImage(event, bannerImageUrl => updateSettings({
       bannerImageUrl
-    }))
+    }), "banner")
   }), /*#__PURE__*/React.createElement("div", {
     className: "inline-buttons"
   }, ["small", "medium", "large"].map(size => /*#__PURE__*/React.createElement("button", {
@@ -1458,7 +1724,7 @@ function HomeCustomize({
   }, /*#__PURE__*/React.createElement("span", {
     className: "work-tool-edit-icon"
   }, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
-    src: tool.iconImage,
+    src: imageThumbnail(tool.iconImage),
     alt: ""
   }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, tool.name), /*#__PURE__*/React.createElement("small", null, tool.url)), /*#__PURE__*/React.createElement("div", {
     className: "work-tool-edit-actions"
@@ -1547,7 +1813,7 @@ function HomeCustomize({
   }, settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `preview-banner ${settings.bannerSize}`,
     style: settings.bannerImageUrl ? {
-      backgroundImage: `url(${settings.bannerImageUrl})`
+      backgroundImage: `url(${imageSrc(settings.bannerImageUrl)})`
     } : undefined
   }), /*#__PURE__*/React.createElement("div", {
     className: "preview-card large"
@@ -1659,7 +1925,7 @@ function HomePromptCard({
     className: "heart-button",
     "aria-label": "お気に入り"
   }, favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("img", {
-    src: prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df"),
+    src: imageThumbnail(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", {
     className: "home-prompt-body"
@@ -1825,7 +2091,7 @@ function Library({
       setQuery("");
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: category.coverImage,
+    src: imageThumbnail(category.coverImage),
     alt: ""
   }), /*#__PURE__*/React.createElement("span", null, category.title), /*#__PURE__*/React.createElement("small", null, category.description)))))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "library-detail-head"
@@ -2053,7 +2319,7 @@ function PromptThumbnail({
   imageUrl
 }) {
   if (imageUrl) return /*#__PURE__*/React.createElement("img", {
-    src: imageUrl,
+    src: imageThumbnail(imageUrl),
     alt: ""
   });
   return /*#__PURE__*/React.createElement("div", {
@@ -2088,7 +2354,7 @@ function EditableThumbnail({
   const importFiles = async files => {
     const file = Array.from(files).find(isSupportedImageFile);
     if (!file) return;
-    const image = saveImageToStorage(await optimizeImage(file));
+    const image = saveImageToStorage(await optimizeImage(file, "prompt"));
     setDraft(image.src);
   };
   if (isEditing) {
@@ -2118,7 +2384,7 @@ function EditableThumbnail({
     }, "画像を選ぶ", /*#__PURE__*/React.createElement("input", {
       type: "file",
       accept: "image/png,image/jpeg,image/webp",
-      onChange: event => readImage(event, imageUrl => setDraft(imageUrl))
+      onChange: event => readImage(event, imageUrl => setDraft(imageUrl), "prompt")
     })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
       className: "primary",
       onClick: () => onSave(draft)
@@ -2291,13 +2557,13 @@ function PromptMenuButton({
     onClick: event => runMenuAction(event, onDelete)
   }, "削除")));
 }
-async function readImage(event, onLoad) {
+async function readImage(event, onLoad, category = "prompt") {
   event?.preventDefault?.();
   event?.stopPropagation?.();
   const file = event.target.files?.[0];
   if (!file) return;
   try {
-    const image = saveImageToStorage(await optimizeImage(file));
+    const image = saveImageToStorage(await optimizeImage(file, category));
     onLoad(image.src);
   } catch (error) {
     console.error("[Prompt Atelier] 画像の最適化に失敗しました", error);
@@ -2344,7 +2610,7 @@ function MockupCategoryModal({
     onChange: e => readImage(e, coverImage => setDraft({
       ...draft,
       coverImage
-    }))
+    }), "mockup")
   })), draft.coverImage && /*#__PURE__*/React.createElement("img", {
     className: "modal-preview-image",
     src: draft.coverImage,
@@ -2427,10 +2693,10 @@ function LibraryPromptModal({
     onChange: e => readImage(e, imageUrl => setDraft({
       ...draft,
       imageUrl
-    }))
+    }), "mockup")
   })), draft.imageUrl && /*#__PURE__*/React.createElement("img", {
     className: "modal-preview-image",
-    src: draft.imageUrl,
+    src: imageThumbnail(draft.imageUrl),
     alt: ""
   })), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
@@ -2896,7 +3162,7 @@ function splitImageUrls(value) {
   return value.split(/[\n,]/).map(item => item.trim()).filter(Boolean).slice(0, 5);
 }
 async function fileToDataUrl(file) {
-  const image = saveImageToStorage(await optimizeImage(file));
+  const image = saveImageToStorage(await optimizeImage(file, "midjourney"));
   return image.src;
 }
 function promptCardHeading(prompt) {
@@ -2954,14 +3220,14 @@ function MJEditableCard({
       setImageMessage("画像は最大5枚までです");
       return;
     }
-    const nextImages = await Promise.all(files.map(optimizeImage));
+    const nextImages = await Promise.all(files.map(file => optimizeImage(file, "midjourney")));
     nextImages.forEach((image, index) => console.log("[MJ画像追加] base64 prefix:", image.src.slice(0, 30), "file:", files[index]?.name, "cardId:", item.id));
     const updatedImages = [...images, ...nextImages].slice(0, 5);
     console.log("[MJ画像追加] updated images length:", updatedImages.length, "cardId:", item.id);
     setImageMessage("");
     onUpdate({
       images: updatedImages,
-      imageUrl: imageSrc(updatedImages[0]) || ""
+      imageUrl: updatedImages[0]?.src || ""
     });
     scheduleStorageWarningCheck();
   };
@@ -2969,7 +3235,7 @@ function MJEditableCard({
     const updatedImages = images.filter((_, imageIndex) => imageIndex !== index);
     onUpdate({
       images: updatedImages,
-      imageUrl: imageSrc(updatedImages[0]) || ""
+      imageUrl: updatedImages[0]?.src || ""
     });
   };
   const updatePrompt = value => {
@@ -3203,7 +3469,7 @@ function normalizeMjSetting(item) {
     title: item.title || "無題のMJ設定",
     description: item.description || item.memo || item.note || "",
     images,
-    imageUrl: imageSrc(images[0]) || item.imageUrl || "",
+    imageUrl: images[0]?.src || item.imageUrl || "",
     prompt: fullPrompt || combinePrompt(basePrompt, params),
     promptEn,
     promptJa,
@@ -3244,8 +3510,25 @@ function GalleryPage({
   setScreen
 }) {
   const fileInputRef = React.useRef(null);
+  const loadMoreRef = React.useRef(null);
   const [previewId, setPreviewId] = React.useState("");
+  const [visibleCount, setVisibleCount] = React.useState(20);
   const preview = images.find(image => image.id === previewId) || null;
+  React.useEffect(() => {
+    setVisibleCount(20);
+  }, [images.length]);
+  React.useEffect(() => {
+    if (!loadMoreRef.current || visibleCount >= images.length) return;
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        setVisibleCount(count => Math.min(count + 20, images.length));
+      }
+    }, {
+      rootMargin: "320px"
+    });
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [images.length, visibleCount]);
   const addFiles = async fileList => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -3254,7 +3537,7 @@ function GalleryPage({
       window.alert("ギャラリー画像は最大200枚までです");
       return;
     }
-    const optimizedImages = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    const optimizedImages = await Promise.all(files.slice(0, remaining).map(file => optimizeImage(file, "gallery")));
     if (files.length > remaining) window.alert("ギャラリー画像は最大200枚までです");
     const nextImages = optimizedImages.map((image, index) => ({
       ...image,
@@ -3337,7 +3620,7 @@ function GalleryPage({
     }
   }), images.length ? /*#__PURE__*/React.createElement("div", {
     className: "gallery-grid"
-  }, images.map(image => /*#__PURE__*/React.createElement("article", {
+  }, images.slice(0, visibleCount).map(image => /*#__PURE__*/React.createElement("article", {
     className: "gallery-card",
     key: image.id
   }, /*#__PURE__*/React.createElement("button", {
@@ -3350,17 +3633,20 @@ function GalleryPage({
     className: "gallery-image-button",
     onClick: () => setPreviewId(image.id)
   }, /*#__PURE__*/React.createElement("img", {
-    src: image.thumbnail || image.src,
+    src: imageThumbnail(image),
     alt: ""
   }))))) : /*#__PURE__*/React.createElement(Empty, {
     text: "画像を追加すると、ここにギャラリーが表示されます。"
-  }), preview && /*#__PURE__*/React.createElement(Modal, {
+  }), images.length > visibleCount && /*#__PURE__*/React.createElement("div", {
+    ref: loadMoreRef,
+    className: "lazy-load-sentinel"
+  }, "画像を読み込んでいます…"), preview && /*#__PURE__*/React.createElement(Modal, {
     title: preview.title || "画像詳細",
     onClose: () => setPreviewId("")
   }, /*#__PURE__*/React.createElement("div", {
     className: "gallery-detail-modal"
   }, /*#__PURE__*/React.createElement("img", {
-    src: preview.src,
+    src: imageSrc(preview),
     alt: ""
   }), /*#__PURE__*/React.createElement("label", null, "タイトル", /*#__PURE__*/React.createElement("input", {
     value: preview.title,
@@ -3413,8 +3699,8 @@ function JournalPage({
   const addJournalItem = image => {
     const normalized = {
       ...image,
-      src: imageSrc(image),
-      thumbnail: imageThumbnail(image)
+      src: image.src || imageSrc(image),
+      thumbnail: image.thumbnail || image.src || imageThumbnail(image)
     };
     const item = {
       id: uid(),
@@ -3442,7 +3728,7 @@ function JournalPage({
       window.alert("ジャーナル1ページの画像は最大100枚までです");
       return;
     }
-    const optimizedImages = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    const optimizedImages = await Promise.all(files.slice(0, remaining).map(file => optimizeImage(file, "journal")));
     if (files.length > remaining) window.alert("ジャーナル1ページの画像は最大100枚までです");
     const nextImages = optimizedImages.map((image, index) => ({
       ...image,
@@ -3464,7 +3750,7 @@ function JournalPage({
       window.alert("背景画像は最大20枚までです");
       return;
     }
-    const optimizedBackgrounds = await Promise.all(files.slice(0, remaining).map(optimizeImage));
+    const optimizedBackgrounds = await Promise.all(files.slice(0, remaining).map(file => optimizeImage(file, "background")));
     if (files.length > remaining) window.alert("背景画像は最大20枚までです");
     const nextBackgrounds = optimizedBackgrounds.map((image, index) => ({
       ...image,
@@ -3631,7 +3917,7 @@ function JournalPage({
     key: image.id,
     onClick: () => addJournalItem(image)
   }, /*#__PURE__*/React.createElement("img", {
-    src: image.thumbnail || image.src,
+    src: imageThumbnail(image),
     alt: ""
   })))), selected && /*#__PURE__*/React.createElement("div", {
     className: "journal-edit-panel"
@@ -3670,7 +3956,7 @@ function JournalPage({
     className: `journal-board ${journal.background}`,
     tabIndex: 0,
     style: selectedCustomBackground ? {
-      backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${selectedCustomBackground.src})`
+      backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${imageSrc(selectedCustomBackground)})`
     } : undefined,
     onPointerMove: moveItem,
     onPointerUp: () => setDraggingId(""),
@@ -3704,7 +3990,7 @@ function JournalPage({
     }
   }, /*#__PURE__*/React.createElement("img", {
     className: isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image",
-    src: item.thumbnail || item.src,
+    src: imageThumbnail(item),
     alt: "",
     draggable: false
   }))) : /*#__PURE__*/React.createElement("div", {
@@ -3797,7 +4083,7 @@ function PromptCard({
   return /*#__PURE__*/React.createElement("article", {
     className: "prompt-card"
   }, /*#__PURE__*/React.createElement("img", {
-    src: prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df"),
+    src: imageThumbnail(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "pill"
