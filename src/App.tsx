@@ -819,6 +819,10 @@ function showStorageWarningIfNeeded() {
   window.alert("画像データが増えています。バックアップや不要画像の整理をおすすめします。");
 }
 
+function scheduleStorageWarningCheck() {
+  window.setTimeout(showStorageWarningIfNeeded, 300);
+}
+
 function isStickerEffectOn(item?: Partial<JournalItem> | null) {
   if (!item) return false;
   return item.stickerEffect ?? item.sticker ?? true;
@@ -866,7 +870,6 @@ async function optimizeImage(file: File): Promise<OptimizedImageData> {
   const image = await loadImageFromFile(file);
   const full = canvasDataUrl(image, 1200, 0.82);
   const thumbnail = canvasDataUrl(image, 360, 0.76);
-  showStorageWarningIfNeeded();
   return {
     id: uid(),
     src: full.dataUrl,
@@ -885,7 +888,7 @@ async function createThumbnail(file: File) {
 }
 
 function saveImageToStorage(image: OptimizedImageData) {
-  showStorageWarningIfNeeded();
+  scheduleStorageWarningCheck();
   return image;
 }
 
@@ -2528,6 +2531,7 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
     console.log("[MJ画像追加] updated images length:", updatedImages.length, "cardId:", item.id);
     setImageMessage("");
     onUpdate({ images: updatedImages, imageUrl: imageSrc(updatedImages[0]) || "" });
+    scheduleStorageWarningCheck();
   };
   const removeImage = (index: number) => {
     const updatedImages = images.filter((_: any, imageIndex: number) => imageIndex !== index);
@@ -2815,6 +2819,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
       favorite: false,
     }));
     setImages((items: AtelierImage[]) => [...nextImages, ...items]);
+    scheduleStorageWarningCheck();
   };
   const updateImage = (id: string, patch: Partial<AtelierImage>) => {
     setImages((items: AtelierImage[]) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
@@ -2951,6 +2956,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
     }));
     setGalleryImages((items: AtelierImage[]) => [...nextImages, ...items]);
     nextImages.forEach(addJournalItem);
+    scheduleStorageWarningCheck();
   };
   const addBackgroundFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
@@ -2975,6 +2981,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
       customBackgrounds: [...nextBackgrounds, ...(current.customBackgrounds || [])],
       background: `custom-${nextBackgrounds[0].id}`,
     }));
+    scheduleStorageWarningCheck();
   };
   const updateBackground = (id: string, patch: Partial<AtelierImage>) => {
     setJournal((current: JournalState) => ({

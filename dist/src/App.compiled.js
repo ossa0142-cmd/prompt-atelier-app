@@ -830,6 +830,9 @@ function showStorageWarningIfNeeded() {
   sessionStorage.setItem(IMAGE_WARNING_KEY, "light");
   window.alert("画像データが増えています。バックアップや不要画像の整理をおすすめします。");
 }
+function scheduleStorageWarningCheck() {
+  window.setTimeout(showStorageWarningIfNeeded, 300);
+}
 function isStickerEffectOn(item) {
   if (!item) return false;
   return item.stickerEffect ?? item.sticker ?? true;
@@ -878,7 +881,6 @@ async function optimizeImage(file) {
   const image = await loadImageFromFile(file);
   const full = canvasDataUrl(image, 1200, 0.82);
   const thumbnail = canvasDataUrl(image, 360, 0.76);
-  showStorageWarningIfNeeded();
   return {
     id: uid(),
     src: full.dataUrl,
@@ -895,7 +897,7 @@ async function createThumbnail(file) {
   return canvasDataUrl(image, 360, 0.76).dataUrl;
 }
 function saveImageToStorage(image) {
-  showStorageWarningIfNeeded();
+  scheduleStorageWarningCheck();
   return image;
 }
 function clipboardImageFiles(event) {
@@ -2961,6 +2963,7 @@ function MJEditableCard({
       images: updatedImages,
       imageUrl: imageSrc(updatedImages[0]) || ""
     });
+    scheduleStorageWarningCheck();
   };
   const removeImage = index => {
     const updatedImages = images.filter((_, imageIndex) => imageIndex !== index);
@@ -3262,6 +3265,7 @@ function GalleryPage({
       favorite: false
     }));
     setImages(items => [...nextImages, ...items]);
+    scheduleStorageWarningCheck();
   };
   const updateImage = (id, patch) => {
     setImages(items => items.map(item => item.id === id ? {
@@ -3449,6 +3453,7 @@ function JournalPage({
     }));
     setGalleryImages(items => [...nextImages, ...items]);
     nextImages.forEach(addJournalItem);
+    scheduleStorageWarningCheck();
   };
   const addBackgroundFiles = async fileList => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
@@ -3473,6 +3478,7 @@ function JournalPage({
       customBackgrounds: [...nextBackgrounds, ...(current.customBackgrounds || [])],
       background: `custom-${nextBackgrounds[0].id}`
     }));
+    scheduleStorageWarningCheck();
   };
   const updateBackground = (id, patch) => {
     setJournal(current => ({
