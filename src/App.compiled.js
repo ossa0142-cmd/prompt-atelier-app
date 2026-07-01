@@ -324,18 +324,42 @@ const blankVideoPrompt = () => ({
   createdAt: ""
 });
 function initialVideoPrompts() {
+  return loadStoredVideoPrompts() || sampleVideos;
+}
+function loadStoredVideoPrompts() {
   try {
-    const saved = localStorage.getItem("promptAtelierVideoPrompts") || localStorage.getItem("promptAtelierVideos");
-    if (!saved) return sampleVideos;
-    const items = JSON.parse(saved);
-    return Array.isArray(items) ? items.map(item => ({
-      ...blankVideoPrompt(),
-      ...item,
-      model: item.model || "その他"
-    })) : sampleVideos;
+    const keys = ["promptAtelierVideoPrompts", "promptAtelierVideos", "promptAtelierVideoPromptBook", "videoPrompts"];
+    for (const key of keys) {
+      const saved = localStorage.getItem(key);
+      if (!saved) continue;
+      const items = JSON.parse(saved);
+      if (Array.isArray(items) && items.length) return items.map(normalizeVideoPrompt).slice(0, 20);
+    }
+    return null;
   } catch {
-    return sampleVideos;
+    return null;
   }
+}
+function normalizeVideoPrompt(item) {
+  const base = blankVideoPrompt();
+  const prompt = item?.prompt || item?.videoPrompt || item?.description || "";
+  const title = item?.title || prompt.slice(0, 28) || item?.memo || "動画プロンプト";
+  const tags = Array.isArray(item?.tags) ? item.tags : splitTags(item?.tags || "");
+  return {
+    ...base,
+    ...item,
+    id: item?.id || uid(),
+    title,
+    url: item?.url || item?.videoUrl || item?.link || "",
+    model: item?.model || item?.aiModel || "その他",
+    thumbnail: item?.thumbnail || item?.thumbnailUrl || item?.imageUrl || item?.image || "",
+    prompt,
+    memo: item?.memo || item?.note || "",
+    tags,
+    favorite: Boolean(item?.favorite),
+    createdAt: item?.createdAt || new Date().toISOString(),
+    updatedAt: item?.updatedAt || item?.createdAt || ""
+  };
 }
 const defaultHomeSettings = {
   themeId: "cute",
@@ -1325,6 +1349,11 @@ function App() {
     setToast("コピーしました");
     window.setTimeout(() => setToast(""), 1600);
   };
+  React.useEffect(() => {
+    if (videos.length) return;
+    const legacyVideos = loadStoredVideoPrompts();
+    if (legacyVideos?.length) setVideos(legacyVideos);
+  }, []);
   React.useEffect(() => {
     const message = sessionStorage.getItem("promptAtelierRestoreMessage");
     if (!message) return;
@@ -3920,10 +3949,7 @@ function VideoLibrary({
     window.alert("プロンプトをコピーしました");
   };
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
-  const normalizedVideos = videos.slice(0, 20).map(item => ({
-    ...blankVideoPrompt(),
-    ...item
-  }));
+  const normalizedVideos = videos.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter(item => {
     const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
     if (query && !haystack.includes(query.toLowerCase())) return false;
@@ -3931,9 +3957,10 @@ function VideoLibrary({
     if (favoriteOnly && !item.favorite) return false;
     return true;
   });
-  const slots = searchActive ? filteredVideos : [...normalizedVideos, ...Array.from({
-    length: Math.max(0, 20 - normalizedVideos.length)
-  }, () => null)];
+  const videoSlotCount = searchActive ? filteredVideos.length : normalizedVideos.length < 20 ? Math.max(8, Math.ceil((normalizedVideos.length + 1) / 4) * 4) : 20;
+  const slots = searchActive ? filteredVideos : Array.from({
+    length: videoSlotCount
+  }, (_, index) => normalizedVideos[index] || null);
   if (selectedId) {
     return /*#__PURE__*/React.createElement("section", {
       className: "page video-page",
@@ -4114,9 +4141,9 @@ function VideoLibrary({
   }, /*#__PURE__*/React.createElement("div", {
     className: "prompt-area-head"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "動画プロンプト"), /*#__PURE__*/React.createElement("p", null, "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
-    className: "video-grid"
+    className: "library-prompt-grid video-grid"
   }, slots.map((item, index) => item ? /*#__PURE__*/React.createElement("article", {
-    className: "video-card video-prompt-card",
+    className: "library-prompt-card video-card video-prompt-card",
     key: item.id,
     onClick: () => editVideo(item)
   }, /*#__PURE__*/React.createElement("button", {
@@ -4174,7 +4201,7 @@ function VideoLibrary({
     src: imageThumbnail(item.thumbnail),
     alt: ""
   }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null)), /*#__PURE__*/React.createElement("div", {
-    className: "video-card-body"
+    className: "prompt-card-content video-card-body"
   }, /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("p", null, item.prompt || item.memo || item.url), /*#__PURE__*/React.createElement("div", {
     className: "video-meta-row"
   }, /*#__PURE__*/React.createElement("span", {

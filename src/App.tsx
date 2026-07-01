@@ -280,14 +280,44 @@ const blankVideoPrompt = (): VideoItem => ({
 });
 
 function initialVideoPrompts() {
+  return loadStoredVideoPrompts() || sampleVideos;
+}
+
+function loadStoredVideoPrompts() {
   try {
-    const saved = localStorage.getItem("promptAtelierVideoPrompts") || localStorage.getItem("promptAtelierVideos");
-    if (!saved) return sampleVideos;
-    const items = JSON.parse(saved);
-    return Array.isArray(items) ? items.map((item) => ({ ...blankVideoPrompt(), ...item, model: item.model || "その他" })) : sampleVideos;
+    const keys = ["promptAtelierVideoPrompts", "promptAtelierVideos", "promptAtelierVideoPromptBook", "videoPrompts"];
+    for (const key of keys) {
+      const saved = localStorage.getItem(key);
+      if (!saved) continue;
+      const items = JSON.parse(saved);
+      if (Array.isArray(items) && items.length) return items.map(normalizeVideoPrompt).slice(0, 20);
+    }
+    return null;
   } catch {
-    return sampleVideos;
+    return null;
   }
+}
+
+function normalizeVideoPrompt(item: any): VideoItem {
+  const base = blankVideoPrompt();
+  const prompt = item?.prompt || item?.videoPrompt || item?.description || "";
+  const title = item?.title || prompt.slice(0, 28) || item?.memo || "動画プロンプト";
+  const tags = Array.isArray(item?.tags) ? item.tags : splitTags(item?.tags || "");
+  return {
+    ...base,
+    ...item,
+    id: item?.id || uid(),
+    title,
+    url: item?.url || item?.videoUrl || item?.link || "",
+    model: item?.model || item?.aiModel || "その他",
+    thumbnail: item?.thumbnail || item?.thumbnailUrl || item?.imageUrl || item?.image || "",
+    prompt,
+    memo: item?.memo || item?.note || "",
+    tags,
+    favorite: Boolean(item?.favorite),
+    createdAt: item?.createdAt || new Date().toISOString(),
+    updatedAt: item?.updatedAt || item?.createdAt || "",
+  };
 }
 
 const defaultHomeSettings: HomeSettings = {
@@ -1337,6 +1367,12 @@ function App() {
     setToast("コピーしました");
     window.setTimeout(() => setToast(""), 1600);
   };
+
+  React.useEffect(() => {
+    if ((videos as VideoItem[]).length) return;
+    const legacyVideos = loadStoredVideoPrompts();
+    if (legacyVideos?.length) setVideos(legacyVideos);
+  }, []);
 
   React.useEffect(() => {
     const message = sessionStorage.getItem("promptAtelierRestoreMessage");
@@ -3429,7 +3465,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
     window.alert("プロンプトをコピーしました");
   };
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
-  const normalizedVideos = (videos as VideoItem[]).slice(0, 20).map((item) => ({ ...blankVideoPrompt(), ...item }));
+  const normalizedVideos = (videos as VideoItem[]).slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter((item) => {
     const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
     if (query && !haystack.includes(query.toLowerCase())) return false;
@@ -3437,10 +3473,10 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
     if (favoriteOnly && !item.favorite) return false;
     return true;
   });
-  const slots = searchActive ? filteredVideos : [
-    ...normalizedVideos,
-    ...Array.from({ length: Math.max(0, 20 - normalizedVideos.length) }, () => null),
-  ];
+  const videoSlotCount = searchActive ? filteredVideos.length : (normalizedVideos.length < 20 ? Math.max(8, Math.ceil((normalizedVideos.length + 1) / 4) * 4) : 20);
+  const slots = searchActive
+    ? filteredVideos
+    : Array.from({ length: videoSlotCount }, (_, index) => normalizedVideos[index] || null);
   if (selectedId) {
     return (
       <section
@@ -3525,9 +3561,9 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
             <p>Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。</p>
           </div>
         </div>
-        <div className="video-grid">
+        <div className="library-prompt-grid video-grid">
           {slots.map((item: VideoItem | null, index: number) => item ? (
-            <article className="video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
+            <article className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
               <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
                 event.stopPropagation();
                 setVideos((items: VideoItem[]) => items.map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
@@ -3554,7 +3590,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
                   <img src={imageThumbnail(item.thumbnail)} alt="" />
                 ) : <VideoPlaceholder />}
               </button>
-              <div className="video-card-body">
+              <div className="prompt-card-content video-card-body">
                 <h3>{item.title}</h3>
                 <p>{item.prompt || item.memo || item.url}</p>
                 <div className="video-meta-row">

@@ -3368,7 +3368,7 @@ p {
 .video-favorite-button {
   position: absolute;
   top: 10px;
-  right: 10px;
+  left: 10px;
   z-index: 2;
   display: grid;
   width: 38px;
@@ -3384,7 +3384,8 @@ p {
 .video-card-menu {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
+  left: auto;
   z-index: 2;
 }
 
@@ -3455,11 +3456,11 @@ p {
 
 .video-card-body p {
   display: -webkit-box;
-  min-height: 60px;
+  min-height: 86px;
   margin-bottom: 0;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 5;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -3479,7 +3480,7 @@ p {
 .video-meta-row {
   display: grid;
   gap: 7px;
-  min-height: 58px;
+  min-height: 38px;
   align-content: start;
 }
 
