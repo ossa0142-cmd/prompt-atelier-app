@@ -141,6 +141,7 @@ type VideoItem = {
   id: string;
   title: string;
   url: string;
+  model: string;
   thumbnail?: string;
   prompt: string;
   memo: string;
@@ -264,6 +265,30 @@ const defaultJournal: JournalState = {
 };
 
 const sampleVideos: VideoItem[] = [];
+const videoModels = ["Runway", "Kling", "Veo", "Hailuo", "Pika", "Luma", "その他"];
+const blankVideoPrompt = (): VideoItem => ({
+  id: "",
+  title: "",
+  url: "",
+  model: "Runway",
+  thumbnail: "",
+  prompt: "",
+  memo: "",
+  tags: [],
+  favorite: false,
+  createdAt: "",
+});
+
+function initialVideoPrompts() {
+  try {
+    const saved = localStorage.getItem("promptAtelierVideoPrompts") || localStorage.getItem("promptAtelierVideos");
+    if (!saved) return sampleVideos;
+    const items = JSON.parse(saved);
+    return Array.isArray(items) ? items.map((item) => ({ ...blankVideoPrompt(), ...item, model: item.model || "その他" })) : sampleVideos;
+  } catch {
+    return sampleVideos;
+  }
+}
 
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
@@ -1293,7 +1318,7 @@ function App() {
   const [workTools, setWorkTools] = useStoredState<WorkTool[]>("promptAtelierWorkTools", defaultWorkTools);
   const [galleryImages, setGalleryImages] = useStoredState<AtelierImage[]>("promptAtelierGallery", sampleAtelierImages);
   const [journal, setJournal] = useStoredState<JournalState>("promptAtelierJournal", defaultJournal);
-  const [videos, setVideos] = useStoredState<VideoItem[]>("promptAtelierVideos", sampleVideos);
+  const [videos, setVideos] = useStoredState<VideoItem[]>("promptAtelierVideoPrompts", initialVideoPrompts());
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [, setImageCacheVersion] = React.useState(0);
@@ -3308,15 +3333,23 @@ function VideoPlaceholder() {
 function VideoLibrary({ videos, setVideos, setScreen }: any) {
   const thumbnailInputRef = React.useRef<HTMLInputElement | null>(null);
   const videoInputRef = React.useRef<HTMLInputElement | null>(null);
-  const [draft, setDraft] = React.useState<VideoItem>({ id: "", title: "", url: "", thumbnail: "", prompt: "", memo: "", tags: [], favorite: false, createdAt: "" });
+  const [draft, setDraft] = React.useState<VideoItem>(blankVideoPrompt());
   const [tagDraft, setTagDraft] = React.useState("");
   const [isThumbnailDragging, setIsThumbnailDragging] = React.useState(false);
-  const [previewId, setPreviewId] = React.useState("");
-  const preview = videos.find((item: VideoItem) => item.id === previewId) || null;
+  const [selectedId, setSelectedId] = React.useState("");
+  const [query, setQuery] = React.useState("");
+  const [modelFilter, setModelFilter] = React.useState("すべて");
+  const [favoriteOnly, setFavoriteOnly] = React.useState(false);
   const updateDraft = (patch: Partial<VideoItem>) => setDraft((current) => ({ ...current, ...patch }));
   const resetDraft = () => {
-    setDraft({ id: "", title: "", url: "", thumbnail: "", prompt: "", memo: "", tags: [], favorite: false, createdAt: "" });
+    setDraft(blankVideoPrompt());
     setTagDraft("");
+    setSelectedId("");
+  };
+  const openNewVideo = () => {
+    setDraft(blankVideoPrompt());
+    setTagDraft("");
+    setSelectedId("new");
   };
   const saveVideo = () => {
     const now = new Date().toISOString();
@@ -3326,6 +3359,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
       id: draft.id || uid(),
       title: draft.title.trim() || "動画プロンプト",
       url: draft.url.trim(),
+      model: draft.model || "その他",
       prompt: draft.prompt || "",
       memo: draft.memo || "",
       tags,
@@ -3337,18 +3371,24 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
       window.alert("動画URLを入力してください");
       return;
     }
-    setVideos((items: VideoItem[]) => draft.id ? items.map((item) => item.id === draft.id ? next : item) : [next, ...items]);
-    resetDraft();
+    if (!draft.id && videos.length >= 20) {
+      window.alert("動画プロンプトは最大20件まで保存できます");
+      return;
+    }
+    setVideos((items: VideoItem[]) => draft.id ? items.map((item) => item.id === draft.id ? next : item) : [next, ...items].slice(0, 20));
+    setDraft(next);
+    setSelectedId(next.id);
+    setTagDraft(tagText(next.tags));
   };
   const editVideo = (item: VideoItem) => {
-    setDraft({ prompt: "", tags: [], favorite: false, ...item });
+    setDraft({ ...blankVideoPrompt(), ...item });
     setTagDraft(tagText(item.tags || []));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setSelectedId(item.id);
   };
   const deleteVideo = (id: string) => {
-    if (!window.confirm("この動画メモを削除しますか？")) return;
+    if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
     setVideos((items: VideoItem[]) => items.filter((item) => item.id !== id));
-    if (previewId === id) setPreviewId("");
+    resetDraft();
   };
   const importThumbnail = async (file?: File) => {
     if (!file) return;
@@ -3376,117 +3416,137 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
   const openVideo = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
+  const copyPrompt = async () => {
+    if (!draft.prompt.trim()) return;
+    await navigator.clipboard.writeText(draft.prompt);
+    window.alert("プロンプトをコピーしました");
+  };
+  const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
+  const normalizedVideos = (videos as VideoItem[]).slice(0, 20).map((item) => ({ ...blankVideoPrompt(), ...item }));
+  const filteredVideos = normalizedVideos.filter((item) => {
+    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
+    if (query && !haystack.includes(query.toLowerCase())) return false;
+    if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
+    if (favoriteOnly && !item.favorite) return false;
+    return true;
+  });
+  const slots = searchActive ? filteredVideos : [
+    ...normalizedVideos,
+    ...Array.from({ length: Math.max(0, 20 - normalizedVideos.length) }, () => null),
+  ];
+  if (selectedId) {
+    return (
+      <section
+        className="page video-page"
+        tabIndex={0}
+        onPaste={(event) => {
+          const files = clipboardImageFiles(event);
+          if (!files.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          importThumbnail(files[0]);
+        }}
+      >
+        <PageHead
+          title={draft.id ? "動画プロンプトを編集" : "新しい動画プロンプト"}
+          action={<button onClick={resetDraft}>一覧へ戻る</button>}
+        />
+        <div className="video-detail-editor">
+          <div className="video-detail-form">
+            <label>タイトル<input value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="タイトル" /></label>
+            <label>動画URL<input value={draft.url} onChange={(event) => updateDraft({ url: event.target.value })} placeholder="YouTube / Google Drive / Runway などのURL" /></label>
+            <label>使用モデル<select value={draft.model} onChange={(event) => updateDraft({ model: event.target.value })}>{videoModels.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+            <label>動画プロンプト<textarea className="video-prompt-input" value={draft.prompt} onChange={(event) => updateDraft({ prompt: event.target.value })} placeholder="動画生成プロンプト" /></label>
+            <label>メモ<textarea value={draft.memo} onChange={(event) => updateDraft({ memo: event.target.value })} placeholder="メモ" /></label>
+            <label>タグ<input value={tagDraft} onChange={(event) => setTagDraft(event.target.value)} placeholder="cinematic, camera move, product demo" /></label>
+            <label className="check"><input type="checkbox" checked={Boolean(draft.favorite)} onChange={(event) => updateDraft({ favorite: event.target.checked })} /> お気に入り</label>
+          </div>
+          <aside className="video-thumbnail-panel">
+            <div
+              className={`video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`}
+              onClick={() => thumbnailInputRef.current?.click()}
+              onDragEnter={(event) => { event.preventDefault(); event.stopPropagation(); setIsThumbnailDragging(true); }}
+              onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); setIsThumbnailDragging(true); }}
+              onDragLeave={(event) => { event.preventDefault(); event.stopPropagation(); setIsThumbnailDragging(false); }}
+              onDrop={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setIsThumbnailDragging(false);
+                importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
+              }}
+            >
+              {draft.thumbnail ? <img src={imageThumbnail(draft.thumbnail)} alt="" /> : <VideoPlaceholder />}
+              <small>クリック・ドロップ・貼り付けでサムネイル追加</small>
+            </div>
+            <div className="video-thumbnail-tools">
+              <button type="button" onClick={() => thumbnailInputRef.current?.click()}>画像を選ぶ</button>
+              <button type="button" onClick={() => videoInputRef.current?.click()}>動画からサムネイル生成</button>
+              <button type="button" onClick={() => updateDraft({ thumbnail: "" })}>削除</button>
+            </div>
+            <input ref={thumbnailInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: "none" }} onChange={(event) => { importThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+            <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style={{ display: "none" }} onChange={(event) => { importVideoThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+          </aside>
+        </div>
+        <div className="video-detail-actions">
+          <button onClick={copyPrompt} disabled={!draft.prompt.trim()}>📋 プロンプトをコピー</button>
+          <button onClick={() => openVideo(draft.url)} disabled={!draft.url.trim()}>動画URLを開く</button>
+          <button className="primary" onClick={saveVideo}>保存する</button>
+          {draft.id && <button className="danger" onClick={() => deleteVideo(draft.id)}>削除</button>}
+          <button onClick={resetDraft}>一覧へ戻る</button>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="page video-page">
       <PageHead
         title="動画プロンプト帳"
-        action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button onClick={() => setScreen("gallery")}>ギャラリーへ</button></div>}
+        action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button className="primary" onClick={openNewVideo} disabled={videos.length >= 20}>追加する</button></div>}
       />
-      <div className="video-editor-card">
-        <div>
-          <h3>{draft.id ? "動画プロンプトを編集" : "動画プロンプトを追加"}</h3>
-          <p>Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを、URLとサムネイルで軽く管理します。</p>
-        </div>
-        <div className="video-form-grid">
-          <input value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="タイトル" />
-          <input value={draft.url} onChange={(event) => updateDraft({ url: event.target.value })} placeholder="動画URL" />
-          <textarea value={draft.prompt} onChange={(event) => updateDraft({ prompt: event.target.value })} placeholder="動画プロンプト" />
-          <textarea value={draft.memo} onChange={(event) => updateDraft({ memo: event.target.value })} placeholder="メモ" />
-          <input value={tagDraft} onChange={(event) => setTagDraft(event.target.value)} placeholder="タグ（カンマ区切り）" />
-          <input value={draft.thumbnail || ""} onChange={(event) => updateDraft({ thumbnail: event.target.value })} placeholder="サムネイル画像URL、またはアップロード" />
-        </div>
-        <div className="video-thumbnail-tools">
-          <button type="button" onClick={() => thumbnailInputRef.current?.click()}>サムネイル画像を選ぶ</button>
-          <button type="button" onClick={() => videoInputRef.current?.click()}>動画からサムネイル生成</button>
-          <button type="button" onClick={() => updateDraft({ thumbnail: "" })}>サムネイル削除</button>
-          <input
-            ref={thumbnailInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            style={{ display: "none" }}
-            onChange={(event) => {
-              importThumbnail(event.currentTarget.files?.[0]);
-              event.currentTarget.value = "";
-            }}
-          />
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*"
-            style={{ display: "none" }}
-            onChange={(event) => {
-              importVideoThumbnail(event.currentTarget.files?.[0]);
-              event.currentTarget.value = "";
-            }}
-          />
-        </div>
-        <label className="check"><input type="checkbox" checked={Boolean(draft.favorite)} onChange={(event) => updateDraft({ favorite: event.target.checked })} /> お気に入り</label>
-        <div
-          className={`video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`}
-          onClick={() => thumbnailInputRef.current?.click()}
-          onDragEnter={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsThumbnailDragging(true);
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsThumbnailDragging(true);
-          }}
-          onDragLeave={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsThumbnailDragging(false);
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsThumbnailDragging(false);
-            importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
-          }}
-        >
-          {draft.thumbnail ? <img src={imageThumbnail(draft.thumbnail)} alt="" /> : <VideoPlaceholder />}
-          <small>クリックまたはドロップでサムネイル追加</small>
-        </div>
-        <div className="modal-actions">
-          <button onClick={resetDraft}>クリア</button>
-          <button className="primary" onClick={saveVideo}>{draft.id ? "保存する" : "追加する"}</button>
-        </div>
+      <div className="video-filter-bar">
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="タイトル、プロンプト、メモ、タグで検索..." />
+        <select value={modelFilter} onChange={(event) => setModelFilter(event.target.value)}>
+          <option>すべて</option>
+          {videoModels.map((model) => <option key={model}>{model}</option>)}
+        </select>
+        <label className="check"><input type="checkbox" checked={favoriteOnly} onChange={(event) => setFavoriteOnly(event.target.checked)} /> お気に入りのみ</label>
       </div>
-      {videos.length ? (
-        <div className="video-grid">
-          {videos.map((item: VideoItem) => (
-            <article className="video-card" key={item.id}>
-              <button className="video-favorite-button" aria-label="お気に入り" onClick={() => setVideos((items: VideoItem[]) => items.map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video))}>
+      <div className="video-grid">
+        {slots.map((item: VideoItem | null, index: number) => item ? (
+          <article className="video-card video-prompt-card" key={item.id}>
+            <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
+              event.stopPropagation();
+              setVideos((items: VideoItem[]) => items.map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
+            }}>
                 {item.favorite ? "♥" : "♡"}
               </button>
-              <button className="video-thumb-button" onClick={() => setPreviewId(item.id)}>
+            <details className="card-menu video-card-menu" onClick={(event) => event.stopPropagation()}>
+              <summary aria-label="メニュー">…</summary>
+              <div>
+                <button onClick={(event) => { event.preventDefault(); editVideo(item); }}>編集</button>
+                <button onClick={(event) => { event.preventDefault(); setVideos((items: VideoItem[]) => [{ ...item, id: uid(), title: `${item.title} コピー`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...items].slice(0, 20)); }}>複製</button>
+                <button className="danger" onClick={(event) => { event.preventDefault(); deleteVideo(item.id); }}>削除</button>
+              </div>
+            </details>
+            <button className="video-thumb-button" onClick={() => editVideo(item)}>
                 {item.thumbnail ? <img src={imageThumbnail(item.thumbnail)} alt="" /> : <VideoPlaceholder />}
               </button>
-            </article>
-          ))}
-        </div>
-      ) : <Empty text="動画URLを追加すると、ここに動画メモが表示されます。" />}
-      {preview && (
-        <Modal title={preview.title} onClose={() => setPreviewId("")}>
-          <div className="video-detail-modal">
-            {preview.thumbnail ? <img src={imageSrc(preview.thumbnail)} alt="" /> : <VideoPlaceholder />}
-            {isPlayableVideoUrl(preview.url) && <video src={preview.url} controls preload="metadata" />}
-            <label className="check"><input type="checkbox" checked={Boolean(preview.favorite)} onChange={(event) => setVideos((items: VideoItem[]) => items.map((video) => video.id === preview.id ? { ...video, favorite: event.target.checked } : video))} /> お気に入り</label>
-            {preview.prompt && <textarea value={preview.prompt} readOnly />}
-            <p>{preview.memo || "メモはありません。"}</p>
-            {!!(preview.tags || []).length && <div className="video-tags">{preview.tags.map((tag) => <span key={tag}>#{tag}</span>)}</div>}
-            <small>{preview.url}</small>
-            <div className="modal-actions">
-              <button onClick={() => openVideo(preview.url)}>動画URLを開く</button>
-              <button onClick={() => editVideo(preview)}>編集</button>
-              <button className="danger" onClick={() => deleteVideo(preview.id)}>削除</button>
-              <button className="primary" onClick={() => setPreviewId("")}>閉じる</button>
-            </div>
-          </div>
-        </Modal>
-      )}
+            <button className="video-card-body video-card-open" onClick={() => editVideo(item)}>
+              <h3>{item.title}</h3>
+              <p>{item.prompt || item.memo || item.url}</p>
+              <span className="mini-pill">{item.model || "その他"}</span>
+              {!!(item.tags || []).length && <div className="video-tags">{item.tags.slice(0, 3).map((tag) => <span key={tag}>#{tag}</span>)}</div>}
+            </button>
+          </article>
+        ) : (
+          <button className="video-add-card" key={`empty-${index}`} onClick={openNewVideo} disabled={videos.length >= 20}>
+            <span>＋</span>
+            <strong>新しい動画プロンプト</strong>
+          </button>
+        ))}
+      </div>
+      {!searchActive && videos.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
+      {searchActive && !filteredVideos.length && <Empty text="条件に合う動画プロンプトがありません。" />}
     </section>
   );
 }

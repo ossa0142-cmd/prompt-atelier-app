@@ -310,6 +310,33 @@ const defaultJournal = {
   items: []
 };
 const sampleVideos = [];
+const videoModels = ["Runway", "Kling", "Veo", "Hailuo", "Pika", "Luma", "その他"];
+const blankVideoPrompt = () => ({
+  id: "",
+  title: "",
+  url: "",
+  model: "Runway",
+  thumbnail: "",
+  prompt: "",
+  memo: "",
+  tags: [],
+  favorite: false,
+  createdAt: ""
+});
+function initialVideoPrompts() {
+  try {
+    const saved = localStorage.getItem("promptAtelierVideoPrompts") || localStorage.getItem("promptAtelierVideos");
+    if (!saved) return sampleVideos;
+    const items = JSON.parse(saved);
+    return Array.isArray(items) ? items.map(item => ({
+      ...blankVideoPrompt(),
+      ...item,
+      model: item.model || "その他"
+    })) : sampleVideos;
+  } catch {
+    return sampleVideos;
+  }
+}
 const defaultHomeSettings = {
   themeId: "cute",
   bannerImageUrl: "",
@@ -1281,7 +1308,7 @@ function App() {
   const [workTools, setWorkTools] = useStoredState("promptAtelierWorkTools", defaultWorkTools);
   const [galleryImages, setGalleryImages] = useStoredState("promptAtelierGallery", sampleAtelierImages);
   const [journal, setJournal] = useStoredState("promptAtelierJournal", defaultJournal);
-  const [videos, setVideos] = useStoredState("promptAtelierVideos", sampleVideos);
+  const [videos, setVideos] = useStoredState("promptAtelierVideoPrompts", initialVideoPrompts());
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [, setImageCacheVersion] = React.useState(0);
@@ -3789,38 +3816,26 @@ function VideoLibrary({
 }) {
   const thumbnailInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
-  const [draft, setDraft] = React.useState({
-    id: "",
-    title: "",
-    url: "",
-    thumbnail: "",
-    prompt: "",
-    memo: "",
-    tags: [],
-    favorite: false,
-    createdAt: ""
-  });
+  const [draft, setDraft] = React.useState(blankVideoPrompt());
   const [tagDraft, setTagDraft] = React.useState("");
   const [isThumbnailDragging, setIsThumbnailDragging] = React.useState(false);
-  const [previewId, setPreviewId] = React.useState("");
-  const preview = videos.find(item => item.id === previewId) || null;
+  const [selectedId, setSelectedId] = React.useState("");
+  const [query, setQuery] = React.useState("");
+  const [modelFilter, setModelFilter] = React.useState("すべて");
+  const [favoriteOnly, setFavoriteOnly] = React.useState(false);
   const updateDraft = patch => setDraft(current => ({
     ...current,
     ...patch
   }));
   const resetDraft = () => {
-    setDraft({
-      id: "",
-      title: "",
-      url: "",
-      thumbnail: "",
-      prompt: "",
-      memo: "",
-      tags: [],
-      favorite: false,
-      createdAt: ""
-    });
+    setDraft(blankVideoPrompt());
     setTagDraft("");
+    setSelectedId("");
+  };
+  const openNewVideo = () => {
+    setDraft(blankVideoPrompt());
+    setTagDraft("");
+    setSelectedId("new");
   };
   const saveVideo = () => {
     const now = new Date().toISOString();
@@ -3830,6 +3845,7 @@ function VideoLibrary({
       id: draft.id || uid(),
       title: draft.title.trim() || "動画プロンプト",
       url: draft.url.trim(),
+      model: draft.model || "その他",
       prompt: draft.prompt || "",
       memo: draft.memo || "",
       tags,
@@ -3841,26 +3857,27 @@ function VideoLibrary({
       window.alert("動画URLを入力してください");
       return;
     }
-    setVideos(items => draft.id ? items.map(item => item.id === draft.id ? next : item) : [next, ...items]);
-    resetDraft();
+    if (!draft.id && videos.length >= 20) {
+      window.alert("動画プロンプトは最大20件まで保存できます");
+      return;
+    }
+    setVideos(items => draft.id ? items.map(item => item.id === draft.id ? next : item) : [next, ...items].slice(0, 20));
+    setDraft(next);
+    setSelectedId(next.id);
+    setTagDraft(tagText(next.tags));
   };
   const editVideo = item => {
     setDraft({
-      prompt: "",
-      tags: [],
-      favorite: false,
+      ...blankVideoPrompt(),
       ...item
     });
     setTagDraft(tagText(item.tags || []));
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
+    setSelectedId(item.id);
   };
   const deleteVideo = id => {
-    if (!window.confirm("この動画メモを削除しますか？")) return;
+    if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
     setVideos(items => items.filter(item => item.id !== id));
-    if (previewId === id) setPreviewId("");
+    resetDraft();
   };
   const importThumbnail = async file => {
     if (!file) return;
@@ -3890,6 +3907,173 @@ function VideoLibrary({
   const openVideo = url => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
+  const copyPrompt = async () => {
+    if (!draft.prompt.trim()) return;
+    await navigator.clipboard.writeText(draft.prompt);
+    window.alert("プロンプトをコピーしました");
+  };
+  const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
+  const normalizedVideos = videos.slice(0, 20).map(item => ({
+    ...blankVideoPrompt(),
+    ...item
+  }));
+  const filteredVideos = normalizedVideos.filter(item => {
+    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
+    if (query && !haystack.includes(query.toLowerCase())) return false;
+    if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
+    if (favoriteOnly && !item.favorite) return false;
+    return true;
+  });
+  const slots = searchActive ? filteredVideos : [...normalizedVideos, ...Array.from({
+    length: Math.max(0, 20 - normalizedVideos.length)
+  }, () => null)];
+  if (selectedId) {
+    return /*#__PURE__*/React.createElement("section", {
+      className: "page video-page",
+      tabIndex: 0,
+      onPaste: event => {
+        const files = clipboardImageFiles(event);
+        if (!files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        importThumbnail(files[0]);
+      }
+    }, /*#__PURE__*/React.createElement(PageHead, {
+      title: draft.id ? "動画プロンプトを編集" : "新しい動画プロンプト",
+      action: /*#__PURE__*/React.createElement("button", {
+        onClick: resetDraft
+      }, "一覧へ戻る")
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "video-detail-editor"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "video-detail-form"
+    }, /*#__PURE__*/React.createElement("label", null, "タイトル", /*#__PURE__*/React.createElement("input", {
+      value: draft.title,
+      onChange: event => updateDraft({
+        title: event.target.value
+      }),
+      placeholder: "タイトル"
+    })), /*#__PURE__*/React.createElement("label", null, "動画URL", /*#__PURE__*/React.createElement("input", {
+      value: draft.url,
+      onChange: event => updateDraft({
+        url: event.target.value
+      }),
+      placeholder: "YouTube / Google Drive / Runway などのURL"
+    })), /*#__PURE__*/React.createElement("label", null, "使用モデル", /*#__PURE__*/React.createElement("select", {
+      value: draft.model,
+      onChange: event => updateDraft({
+        model: event.target.value
+      })
+    }, videoModels.map(model => /*#__PURE__*/React.createElement("option", {
+      key: model,
+      value: model
+    }, model)))), /*#__PURE__*/React.createElement("label", null, "動画プロンプト", /*#__PURE__*/React.createElement("textarea", {
+      className: "video-prompt-input",
+      value: draft.prompt,
+      onChange: event => updateDraft({
+        prompt: event.target.value
+      }),
+      placeholder: "動画生成プロンプト"
+    })), /*#__PURE__*/React.createElement("label", null, "メモ", /*#__PURE__*/React.createElement("textarea", {
+      value: draft.memo,
+      onChange: event => updateDraft({
+        memo: event.target.value
+      }),
+      placeholder: "メモ"
+    })), /*#__PURE__*/React.createElement("label", null, "タグ", /*#__PURE__*/React.createElement("input", {
+      value: tagDraft,
+      onChange: event => setTagDraft(event.target.value),
+      placeholder: "cinematic, camera move, product demo"
+    })), /*#__PURE__*/React.createElement("label", {
+      className: "check"
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      checked: Boolean(draft.favorite),
+      onChange: event => updateDraft({
+        favorite: event.target.checked
+      })
+    }), " お気に入り")), /*#__PURE__*/React.createElement("aside", {
+      className: "video-thumbnail-panel"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: `video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`,
+      onClick: () => thumbnailInputRef.current?.click(),
+      onDragEnter: event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsThumbnailDragging(true);
+      },
+      onDragOver: event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsThumbnailDragging(true);
+      },
+      onDragLeave: event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsThumbnailDragging(false);
+      },
+      onDrop: event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsThumbnailDragging(false);
+        importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
+      }
+    }, draft.thumbnail ? /*#__PURE__*/React.createElement("img", {
+      src: imageThumbnail(draft.thumbnail),
+      alt: ""
+    }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null), /*#__PURE__*/React.createElement("small", null, "クリック・ドロップ・貼り付けでサムネイル追加")), /*#__PURE__*/React.createElement("div", {
+      className: "video-thumbnail-tools"
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => thumbnailInputRef.current?.click()
+    }, "画像を選ぶ"), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => videoInputRef.current?.click()
+    }, "動画からサムネイル生成"), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => updateDraft({
+        thumbnail: ""
+      })
+    }, "削除")), /*#__PURE__*/React.createElement("input", {
+      ref: thumbnailInputRef,
+      type: "file",
+      accept: "image/png,image/jpeg,image/webp",
+      style: {
+        display: "none"
+      },
+      onChange: event => {
+        importThumbnail(event.currentTarget.files?.[0]);
+        event.currentTarget.value = "";
+      }
+    }), /*#__PURE__*/React.createElement("input", {
+      ref: videoInputRef,
+      type: "file",
+      accept: "video/mp4,video/webm,video/ogg,video/quicktime,video/*",
+      style: {
+        display: "none"
+      },
+      onChange: event => {
+        importVideoThumbnail(event.currentTarget.files?.[0]);
+        event.currentTarget.value = "";
+      }
+    }))), /*#__PURE__*/React.createElement("div", {
+      className: "video-detail-actions"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: copyPrompt,
+      disabled: !draft.prompt.trim()
+    }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => openVideo(draft.url),
+      disabled: !draft.url.trim()
+    }, "動画URLを開く"), /*#__PURE__*/React.createElement("button", {
+      className: "primary",
+      onClick: saveVideo
+    }, "保存する"), draft.id && /*#__PURE__*/React.createElement("button", {
+      className: "danger",
+      onClick: () => deleteVideo(draft.id)
+    }, "削除"), /*#__PURE__*/React.createElement("button", {
+      onClick: resetDraft
+    }, "一覧へ戻る")));
+  }
   return /*#__PURE__*/React.createElement("section", {
     className: "page video-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -3899,184 +4083,94 @@ function VideoLibrary({
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => setScreen("home")
     }, "ホームへ"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setScreen("gallery")
-    }, "ギャラリーへ"))
+      className: "primary",
+      onClick: openNewVideo,
+      disabled: videos.length >= 20
+    }, "追加する"))
   }), /*#__PURE__*/React.createElement("div", {
-    className: "video-editor-card"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, draft.id ? "動画プロンプトを編集" : "動画プロンプトを追加"), /*#__PURE__*/React.createElement("p", null, "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを、URLとサムネイルで軽く管理します。")), /*#__PURE__*/React.createElement("div", {
-    className: "video-form-grid"
+    className: "video-filter-bar"
   }, /*#__PURE__*/React.createElement("input", {
-    value: draft.title,
-    onChange: event => updateDraft({
-      title: event.target.value
-    }),
-    placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.url,
-    onChange: event => updateDraft({
-      url: event.target.value
-    }),
-    placeholder: "動画URL"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.prompt,
-    onChange: event => updateDraft({
-      prompt: event.target.value
-    }),
-    placeholder: "動画プロンプト"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.memo,
-    onChange: event => updateDraft({
-      memo: event.target.value
-    }),
-    placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: tagDraft,
-    onChange: event => setTagDraft(event.target.value),
-    placeholder: "タグ（カンマ区切り）"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.thumbnail || "",
-    onChange: event => updateDraft({
-      thumbnail: event.target.value
-    }),
-    placeholder: "サムネイル画像URL、またはアップロード"
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "video-thumbnail-tools"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => thumbnailInputRef.current?.click()
-  }, "サムネイル画像を選ぶ"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => videoInputRef.current?.click()
-  }, "動画からサムネイル生成"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => updateDraft({
-      thumbnail: ""
-    })
-  }, "サムネイル削除"), /*#__PURE__*/React.createElement("input", {
-    ref: thumbnailInputRef,
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    style: {
-      display: "none"
-    },
-    onChange: event => {
-      importThumbnail(event.currentTarget.files?.[0]);
-      event.currentTarget.value = "";
-    }
-  }), /*#__PURE__*/React.createElement("input", {
-    ref: videoInputRef,
-    type: "file",
-    accept: "video/mp4,video/webm,video/ogg,video/quicktime,video/*",
-    style: {
-      display: "none"
-    },
-    onChange: event => {
-      importVideoThumbnail(event.currentTarget.files?.[0]);
-      event.currentTarget.value = "";
-    }
-  })), /*#__PURE__*/React.createElement("label", {
+    value: query,
+    onChange: event => setQuery(event.target.value),
+    placeholder: "タイトル、プロンプト、メモ、タグで検索..."
+  }), /*#__PURE__*/React.createElement("select", {
+    value: modelFilter,
+    onChange: event => setModelFilter(event.target.value)
+  }, /*#__PURE__*/React.createElement("option", null, "すべて"), videoModels.map(model => /*#__PURE__*/React.createElement("option", {
+    key: model
+  }, model))), /*#__PURE__*/React.createElement("label", {
     className: "check"
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
-    checked: Boolean(draft.favorite),
-    onChange: event => updateDraft({
-      favorite: event.target.checked
-    })
-  }), " お気に入り"), /*#__PURE__*/React.createElement("div", {
-    className: `video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`,
-    onClick: () => thumbnailInputRef.current?.click(),
-    onDragEnter: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsThumbnailDragging(true);
-    },
-    onDragOver: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsThumbnailDragging(true);
-    },
-    onDragLeave: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsThumbnailDragging(false);
-    },
-    onDrop: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsThumbnailDragging(false);
-      importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
-    }
-  }, draft.thumbnail ? /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(draft.thumbnail),
-    alt: ""
-  }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null), /*#__PURE__*/React.createElement("small", null, "クリックまたはドロップでサムネイル追加")), /*#__PURE__*/React.createElement("div", {
-    className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: resetDraft
-  }, "クリア"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: saveVideo
-  }, draft.id ? "保存する" : "追加する"))), videos.length ? /*#__PURE__*/React.createElement("div", {
+    checked: favoriteOnly,
+    onChange: event => setFavoriteOnly(event.target.checked)
+  }), " お気に入りのみ")), /*#__PURE__*/React.createElement("div", {
     className: "video-grid"
-  }, videos.map(item => /*#__PURE__*/React.createElement("article", {
-    className: "video-card",
+  }, slots.map((item, index) => item ? /*#__PURE__*/React.createElement("article", {
+    className: "video-card video-prompt-card",
     key: item.id
   }, /*#__PURE__*/React.createElement("button", {
     className: "video-favorite-button",
     "aria-label": "お気に入り",
-    onClick: () => setVideos(items => items.map(video => video.id === item.id ? {
-      ...video,
-      favorite: !video.favorite
-    } : video))
-  }, item.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("button", {
+    onClick: event => {
+      event.stopPropagation();
+      setVideos(items => items.map(video => video.id === item.id ? {
+        ...video,
+        favorite: !video.favorite
+      } : video));
+    }
+  }, item.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("details", {
+    className: "card-menu video-card-menu",
+    onClick: event => event.stopPropagation()
+  }, /*#__PURE__*/React.createElement("summary", {
+    "aria-label": "メニュー"
+  }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    onClick: event => {
+      event.preventDefault();
+      editVideo(item);
+    }
+  }, "編集"), /*#__PURE__*/React.createElement("button", {
+    onClick: event => {
+      event.preventDefault();
+      setVideos(items => [{
+        ...item,
+        id: uid(),
+        title: `${item.title} コピー`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, ...items].slice(0, 20));
+    }
+  }, "複製"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: event => {
+      event.preventDefault();
+      deleteVideo(item.id);
+    }
+  }, "削除"))), /*#__PURE__*/React.createElement("button", {
     className: "video-thumb-button",
-    onClick: () => setPreviewId(item.id)
+    onClick: () => editVideo(item)
   }, item.thumbnail ? /*#__PURE__*/React.createElement("img", {
     src: imageThumbnail(item.thumbnail),
     alt: ""
-  }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null))))) : /*#__PURE__*/React.createElement(Empty, {
-    text: "動画URLを追加すると、ここに動画メモが表示されます。"
-  }), preview && /*#__PURE__*/React.createElement(Modal, {
-    title: preview.title,
-    onClose: () => setPreviewId("")
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "video-detail-modal"
-  }, preview.thumbnail ? /*#__PURE__*/React.createElement("img", {
-    src: imageSrc(preview.thumbnail),
-    alt: ""
-  }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null), isPlayableVideoUrl(preview.url) && /*#__PURE__*/React.createElement("video", {
-    src: preview.url,
-    controls: true,
-    preload: "metadata"
-  }), /*#__PURE__*/React.createElement("label", {
-    className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: Boolean(preview.favorite),
-    onChange: event => setVideos(items => items.map(video => video.id === preview.id ? {
-      ...video,
-      favorite: event.target.checked
-    } : video))
-  }), " お気に入り"), preview.prompt && /*#__PURE__*/React.createElement("textarea", {
-    value: preview.prompt,
-    readOnly: true
-  }), /*#__PURE__*/React.createElement("p", null, preview.memo || "メモはありません。"), !!(preview.tags || []).length && /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null)), /*#__PURE__*/React.createElement("button", {
+    className: "video-card-body video-card-open",
+    onClick: () => editVideo(item)
+  }, /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("p", null, item.prompt || item.memo || item.url), /*#__PURE__*/React.createElement("span", {
+    className: "mini-pill"
+  }, item.model || "その他"), !!(item.tags || []).length && /*#__PURE__*/React.createElement("div", {
     className: "video-tags"
-  }, preview.tags.map(tag => /*#__PURE__*/React.createElement("span", {
+  }, item.tags.slice(0, 3).map(tag => /*#__PURE__*/React.createElement("span", {
     key: tag
-  }, "#", tag))), /*#__PURE__*/React.createElement("small", null, preview.url), /*#__PURE__*/React.createElement("div", {
-    className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => openVideo(preview.url)
-  }, "動画URLを開く"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => editVideo(preview)
-  }, "編集"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: () => deleteVideo(preview.id)
-  }, "削除"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => setPreviewId("")
-  }, "閉じる")))));
+  }, "#", tag))))) : /*#__PURE__*/React.createElement("button", {
+    className: "video-add-card",
+    key: `empty-${index}`,
+    onClick: openNewVideo,
+    disabled: videos.length >= 20
+  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しい動画プロンプト")))), !searchActive && videos.length >= 20 && /*#__PURE__*/React.createElement("p", {
+    className: "limit-message"
+  }, "動画プロンプトは最大20件まで保存できます"), searchActive && !filteredVideos.length && /*#__PURE__*/React.createElement(Empty, {
+    text: "条件に合う動画プロンプトがありません。"
+  }));
 }
 function JournalPage({
   images,
