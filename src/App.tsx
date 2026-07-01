@@ -3319,7 +3319,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
 }
 
 function isPlayableVideoUrl(url: string) {
-  return /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+  return /\.(mp4|webm)(\?.*)?$/i.test(url);
 }
 
 function VideoPlaceholder() {
@@ -3340,6 +3340,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
   const [query, setQuery] = React.useState("");
   const [modelFilter, setModelFilter] = React.useState("すべて");
   const [favoriteOnly, setFavoriteOnly] = React.useState(false);
+  const [hoverVideoId, setHoverVideoId] = React.useState("");
   const updateDraft = (patch: Partial<VideoItem>) => setDraft((current) => ({ ...current, ...patch }));
   const resetDraft = () => {
     setDraft(blankVideoPrompt());
@@ -3419,6 +3420,12 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
   const copyPrompt = async () => {
     if (!draft.prompt.trim()) return;
     await navigator.clipboard.writeText(draft.prompt);
+    window.alert("プロンプトをコピーしました");
+  };
+  const copyVideoPrompt = async (item: VideoItem, event: any) => {
+    event.stopPropagation();
+    if (!item.prompt.trim()) return;
+    await navigator.clipboard.writeText(item.prompt);
     window.alert("プロンプトをコピーしました");
   };
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
@@ -3501,7 +3508,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
     <section className="page video-page">
       <PageHead
         title="動画プロンプト帳"
-        action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button className="primary" onClick={openNewVideo} disabled={videos.length >= 20}>追加する</button></div>}
+        action={<div className="actions"><span className="prompt-count-pill">{normalizedVideos.length} / 20</span><button onClick={() => setScreen("home")}>ホームへ</button></div>}
       />
       <div className="video-filter-bar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="タイトル、プロンプト、メモ、タグで検索..." />
@@ -3511,42 +3518,65 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
         </select>
         <label className="check"><input type="checkbox" checked={favoriteOnly} onChange={(event) => setFavoriteOnly(event.target.checked)} /> お気に入りのみ</label>
       </div>
-      <div className="video-grid">
-        {slots.map((item: VideoItem | null, index: number) => item ? (
-          <article className="video-card video-prompt-card" key={item.id}>
-            <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
-              event.stopPropagation();
-              setVideos((items: VideoItem[]) => items.map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
-            }}>
+      <section className="prompt-area video-prompt-area">
+        <div className="prompt-area-head">
+          <div>
+            <h3>動画プロンプト</h3>
+            <p>Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。</p>
+          </div>
+        </div>
+        <div className="video-grid">
+          {slots.map((item: VideoItem | null, index: number) => item ? (
+            <article className="video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
+              <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
+                event.stopPropagation();
+                setVideos((items: VideoItem[]) => items.map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
+              }}>
                 {item.favorite ? "♥" : "♡"}
               </button>
-            <details className="card-menu video-card-menu" onClick={(event) => event.stopPropagation()}>
-              <summary aria-label="メニュー">…</summary>
-              <div>
-                <button onClick={(event) => { event.preventDefault(); editVideo(item); }}>編集</button>
-                <button onClick={(event) => { event.preventDefault(); setVideos((items: VideoItem[]) => [{ ...item, id: uid(), title: `${item.title} コピー`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...items].slice(0, 20)); }}>複製</button>
-                <button className="danger" onClick={(event) => { event.preventDefault(); deleteVideo(item.id); }}>削除</button>
-              </div>
-            </details>
-            <button className="video-thumb-button" onClick={() => editVideo(item)}>
-                {item.thumbnail ? <img src={imageThumbnail(item.thumbnail)} alt="" /> : <VideoPlaceholder />}
+              <details className="card-menu video-card-menu" onClick={(event) => event.stopPropagation()}>
+                <summary aria-label="メニュー">…</summary>
+                <div>
+                  <button onClick={(event) => { event.preventDefault(); editVideo(item); }}>編集</button>
+                  <button onClick={(event) => { event.preventDefault(); setVideos((items: VideoItem[]) => [{ ...item, id: uid(), title: `${item.title} コピー`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...items].slice(0, 20)); }}>複製</button>
+                  <button className="danger" onClick={(event) => { event.preventDefault(); deleteVideo(item.id); }}>削除</button>
+                </div>
+              </details>
+              <button
+                className="video-thumb-button"
+                onClick={(event) => { event.stopPropagation(); editVideo(item); }}
+                onMouseEnter={() => setHoverVideoId(item.id)}
+                onMouseLeave={() => setHoverVideoId("")}
+              >
+                {hoverVideoId === item.id && isPlayableVideoUrl(item.url) ? (
+                  <video src={item.url} autoPlay muted loop playsInline />
+                ) : item.thumbnail ? (
+                  <img src={imageThumbnail(item.thumbnail)} alt="" />
+                ) : <VideoPlaceholder />}
               </button>
-            <button className="video-card-body video-card-open" onClick={() => editVideo(item)}>
-              <h3>{item.title}</h3>
-              <p>{item.prompt || item.memo || item.url}</p>
-              <span className="mini-pill">{item.model || "その他"}</span>
-              {!!(item.tags || []).length && <div className="video-tags">{item.tags.slice(0, 3).map((tag) => <span key={tag}>#{tag}</span>)}</div>}
+              <div className="video-card-body">
+                <h3>{item.title}</h3>
+                <p>{item.prompt || item.memo || item.url}</p>
+                <div className="video-meta-row">
+                  <span className="mini-pill">{item.model || "その他"}</span>
+                  {!!(item.tags || []).length && <div className="video-tags">{item.tags.slice(0, 2).map((tag) => <span key={tag}>#{tag}</span>)}</div>}
+                </div>
+                <div className="prompt-card-actions video-card-actions">
+                  <button className="primary" onClick={(event) => copyVideoPrompt(item, event)} disabled={!item.prompt.trim()}>📋 プロンプトをコピー</button>
+                  <button onClick={(event) => { event.stopPropagation(); editVideo(item); }}>メモ</button>
+                </div>
+              </div>
+            </article>
+          ) : (
+            <button className="add-prompt-card video-add-card" key={`empty-${index}`} onClick={openNewVideo} disabled={videos.length >= 20}>
+              <span>＋</span>
+              <strong>新しい動画プロンプト</strong>
             </button>
-          </article>
-        ) : (
-          <button className="video-add-card" key={`empty-${index}`} onClick={openNewVideo} disabled={videos.length >= 20}>
-            <span>＋</span>
-            <strong>新しい動画プロンプト</strong>
-          </button>
-        ))}
-      </div>
-      {!searchActive && videos.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
-      {searchActive && !filteredVideos.length && <Empty text="条件に合う動画プロンプトがありません。" />}
+          ))}
+        </div>
+        {!searchActive && videos.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
+        {searchActive && !filteredVideos.length && <Empty text="条件に合う動画プロンプトがありません。" />}
+      </section>
     </section>
   );
 }

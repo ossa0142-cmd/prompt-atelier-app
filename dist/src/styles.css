@@ -3300,8 +3300,7 @@ p {
   grid-column: 1 / -1;
 }
 
-.video-thumbnail-tools,
-.video-card-actions {
+.video-thumbnail-tools {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -3345,13 +3344,25 @@ p {
   gap: 16px;
 }
 
+.video-prompt-area {
+  margin-top: 18px;
+}
+
 .video-card {
   position: relative;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-  border-radius: 24px;
+  border-radius: 26px;
   background: var(--card-bg);
   box-shadow: 0 14px 30px rgba(73, 58, 45, 0.07);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.video-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  box-shadow: 0 22px 48px rgba(73, 58, 45, 0.11);
+  transform: translateY(-5px);
 }
 
 .video-favorite-button {
@@ -3384,26 +3395,29 @@ p {
   border-radius: 0;
   background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
   padding: 0;
+  overflow: hidden;
 }
 
 .video-thumb-button img,
+.video-thumb-button video,
 .video-draft-preview img,
 .video-detail-modal > img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1.25;
   border-radius: 20px;
   object-fit: cover;
 }
 
-.video-thumb-button img {
+.video-thumb-button img,
+.video-thumb-button video {
   border-radius: 0;
 }
 
 .video-placeholder {
   display: grid;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1.25;
   place-items: center;
   border-radius: 20px;
   background:
@@ -3421,7 +3435,7 @@ p {
 .video-card-body {
   display: grid;
   gap: 9px;
-  padding: 14px;
+  padding: 13px;
 }
 
 .video-card-open {
@@ -3435,16 +3449,19 @@ p {
 .video-card-body h3 {
   color: var(--text-main);
   font-size: 16px;
+  line-height: 1.35;
+  margin-bottom: 0;
 }
 
 .video-card-body p {
   display: -webkit-box;
-  min-height: 42px;
+  min-height: 60px;
+  margin-bottom: 0;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .video-card-body small {
@@ -3457,6 +3474,13 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.video-meta-row {
+  display: grid;
+  gap: 7px;
+  min-height: 58px;
+  align-content: start;
 }
 
 .video-tags span {
@@ -3485,28 +3509,31 @@ p {
 }
 
 .video-add-card {
-  display: grid;
-  min-height: 258px;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  border: 1px dashed color-mix(in srgb, var(--accent) 42%, var(--border));
-  border-radius: 24px;
-  background: color-mix(in srgb, var(--accent) 7%, var(--card-bg));
+  min-height: 310px;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background:
+    radial-gradient(circle at 24% 20%, color-mix(in srgb, white 82%, transparent), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--accent-soft) 74%, var(--card-bg)), var(--card-bg));
   color: var(--text-sub);
-  padding: 18px;
 }
 
 .video-add-card span {
-  display: grid;
-  width: 58px;
-  height: 58px;
-  place-items: center;
-  border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 14%, var(--card-bg));
   color: var(--accent);
-  font-size: 34px;
-  font-weight: 900;
+}
+
+.prompt-card-actions.video-card-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(70px, 0.75fr);
+  gap: 7px;
+}
+
+.prompt-card-actions.video-card-actions button {
+  min-height: 40px;
+  justify-content: center;
+  padding-inline: 7px;
+  font-size: 12px;
+  white-space: normal;
 }
 
 .video-detail-editor {
