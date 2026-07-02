@@ -2789,6 +2789,25 @@ p {
   margin: 14px 0 18px;
 }
 
+.page-back-button {
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--button-bg) 88%, var(--card-bg));
+  color: var(--button-text);
+  box-shadow: 0 10px 22px rgba(73, 58, 45, 0.055);
+  font-weight: 900;
+  padding: 10px 15px;
+}
+
+.page-back-button:hover {
+  transform: translateY(-2px);
+}
+
+.page-bottom-back {
+  justify-self: start;
+  margin-top: 28px;
+}
+
 .home-page .section-title {
   margin: 8px 0 24px;
 }
@@ -3324,7 +3343,8 @@ p {
   cursor: pointer;
 }
 
-.video-draft-preview.dragging {
+.video-draft-preview.dragging,
+.video-upload-preview.dragging {
   outline: 3px solid color-mix(in srgb, var(--accent) 54%, transparent);
   outline-offset: 4px;
 }
@@ -3336,6 +3356,66 @@ p {
   font-weight: 800;
   margin-top: 8px;
   text-align: center;
+}
+
+.video-upload-preview {
+  display: grid;
+  width: min(280px, 100%);
+  min-height: 158px;
+  overflow: hidden;
+  place-items: center;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 36%, var(--border));
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 24% 20%, color-mix(in srgb, white 78%, transparent), transparent 34%),
+    color-mix(in srgb, var(--accent-soft) 54%, var(--card-bg));
+  cursor: pointer;
+  transition: outline-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.video-upload-preview:hover {
+  transform: translateY(-2px);
+}
+
+.video-upload-preview video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #111;
+  object-fit: cover;
+}
+
+.video-upload-placeholder {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  color: var(--text-sub);
+  padding: 18px;
+  text-align: center;
+}
+
+.video-upload-placeholder span {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 13%, var(--card-bg));
+  color: var(--accent);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.video-upload-placeholder strong {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.video-upload-placeholder small {
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.55;
 }
 
 .video-grid {

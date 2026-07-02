@@ -1513,9 +1513,9 @@ function App() {
             setWorkTools={setWorkTools}
           />
         )}
-        {screen === "library" && <Library copyText={copyText} />}
-        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} />}
-        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} />}
+        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} />}
+        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={setScreen} />}
         {screen === "projects" && (
           <Projects
             projects={projects}
@@ -1523,6 +1523,7 @@ function App() {
             prompts={myPrompts}
             settings={mjSettings}
             copyText={copyText}
+            setScreen={setScreen}
           />
         )}
         {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
@@ -1798,7 +1799,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     <section className="page customize-page">
       <PageHead
         title="ホームカスタマイズ"
-        action={<button className="primary" onClick={() => setScreen("home")}>ホームへ戻る</button>}
+        action={<PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} />}
       />
       <div className="customize-layout">
         <div className="customize-settings">
@@ -1953,6 +1954,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           </div>
         </aside>
       </div>
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
@@ -2040,7 +2042,7 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
   );
 }
 
-function Library({ copyText }: any) {
+function Library({ copyText, setScreen }: any) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
@@ -2133,7 +2135,7 @@ function Library({ copyText }: any) {
         <>
           <PageHead
             title="モックアップライブラリ"
-            action={<button className="primary" onClick={() => setEditingCategory({ id: "", title: "", description: "", coverImage: "" })}>＋ カテゴリを追加</button>}
+            action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button className="primary" onClick={() => setEditingCategory({ id: "", title: "", description: "", coverImage: "" })}>＋ カテゴリを追加</button></div>}
           />
           <div className="library-intro">
             <p>販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。</p>
@@ -2158,9 +2160,11 @@ function Library({ copyText }: any) {
               </article>
             ))}
           </div>
+          <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
         </>
       ) : (
         <>
+          <PageBackButton label="ライブラリへ戻る" onClick={() => { setSelectedCategory(null); setQuery(""); }} />
           <div className="library-detail-head">
             <img className="library-detail-cover" src={currentCategory.coverImage} alt="" />
             <div>
@@ -2225,7 +2229,7 @@ function Library({ copyText }: any) {
             )}
             {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
           </section>
-          <button className="back-to-library" onClick={() => { setSelectedCategory(null); setQuery(""); }}>← ライブラリへ戻る</button>
+          <PageBackButton className="page-bottom-back" label="ライブラリへ戻る" onClick={() => { setSelectedCategory(null); setQuery(""); }} />
         </>
       )}
       {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
@@ -2559,7 +2563,7 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   );
 }
 
-function PromptBook({ prompts, setPrompts, copyText }: any) {
+function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
@@ -2621,7 +2625,7 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
   };
   return (
     <section className="page prompt-book-page">
-      <PageHead title="プロンプト帳" action={<span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span>} />
+      <PageHead title="プロンプト帳" action={<div className="actions"><span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>} />
       <Filters>
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="検索" />
         <select value={tag} onChange={(e) => setTag(e.target.value)}>
@@ -2697,11 +2701,12 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
           }}
         />
       )}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
 
-function Midjourney({ settings, setSettings, copyText }: any) {
+function Midjourney({ settings, setSettings, copyText, setScreen }: any) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
   const [promptEn, setPromptEn] = React.useState("");
@@ -2860,7 +2865,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
   };
   return (
     <section className="page mj-board-page">
-      <PageHead title="Midjourneyパラメータ制作ボード" action={<button className="primary" onClick={save} disabled={!canSave}>完成プロンプトを保存</button>} />
+      <PageHead title="Midjourneyパラメータ制作ボード" action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button className="primary" onClick={save} disabled={!canSave}>完成プロンプトを保存</button></div>} />
       <div className="mj-workspace">
         <aside className="mj-builder-panel">
           <section className="mj-input-panel">
@@ -2939,6 +2944,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
         </section>
       </div>
       {imageModal && <ImagePreviewModal modal={imageModal} setModal={setImageModal} />}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
@@ -3359,7 +3365,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
     >
       <PageHead
         title="ギャラリー"
-        action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button onClick={() => setScreen("journal")}>ジャーナルへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
+        action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button onClick={() => setScreen("journal")}>ジャーナルへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
       />
       <input
         ref={fileInputRef}
@@ -3403,12 +3409,25 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
           </div>
         </Modal>
       )}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
 
 function isPlayableVideoUrl(url: string) {
   return /\.(mp4|webm)(\?.*)?$/i.test(url);
+}
+
+function isSupportedVideoFile(file?: File | null) {
+  if (!file) return false;
+  return /^video\//i.test(file.type) || /\.(mp4|webm|mov|m4v|quicktime)$/i.test(file.name);
+}
+
+function clipboardVideoFiles(event: React.ClipboardEvent) {
+  return Array.from(event.clipboardData?.items || [])
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file) && isSupportedVideoFile(file));
 }
 
 function VideoPlaceholder() {
@@ -3422,9 +3441,15 @@ function VideoPlaceholder() {
 function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen }: any) {
   const thumbnailInputRef = React.useRef<HTMLInputElement | null>(null);
   const videoInputRef = React.useRef<HTMLInputElement | null>(null);
+  const uploadVideoInputRef = React.useRef<HTMLInputElement | null>(null);
+  const uploadedVideoUrlRef = React.useRef("");
+  const tempVideoUrlsRef = React.useRef<Record<string, string>>({});
   const [draft, setDraft] = React.useState<VideoItem>(blankVideoPrompt());
   const [tagDraft, setTagDraft] = React.useState("");
   const [isThumbnailDragging, setIsThumbnailDragging] = React.useState(false);
+  const [isVideoUploadDragging, setIsVideoUploadDragging] = React.useState(false);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = React.useState("");
+  const [tempVideoUrls, setTempVideoUrls] = React.useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = React.useState("");
   const [query, setQuery] = React.useState("");
   const [modelFilter, setModelFilter] = React.useState("すべて");
@@ -3433,16 +3458,36 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const [memoStock, setMemoStock] = React.useState<VideoPromptStock | null>(null);
   const videoItems = extractVideoPromptItems(videos);
+  React.useEffect(() => {
+    uploadedVideoUrlRef.current = uploadedVideoUrl;
+  }, [uploadedVideoUrl]);
+  React.useEffect(() => {
+    tempVideoUrlsRef.current = tempVideoUrls;
+  }, [tempVideoUrls]);
+  React.useEffect(() => {
+    return () => {
+      if (uploadedVideoUrlRef.current) URL.revokeObjectURL(uploadedVideoUrlRef.current);
+      Object.values(tempVideoUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
   const updateDraft = (patch: Partial<VideoItem>) => setDraft((current) => ({ ...current, ...patch }));
   const resetDraft = () => {
     setDraft(blankVideoPrompt());
     setTagDraft("");
     setSelectedId("");
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
   };
   const openNewVideo = () => {
     setDraft(blankVideoPrompt());
     setTagDraft("");
     setSelectedId("new");
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
   };
   const saveVideo = () => {
     const now = new Date().toISOString();
@@ -3460,8 +3505,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       createdAt: draft.createdAt || now,
       updatedAt: now,
     };
-    if (!next.url) {
-      window.alert("動画URLを入力してください");
+    if (!next.url && !uploadedVideoUrl) {
+      window.alert("動画URLを入力するか、動画をアップロードしてください");
       return;
     }
     if (!draft.id && videoItems.length >= 20) {
@@ -3472,6 +3517,11 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       const current = extractVideoPromptItems(items);
       return draft.id ? current.map((item) => item.id === draft.id ? next : item) : [next, ...current].slice(0, 20);
     });
+    if (uploadedVideoUrl) {
+      setTempVideoUrls((items) => ({ ...items, [next.id]: uploadedVideoUrl }));
+      setUploadedVideoUrl("");
+      if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
+    }
     setDraft(next);
     setSelectedId(next.id);
     setTagDraft(tagText(next.tags));
@@ -3480,9 +3530,19 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     setDraft({ ...blankVideoPrompt(), ...item });
     setTagDraft(tagText(item.tags || []));
     setSelectedId(item.id);
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
   };
   const deleteVideo = (id: string) => {
     if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
+    setTempVideoUrls((items) => {
+      if (items[id]) URL.revokeObjectURL(items[id]);
+      const next = { ...items };
+      delete next[id];
+      return next;
+    });
     setVideos((items: VideoItem[]) => extractVideoPromptItems(items).filter((item) => item.id !== id));
     resetDraft();
   };
@@ -3508,6 +3568,25 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     } catch {
       window.alert("動画からサムネイルを作成できませんでした。別の動画形式を試してください。");
     }
+  };
+  const importUploadedVideo = (file?: File) => {
+    if (!file) return;
+    if (!isSupportedVideoFile(file)) {
+      window.alert("mp4 / webm / mov などの動画ファイルを選んでください。");
+      return;
+    }
+    const nextUrl = URL.createObjectURL(file);
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return nextUrl;
+    });
+  };
+  const clearUploadedVideo = () => {
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
+    if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
   };
   const openVideo = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -3592,15 +3671,17 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
         tabIndex={0}
         onPaste={(event) => {
           const files = clipboardImageFiles(event);
-          if (!files.length) return;
+          const videoFiles = clipboardVideoFiles(event);
+          if (!files.length && !videoFiles.length) return;
           event.preventDefault();
           event.stopPropagation();
-          importThumbnail(files[0]);
+          if (videoFiles.length) importUploadedVideo(videoFiles[0]);
+          else importThumbnail(files[0]);
         }}
       >
         <PageHead
           title={draft.id ? "動画プロンプトを編集" : "新しい動画プロンプト"}
-          action={<button onClick={resetDraft}>一覧へ戻る</button>}
+          action={<PageBackButton label="動画プロンプト帳へ戻る" onClick={resetDraft} />}
         />
         <div className="video-detail-editor">
           <div className="video-detail-form">
@@ -3634,8 +3715,36 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
               <button type="button" onClick={() => videoInputRef.current?.click()}>動画からサムネイル生成</button>
               <button type="button" onClick={() => updateDraft({ thumbnail: "" })}>削除</button>
             </div>
+            <div
+              className={`video-upload-preview ${isVideoUploadDragging ? "dragging" : ""}`}
+              onClick={() => uploadVideoInputRef.current?.click()}
+              onDragEnter={(event) => { event.preventDefault(); event.stopPropagation(); setIsVideoUploadDragging(true); }}
+              onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); setIsVideoUploadDragging(true); }}
+              onDragLeave={(event) => { event.preventDefault(); event.stopPropagation(); setIsVideoUploadDragging(false); }}
+              onDrop={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setIsVideoUploadDragging(false);
+                importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
+              }}
+            >
+              {uploadedVideoUrl ? (
+                <video src={uploadedVideoUrl} controls playsInline />
+              ) : (
+                <div className="video-upload-placeholder">
+                  <span>▶</span>
+                  <strong>動画をアップロード</strong>
+                  <small>mp4 / webm / mov に対応。動画本体は保存されません。</small>
+                </div>
+              )}
+            </div>
+            <div className="video-thumbnail-tools">
+              <button type="button" onClick={() => uploadVideoInputRef.current?.click()}>動画を選ぶ</button>
+              <button type="button" onClick={clearUploadedVideo} disabled={!uploadedVideoUrl}>アップロード動画を削除</button>
+            </div>
             <input ref={thumbnailInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: "none" }} onChange={(event) => { importThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
             <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style={{ display: "none" }} onChange={(event) => { importVideoThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+            <input ref={uploadVideoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/*" style={{ display: "none" }} onChange={(event) => { importUploadedVideo(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
           </aside>
         </div>
         <div className="video-detail-actions">
@@ -3643,7 +3752,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
           <button onClick={() => openVideo(draft.url)} disabled={!draft.url.trim()}>動画URLを開く</button>
           <button className="primary" onClick={saveVideo}>保存する</button>
           {draft.id && <button className="danger" onClick={() => deleteVideo(draft.id)}>削除</button>}
-          <button onClick={resetDraft}>一覧へ戻る</button>
+          <PageBackButton label="動画プロンプト帳へ戻る" onClick={resetDraft} />
         </div>
       </section>
     );
@@ -3652,7 +3761,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     <section className="page video-page">
       <PageHead
         title="動画プロンプト帳"
-        action={<div className="actions"><span className="prompt-count-pill">動画 {normalizedVideos.length} / 20・ストック {stockCount} / 100</span><button onClick={() => setScreen("home")}>ホームへ</button></div>}
+        action={<div className="actions"><span className="prompt-count-pill">動画 {normalizedVideos.length} / 20・ストック {stockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>}
       />
       <div className="video-filter-bar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="タイトル、プロンプト、メモ、タグで検索..." />
@@ -3670,7 +3779,9 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
           </div>
         </div>
         <div className="library-prompt-grid video-grid">
-          {slots.map((item: VideoItem | null, index: number) => item ? (
+          {slots.map((item: VideoItem | null, index: number) => {
+            const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
+            return item ? (
             <article className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
               <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
                 event.stopPropagation();
@@ -3692,8 +3803,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
                 onMouseEnter={() => setHoverVideoId(item.id)}
                 onMouseLeave={() => setHoverVideoId("")}
               >
-                {hoverVideoId === item.id && isPlayableVideoUrl(item.url) ? (
-                  <video src={item.url} autoPlay muted loop playsInline />
+                {hoverVideoId === item.id && (isPlayableVideoUrl(previewUrl) || previewUrl.startsWith("blob:")) ? (
+                  <video src={previewUrl} autoPlay muted loop playsInline />
                 ) : item.thumbnail ? (
                   <img src={imageThumbnail(item.thumbnail)} alt="" />
                 ) : <VideoPlaceholder />}
@@ -3716,7 +3827,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
               <span>＋</span>
               <strong>新しい動画プロンプト</strong>
             </button>
-          ))}
+          );
+          })}
         </div>
         {!searchActive && videoItems.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
         {searchActive && !filteredVideos.length && <Empty text="条件に合う動画プロンプトがありません。" />}
@@ -3757,6 +3869,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
           }}
         />
       )}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
@@ -3862,7 +3975,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
     <section className="page journal-page">
       <PageHead
         title="ジャーナル"
-        action={<div className="actions"><button onClick={() => setScreen("home")}>ホームへ</button><button onClick={() => setScreen("gallery")}>ギャラリーへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
+        action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button onClick={() => setScreen("gallery")}>ギャラリーへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
       />
       <input
         ref={fileInputRef}
@@ -3985,11 +4098,12 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
           )) : <div className="journal-empty">画像を追加して、シール帳のように並べられます。</div>}
         </div>
       </div>
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
 
-function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
+function Projects({ projects, setProjects, prompts, settings, copyText, setScreen }: any) {
   const [editing, setEditing] = React.useState<Project | null>(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
@@ -4003,7 +4117,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
     <section className="page">
       <PageHead
         title="プロジェクト管理"
-        action={canAddProject ? <button className="primary" onClick={() => setEditing(blankProject())}>追加する</button> : <span className="limit-message">プロジェクトは最大30件まで登録できます</span>}
+        action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} />{canAddProject ? <button className="primary" onClick={() => setEditing(blankProject())}>追加する</button> : <span className="limit-message">プロジェクトは最大30件まで登録できます</span>}</div>}
       />
       <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="プロジェクト名、タグ、メモで検索" /></Filters>
       {!canAddProject && <p className="limit-note">プロジェクトは最大30件まで登録できます</p>}
@@ -4039,6 +4153,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
         })}
       </div>
       {editing && <ProjectModal item={editing} prompts={prompts} settings={settings} onClose={() => setEditing(null)} onSave={save} />}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
@@ -4206,6 +4321,14 @@ function mjCommand(item: MjSetting) {
 
 function PageHead({ title, action }: any) {
   return <div className="page-head"><h2>{title}</h2>{action}</div>;
+}
+
+function PageBackButton({ label = "前のページに戻る", onClick, className = "" }: any) {
+  return (
+    <button type="button" className={`page-back-button ${className}`.trim()} onClick={onClick}>
+      ← {label}
+    </button>
+  );
 }
 
 function SectionTitle({ title }: any) {
