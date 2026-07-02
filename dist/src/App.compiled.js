@@ -345,6 +345,13 @@ const blankVideoPrompt = () => ({
   favorite: false,
   createdAt: ""
 });
+const blankVideoPromptStock = () => ({
+  id: "",
+  title: "",
+  prompt: "",
+  memo: "",
+  createdAt: ""
+});
 function initialVideoPrompts() {
   return loadStoredVideoPrompts() || sampleVideos;
 }
@@ -1365,6 +1372,7 @@ function App() {
   const [galleryImages, setGalleryImages] = useStoredState("promptAtelierGallery", sampleAtelierImages);
   const [journal, setJournal] = useStoredState("promptAtelierJournal", defaultJournal);
   const [videos, setVideos] = useStoredState("promptAtelierVideoPrompts", initialVideoPrompts());
+  const [videoStocks, setVideoStocks] = useStoredState("promptAtelierVideoPromptStocks", []);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [, setImageCacheVersion] = React.useState(0);
@@ -1481,6 +1489,8 @@ function App() {
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
+    videoStocks: videoStocks,
+    setVideoStocks: setVideoStocks,
     setScreen: setScreen
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
     className: "image-migration-overlay"
@@ -3873,6 +3883,8 @@ function VideoPlaceholder() {
 function VideoLibrary({
   videos,
   setVideos,
+  videoStocks,
+  setVideoStocks,
   setScreen
 }) {
   const thumbnailInputRef = React.useRef(null);
@@ -3885,6 +3897,8 @@ function VideoLibrary({
   const [modelFilter, setModelFilter] = React.useState("すべて");
   const [favoriteOnly, setFavoriteOnly] = React.useState(false);
   const [hoverVideoId, setHoverVideoId] = React.useState("");
+  const [stockFrameCount, setStockFrameCount] = React.useState(5);
+  const [memoStock, setMemoStock] = React.useState(null);
   const videoItems = extractVideoPromptItems(videos);
   const updateDraft = patch => setDraft(current => ({
     ...current,
@@ -3983,6 +3997,59 @@ function VideoLibrary({
     if (!item.prompt.trim()) return;
     await navigator.clipboard.writeText(item.prompt);
     window.alert("プロンプトをコピーしました");
+  };
+  const copyVideoStockText = async text => {
+    if (!text.trim()) return;
+    await navigator.clipboard.writeText(text);
+    window.alert("プロンプトをコピーしました");
+  };
+  const normalizedStocks = (Array.isArray(videoStocks) ? videoStocks : []).slice(0, 100).map(item => ({
+    ...blankVideoPromptStock(),
+    ...item,
+    id: item.id || uid(),
+    title: item.title || "",
+    prompt: item.prompt || item.videoPrompt || "",
+    memo: item.memo || item.note || "",
+    createdAt: item.createdAt || new Date().toISOString()
+  }));
+  const stockQuery = query.trim().toLowerCase();
+  const filteredStocks = normalizedStocks.filter(item => {
+    if (!stockQuery) return true;
+    const haystack = `${item.title} ${item.prompt} ${item.memo}`.toLowerCase();
+    return haystack.includes(stockQuery);
+  });
+  const stockCount = normalizedStocks.length;
+  const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
+  const stockSlots = stockQuery ? filteredStocks : Array.from({
+    length: visibleStockFrameCount
+  }, (_, index) => normalizedStocks[index] || null);
+  const canAddStock = stockCount < 100;
+  const updateVideoStock = (id, patch) => {
+    setVideoStocks(items => items.map(item => item.id === id ? {
+      ...item,
+      ...patch,
+      updatedAt: new Date().toISOString()
+    } : item));
+  };
+  const saveVideoStockFrame = item => {
+    if (stockCount >= 100) return;
+    const now = new Date().toISOString();
+    const next = {
+      ...blankVideoPromptStock(),
+      ...item,
+      id: item.id || uid(),
+      title: item.title || "",
+      prompt: item.prompt || "",
+      memo: item.memo || "",
+      createdAt: item.createdAt || now,
+      updatedAt: now
+    };
+    if (!next.title.trim() && !next.prompt.trim()) return;
+    setVideoStocks(items => [...items, next].slice(0, 100));
+  };
+  const addVideoStockFrame = () => {
+    if (!canAddStock) return;
+    setStockFrameCount(count => Math.min(100, count + 1));
   };
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
   const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
@@ -4152,7 +4219,7 @@ function VideoLibrary({
       className: "actions"
     }, /*#__PURE__*/React.createElement("span", {
       className: "prompt-count-pill"
-    }, normalizedVideos.length, " / 20"), /*#__PURE__*/React.createElement("button", {
+    }, "動画 ", normalizedVideos.length, " / 20・ストック ", stockCount, " / 100"), /*#__PURE__*/React.createElement("button", {
       onClick: () => setScreen("home")
     }, "ホームへ"))
   }), /*#__PURE__*/React.createElement("div", {
@@ -4266,7 +4333,41 @@ function VideoLibrary({
     className: "limit-message"
   }, "動画プロンプトは最大20件まで保存できます"), searchActive && !filteredVideos.length && /*#__PURE__*/React.createElement(Empty, {
     text: "条件に合う動画プロンプトがありません。"
-  })));
+  })), /*#__PURE__*/React.createElement("section", {
+    className: "prompt-area text-prompt-area video-stock-area"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "prompt-area-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトストック"), /*#__PURE__*/React.createElement("p", null, "動画を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+    className: "text-prompt-list"
+  }, stockSlots.map((stock, index) => /*#__PURE__*/React.createElement(TextStockFrame, {
+    key: stock?.id || `video-stock-frame-${index}`,
+    prompt: stock,
+    blankPrompt: blankVideoPromptStock(),
+    onCreate: saveVideoStockFrame,
+    onUpdate: updateVideoStock,
+    copyText: copyVideoStockText,
+    showMemo: () => stock && setMemoStock(stock)
+  }))), canAddStock && !stockQuery && stockCount >= visibleStockFrameCount && /*#__PURE__*/React.createElement("button", {
+    className: "add-stock-button",
+    onClick: addVideoStockFrame
+  }, "＋ プロンプトを追加"), !canAddStock && /*#__PURE__*/React.createElement("p", {
+    className: "limit-message"
+  }, "保存上限（100件）に達しました"), stockQuery && !filteredStocks.length && /*#__PURE__*/React.createElement(Empty, {
+    text: "条件に合うプロンプトストックがありません。"
+  })), memoStock && /*#__PURE__*/React.createElement(MemoModal, {
+    prompt: {
+      ...memoStock,
+      id: memoStock.id,
+      memo: memoStock.memo || ""
+    },
+    onClose: () => setMemoStock(null),
+    onSave: memo => {
+      updateVideoStock(memoStock.id, {
+        memo
+      });
+      setMemoStock(null);
+    }
+  }));
 }
 function JournalPage({
   images,

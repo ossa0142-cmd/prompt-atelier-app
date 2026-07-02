@@ -151,6 +151,15 @@ type VideoItem = {
   updatedAt?: string;
 };
 
+type VideoPromptStock = {
+  id: string;
+  title: string;
+  prompt: string;
+  memo: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
 type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos";
 
 type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites" | "atelier";
@@ -301,6 +310,13 @@ const blankVideoPrompt = (): VideoItem => ({
   memo: "",
   tags: [],
   favorite: false,
+  createdAt: "",
+});
+const blankVideoPromptStock = (): VideoPromptStock => ({
+  id: "",
+  title: "",
+  prompt: "",
+  memo: "",
   createdAt: "",
 });
 
@@ -1385,6 +1401,7 @@ function App() {
   const [galleryImages, setGalleryImages] = useStoredState<AtelierImage[]>("promptAtelierGallery", sampleAtelierImages);
   const [journal, setJournal] = useStoredState<JournalState>("promptAtelierJournal", defaultJournal);
   const [videos, setVideos] = useStoredState<VideoItem[]>("promptAtelierVideoPrompts", initialVideoPrompts());
+  const [videoStocks, setVideoStocks] = useStoredState<VideoPromptStock[]>("promptAtelierVideoPromptStocks", []);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [, setImageCacheVersion] = React.useState(0);
@@ -1510,7 +1527,7 @@ function App() {
         )}
         {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
         {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} />}
-        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} setScreen={setScreen} />}
+        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={setScreen} />}
       </main>
       {isImageMigrating && (
         <div className="image-migration-overlay">
@@ -3402,7 +3419,7 @@ function VideoPlaceholder() {
   );
 }
 
-function VideoLibrary({ videos, setVideos, setScreen }: any) {
+function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen }: any) {
   const thumbnailInputRef = React.useRef<HTMLInputElement | null>(null);
   const videoInputRef = React.useRef<HTMLInputElement | null>(null);
   const [draft, setDraft] = React.useState<VideoItem>(blankVideoPrompt());
@@ -3413,6 +3430,8 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
   const [modelFilter, setModelFilter] = React.useState("すべて");
   const [favoriteOnly, setFavoriteOnly] = React.useState(false);
   const [hoverVideoId, setHoverVideoId] = React.useState("");
+  const [stockFrameCount, setStockFrameCount] = React.useState(5);
+  const [memoStock, setMemoStock] = React.useState<VideoPromptStock | null>(null);
   const videoItems = extractVideoPromptItems(videos);
   const updateDraft = (patch: Partial<VideoItem>) => setDraft((current) => ({ ...current, ...patch }));
   const resetDraft = () => {
@@ -3504,6 +3523,55 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
     await navigator.clipboard.writeText(item.prompt);
     window.alert("プロンプトをコピーしました");
   };
+  const copyVideoStockText = async (text: string) => {
+    if (!text.trim()) return;
+    await navigator.clipboard.writeText(text);
+    window.alert("プロンプトをコピーしました");
+  };
+  const normalizedStocks = (Array.isArray(videoStocks) ? videoStocks : []).slice(0, 100).map((item: any) => ({
+    ...blankVideoPromptStock(),
+    ...item,
+    id: item.id || uid(),
+    title: item.title || "",
+    prompt: item.prompt || item.videoPrompt || "",
+    memo: item.memo || item.note || "",
+    createdAt: item.createdAt || new Date().toISOString(),
+  }));
+  const stockQuery = query.trim().toLowerCase();
+  const filteredStocks = normalizedStocks.filter((item) => {
+    if (!stockQuery) return true;
+    const haystack = `${item.title} ${item.prompt} ${item.memo}`.toLowerCase();
+    return haystack.includes(stockQuery);
+  });
+  const stockCount = normalizedStocks.length;
+  const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
+  const stockSlots = stockQuery
+    ? filteredStocks
+    : Array.from({ length: visibleStockFrameCount }, (_, index) => normalizedStocks[index] || null);
+  const canAddStock = stockCount < 100;
+  const updateVideoStock = (id: string, patch: Partial<VideoPromptStock>) => {
+    setVideoStocks((items: VideoPromptStock[]) => items.map((item) => item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item));
+  };
+  const saveVideoStockFrame = (item: VideoPromptStock) => {
+    if (stockCount >= 100) return;
+    const now = new Date().toISOString();
+    const next = {
+      ...blankVideoPromptStock(),
+      ...item,
+      id: item.id || uid(),
+      title: item.title || "",
+      prompt: item.prompt || "",
+      memo: item.memo || "",
+      createdAt: item.createdAt || now,
+      updatedAt: now,
+    };
+    if (!next.title.trim() && !next.prompt.trim()) return;
+    setVideoStocks((items: VideoPromptStock[]) => [...items, next].slice(0, 100));
+  };
+  const addVideoStockFrame = () => {
+    if (!canAddStock) return;
+    setStockFrameCount((count) => Math.min(100, count + 1));
+  };
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
   const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter((item) => {
@@ -3584,7 +3652,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
     <section className="page video-page">
       <PageHead
         title="動画プロンプト帳"
-        action={<div className="actions"><span className="prompt-count-pill">{normalizedVideos.length} / 20</span><button onClick={() => setScreen("home")}>ホームへ</button></div>}
+        action={<div className="actions"><span className="prompt-count-pill">動画 {normalizedVideos.length} / 20・ストック {stockCount} / 100</span><button onClick={() => setScreen("home")}>ホームへ</button></div>}
       />
       <div className="video-filter-bar">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="タイトル、プロンプト、メモ、タグで検索..." />
@@ -3653,6 +3721,42 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
         {!searchActive && videoItems.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
         {searchActive && !filteredVideos.length && <Empty text="条件に合う動画プロンプトがありません。" />}
       </section>
+      <section className="prompt-area text-prompt-area video-stock-area">
+        <div className="prompt-area-head">
+          <div>
+            <h3>プロンプトストック</h3>
+            <p>動画を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+          </div>
+        </div>
+        <div className="text-prompt-list">
+          {stockSlots.map((stock: VideoPromptStock | null, index: number) => (
+            <TextStockFrame
+              key={stock?.id || `video-stock-frame-${index}`}
+              prompt={stock}
+              blankPrompt={blankVideoPromptStock()}
+              onCreate={saveVideoStockFrame}
+              onUpdate={updateVideoStock}
+              copyText={copyVideoStockText}
+              showMemo={() => stock && setMemoStock(stock)}
+            />
+          ))}
+        </div>
+        {canAddStock && !stockQuery && stockCount >= visibleStockFrameCount && (
+          <button className="add-stock-button" onClick={addVideoStockFrame}>＋ プロンプトを追加</button>
+        )}
+        {!canAddStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+        {stockQuery && !filteredStocks.length && <Empty text="条件に合うプロンプトストックがありません。" />}
+      </section>
+      {memoStock && (
+        <MemoModal
+          prompt={{ ...memoStock, id: memoStock.id, memo: memoStock.memo || "" }}
+          onClose={() => setMemoStock(null)}
+          onSave={(memo) => {
+            updateVideoStock(memoStock.id, { memo });
+            setMemoStock(null);
+          }}
+        />
+      )}
     </section>
   );
 }
