@@ -1423,6 +1423,161 @@ main {
   background: var(--sand);
 }
 
+.cover-image-carousel {
+  position: relative;
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1.25;
+  overflow: hidden;
+  background: var(--sand);
+}
+
+.cover-image-carousel img,
+.cover-image-carousel .image-placeholder {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+  transition: opacity 260ms ease, transform 520ms ease;
+}
+
+.cover-image-carousel:hover img {
+  transform: scale(1.025);
+}
+
+.category-cover-carousel {
+  aspect-ratio: 0.88;
+}
+
+.library-detail-cover.cover-image-carousel {
+  width: 112px;
+  aspect-ratio: 1;
+}
+
+.cover-image-dots {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  display: flex;
+  gap: 5px;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.72);
+  padding: 5px 6px;
+  backdrop-filter: blur(8px);
+}
+
+.cover-image-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(123, 102, 85, 0.36);
+}
+
+.cover-image-dots span.active {
+  width: 14px;
+  background: var(--accent);
+}
+
+.cover-image-uploader {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid rgba(232, 222, 209, 0.72);
+  background: color-mix(in srgb, var(--card-bg) 86%, white);
+  padding: 11px 12px 0;
+}
+
+.cover-image-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.cover-image-thumb,
+.cover-image-add {
+  position: relative;
+  display: grid;
+  min-height: 58px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(226, 218, 209, 0.95);
+  border-radius: 14px;
+  background: rgba(255, 253, 249, 0.78);
+  color: var(--muted);
+}
+
+.cover-image-thumb img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+}
+
+.cover-image-thumb button {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  min-height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.88);
+  padding: 3px 7px;
+  color: #8c6358;
+  font-size: 11px;
+}
+
+.cover-image-add {
+  cursor: pointer;
+  border-style: dashed;
+  gap: 2px;
+}
+
+.cover-image-add span {
+  color: var(--accent);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.cover-image-add small,
+.cover-image-help,
+.cover-image-message {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cover-image-add input {
+  display: none;
+}
+
+.cover-image-help,
+.cover-image-message {
+  margin: 0;
+}
+
+.cover-image-message {
+  color: #9b5f55;
+  font-weight: 800;
+}
+
+.cover-image-url-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.cover-image-url-row input {
+  min-height: 36px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.cover-image-url-row button {
+  min-height: 36px;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+}
+
 .image-placeholder {
   display: grid;
   width: 100%;

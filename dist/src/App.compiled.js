@@ -670,6 +670,7 @@ const blankPrompt = (textOnly = false) => ({
   note: "",
   tags: [],
   imageUrl: "",
+  coverImages: [],
   favorite: false,
   japaneseTranslation: "",
   memo: "",
@@ -878,6 +879,15 @@ function imageThumbnail(image) {
   if (!image) return "";
   const value = typeof image === "string" ? image : image.thumbnail || image.src || "";
   return resolveIndexedDbImage(value, true);
+}
+function getCoverImages(item) {
+  const existing = Array.isArray(item?.coverImages) ? item.coverImages.filter(Boolean) : [];
+  if (existing.length) return existing.slice(0, 3);
+  const fallback = item?.coverImage || item?.thumbnail || item?.image || item?.imageUrl || item?.previewImage;
+  return fallback ? [fallback] : [];
+}
+function primaryCoverImage(item) {
+  return getCoverImages(item)[0] || "";
 }
 function imageReference(id, category = "gallery", title = "") {
   const record = indexedDbImageCache.get(id);
@@ -2184,14 +2194,18 @@ function Library({
     memo: "",
     tags: [],
     imageUrl: "",
+    coverImages: [],
     japaneseTranslation: "",
     isTextStock: textOnly
   });
   const saveCategory = item => {
+    const coverImages = getCoverImages(item);
+    const coverImage = coverImages[0] || item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7");
     const next = {
       ...item,
       id: item.id || uid(),
-      coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7")
+      coverImage,
+      coverImages: coverImages.length ? coverImages : [coverImage]
     };
     setBoardCategories(items => item.id ? items.map(category => category.id === item.id ? next : category) : [next, ...items]);
     setEditingCategory(null);
@@ -2209,7 +2223,8 @@ function Library({
       id: item.id || uid(),
       categoryId: item.categoryId || category.id,
       category: "ステッカーモックアップ",
-      imageUrl: item.imageUrl || "",
+      coverImages: item.isTextStock ? [] : getCoverImages(item),
+      imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || "",
       tags: item.tags || [],
@@ -2295,9 +2310,10 @@ function Library({
       setSelectedCategory(category);
       setQuery("");
     }
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(category.coverImage),
-    alt: ""
+  }, /*#__PURE__*/React.createElement(CoverImageCarousel, {
+    item: category,
+    className: "category-cover-carousel",
+    placeholderLabel: "カテゴリ"
   }), /*#__PURE__*/React.createElement("span", null, category.title), /*#__PURE__*/React.createElement("small", null, category.description))))), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
@@ -2310,10 +2326,10 @@ function Library({
     }
   }), /*#__PURE__*/React.createElement("div", {
     className: "library-detail-head"
-  }, /*#__PURE__*/React.createElement("img", {
+  }, /*#__PURE__*/React.createElement(CoverImageCarousel, {
+    item: currentCategory,
     className: "library-detail-cover",
-    src: currentCategory.coverImage,
-    alt: ""
+    placeholderLabel: "カテゴリ"
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, currentCategory.title), /*#__PURE__*/React.createElement("p", null, currentCategory.description)), /*#__PURE__*/React.createElement("span", {
     className: "prompt-count-pill"
   }, "画像 ", imagePrompts.length, " / 20・ストック ", textStockCount, " / 100")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
@@ -2386,6 +2402,146 @@ function Library({
     }
   }));
 }
+function CoverImageCarousel({
+  item,
+  className = "",
+  placeholderLabel = "画像"
+}) {
+  const images = getCoverImages(item);
+  const [isHovering, setIsHovering] = React.useState(false);
+  const [index, setIndex] = React.useState(0);
+  React.useEffect(() => {
+    if (!isHovering || images.length <= 1) {
+      setIndex(0);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setIndex(current => (current + 1) % images.length);
+    }, 1800);
+    return () => window.clearInterval(timer);
+  }, [isHovering, images.length]);
+  const currentImage = images[index] || images[0];
+  return /*#__PURE__*/React.createElement("div", {
+    className: `cover-image-carousel ${className}`,
+    onMouseEnter: () => setIsHovering(true),
+    onMouseLeave: () => setIsHovering(false)
+  }, currentImage ? /*#__PURE__*/React.createElement("img", {
+    src: imageThumbnail(currentImage),
+    alt: ""
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "image-placeholder",
+    "aria-label": `${placeholderLabel}未設定`
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 64 64",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "12",
+    y: "16",
+    width: "40",
+    height: "32",
+    rx: "7"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M18 41l10-10 8 8 5-5 7 7"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "42",
+    cy: "25",
+    r: "4"
+  }))), images.length > 1 && /*#__PURE__*/React.createElement("div", {
+    className: "cover-image-dots",
+    "aria-hidden": "true"
+  }, images.map((_, dotIndex) => /*#__PURE__*/React.createElement("span", {
+    className: dotIndex === index ? "active" : "",
+    key: dotIndex
+  }))));
+}
+function CoverImageUploader({
+  item,
+  onChange,
+  category = "prompt"
+}) {
+  const [message, setMessage] = React.useState("");
+  const [urlDraft, setUrlDraft] = React.useState("");
+  const images = getCoverImages(item);
+  const applyImages = nextImages => {
+    onChange(nextImages.filter(Boolean).slice(0, 3));
+  };
+  const addImages = async files => {
+    const supported = Array.from(files).filter(isSupportedImageFile);
+    if (!supported.length) return;
+    const available = Math.max(0, 3 - images.length);
+    if (!available) {
+      setMessage("見出し画像は最大3枚までです");
+      return;
+    }
+    if (supported.length > available) setMessage("見出し画像は最大3枚までです");
+    try {
+      const optimized = await Promise.all(supported.slice(0, available).map(async file => saveImageToStorage(await optimizeImage(file, category))));
+      applyImages([...images, ...optimized]);
+    } catch (error) {
+      console.error("[Prompt Atelier] 見出し画像の追加に失敗しました", error);
+      setMessage("画像を追加できませんでした。jpg / png / webp を選んでください。");
+    }
+  };
+  const addUrl = () => {
+    const value = urlDraft.trim();
+    if (!value) return;
+    if (images.length >= 3) {
+      setMessage("見出し画像は最大3枚までです");
+      return;
+    }
+    applyImages([...images, value]);
+    setUrlDraft("");
+    setMessage("");
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "cover-image-uploader",
+    onClick: event => event.stopPropagation(),
+    onDragOver: event => event.preventDefault(),
+    onDrop: event => {
+      event.preventDefault();
+      event.stopPropagation();
+      addImages(event.dataTransfer.files);
+    },
+    onPaste: event => {
+      const files = clipboardImageFiles(event);
+      if (!files.length) return;
+      event.preventDefault();
+      event.stopPropagation();
+      addImages(files);
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cover-image-strip"
+  }, images.map((image, index) => /*#__PURE__*/React.createElement("div", {
+    className: "cover-image-thumb",
+    key: `${imageThumbnail(image)}-${index}`
+  }, /*#__PURE__*/React.createElement("img", {
+    src: imageThumbnail(image),
+    alt: ""
+  }), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => applyImages(images.filter((_, imageIndex) => imageIndex !== index))
+  }, "削除"))), images.length < 3 && /*#__PURE__*/React.createElement("label", {
+    className: "cover-image-add"
+  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("small", null, "画像を追加"), /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/png,image/jpeg,image/webp",
+    multiple: true,
+    onChange: event => addImages(event.target.files || [])
+  }))), /*#__PURE__*/React.createElement("p", {
+    className: "cover-image-help"
+  }, "見出し画像は最大3枚まで設定できます"), /*#__PURE__*/React.createElement("div", {
+    className: "cover-image-url-row"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: urlDraft,
+    onChange: event => setUrlDraft(event.target.value),
+    placeholder: "画像URLを追加"
+  }), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: addUrl
+  }, "追加")), message && /*#__PURE__*/React.createElement("p", {
+    className: "cover-image-message"
+  }, message));
+}
 function LibraryImagePromptCard({
   prompt,
   inlineEdit,
@@ -2396,28 +2552,26 @@ function LibraryImagePromptCard({
   copyText,
   showMemo
 }) {
+  const updateCoverImages = coverImages => updatePrompt(prompt.id, {
+    coverImages,
+    imageUrl: coverImages[0] || ""
+  });
   return /*#__PURE__*/React.createElement("article", {
     className: "library-prompt-card"
   }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
     onClearImage: () => updatePrompt(prompt.id, {
-      imageUrl: ""
+      imageUrl: "",
+      coverImages: []
     }),
     onDelete: deletePrompt
-  }), /*#__PURE__*/React.createElement(EditableThumbnail, {
-    prompt: prompt,
-    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl",
-    onEdit: () => setInlineEdit({
-      id: prompt.id,
-      field: "imageUrl"
-    }),
-    onCancel: () => setInlineEdit(null),
-    onSave: imageUrl => {
-      updatePrompt(prompt.id, {
-        imageUrl
-      });
-      setInlineEdit(null);
-    }
+  }), /*#__PURE__*/React.createElement(CoverImageCarousel, {
+    item: prompt,
+    placeholderLabel: "プロンプト画像"
+  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
+    item: prompt,
+    category: "prompt",
+    onChange: updateCoverImages
   }), /*#__PURE__*/React.createElement("div", {
     className: "prompt-card-content"
   }, /*#__PURE__*/React.createElement(InlineEditable, {
@@ -2794,6 +2948,11 @@ function MockupCategoryModal({
   const [draft, setDraft] = React.useState({
     ...item
   });
+  const setCoverImages = coverImages => setDraft({
+    ...draft,
+    coverImages,
+    coverImage: coverImages[0] || ""
+  });
   return /*#__PURE__*/React.createElement(Modal, {
     title: item.id ? "カテゴリを編集" : "カテゴリを追加",
     onClose: onClose
@@ -2811,26 +2970,10 @@ function MockupCategoryModal({
       description: e.target.value
     }),
     placeholder: "説明文"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.coverImage,
-    onChange: e => setDraft({
-      ...draft,
-      coverImage: e.target.value
-    }),
-    placeholder: "カバー画像URL"
-  }), /*#__PURE__*/React.createElement("label", {
-    className: "upload-box"
-  }, /*#__PURE__*/React.createElement("span", null, "画像をアップロード"), /*#__PURE__*/React.createElement("input", {
-    type: "file",
-    accept: "image/*",
-    onChange: e => readImage(e, coverImage => setDraft({
-      ...draft,
-      coverImage
-    }), "mockup")
-  })), draft.coverImage && /*#__PURE__*/React.createElement("img", {
-    className: "modal-preview-image",
-    src: draft.coverImage,
-    alt: ""
+  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
+    item: draft,
+    category: "mockup",
+    onChange: setCoverImages
   })), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
     onSave: () => onSave(draft)
@@ -2844,6 +2987,11 @@ function LibraryPromptModal({
 }) {
   const [draft, setDraft] = React.useState({
     ...item
+  });
+  const setCoverImages = coverImages => setDraft({
+    ...draft,
+    coverImages,
+    imageUrl: coverImages[0] || ""
   });
   return /*#__PURE__*/React.createElement(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
@@ -2894,26 +3042,10 @@ function LibraryPromptModal({
       memo: e.target.value
     }),
     placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.imageUrl,
-    onChange: e => setDraft({
-      ...draft,
-      imageUrl: e.target.value
-    }),
-    placeholder: "サムネイル画像URL"
-  }), /*#__PURE__*/React.createElement("label", {
-    className: "upload-box"
-  }, /*#__PURE__*/React.createElement("span", null, "画像をアップロード"), /*#__PURE__*/React.createElement("input", {
-    type: "file",
-    accept: "image/*",
-    onChange: e => readImage(e, imageUrl => setDraft({
-      ...draft,
-      imageUrl
-    }), "mockup")
-  })), draft.imageUrl && /*#__PURE__*/React.createElement("img", {
-    className: "modal-preview-image",
-    src: imageThumbnail(draft.imageUrl),
-    alt: ""
+  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
+    item: draft,
+    category: "mockup",
+    onChange: setCoverImages
   })), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
     onSave: () => onSave(draft)
@@ -2962,7 +3094,8 @@ function PromptBook({
     const next = {
       ...item,
       id: item.id || uid(),
-      imageUrl: item.isTextStock ? "" : item.imageUrl || "",
+      coverImages: item.isTextStock ? [] : getCoverImages(item),
+      imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || item.note || "",
       note: item.note || item.memo || "",
@@ -4994,6 +5127,11 @@ function PromptModal({
     ...item,
     tagInput: tagText(item.tags)
   });
+  const setCoverImages = coverImages => setDraft({
+    ...draft,
+    coverImages,
+    imageUrl: coverImages[0] || ""
+  });
   return /*#__PURE__*/React.createElement(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
     onClose: onClose
@@ -5041,13 +5179,10 @@ function PromptModal({
       tagInput: e.target.value
     }),
     placeholder: "タグ（カンマ区切り）"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.imageUrl,
-    onChange: e => setDraft({
-      ...draft,
-      imageUrl: e.target.value
-    }),
-    placeholder: "サンプル画像URL"
+  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
+    item: draft,
+    category: "prompt",
+    onChange: setCoverImages
   }), /*#__PURE__*/React.createElement("label", {
     className: "check"
   }, /*#__PURE__*/React.createElement("input", {

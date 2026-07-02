@@ -15,6 +15,7 @@ type LibraryPrompt = {
   prompt: string;
   tags: string[];
   imageUrl: string;
+  coverImages?: any[];
 };
 
 type MockupCategory = {
@@ -22,6 +23,7 @@ type MockupCategory = {
   title: string;
   description: string;
   coverImage: string;
+  coverImages?: any[];
 };
 
 type LibraryBoardPrompt = LibraryPrompt & {
@@ -685,6 +687,7 @@ const blankPrompt = (textOnly = false): MyPrompt => ({
   note: "",
   tags: [],
   imageUrl: "",
+  coverImages: [],
   favorite: false,
   japaneseTranslation: "",
   memo: "",
@@ -902,6 +905,19 @@ function imageThumbnail(image: any) {
   if (!image) return "";
   const value = typeof image === "string" ? image : image.thumbnail || image.src || "";
   return resolveIndexedDbImage(value, true);
+}
+
+function getCoverImages(item: any) {
+  const existing = Array.isArray(item?.coverImages)
+    ? item.coverImages.filter(Boolean)
+    : [];
+  if (existing.length) return existing.slice(0, 3);
+  const fallback = item?.coverImage || item?.thumbnail || item?.image || item?.imageUrl || item?.previewImage;
+  return fallback ? [fallback] : [];
+}
+
+function primaryCoverImage(item: any) {
+  return getCoverImages(item)[0] || "";
 }
 
 function imageReference(id: string, category = "gallery", title = ""): OptimizedImageData {
@@ -2080,11 +2096,14 @@ function Library({ copyText, setScreen }: any) {
     memo: "",
     tags: [],
     imageUrl: "",
+    coverImages: [],
     japaneseTranslation: "",
     isTextStock: textOnly,
   });
   const saveCategory = (item: MockupCategory) => {
-    const next = { ...item, id: item.id || uid(), coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7") };
+    const coverImages = getCoverImages(item);
+    const coverImage = coverImages[0] || item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7");
+    const next = { ...item, id: item.id || uid(), coverImage, coverImages: coverImages.length ? coverImages : [coverImage] };
     setBoardCategories((items: MockupCategory[]) => item.id ? items.map((category) => category.id === item.id ? next : category) : [next, ...items]);
     setEditingCategory(null);
   };
@@ -2101,7 +2120,8 @@ function Library({ copyText, setScreen }: any) {
       id: item.id || uid(),
       categoryId: item.categoryId || category.id,
       category: "ステッカーモックアップ" as Category,
-      imageUrl: item.imageUrl || "",
+      coverImages: item.isTextStock ? [] : getCoverImages(item),
+      imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || "",
       tags: item.tags || [],
@@ -2153,7 +2173,7 @@ function Library({ copyText, setScreen }: any) {
                   onDelete={() => setBoardCategories((items: MockupCategory[]) => items.filter((item) => item.id !== category.id))}
                 />
                 <button className="category-open" onClick={() => { setSelectedCategory(category); setQuery(""); }}>
-                  <img src={imageThumbnail(category.coverImage)} alt="" />
+                  <CoverImageCarousel item={category} className="category-cover-carousel" placeholderLabel="カテゴリ" />
                   <span>{category.title}</span>
                   <small>{category.description}</small>
                 </button>
@@ -2166,7 +2186,7 @@ function Library({ copyText, setScreen }: any) {
         <>
           <PageBackButton label="ライブラリへ戻る" onClick={() => { setSelectedCategory(null); setQuery(""); }} />
           <div className="library-detail-head">
-            <img className="library-detail-cover" src={currentCategory.coverImage} alt="" />
+            <CoverImageCarousel item={currentCategory} className="library-detail-cover" placeholderLabel="カテゴリ" />
             <div>
               <h2>{currentCategory.title}</h2>
               <p>{currentCategory.description}</p>
@@ -2248,21 +2268,136 @@ function Library({ copyText, setScreen }: any) {
   );
 }
 
+function CoverImageCarousel({ item, className = "", placeholderLabel = "画像" }: any) {
+  const images = getCoverImages(item);
+  const [isHovering, setIsHovering] = React.useState(false);
+  const [index, setIndex] = React.useState(0);
+  React.useEffect(() => {
+    if (!isHovering || images.length <= 1) {
+      setIndex(0);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % images.length);
+    }, 1800);
+    return () => window.clearInterval(timer);
+  }, [isHovering, images.length]);
+  const currentImage = images[index] || images[0];
+  return (
+    <div
+      className={`cover-image-carousel ${className}`}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      {currentImage ? (
+        <img src={imageThumbnail(currentImage)} alt="" />
+      ) : (
+        <div className="image-placeholder" aria-label={`${placeholderLabel}未設定`}>
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect x="12" y="16" width="40" height="32" rx="7" />
+            <path d="M18 41l10-10 8 8 5-5 7 7" />
+            <circle cx="42" cy="25" r="4" />
+          </svg>
+        </div>
+      )}
+      {images.length > 1 && (
+        <div className="cover-image-dots" aria-hidden="true">
+          {images.map((_: any, dotIndex: number) => <span className={dotIndex === index ? "active" : ""} key={dotIndex} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CoverImageUploader({ item, onChange, category = "prompt" }: any) {
+  const [message, setMessage] = React.useState("");
+  const [urlDraft, setUrlDraft] = React.useState("");
+  const images = getCoverImages(item);
+  const applyImages = (nextImages: any[]) => {
+    onChange(nextImages.filter(Boolean).slice(0, 3));
+  };
+  const addImages = async (files: FileList | File[]) => {
+    const supported = Array.from(files).filter(isSupportedImageFile);
+    if (!supported.length) return;
+    const available = Math.max(0, 3 - images.length);
+    if (!available) {
+      setMessage("見出し画像は最大3枚までです");
+      return;
+    }
+    if (supported.length > available) setMessage("見出し画像は最大3枚までです");
+    try {
+      const optimized = await Promise.all(supported.slice(0, available).map(async (file) => saveImageToStorage(await optimizeImage(file, category))));
+      applyImages([...images, ...optimized]);
+    } catch (error) {
+      console.error("[Prompt Atelier] 見出し画像の追加に失敗しました", error);
+      setMessage("画像を追加できませんでした。jpg / png / webp を選んでください。");
+    }
+  };
+  const addUrl = () => {
+    const value = urlDraft.trim();
+    if (!value) return;
+    if (images.length >= 3) {
+      setMessage("見出し画像は最大3枚までです");
+      return;
+    }
+    applyImages([...images, value]);
+    setUrlDraft("");
+    setMessage("");
+  };
+  return (
+    <div
+      className="cover-image-uploader"
+      onClick={(event) => event.stopPropagation()}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        addImages(event.dataTransfer.files);
+      }}
+      onPaste={(event) => {
+        const files = clipboardImageFiles(event);
+        if (!files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        addImages(files);
+      }}
+    >
+      <div className="cover-image-strip">
+        {images.map((image: any, index: number) => (
+          <div className="cover-image-thumb" key={`${imageThumbnail(image)}-${index}`}>
+            <img src={imageThumbnail(image)} alt="" />
+            <button type="button" onClick={() => applyImages(images.filter((_: any, imageIndex: number) => imageIndex !== index))}>削除</button>
+          </div>
+        ))}
+        {images.length < 3 && (
+          <label className="cover-image-add">
+            <span>＋</span>
+            <small>画像を追加</small>
+            <input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(event) => addImages(event.target.files || [])} />
+          </label>
+        )}
+      </div>
+      <p className="cover-image-help">見出し画像は最大3枚まで設定できます</p>
+      <div className="cover-image-url-row">
+        <input value={urlDraft} onChange={(event) => setUrlDraft(event.target.value)} placeholder="画像URLを追加" />
+        <button type="button" onClick={addUrl}>追加</button>
+      </div>
+      {message && <p className="cover-image-message">{message}</p>}
+    </div>
+  );
+}
+
 function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showMemo }: any) {
+  const updateCoverImages = (coverImages: any[]) => updatePrompt(prompt.id, { coverImages, imageUrl: coverImages[0] || "" });
   return (
     <article className="library-prompt-card">
       <PromptMenuButton
         onDuplicate={() => duplicatePrompt(prompt)}
-        onClearImage={() => updatePrompt(prompt.id, { imageUrl: "" })}
+        onClearImage={() => updatePrompt(prompt.id, { imageUrl: "", coverImages: [] })}
         onDelete={deletePrompt}
       />
-      <EditableThumbnail
-        prompt={prompt}
-        isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl"}
-        onEdit={() => setInlineEdit({ id: prompt.id, field: "imageUrl" })}
-        onCancel={() => setInlineEdit(null)}
-        onSave={(imageUrl: string) => { updatePrompt(prompt.id, { imageUrl }); setInlineEdit(null); }}
-      />
+      <CoverImageCarousel item={prompt} placeholderLabel="プロンプト画像" />
+      <CoverImageUploader item={prompt} category="prompt" onChange={updateCoverImages} />
       <div className="prompt-card-content">
         <InlineEditable
           className="inline-title"
@@ -2521,17 +2656,13 @@ async function readImage(event: any, onLoad: (value: string) => void, category =
 
 function MockupCategoryModal({ item, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item });
+  const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, coverImage: coverImages[0] || "" });
   return (
     <Modal title={item.id ? "カテゴリを編集" : "カテゴリを追加"} onClose={onClose}>
       <FormGrid>
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
         <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明文" />
-        <input value={draft.coverImage} onChange={(e) => setDraft({ ...draft, coverImage: e.target.value })} placeholder="カバー画像URL" />
-        <label className="upload-box">
-          <span>画像をアップロード</span>
-          <input type="file" accept="image/*" onChange={(e) => readImage(e, (coverImage) => setDraft({ ...draft, coverImage }), "mockup")} />
-        </label>
-        {draft.coverImage && <img className="modal-preview-image" src={draft.coverImage} alt="" />}
+        <CoverImageUploader item={draft} category="mockup" onChange={setCoverImages} />
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
     </Modal>
@@ -2540,6 +2671,7 @@ function MockupCategoryModal({ item, onClose, onSave }: any) {
 
 function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item });
+  const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, imageUrl: coverImages[0] || "" });
   return (
     <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
       <FormGrid>
@@ -2551,12 +2683,7 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
         <textarea className="tall" value={draft.japaneseTranslation || ""} onChange={(e) => setDraft({ ...draft, japaneseTranslation: e.target.value })} placeholder="和訳本文" />
         <textarea value={draft.memo || ""} onChange={(e) => setDraft({ ...draft, memo: e.target.value })} placeholder="メモ" />
-        <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サムネイル画像URL" />
-        <label className="upload-box">
-          <span>画像をアップロード</span>
-          <input type="file" accept="image/*" onChange={(e) => readImage(e, (imageUrl) => setDraft({ ...draft, imageUrl }), "mockup")} />
-        </label>
-        {draft.imageUrl && <img className="modal-preview-image" src={imageThumbnail(draft.imageUrl)} alt="" />}
+        <CoverImageUploader item={draft} category="mockup" onChange={setCoverImages} />
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
     </Modal>
@@ -2597,7 +2724,8 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
     const next = {
       ...item,
       id: item.id || uid(),
-      imageUrl: item.isTextStock ? "" : item.imageUrl || "",
+      coverImages: item.isTextStock ? [] : getCoverImages(item),
+      imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || item.note || "",
       note: item.note || item.memo || "",
@@ -4182,6 +4310,7 @@ function PromptCard({ prompt, onCopy, extra }: any) {
 
 function PromptModal({ item, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item, tagInput: tagText(item.tags) });
+  const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, imageUrl: coverImages[0] || "" });
   return (
     <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
       <FormGrid>
@@ -4191,7 +4320,7 @@ function PromptModal({ item, onClose, onSave }: any) {
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
         <textarea value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="メモ" />
         <input value={draft.tagInput} onChange={(e) => setDraft({ ...draft, tagInput: e.target.value })} placeholder="タグ（カンマ区切り）" />
-        <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サンプル画像URL" />
+        <CoverImageUploader item={draft} category="prompt" onChange={setCoverImages} />
         <label className="check"><input type="checkbox" checked={draft.favorite} onChange={(e) => setDraft({ ...draft, favorite: e.target.checked })} /> お気に入り</label>
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave({ ...draft, tags: splitTags(draft.tagInput) })} />
