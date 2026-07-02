@@ -264,7 +264,32 @@ const defaultJournal: JournalState = {
   items: [],
 };
 
-const sampleVideos: VideoItem[] = [];
+const sampleVideos: VideoItem[] = [
+  {
+    id: "video-sample-1",
+    title: "淡いステッカー紹介動画",
+    url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    model: "Runway",
+    thumbnail: "",
+    prompt: "soft pastel clipart sticker sheet reveal, gentle camera push in, cozy stationery desk, clean white background, smooth motion",
+    memo: "Etsyのサムネイル動画やSNS用に使いやすい構成。",
+    tags: ["sticker", "pastel", "reveal"],
+    favorite: true,
+    createdAt: "2026-07-02T00:00:00.000Z",
+  },
+  {
+    id: "video-sample-2",
+    title: "招待状モックアップ動画",
+    url: "",
+    model: "Kling",
+    thumbnail: "",
+    prompt: "wedding invitation card mockup on linen fabric, slow top-down camera movement, elegant natural light, warm ivory tone",
+    memo: "招待状パックの販売ページ用。",
+    tags: ["invitation", "mockup", "wedding"],
+    favorite: false,
+    createdAt: "2026-07-02T00:00:00.000Z",
+  },
+];
 const videoModels = ["Runway", "Kling", "Veo", "Hailuo", "Pika", "Luma", "その他"];
 const blankVideoPrompt = (): VideoItem => ({
   id: "",
@@ -290,12 +315,23 @@ function loadStoredVideoPrompts() {
       const saved = localStorage.getItem(key);
       if (!saved) continue;
       const items = JSON.parse(saved);
-      if (Array.isArray(items) && items.length) return items.map(normalizeVideoPrompt).slice(0, 20);
+      const extracted = extractVideoPromptItems(items);
+      if (extracted.length) return extracted.map(normalizeVideoPrompt).slice(0, 20);
     }
     return null;
   } catch {
     return null;
   }
+}
+
+function extractVideoPromptItems(value: any): any[] {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+  if (Array.isArray(value.cards)) return value.cards;
+  if (Array.isArray(value.prompts)) return value.prompts;
+  if (Array.isArray(value.videoPrompts)) return value.videoPrompts;
+  if (Array.isArray(value.items)) return value.items;
+  return [];
 }
 
 function normalizeVideoPrompt(item: any): VideoItem {
@@ -1369,9 +1405,9 @@ function App() {
   };
 
   React.useEffect(() => {
-    if ((videos as VideoItem[]).length) return;
+    if (extractVideoPromptItems(videos).length) return;
     const legacyVideos = loadStoredVideoPrompts();
-    if (legacyVideos?.length) setVideos(legacyVideos);
+    setVideos(legacyVideos?.length ? legacyVideos : sampleVideos);
   }, []);
 
   React.useEffect(() => {
@@ -3377,6 +3413,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
   const [modelFilter, setModelFilter] = React.useState("すべて");
   const [favoriteOnly, setFavoriteOnly] = React.useState(false);
   const [hoverVideoId, setHoverVideoId] = React.useState("");
+  const videoItems = extractVideoPromptItems(videos);
   const updateDraft = (patch: Partial<VideoItem>) => setDraft((current) => ({ ...current, ...patch }));
   const resetDraft = () => {
     setDraft(blankVideoPrompt());
@@ -3408,11 +3445,14 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
       window.alert("動画URLを入力してください");
       return;
     }
-    if (!draft.id && videos.length >= 20) {
+    if (!draft.id && videoItems.length >= 20) {
       window.alert("動画プロンプトは最大20件まで保存できます");
       return;
     }
-    setVideos((items: VideoItem[]) => draft.id ? items.map((item) => item.id === draft.id ? next : item) : [next, ...items].slice(0, 20));
+    setVideos((items: VideoItem[]) => {
+      const current = extractVideoPromptItems(items);
+      return draft.id ? current.map((item) => item.id === draft.id ? next : item) : [next, ...current].slice(0, 20);
+    });
     setDraft(next);
     setSelectedId(next.id);
     setTagDraft(tagText(next.tags));
@@ -3424,7 +3464,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
   };
   const deleteVideo = (id: string) => {
     if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
-    setVideos((items: VideoItem[]) => items.filter((item) => item.id !== id));
+    setVideos((items: VideoItem[]) => extractVideoPromptItems(items).filter((item) => item.id !== id));
     resetDraft();
   };
   const importThumbnail = async (file?: File) => {
@@ -3465,7 +3505,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
     window.alert("プロンプトをコピーしました");
   };
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
-  const normalizedVideos = (videos as VideoItem[]).slice(0, 20).map(normalizeVideoPrompt);
+  const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter((item) => {
     const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
     if (query && !haystack.includes(query.toLowerCase())) return false;
@@ -3566,7 +3606,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
             <article className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
               <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
                 event.stopPropagation();
-                setVideos((items: VideoItem[]) => items.map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
+                setVideos((items: VideoItem[]) => extractVideoPromptItems(items).map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
               }}>
                 {item.favorite ? "♥" : "♡"}
               </button>
@@ -3574,7 +3614,7 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
                 <summary aria-label="メニュー">…</summary>
                 <div>
                   <button onClick={(event) => { event.preventDefault(); editVideo(item); }}>編集</button>
-                  <button onClick={(event) => { event.preventDefault(); setVideos((items: VideoItem[]) => [{ ...item, id: uid(), title: `${item.title} コピー`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...items].slice(0, 20)); }}>複製</button>
+                  <button onClick={(event) => { event.preventDefault(); setVideos((items: VideoItem[]) => [{ ...item, id: uid(), title: `${item.title} コピー`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...extractVideoPromptItems(items)].slice(0, 20)); }}>複製</button>
                   <button className="danger" onClick={(event) => { event.preventDefault(); deleteVideo(item.id); }}>削除</button>
                 </div>
               </details>
@@ -3604,13 +3644,13 @@ function VideoLibrary({ videos, setVideos, setScreen }: any) {
               </div>
             </article>
           ) : (
-            <button className="add-prompt-card video-add-card" key={`empty-${index}`} onClick={openNewVideo} disabled={videos.length >= 20}>
+            <button className="add-prompt-card video-add-card" key={`empty-${index}`} onClick={openNewVideo} disabled={videoItems.length >= 20}>
               <span>＋</span>
               <strong>新しい動画プロンプト</strong>
             </button>
           ))}
         </div>
-        {!searchActive && videos.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
+        {!searchActive && videoItems.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
         {searchActive && !filteredVideos.length && <Empty text="条件に合う動画プロンプトがありません。" />}
       </section>
     </section>

@@ -3351,16 +3351,15 @@ p {
 .video-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border: 1px solid rgba(232, 222, 209, 0.9);
   border-radius: 26px;
-  background: var(--card-bg);
-  box-shadow: 0 14px 30px rgba(73, 58, 45, 0.07);
+  background: #fffdf9;
+  box-shadow: 0 14px 34px rgba(73, 58, 45, 0.065);
   cursor: pointer;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .video-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
   box-shadow: 0 22px 48px rgba(73, 58, 45, 0.11);
   transform: translateY(-5px);
 }
@@ -3394,7 +3393,7 @@ p {
   width: 100%;
   border: 0;
   border-radius: 0;
-  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+  background: var(--sand);
   padding: 0;
   overflow: hidden;
 }

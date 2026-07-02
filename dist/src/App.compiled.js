@@ -309,7 +309,29 @@ const defaultJournal = {
   background: "paper",
   items: []
 };
-const sampleVideos = [];
+const sampleVideos = [{
+  id: "video-sample-1",
+  title: "淡いステッカー紹介動画",
+  url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+  model: "Runway",
+  thumbnail: "",
+  prompt: "soft pastel clipart sticker sheet reveal, gentle camera push in, cozy stationery desk, clean white background, smooth motion",
+  memo: "Etsyのサムネイル動画やSNS用に使いやすい構成。",
+  tags: ["sticker", "pastel", "reveal"],
+  favorite: true,
+  createdAt: "2026-07-02T00:00:00.000Z"
+}, {
+  id: "video-sample-2",
+  title: "招待状モックアップ動画",
+  url: "",
+  model: "Kling",
+  thumbnail: "",
+  prompt: "wedding invitation card mockup on linen fabric, slow top-down camera movement, elegant natural light, warm ivory tone",
+  memo: "招待状パックの販売ページ用。",
+  tags: ["invitation", "mockup", "wedding"],
+  favorite: false,
+  createdAt: "2026-07-02T00:00:00.000Z"
+}];
 const videoModels = ["Runway", "Kling", "Veo", "Hailuo", "Pika", "Luma", "その他"];
 const blankVideoPrompt = () => ({
   id: "",
@@ -333,12 +355,22 @@ function loadStoredVideoPrompts() {
       const saved = localStorage.getItem(key);
       if (!saved) continue;
       const items = JSON.parse(saved);
-      if (Array.isArray(items) && items.length) return items.map(normalizeVideoPrompt).slice(0, 20);
+      const extracted = extractVideoPromptItems(items);
+      if (extracted.length) return extracted.map(normalizeVideoPrompt).slice(0, 20);
     }
     return null;
   } catch {
     return null;
   }
+}
+function extractVideoPromptItems(value) {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+  if (Array.isArray(value.cards)) return value.cards;
+  if (Array.isArray(value.prompts)) return value.prompts;
+  if (Array.isArray(value.videoPrompts)) return value.videoPrompts;
+  if (Array.isArray(value.items)) return value.items;
+  return [];
 }
 function normalizeVideoPrompt(item) {
   const base = blankVideoPrompt();
@@ -1350,9 +1382,9 @@ function App() {
     window.setTimeout(() => setToast(""), 1600);
   };
   React.useEffect(() => {
-    if (videos.length) return;
+    if (extractVideoPromptItems(videos).length) return;
     const legacyVideos = loadStoredVideoPrompts();
-    if (legacyVideos?.length) setVideos(legacyVideos);
+    setVideos(legacyVideos?.length ? legacyVideos : sampleVideos);
   }, []);
   React.useEffect(() => {
     const message = sessionStorage.getItem("promptAtelierRestoreMessage");
@@ -3853,6 +3885,7 @@ function VideoLibrary({
   const [modelFilter, setModelFilter] = React.useState("すべて");
   const [favoriteOnly, setFavoriteOnly] = React.useState(false);
   const [hoverVideoId, setHoverVideoId] = React.useState("");
+  const videoItems = extractVideoPromptItems(videos);
   const updateDraft = patch => setDraft(current => ({
     ...current,
     ...patch
@@ -3887,11 +3920,14 @@ function VideoLibrary({
       window.alert("動画URLを入力してください");
       return;
     }
-    if (!draft.id && videos.length >= 20) {
+    if (!draft.id && videoItems.length >= 20) {
       window.alert("動画プロンプトは最大20件まで保存できます");
       return;
     }
-    setVideos(items => draft.id ? items.map(item => item.id === draft.id ? next : item) : [next, ...items].slice(0, 20));
+    setVideos(items => {
+      const current = extractVideoPromptItems(items);
+      return draft.id ? current.map(item => item.id === draft.id ? next : item) : [next, ...current].slice(0, 20);
+    });
     setDraft(next);
     setSelectedId(next.id);
     setTagDraft(tagText(next.tags));
@@ -3906,7 +3942,7 @@ function VideoLibrary({
   };
   const deleteVideo = id => {
     if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
-    setVideos(items => items.filter(item => item.id !== id));
+    setVideos(items => extractVideoPromptItems(items).filter(item => item.id !== id));
     resetDraft();
   };
   const importThumbnail = async file => {
@@ -3949,7 +3985,7 @@ function VideoLibrary({
     window.alert("プロンプトをコピーしました");
   };
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
-  const normalizedVideos = videos.slice(0, 20).map(normalizeVideoPrompt);
+  const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter(item => {
     const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
     if (query && !haystack.includes(query.toLowerCase())) return false;
@@ -4151,7 +4187,7 @@ function VideoLibrary({
     "aria-label": "お気に入り",
     onClick: event => {
       event.stopPropagation();
-      setVideos(items => items.map(video => video.id === item.id ? {
+      setVideos(items => extractVideoPromptItems(items).map(video => video.id === item.id ? {
         ...video,
         favorite: !video.favorite
       } : video));
@@ -4175,7 +4211,7 @@ function VideoLibrary({
         title: `${item.title} コピー`,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      }, ...items].slice(0, 20));
+      }, ...extractVideoPromptItems(items)].slice(0, 20));
     }
   }, "複製"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
@@ -4225,8 +4261,8 @@ function VideoLibrary({
     className: "add-prompt-card video-add-card",
     key: `empty-${index}`,
     onClick: openNewVideo,
-    disabled: videos.length >= 20
-  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しい動画プロンプト")))), !searchActive && videos.length >= 20 && /*#__PURE__*/React.createElement("p", {
+    disabled: videoItems.length >= 20
+  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しい動画プロンプト")))), !searchActive && videoItems.length >= 20 && /*#__PURE__*/React.createElement("p", {
     className: "limit-message"
   }, "動画プロンプトは最大20件まで保存できます"), searchActive && !filteredVideos.length && /*#__PURE__*/React.createElement(Empty, {
     text: "条件に合う動画プロンプトがありません。"
