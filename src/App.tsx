@@ -180,7 +180,7 @@ type DisplayDensity = "comfortable" | "normal" | "compact";
 type CardRadiusStyle = "small" | "medium" | "large" | "pillowy";
 type CardShadowStyle = "none" | "soft" | "normal" | "dreamy";
 type CardTransparencyStyle = "solid" | "soft" | "glass";
-type CardBorderStyle = "none" | "thin" | "soft" | "dashed";
+type CardBorderStyle = "none" | "thin" | "soft" | "bold" | "dashed";
 type BackgroundType = "theme" | "solid" | "gradient" | "pattern" | "image";
 type BackgroundGradient = "milkPink" | "peachBeige" | "blueMist" | "lavenderMilk" | "mintCream" | "cafeLatte";
 type BackgroundPattern = "none" | "dot" | "stripe" | "grid" | "floral" | "paper";
@@ -369,7 +369,7 @@ const cardStyleOptions = {
   radius: [["small", "控えめ"], ["medium", "標準"], ["large", "大きめ"], ["pillowy", "ぷっくり"]],
   shadow: [["none", "なし"], ["soft", "弱め"], ["normal", "標準"], ["dreamy", "ふんわり"]],
   transparency: [["solid", "なし"], ["soft", "薄め"], ["glass", "ガラス風"]],
-  border: [["none", "なし"], ["thin", "細線"], ["soft", "淡い線"], ["dashed", "点線"]],
+  border: [["none", "なし"], ["thin", "細線"], ["soft", "淡い線"], ["bold", "太い"], ["dashed", "点線"]],
 } as const;
 
 const backgroundStyleOptions = {
@@ -644,7 +644,7 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
       radius: ["small", "medium", "large", "pillowy"].includes(rawCardStyle.radius) ? rawCardStyle.radius : "medium",
       shadow: ["none", "soft", "normal", "dreamy"].includes(rawCardStyle.shadow) ? rawCardStyle.shadow : "normal",
       transparency: ["solid", "soft", "glass"].includes(rawCardStyle.transparency) ? rawCardStyle.transparency : "solid",
-      border: ["none", "thin", "soft", "dashed"].includes(rawCardStyle.border) ? rawCardStyle.border : "soft",
+      border: ["none", "thin", "soft", "bold", "dashed"].includes(rawCardStyle.border) ? rawCardStyle.border : "soft",
     },
     backgroundStyle: {
       ...rawBackgroundStyle,
@@ -1168,28 +1168,28 @@ function customBackgroundLayers(settings: HomeSettings) {
     floral: "radial-gradient(circle at 10px 12px, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 3px), radial-gradient(circle at 15px 9px, color-mix(in srgb, var(--sage) 18%, transparent) 0 2px, transparent 3px)",
     paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)",
   };
-  if (bg.type === "solid") return bg.color;
+  if (bg.type === "solid") return `linear-gradient(${bg.color}, ${bg.color})`;
   if (bg.type === "gradient") return gradients[bg.gradient] || gradients.milkPink;
   if (bg.type === "pattern") {
     const pattern = patternLayers[bg.pattern] || "";
-    return pattern ? `${pattern}, var(--app-bg)` : "var(--app-bg)";
+    return pattern ? `${pattern}, linear-gradient(var(--app-bg), var(--app-bg))` : "linear-gradient(var(--app-bg), var(--app-bg))";
   }
   if (bg.type === "image" && bg.image) {
     const src = imageDisplaySrc(bg.image);
     if (src) return `linear-gradient(color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent), color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent)), url("${src}")`;
   }
-  return "";
+  return "none";
 }
 
 function customStyle(settings: HomeSettings) {
   const bg = settings.backgroundStyle || defaultBackgroundStyle;
   const bodyFonts: Record<FontPreset, string> = {
     simple: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    elegant: '"Hiragino Mincho ProN", "Yu Mincho", "Times New Roman", serif',
-    cute: '"Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
-    korean: '"Apple SD Gothic Neo", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif',
+    elegant: '"Hiragino Mincho ProN", "Yu Mincho", "Times New Roman", "Hiragino Sans", serif',
+    cute: '"Hiragino Maru Gothic ProN", "Yu Gothic", "Avenir Next Rounded", system-ui, sans-serif',
+    korean: '"Apple SD Gothic Neo", "Hiragino Sans", "Yu Gothic", "Avenir Next", system-ui, sans-serif',
     handwritten: '"Comic Sans MS", "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
-    cool: '"Avenir Next", "Helvetica Neue", Arial, sans-serif',
+    cool: '"Avenir Next Condensed", "Avenir Next", "Helvetica Neue", Arial, sans-serif',
   };
   const headingFonts: Record<FontPreset, string> = {
     ...bodyFonts,
@@ -1206,11 +1206,15 @@ function customStyle(settings: HomeSettings) {
   return {
     "--font-body": bodyFonts[settings.fontPreset || "simple"],
     "--font-heading": headingFonts[settings.fontPreset || "simple"],
-    "--font-weight-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "760" : settings.fontPreset === "cool" ? "850" : "900",
-    "--letter-spacing-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "0.035em" : "0",
-    "--body-line-height": settings.fontPreset === "korean" ? "1.82" : settings.fontPreset === "cool" ? "1.55" : "1.68",
-    "--custom-background": backgroundLayers || "",
-    "--custom-background-size": bg.type === "pattern" && bg.pattern === "grid" ? "34px 34px" : bg.type === "pattern" && bg.pattern === "paper" ? "8px 8px" : bg.type === "pattern" ? "54px 54px" : bg.type === "image" ? bg.imageFit : "auto",
+    "--font-number": settings.fontPreset === "cool" ? '"Avenir Next", "Helvetica Neue", Arial, sans-serif' : settings.fontPreset === "elegant" ? '"Times New Roman", "Hiragino Mincho ProN", serif' : bodyFonts[settings.fontPreset || "simple"],
+    "--font-weight-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "680" : settings.fontPreset === "cute" ? "900" : settings.fontPreset === "cool" ? "900" : "850",
+    "--font-weight-body": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "560" : settings.fontPreset === "cool" ? "720" : "650",
+    "--letter-spacing-heading": settings.fontPreset === "elegant" ? "0.07em" : settings.fontPreset === "korean" ? "0.055em" : settings.fontPreset === "cool" ? "-0.005em" : settings.fontPreset === "handwritten" ? "0.025em" : "0",
+    "--body-letter-spacing": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "0.025em" : settings.fontPreset === "cool" ? "-0.004em" : "0",
+    "--body-line-height": settings.fontPreset === "korean" ? "1.88" : settings.fontPreset === "cute" ? "1.78" : settings.fontPreset === "cool" ? "1.52" : "1.68",
+    "--heading-size-scale": settings.fontPreset === "elegant" ? "1.08" : settings.fontPreset === "cute" ? "1.04" : settings.fontPreset === "cool" ? "1.02" : "1",
+    "--custom-background": backgroundLayers || "none",
+    "--custom-background-size": bg.type === "pattern" && bg.pattern === "grid" ? "34px 34px, auto" : bg.type === "pattern" && bg.pattern === "paper" ? "8px 8px, auto" : bg.type === "pattern" ? "54px 54px, auto" : bg.type === "image" ? `${bg.imageFit}, ${bg.imageFit}` : "auto",
     "--custom-background-position": bg.type === "image" ? backgroundPositionMap[bg.imagePosition] : "center",
     "--custom-background-blur": bg.imageBlur === "medium" ? "blur(5px)" : bg.imageBlur === "soft" ? "blur(2px)" : "none",
   } as any;
@@ -2302,7 +2306,18 @@ function App() {
   };
 
   return (
-    <div className={`app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`} style={appStyle}>
+    <div
+      className={`app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`}
+      data-density={homeSettings.displayDensity || "normal"}
+      data-card-radius={homeSettings.cardStyle.radius}
+      data-card-shadow={homeSettings.cardStyle.shadow}
+      data-card-transparency={homeSettings.cardStyle.transparency}
+      data-card-border={homeSettings.cardStyle.border}
+      data-background-type={homeSettings.backgroundStyle.type}
+      data-font-preset={homeSettings.fontPreset || "simple"}
+      data-icon-set={homeSettings.iconSet || "line"}
+      style={appStyle}
+    >
       <header className="app-header">
         <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>
@@ -3437,7 +3452,18 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
 
         <aside className="customize-preview">
           <span>プレビュー</span>
-          <div className={`preview-shell ${previewClassName}`} style={previewStyle}>
+          <div
+            className={`preview-shell density-${settings.displayDensity || "normal"} ${previewClassName}`}
+            data-density={settings.displayDensity || "normal"}
+            data-card-radius={settings.cardStyle.radius}
+            data-card-shadow={settings.cardStyle.shadow}
+            data-card-transparency={settings.cardStyle.transparency}
+            data-card-border={settings.cardStyle.border}
+            data-background-type={settings.backgroundStyle.type}
+            data-font-preset={settings.fontPreset || "simple"}
+            data-icon-set={settings.iconSet || "line"}
+            style={previewStyle}
+          >
             {settings.bannerVisible && (
               <>
                 <div
@@ -3475,27 +3501,42 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               </>
             )}
             <section className="preview-style-showcase">
+              <div className="preview-demo-banner">
+                <span>Sample Banner</span>
+                <strong>Prompt Atelier Preview</strong>
+              </div>
               <div className="preview-mini-head">
                 <span className="feature-icon preview-icon"><FeatureIcon name="mockup" /></span>
                 <div>
-                  <strong>Preview Atelier</strong>
-                  <small>設定がここに即時反映されます</small>
+                  <strong>Prompt Atelier Preview</strong>
+                  <small>今日の制作ボード / Creative Board</small>
                 </div>
               </div>
               <article className="preview-sample-card">
                 <span className="mini-pill">Today’s Creative Board</span>
-                <h4>カードの角丸・影・透明感を確認</h4>
-                <p>フォント、背景、枠線、アイコンセットの雰囲気がこのプレビューに反映されます。</p>
+                <h4>今日の制作ボード</h4>
+                <h5>Creative Board</h5>
+                <strong className="preview-number-text">12 Projects / 48 Prompts / 300DPI</strong>
+                <p>カード密度・角丸・影・透明感・背景・フォント・アイコンの変化を確認できます。</p>
                 <div className="preview-icon-row">
                   <span><FeatureIcon name="mockup" /> モックアップ</span>
                   <span><FeatureIcon name="notebook" /> プロンプト</span>
                   <span><FeatureIcon name="folder" /> プロジェクト</span>
+                </div>
+                <div className="preview-button-row">
+                  <button type="button">小さなボタン</button>
+                  <span className="mini-pill">#sample</span>
                 </div>
               </article>
               <div className="preview-stat-row">
                 <button className="stat-card" type="button"><span className="stat-icon"><FeatureIcon name="magic" /></span><span className="stat-title">MJ設定</span><strong>18件</strong></button>
                 <button className="work-tool-launcher-item" type="button"><span><b>GPT</b></span><strong>作業ツール</strong></button>
               </div>
+              <nav className="preview-nav-sample" aria-label="プレビュー用ナビ">
+                <span><FeatureIcon name="spark" /> Home</span>
+                <span><FeatureIcon name="image" /> Gallery</span>
+                <span><FeatureIcon name="video" /> Video</span>
+              </nav>
             </section>
             <button className="primary preview-save-home" onClick={() => { setSettings(persistHomeSettings()); setScreen("home"); }}>
               保存してホームへ

@@ -116,7 +116,7 @@ const cardStyleOptions = {
   radius: [["small", "控えめ"], ["medium", "標準"], ["large", "大きめ"], ["pillowy", "ぷっくり"]],
   shadow: [["none", "なし"], ["soft", "弱め"], ["normal", "標準"], ["dreamy", "ふんわり"]],
   transparency: [["solid", "なし"], ["soft", "薄め"], ["glass", "ガラス風"]],
-  border: [["none", "なし"], ["thin", "細線"], ["soft", "淡い線"], ["dashed", "点線"]]
+  border: [["none", "なし"], ["thin", "細線"], ["soft", "淡い線"], ["bold", "太い"], ["dashed", "点線"]]
 };
 const backgroundStyleOptions = {
   type: [["theme", "テーマ標準"], ["solid", "単色"], ["gradient", "グラデーション"], ["pattern", "パターン"], ["image", "画像"]],
@@ -646,7 +646,7 @@ const normalizeHomeSettings = settings => {
       radius: ["small", "medium", "large", "pillowy"].includes(rawCardStyle.radius) ? rawCardStyle.radius : "medium",
       shadow: ["none", "soft", "normal", "dreamy"].includes(rawCardStyle.shadow) ? rawCardStyle.shadow : "normal",
       transparency: ["solid", "soft", "glass"].includes(rawCardStyle.transparency) ? rawCardStyle.transparency : "solid",
-      border: ["none", "thin", "soft", "dashed"].includes(rawCardStyle.border) ? rawCardStyle.border : "soft"
+      border: ["none", "thin", "soft", "bold", "dashed"].includes(rawCardStyle.border) ? rawCardStyle.border : "soft"
     },
     backgroundStyle: {
       ...rawBackgroundStyle,
@@ -1145,27 +1145,27 @@ function customBackgroundLayers(settings) {
     floral: "radial-gradient(circle at 10px 12px, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 3px), radial-gradient(circle at 15px 9px, color-mix(in srgb, var(--sage) 18%, transparent) 0 2px, transparent 3px)",
     paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)"
   };
-  if (bg.type === "solid") return bg.color;
+  if (bg.type === "solid") return `linear-gradient(${bg.color}, ${bg.color})`;
   if (bg.type === "gradient") return gradients[bg.gradient] || gradients.milkPink;
   if (bg.type === "pattern") {
     const pattern = patternLayers[bg.pattern] || "";
-    return pattern ? `${pattern}, var(--app-bg)` : "var(--app-bg)";
+    return pattern ? `${pattern}, linear-gradient(var(--app-bg), var(--app-bg))` : "linear-gradient(var(--app-bg), var(--app-bg))";
   }
   if (bg.type === "image" && bg.image) {
     const src = imageDisplaySrc(bg.image);
     if (src) return `linear-gradient(color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent), color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent)), url("${src}")`;
   }
-  return "";
+  return "none";
 }
 function customStyle(settings) {
   const bg = settings.backgroundStyle || defaultBackgroundStyle;
   const bodyFonts = {
     simple: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    elegant: '"Hiragino Mincho ProN", "Yu Mincho", "Times New Roman", serif',
-    cute: '"Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
-    korean: '"Apple SD Gothic Neo", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif',
+    elegant: '"Hiragino Mincho ProN", "Yu Mincho", "Times New Roman", "Hiragino Sans", serif',
+    cute: '"Hiragino Maru Gothic ProN", "Yu Gothic", "Avenir Next Rounded", system-ui, sans-serif',
+    korean: '"Apple SD Gothic Neo", "Hiragino Sans", "Yu Gothic", "Avenir Next", system-ui, sans-serif',
     handwritten: '"Comic Sans MS", "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
-    cool: '"Avenir Next", "Helvetica Neue", Arial, sans-serif'
+    cool: '"Avenir Next Condensed", "Avenir Next", "Helvetica Neue", Arial, sans-serif'
   };
   const headingFonts = {
     ...bodyFonts,
@@ -1182,11 +1182,15 @@ function customStyle(settings) {
   return {
     "--font-body": bodyFonts[settings.fontPreset || "simple"],
     "--font-heading": headingFonts[settings.fontPreset || "simple"],
-    "--font-weight-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "760" : settings.fontPreset === "cool" ? "850" : "900",
-    "--letter-spacing-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "0.035em" : "0",
-    "--body-line-height": settings.fontPreset === "korean" ? "1.82" : settings.fontPreset === "cool" ? "1.55" : "1.68",
-    "--custom-background": backgroundLayers || "",
-    "--custom-background-size": bg.type === "pattern" && bg.pattern === "grid" ? "34px 34px" : bg.type === "pattern" && bg.pattern === "paper" ? "8px 8px" : bg.type === "pattern" ? "54px 54px" : bg.type === "image" ? bg.imageFit : "auto",
+    "--font-number": settings.fontPreset === "cool" ? '"Avenir Next", "Helvetica Neue", Arial, sans-serif' : settings.fontPreset === "elegant" ? '"Times New Roman", "Hiragino Mincho ProN", serif' : bodyFonts[settings.fontPreset || "simple"],
+    "--font-weight-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "680" : settings.fontPreset === "cute" ? "900" : settings.fontPreset === "cool" ? "900" : "850",
+    "--font-weight-body": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "560" : settings.fontPreset === "cool" ? "720" : "650",
+    "--letter-spacing-heading": settings.fontPreset === "elegant" ? "0.07em" : settings.fontPreset === "korean" ? "0.055em" : settings.fontPreset === "cool" ? "-0.005em" : settings.fontPreset === "handwritten" ? "0.025em" : "0",
+    "--body-letter-spacing": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "0.025em" : settings.fontPreset === "cool" ? "-0.004em" : "0",
+    "--body-line-height": settings.fontPreset === "korean" ? "1.88" : settings.fontPreset === "cute" ? "1.78" : settings.fontPreset === "cool" ? "1.52" : "1.68",
+    "--heading-size-scale": settings.fontPreset === "elegant" ? "1.08" : settings.fontPreset === "cute" ? "1.04" : settings.fontPreset === "cool" ? "1.02" : "1",
+    "--custom-background": backgroundLayers || "none",
+    "--custom-background-size": bg.type === "pattern" && bg.pattern === "grid" ? "34px 34px, auto" : bg.type === "pattern" && bg.pattern === "paper" ? "8px 8px, auto" : bg.type === "pattern" ? "54px 54px, auto" : bg.type === "image" ? `${bg.imageFit}, ${bg.imageFit}` : "auto",
     "--custom-background-position": bg.type === "image" ? backgroundPositionMap[bg.imagePosition] : "center",
     "--custom-background-blur": bg.imageBlur === "medium" ? "blur(5px)" : bg.imageBlur === "soft" ? "blur(2px)" : "none"
   };
@@ -2246,6 +2250,14 @@ function App() {
   };
   return /*#__PURE__*/React.createElement("div", {
     className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`,
+    "data-density": homeSettings.displayDensity || "normal",
+    "data-card-radius": homeSettings.cardStyle.radius,
+    "data-card-shadow": homeSettings.cardStyle.shadow,
+    "data-card-transparency": homeSettings.cardStyle.transparency,
+    "data-card-border": homeSettings.cardStyle.border,
+    "data-background-type": homeSettings.backgroundStyle.type,
+    "data-font-preset": homeSettings.fontPreset || "simple",
+    "data-icon-set": homeSettings.iconSet || "line",
     style: appStyle
   }, /*#__PURE__*/React.createElement("header", {
     className: "app-header"
@@ -3632,7 +3644,15 @@ function HomeCustomize({
   }, "初期設定に戻す"))), /*#__PURE__*/React.createElement("aside", {
     className: "customize-preview"
   }, /*#__PURE__*/React.createElement("span", null, "プレビュー"), /*#__PURE__*/React.createElement("div", {
-    className: `preview-shell ${previewClassName}`,
+    className: `preview-shell density-${settings.displayDensity || "normal"} ${previewClassName}`,
+    "data-density": settings.displayDensity || "normal",
+    "data-card-radius": settings.cardStyle.radius,
+    "data-card-shadow": settings.cardStyle.shadow,
+    "data-card-transparency": settings.cardStyle.transparency,
+    "data-card-border": settings.cardStyle.border,
+    "data-background-type": settings.backgroundStyle.type,
+    "data-font-preset": settings.fontPreset || "simple",
+    "data-icon-set": settings.iconSet || "line",
     style: previewStyle
   }, settings.bannerVisible && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: `preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
@@ -3663,16 +3683,20 @@ function HomeCustomize({
   }, "中央に戻す"))), /*#__PURE__*/React.createElement("section", {
     className: "preview-style-showcase"
   }, /*#__PURE__*/React.createElement("div", {
+    className: "preview-demo-banner"
+  }, /*#__PURE__*/React.createElement("span", null, "Sample Banner"), /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier Preview")), /*#__PURE__*/React.createElement("div", {
     className: "preview-mini-head"
   }, /*#__PURE__*/React.createElement("span", {
     className: "feature-icon preview-icon"
   }, /*#__PURE__*/React.createElement(FeatureIcon, {
     name: "mockup"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Preview Atelier"), /*#__PURE__*/React.createElement("small", null, "設定がここに即時反映されます"))), /*#__PURE__*/React.createElement("article", {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier Preview"), /*#__PURE__*/React.createElement("small", null, "今日の制作ボード / Creative Board"))), /*#__PURE__*/React.createElement("article", {
     className: "preview-sample-card"
   }, /*#__PURE__*/React.createElement("span", {
     className: "mini-pill"
-  }, "Today’s Creative Board"), /*#__PURE__*/React.createElement("h4", null, "カードの角丸・影・透明感を確認"), /*#__PURE__*/React.createElement("p", null, "フォント、背景、枠線、アイコンセットの雰囲気がこのプレビューに反映されます。"), /*#__PURE__*/React.createElement("div", {
+  }, "Today’s Creative Board"), /*#__PURE__*/React.createElement("h4", null, "今日の制作ボード"), /*#__PURE__*/React.createElement("h5", null, "Creative Board"), /*#__PURE__*/React.createElement("strong", {
+    className: "preview-number-text"
+  }, "12 Projects / 48 Prompts / 300DPI"), /*#__PURE__*/React.createElement("p", null, "カード密度・角丸・影・透明感・背景・フォント・アイコンの変化を確認できます。"), /*#__PURE__*/React.createElement("div", {
     className: "preview-icon-row"
   }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
     name: "mockup"
@@ -3680,7 +3704,13 @@ function HomeCustomize({
     name: "notebook"
   }), " プロンプト"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
     name: "folder"
-  }), " プロジェクト"))), /*#__PURE__*/React.createElement("div", {
+  }), " プロジェクト")), /*#__PURE__*/React.createElement("div", {
+    className: "preview-button-row"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button"
+  }, "小さなボタン"), /*#__PURE__*/React.createElement("span", {
+    className: "mini-pill"
+  }, "#sample"))), /*#__PURE__*/React.createElement("div", {
     className: "preview-stat-row"
   }, /*#__PURE__*/React.createElement("button", {
     className: "stat-card",
@@ -3694,7 +3724,16 @@ function HomeCustomize({
   }, "MJ設定"), /*#__PURE__*/React.createElement("strong", null, "18件")), /*#__PURE__*/React.createElement("button", {
     className: "work-tool-launcher-item",
     type: "button"
-  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "GPT")), /*#__PURE__*/React.createElement("strong", null, "作業ツール")))), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "GPT")), /*#__PURE__*/React.createElement("strong", null, "作業ツール"))), /*#__PURE__*/React.createElement("nav", {
+    className: "preview-nav-sample",
+    "aria-label": "プレビュー用ナビ"
+  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "spark"
+  }), " Home"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "image"
+  }), " Gallery"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "video"
+  }), " Video"))), /*#__PURE__*/React.createElement("button", {
     className: "primary preview-save-home",
     onClick: () => {
       setSettings(persistHomeSettings());
