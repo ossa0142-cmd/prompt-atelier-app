@@ -8,7 +8,9 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-self.addEventListener("fetch", () => {
-  // Prompt Atelier keeps user data in localStorage / IndexedDB.
-  // The service worker is intentionally light so it never serves stale app data.
+self.addEventListener("fetch", (event) => {
+  // Keep this network-first and cache-free while Prompt Atelier is shared as a prototype.
+  // User data lives in localStorage / IndexedDB and is not touched by this worker.
+  if (event.request.method !== "GET") return;
+  event.respondWith(fetch(event.request));
 });

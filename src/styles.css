@@ -505,6 +505,14 @@ main {
   line-height: 1.6;
 }
 
+.pwa-install-help {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .pwa-install-actions {
   display: flex;
   flex-wrap: wrap;

@@ -1843,6 +1843,7 @@ function App() {
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [installPrompt, setInstallPrompt] = React.useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = React.useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = React.useState(false);
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -1898,36 +1899,55 @@ function App() {
   }, []);
   React.useEffect(() => {
     const isStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
+    setIsStandaloneApp(isStandalone);
     if (isStandalone) return;
     const dismissedInSession = sessionStorage.getItem("promptAtelierPwaInstallDismissed") === "true";
+    if (!dismissedInSession) setShowInstallPrompt(true);
+    const existingPrompt = window.__promptAtelierInstallPrompt;
+    if (existingPrompt) setInstallPrompt(existingPrompt);
     const handleBeforeInstallPrompt = event => {
       event.preventDefault();
       setInstallPrompt(event);
-      if (!dismissedInSession) setShowInstallPrompt(true);
+    };
+    const handleInstallReady = () => {
+      const promptEvent = window.__promptAtelierInstallPrompt;
+      if (promptEvent) {
+        setInstallPrompt(promptEvent);
+        if (!sessionStorage.getItem("promptAtelierPwaInstallDismissed")) setShowInstallPrompt(true);
+      }
     };
     const handleInstalled = () => {
       setInstallPrompt(null);
+      window.__promptAtelierInstallPrompt = null;
       setShowInstallPrompt(false);
+      setIsStandaloneApp(true);
       setToast("Prompt Atelierをアプリとして追加しました");
       window.setTimeout(() => setToast(""), 1800);
     };
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("promptatelierinstallready", handleInstallReady);
     window.addEventListener("appinstalled", handleInstalled);
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("promptatelierinstallready", handleInstallReady);
       window.removeEventListener("appinstalled", handleInstalled);
     };
   }, []);
   const installPwa = async () => {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    const choice = await installPrompt.userChoice?.catch(() => null);
+    const promptEvent = installPrompt || window.__promptAtelierInstallPrompt;
+    if (!promptEvent) {
+      window.alert("Chromeでインストール条件を確認中、または条件を満たしていない可能性があります。\n\n本番公開URL（https）をChromeで開いているか確認してください。\nそれでも出ない場合は、右上メニューから「保存して共有」→「ページをアプリとしてインストール」を選んでください。");
+      return;
+    }
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice?.catch(() => null);
     if (choice?.outcome === "accepted") {
       setInstallPrompt(null);
+      window.__promptAtelierInstallPrompt = null;
       setShowInstallPrompt(false);
       return;
     }
-    setShowInstallPrompt(false);
+    setShowInstallPrompt(true);
   };
   const dismissInstallPrompt = () => {
     sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
@@ -1948,7 +1968,8 @@ function App() {
     key: id,
     className: screen === id ? "active" : "",
     onClick: () => setScreen(id)
-  }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && installPrompt && /*#__PURE__*/React.createElement(PwaInstallCard, {
+  }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && !isStandaloneApp && /*#__PURE__*/React.createElement(PwaInstallCard, {
+    canInstall: Boolean(installPrompt),
     onInstall: installPwa,
     onDismiss: dismissInstallPrompt
   }), screen === "home" && /*#__PURE__*/React.createElement(Home, {
@@ -2013,6 +2034,7 @@ function App() {
   }, toast));
 }
 function PwaInstallCard({
+  canInstall,
   onInstall,
   onDismiss
 }) {
@@ -2022,12 +2044,14 @@ function PwaInstallCard({
     "aria-label": "Prompt Atelierをアプリとして追加"
   }, /*#__PURE__*/React.createElement("div", {
     className: "pwa-install-icon"
-  }, "PA"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelierをアプリにしますか？"), /*#__PURE__*/React.createElement("p", null, "Dockからすぐ開けるようになります。保存済みデータはこのブラウザ内に残ります。")), /*#__PURE__*/React.createElement("div", {
+  }, "PA"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelierをアプリとして追加"), /*#__PURE__*/React.createElement("p", null, "ChromeでDockに追加すると、アプリのように起動できます。保存済みデータはこのブラウザ内に残ります。"), !canInstall && /*#__PURE__*/React.createElement("small", {
+    className: "pwa-install-help"
+  }, "Chrome推奨です。ポップアップが出ない場合は、本番公開URLをChromeで開き、右上メニューから「保存して共有」→「ページをアプリとしてインストール」を選んでください。")), /*#__PURE__*/React.createElement("div", {
     className: "pwa-install-actions"
   }, /*#__PURE__*/React.createElement("button", {
     className: "primary",
     onClick: onInstall
-  }, "はい、追加する"), /*#__PURE__*/React.createElement("button", {
+  }, canInstall ? "アプリとして追加" : "追加方法を見る"), /*#__PURE__*/React.createElement("button", {
     onClick: onDismiss
   }, "あとで")));
 }
