@@ -1042,6 +1042,14 @@ function loadImageFromFile(file) {
     image.src = url;
   });
 }
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("画像を読み込めませんでした"));
+    reader.readAsDataURL(file);
+  });
+}
 function canvasDataUrl(image, maxSide, quality = 0.82) {
   const sourceWidth = image.naturalWidth || image.width;
   const sourceHeight = image.naturalHeight || image.height;
@@ -1228,6 +1236,36 @@ async function optimizeImage(file, category = "gallery") {
   return storeOptimizedImage(optimized, category, {
     title: file.name,
     memo: "",
+    favorite: false
+  });
+}
+async function optimizeBannerImage(file) {
+  if (!isSupportedImageFile(file)) throw new Error("対応していない画像形式です");
+  const image = await loadImageFromFile(file);
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const maxSide = Math.max(sourceWidth, sourceHeight);
+  const keepOriginal = maxSide <= 1600;
+  const full = keepOriginal ? {
+    dataUrl: await readFileAsDataUrl(file),
+    width: sourceWidth,
+    height: sourceHeight,
+    mimeType: file.type || "image/*"
+  } : canvasDataUrl(image, 1600, 0.94);
+  const thumbnail = canvasDataUrl(image, 720, 0.88);
+  const optimized = {
+    id: uid(),
+    src: full.dataUrl,
+    thumbnail: thumbnail.dataUrl,
+    originalName: file.name,
+    mimeType: full.mimeType,
+    width: full.width,
+    height: full.height,
+    createdAt: new Date().toISOString()
+  };
+  return storeOptimizedImage(optimized, "banner", {
+    title: file.name,
+    memo: "ホームバナー画像",
     favorite: false
   });
 }
@@ -3487,7 +3525,7 @@ async function readImage(event, onLoad, category = "prompt") {
   const file = event.target.files?.[0];
   if (!file) return;
   try {
-    const image = saveImageToStorage(await optimizeImage(file, category));
+    const image = saveImageToStorage(category === "banner" ? await optimizeBannerImage(file) : await optimizeImage(file, category));
     onLoad(image.src);
   } catch (error) {
     console.error("[Prompt Atelier] 画像の最適化に失敗しました", error);
