@@ -1326,6 +1326,52 @@ main {
   transform: translateY(-5px);
 }
 
+.library-category-card.is-dragging {
+  opacity: 0.62;
+  transform: translateY(-6px) scale(0.98);
+}
+
+.library-category-card.is-drag-over {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent), 0 22px 48px rgba(73, 58, 45, 0.1);
+}
+
+.category-drag-handle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  box-shadow: 0 8px 18px rgba(73, 58, 45, 0.08);
+  color: var(--muted);
+  cursor: grab;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.category-drag-handle:active {
+  cursor: grabbing;
+}
+
+.category-drag-handle:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.category-sort-note {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .category-open {
   display: grid;
   width: 100%;

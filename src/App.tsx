@@ -24,6 +24,7 @@ type MockupCategory = {
   description: string;
   coverImage: string;
   coverImages?: any[];
+  order?: number;
 };
 
 type LibraryBoardPrompt = LibraryPrompt & {
@@ -603,6 +604,17 @@ const defaultMockupCategories: MockupCategory[] = [
   },
 ];
 
+function normalizeMockupCategoryOrder(items: MockupCategory[]) {
+  return [...(items || [])]
+    .map((category, index) => ({
+      ...category,
+      order: Number.isFinite(Number(category.order)) ? Number(category.order) : index + 1,
+      __index: index,
+    }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0) || a.__index - b.__index)
+    .map(({ __index, ...category }, index) => ({ ...category, order: index + 1 }));
+}
+
 const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
   ...libraryPrompts.map((prompt) => ({
     ...prompt,
@@ -788,7 +800,8 @@ const lowerIncludes = (source: string, query: string) => source.toLowerCase().in
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
-const DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
+const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
+const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
 const SAMPLE_EXPORT_KEYS = [
   "prompt-atelier-mockup-categories-v2",
   "prompt-atelier-library-prompts-v5",
@@ -804,6 +817,7 @@ const SAMPLE_EXPORT_KEYS = [
 ];
 const SAMPLE_DATA_STORAGE_MAP: Record<string, string> = {
   libraryItems: "prompt-atelier-mockup-categories-v2",
+  mockupCategories: "prompt-atelier-mockup-categories-v2",
   mockupItems: "prompt-atelier-library-prompts-v5",
   mockupStocks: "prompt-atelier-library-prompts-v5",
   promptCards: "prompt-atelier-prompts-ja-v2",
@@ -816,6 +830,7 @@ const SAMPLE_DATA_STORAGE_MAP: Record<string, string> = {
   journalItems: "promptAtelierJournal",
   journalBackgrounds: "promptAtelierJournal",
   homeSettings: "promptAtelierHomeSettings",
+  customizeSettings: "promptAtelierHomeSettings",
   workTools: "promptAtelierWorkTools",
 };
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
@@ -1434,17 +1449,24 @@ function clipboardImageFiles(event: React.ClipboardEvent) {
 }
 
 function useStoredState<T>(key: string, fallback: T) {
+  const hasStoredValueRef = React.useRef(false);
   const [value, setValue] = React.useState<T>(() => {
     try {
       const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : fallback;
+      if (saved) {
+        hasStoredValueRef.current = true;
+        return JSON.parse(saved);
+      }
+      return fallback;
     } catch {
       return fallback;
     }
   });
   React.useEffect(() => {
     try {
+      if (!hasStoredValueRef.current && JSON.stringify(value) === JSON.stringify(fallback)) return;
       localStorage.setItem(key, JSON.stringify(value));
+      hasStoredValueRef.current = true;
     } catch (error) {
       console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
     }
@@ -1705,6 +1727,31 @@ function sampleIdOf(item: any) {
   return item?.sampleId || "";
 }
 
+function readDeletedSampleIds() {
+  const values = [DELETED_SAMPLE_IDS_KEY, LEGACY_DELETED_SAMPLE_IDS_KEY].flatMap((key) => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+  return new Set<string>(values.filter(Boolean));
+}
+
+function writeDeletedSampleIds(ids: Set<string>) {
+  localStorage.setItem(DELETED_SAMPLE_IDS_KEY, JSON.stringify([...ids]));
+}
+
+function rememberDeletedSampleIdsFromItems(items: any) {
+  const list = Array.isArray(items) ? items : [items];
+  const sampleIds = list.map(sampleIdOf).filter(Boolean);
+  if (!sampleIds.length) return;
+  const deletedIds = readDeletedSampleIds();
+  sampleIds.forEach((sampleId) => deletedIds.add(sampleId));
+  writeDeletedSampleIds(deletedIds);
+}
+
 function mergeSampleCollection(existing: any, incoming: any, deletedIds: Set<string>) {
   if (!Array.isArray(incoming)) return existing ?? incoming;
   const current = Array.isArray(existing) ? existing : [];
@@ -1713,7 +1760,7 @@ function mergeSampleCollection(existing: any, incoming: any, deletedIds: Set<str
   incoming.forEach((item) => {
     const sampleId = sampleIdOf(item);
     if (!sampleId || deletedIds.has(sampleId) || currentSampleIds.has(sampleId)) return;
-    next.push(cleanSampleValue(item));
+    next.push({ ...cleanSampleValue(item), isSample: true, sampleId });
     currentSampleIds.add(sampleId);
   });
   return next;
@@ -1741,6 +1788,7 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
     storageData[key] = [...(storageData[key] || []), ...values];
   };
   append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
@@ -1758,6 +1806,7 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
     };
   }
   if (seedData.homeSettings && typeof seedData.homeSettings === "object") storageData.promptAtelierHomeSettings = seedData.homeSettings;
+  if (seedData.customizeSettings && typeof seedData.customizeSettings === "object") storageData.promptAtelierHomeSettings = seedData.customizeSettings;
   append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
   return storageData;
 }
@@ -1768,7 +1817,7 @@ async function loadSampleSeedIfNeeded() {
     if (!response.ok) return false;
     const seed = await response.json();
     if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) return false;
-    const deletedIds = new Set<string>(JSON.parse(localStorage.getItem(DELETED_SAMPLE_IDS_KEY) || "[]"));
+    const deletedIds = readDeletedSampleIds();
     let changed = false;
     const storageData = Object.keys(SAMPLE_DATA_STORAGE_MAP).some((key) => key in seed.data)
       ? sampleSeedDataToStorage(seed.data)
@@ -1786,8 +1835,9 @@ async function loadSampleSeedIfNeeded() {
       for (const image of seed.images) {
         const sampleId = sampleIdOf(image);
         if (sampleId && deletedIds.has(sampleId)) continue;
+        if (sampleId && [...indexedDbImageCache.values()].some((record: any) => record?.sampleId === sampleId)) continue;
         if (image?.id && image?.src && !indexedDbImageCache.has(image.id)) {
-          await putIndexedDbImage(cleanSampleValue(image));
+          await putIndexedDbImage({ ...cleanSampleValue(image), isSample: true });
           changed = true;
         }
       }
@@ -2412,7 +2462,10 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   };
   const deleteWorkTool = (id: string) => {
     if (window.confirm("この作業ツールを削除しますか？")) {
-      setWorkTools((items: WorkTool[]) => items.filter((item) => item.id !== id));
+      setWorkTools((items: WorkTool[]) => {
+        rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+        return items.filter((item) => item.id !== id);
+      });
     }
   };
   const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
@@ -2769,10 +2822,14 @@ function Library({ copyText, setScreen }: any) {
   const [memoPrompt, setMemoPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [stockFrameCounts, setStockFrameCounts] = React.useState<Record<string, number>>({});
+  const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
+  const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
-  const currentCategory = selectedCategory ? boardCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
-  const filteredCategories = boardCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
+  const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
+  const currentCategory = selectedCategory ? orderedCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
+  const isCategorySearching = !currentCategory && query.trim().length > 0;
+  const filteredCategories = orderedCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter((item) => {
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
@@ -2793,7 +2850,7 @@ function Library({ copyText, setScreen }: any) {
     id: "",
     title: "",
     category: "ステッカーモックアップ" as Category,
-    categoryId: currentCategory?.id || boardCategories[0]?.id || "",
+    categoryId: currentCategory?.id || orderedCategories[0]?.id || "",
     description: "",
     prompt: "",
     memo: "",
@@ -2807,11 +2864,19 @@ function Library({ copyText, setScreen }: any) {
     const coverImages = getCoverImages(item);
     const coverImage = coverImages[0] || item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7");
     const next = { ...item, id: item.id || uid(), coverImage, coverImages: coverImages.length ? coverImages : [coverImage] };
-    setBoardCategories((items: MockupCategory[]) => item.id ? items.map((category) => category.id === item.id ? next : category) : [next, ...items]);
+    setBoardCategories((items: MockupCategory[]) => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      if (item.id) {
+        const existing = normalized.find((category) => category.id === item.id);
+        return normalizeMockupCategoryOrder(normalized.map((category) => category.id === item.id ? { ...next, order: next.order ?? existing?.order } : category));
+      }
+      const maxOrder = normalized.reduce((max, category) => Math.max(max, category.order || 0), 0);
+      return normalizeMockupCategoryOrder([...normalized, { ...next, order: maxOrder + 1 }]);
+    });
     setEditingCategory(null);
   };
   const savePrompt = (item: LibraryBoardPrompt) => {
-    const category = boardCategories.find((category) => category.id === item.categoryId) || currentCategory || boardCategories[0];
+    const category = orderedCategories.find((category) => category.id === item.categoryId) || currentCategory || orderedCategories[0];
     const countForKind = boardPrompts.filter((prompt) => prompt.categoryId === category.id && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
     const limit = item.isTextStock ? 100 : 20;
     if (!item.id && countForKind >= limit) {
@@ -2834,7 +2899,11 @@ function Library({ copyText, setScreen }: any) {
     setEditingPrompt(null);
   };
   const duplicateCategory = (item: MockupCategory) => {
-    setBoardCategories((items: MockupCategory[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
+    setBoardCategories((items: MockupCategory[]) => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      const maxOrder = normalized.reduce((max, category) => Math.max(max, category.order || 0), 0);
+      return normalizeMockupCategoryOrder([...normalized, { ...item, id: uid(), title: `${item.title} コピー`, order: maxOrder + 1 }]);
+    });
   };
   const duplicatePrompt = (item: LibraryBoardPrompt) => {
     const countForKind = boardPrompts.filter((prompt) => prompt.categoryId === item.categoryId && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
@@ -2852,6 +2921,59 @@ function Library({ copyText, setScreen }: any) {
     if (!currentCategory || !canAddTextStock) return;
     setStockFrameCounts((counts) => ({ ...counts, [currentCategory.id]: Math.min(100, stockFrameCount + 1) }));
   };
+  const deleteCategory = (id: string) => {
+    setBoardCategories((items: MockupCategory[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return normalizeMockupCategoryOrder(items.filter((item) => item.id !== id));
+    });
+  };
+  const deleteBoardPrompt = (id: string) => {
+    setBoardPrompts((items: LibraryBoardPrompt[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return items.filter((item) => item.id !== id);
+    });
+  };
+  const reorderCategories = (sourceId: string, targetId: string) => {
+    if (isCategorySearching || !sourceId || !targetId || sourceId === targetId) return;
+    setBoardCategories((items: MockupCategory[]) => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      const fromIndex = normalized.findIndex((category) => category.id === sourceId);
+      const toIndex = normalized.findIndex((category) => category.id === targetId);
+      if (fromIndex < 0 || toIndex < 0) return normalized;
+      const next = [...normalized];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return normalizeMockupCategoryOrder(next);
+    });
+  };
+  const startCategoryDrag = (event: React.DragEvent, categoryId: string) => {
+    if (isCategorySearching) {
+      event.preventDefault();
+      return;
+    }
+    event.stopPropagation();
+    setDraggedCategoryId(categoryId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", categoryId);
+  };
+  const overCategoryDrag = (event: React.DragEvent, categoryId: string) => {
+    if (isCategorySearching || !draggedCategoryId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverCategoryId(categoryId);
+  };
+  const dropCategoryDrag = (event: React.DragEvent, categoryId: string) => {
+    if (isCategorySearching) return;
+    event.preventDefault();
+    const sourceId = draggedCategoryId || event.dataTransfer.getData("text/plain");
+    reorderCategories(sourceId, categoryId);
+    setDraggedCategoryId("");
+    setDragOverCategoryId("");
+  };
+  const endCategoryDrag = () => {
+    setDraggedCategoryId("");
+    setDragOverCategoryId("");
+  };
   return (
     <section className="page library-page">
       {!currentCategory ? (
@@ -2866,14 +2988,34 @@ function Library({ copyText, setScreen }: any) {
           <Filters>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="カテゴリを検索..." />
           </Filters>
+          {isCategorySearching && <p className="category-sort-note">並び替えは検索を解除すると使用できます。</p>}
           <div className="library-category-grid">
             {filteredCategories.map((category) => (
-              <article className="library-category-card" key={category.id}>
+              <article
+                className={`library-category-card ${draggedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`}
+                key={category.id}
+                onDragOver={(event) => overCategoryDrag(event, category.id)}
+                onDrop={(event) => dropCategoryDrag(event, category.id)}
+                onDragLeave={() => dragOverCategoryId === category.id && setDragOverCategoryId("")}
+              >
+                <button
+                  type="button"
+                  className="category-drag-handle"
+                  draggable={!isCategorySearching}
+                  aria-label={`${category.title}を並び替え`}
+                  title={isCategorySearching ? "検索を解除すると並び替えできます" : "ドラッグして並び替え"}
+                  onClick={(event) => event.stopPropagation()}
+                  onDragStart={(event) => startCategoryDrag(event, category.id)}
+                  onDragEnd={endCategoryDrag}
+                  disabled={isCategorySearching}
+                >
+                  ⋮⋮
+                </button>
                 <MenuButton
                   onEdit={() => setEditingCategory(category)}
                   onDuplicate={() => duplicateCategory(category)}
                   onImage={() => setEditingCategory(category)}
-                  onDelete={() => setBoardCategories((items: MockupCategory[]) => items.filter((item) => item.id !== category.id))}
+                  onDelete={() => deleteCategory(category.id)}
                 />
                 <button className="category-open" onClick={() => { setSelectedCategory(category); setQuery(""); }}>
                   <CoverImageCarousel item={category} className="category-cover-carousel" placeholderLabel="カテゴリ" />
@@ -2915,7 +3057,7 @@ function Library({ copyText, setScreen }: any) {
                   setInlineEdit={setInlineEdit}
                   updatePrompt={updatePrompt}
                   duplicatePrompt={duplicatePrompt}
-                  deletePrompt={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+                  deletePrompt={() => deleteBoardPrompt(prompt.id)}
                   copyText={copyText}
                   showMemo={() => setMemoPrompt(prompt)}
                 />
@@ -2956,7 +3098,7 @@ function Library({ copyText, setScreen }: any) {
         </>
       )}
       {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
-      {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={boardCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
+      {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={orderedCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
       {memoPrompt && (
         <MemoModal
           prompt={memoPrompt}
@@ -3446,6 +3588,12 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
     if (countForKind >= (prompt.isTextStock ? 100 : 20)) return;
     setPrompts((items: MyPrompt[]) => [...items, { ...prompt, id: uid(), title: `${prompt.title} コピー` }]);
   };
+  const deletePrompt = (id: string) => {
+    setPrompts((items: MyPrompt[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return items.filter((item) => item.id !== id);
+    });
+  };
   const saveTextStockFrame = (item: MyPrompt) => {
     if (!item.title.trim() && !item.prompt.trim()) return;
     save({ ...item, isTextStock: true, imageUrl: "" });
@@ -3481,7 +3629,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
               setInlineEdit={setInlineEdit}
               updatePrompt={updatePrompt}
               duplicatePrompt={duplicatePrompt}
-              deletePrompt={() => setPrompts((items: MyPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+              deletePrompt={() => deletePrompt(prompt.id)}
               copyText={copyText}
               showTranslation={() => setTranslationPrompt(prompt)}
               showMemo={() => setMemoPrompt(prompt)}
@@ -3762,7 +3910,10 @@ function Midjourney({ settings, setSettings, copyText, setScreen }: any) {
                   item={item}
                   highlighted={highlightedId === item.id}
                   onUpdate={(patch: Partial<MjSetting>) => updateSavedSetting(item.id, patch)}
-                  onDelete={() => setSettings((items: MjSetting[]) => items.filter((setting) => setting.id !== item.id))}
+                  onDelete={() => setSettings((items: MjSetting[]) => {
+                    rememberDeletedSampleIdsFromItems(items.find((setting) => setting.id === item.id));
+                    return items.filter((setting) => setting.id !== item.id);
+                  })}
                   onCopyPrompt={() => copyText(mjCommand(item), item.id)}
                   onCopyParams={() => copyText((item.extractedParams || []).join(" "), item.id)}
                   onParamClick={applyParamFromCard}
@@ -4158,7 +4309,10 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
     setImages((items: AtelierImage[]) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
   };
   const deleteImage = (id: string) => {
-    setImages((items: AtelierImage[]) => items.filter((item) => item.id !== id));
+    setImages((items: AtelierImage[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return items.filter((item) => item.id !== id);
+    });
     setPreviewId("");
   };
   const pasteToJournal = (image: AtelierImage) => {
@@ -4374,7 +4528,11 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       delete next[id];
       return next;
     });
-    setVideos((items: VideoItem[]) => extractVideoPromptItems(items).filter((item) => item.id !== id));
+    setVideos((items: VideoItem[]) => {
+      const extracted = extractVideoPromptItems(items);
+      rememberDeletedSampleIdsFromItems(extracted.find((item) => item.id === id));
+      return extracted.filter((item) => item.id !== id);
+    });
     resetDraft();
   };
   const importThumbnail = async (file?: File) => {
@@ -4790,6 +4948,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   };
   const deleteBackground = (id: string) => {
     setJournal((current: JournalState) => {
+      rememberDeletedSampleIdsFromItems((current.customBackgrounds || []).find((item) => item.id === id));
       const nextBackgrounds = (current.customBackgrounds || []).filter((item) => item.id !== id);
       return { ...current, customBackgrounds: nextBackgrounds, background: current.background === `custom-${id}` ? "paper" : current.background };
     });
@@ -4887,7 +5046,10 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
               <label>サイズ<input type="range" min="80" max="360" value={selected.width} onChange={(event) => updateItem(selected.id, { width: Number(event.target.value) })} /></label>
               <label>回転<input type="range" min="-35" max="35" value={selected.rotate} onChange={(event) => updateItem(selected.id, { rotate: Number(event.target.value) })} /></label>
               <label className="check"><input type="checkbox" checked={isStickerEffectOn(selected)} onChange={(event) => updateItem(selected.id, { stickerEffect: event.target.checked })} /> シール風</label>
-              <button className="danger" onClick={() => setJournal((current: JournalState) => ({ ...current, items: current.items.filter((item) => item.id !== selected.id) }))}>選択画像を削除</button>
+              <button className="danger" onClick={() => setJournal((current: JournalState) => {
+                rememberDeletedSampleIdsFromItems(current.items.find((item) => item.id === selected.id));
+                return { ...current, items: current.items.filter((item) => item.id !== selected.id) };
+              })}>選択画像を削除</button>
             </div>
           )}
         </aside>
@@ -4965,7 +5127,10 @@ function Projects({ projects, setProjects, prompts, settings, copyText, setScree
                 </div>
                 <div className="actions">
                   <button onClick={() => setEditing(project)}>編集</button>
-                  <button className="danger" onClick={() => setProjects((items: Project[]) => items.filter((p) => p.id !== project.id))}>削除</button>
+                  <button className="danger" onClick={() => setProjects((items: Project[]) => {
+                    rememberDeletedSampleIdsFromItems(items.find((p) => p.id === project.id));
+                    return items.filter((p) => p.id !== project.id);
+                  })}>削除</button>
                 </div>
               </div>
               <TagRow tags={project.tags} />

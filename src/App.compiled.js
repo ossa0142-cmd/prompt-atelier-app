@@ -601,6 +601,19 @@ const defaultMockupCategories = [{
   description: "アクリルチャームや小物商品のかわいい撮影イメージ。",
   coverImage: art("Keychain", "#f6e6ec", "#e8edf5")
 }];
+function normalizeMockupCategoryOrder(items) {
+  return [...(items || [])].map((category, index) => ({
+    ...category,
+    order: Number.isFinite(Number(category.order)) ? Number(category.order) : index + 1,
+    __index: index
+  })).sort((a, b) => (a.order || 0) - (b.order || 0) || a.__index - b.__index).map(({
+    __index,
+    ...category
+  }, index) => ({
+    ...category,
+    order: index + 1
+  }));
+}
 const defaultLibraryBoardPrompts = [...libraryPrompts.map(prompt => ({
   ...prompt,
   categoryId: mockupCategoryIdByTitle[prompt.category],
@@ -763,10 +776,12 @@ const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toL
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
-const DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
+const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
+const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
 const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
 const SAMPLE_DATA_STORAGE_MAP = {
   libraryItems: "prompt-atelier-mockup-categories-v2",
+  mockupCategories: "prompt-atelier-mockup-categories-v2",
   mockupItems: "prompt-atelier-library-prompts-v5",
   mockupStocks: "prompt-atelier-library-prompts-v5",
   promptCards: "prompt-atelier-prompts-ja-v2",
@@ -779,6 +794,7 @@ const SAMPLE_DATA_STORAGE_MAP = {
   journalItems: "promptAtelierJournal",
   journalBackgrounds: "promptAtelierJournal",
   homeSettings: "promptAtelierHomeSettings",
+  customizeSettings: "promptAtelierHomeSettings",
   workTools: "promptAtelierWorkTools"
 };
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
@@ -1419,17 +1435,24 @@ function clipboardImageFiles(event) {
   return Array.from(event.clipboardData?.items || []).filter(item => item.kind === "file").map(item => item.getAsFile()).filter(file => Boolean(file) && isSupportedImageFile(file));
 }
 function useStoredState(key, fallback) {
+  const hasStoredValueRef = React.useRef(false);
   const [value, setValue] = React.useState(() => {
     try {
       const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : fallback;
+      if (saved) {
+        hasStoredValueRef.current = true;
+        return JSON.parse(saved);
+      }
+      return fallback;
     } catch {
       return fallback;
     }
   });
   React.useEffect(() => {
     try {
+      if (!hasStoredValueRef.current && JSON.stringify(value) === JSON.stringify(fallback)) return;
       localStorage.setItem(key, JSON.stringify(value));
+      hasStoredValueRef.current = true;
     } catch (error) {
       console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
     }
@@ -1682,6 +1705,28 @@ async function exportPromptAtelierSampleSeed() {
 function sampleIdOf(item) {
   return item?.sampleId || "";
 }
+function readDeletedSampleIds() {
+  const values = [DELETED_SAMPLE_IDS_KEY, LEGACY_DELETED_SAMPLE_IDS_KEY].flatMap(key => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+  return new Set(values.filter(Boolean));
+}
+function writeDeletedSampleIds(ids) {
+  localStorage.setItem(DELETED_SAMPLE_IDS_KEY, JSON.stringify([...ids]));
+}
+function rememberDeletedSampleIdsFromItems(items) {
+  const list = Array.isArray(items) ? items : [items];
+  const sampleIds = list.map(sampleIdOf).filter(Boolean);
+  if (!sampleIds.length) return;
+  const deletedIds = readDeletedSampleIds();
+  sampleIds.forEach(sampleId => deletedIds.add(sampleId));
+  writeDeletedSampleIds(deletedIds);
+}
 function mergeSampleCollection(existing, incoming, deletedIds) {
   if (!Array.isArray(incoming)) return existing ?? incoming;
   const current = Array.isArray(existing) ? existing : [];
@@ -1690,7 +1735,11 @@ function mergeSampleCollection(existing, incoming, deletedIds) {
   incoming.forEach(item => {
     const sampleId = sampleIdOf(item);
     if (!sampleId || deletedIds.has(sampleId) || currentSampleIds.has(sampleId)) return;
-    next.push(cleanSampleValue(item));
+    next.push({
+      ...cleanSampleValue(item),
+      isSample: true,
+      sampleId
+    });
     currentSampleIds.add(sampleId);
   });
   return next;
@@ -1717,6 +1766,7 @@ function sampleSeedDataToStorage(seedData) {
     storageData[key] = [...(storageData[key] || []), ...values];
   };
   append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
@@ -1734,6 +1784,7 @@ function sampleSeedDataToStorage(seedData) {
     };
   }
   if (seedData.homeSettings && typeof seedData.homeSettings === "object") storageData.promptAtelierHomeSettings = seedData.homeSettings;
+  if (seedData.customizeSettings && typeof seedData.customizeSettings === "object") storageData.promptAtelierHomeSettings = seedData.customizeSettings;
   append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
   return storageData;
 }
@@ -1745,7 +1796,7 @@ async function loadSampleSeedIfNeeded() {
     if (!response.ok) return false;
     const seed = await response.json();
     if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) return false;
-    const deletedIds = new Set(JSON.parse(localStorage.getItem(DELETED_SAMPLE_IDS_KEY) || "[]"));
+    const deletedIds = readDeletedSampleIds();
     let changed = false;
     const storageData = Object.keys(SAMPLE_DATA_STORAGE_MAP).some(key => key in seed.data) ? sampleSeedDataToStorage(seed.data) : seed.data;
     Object.entries(storageData).forEach(([key, incoming]) => {
@@ -1761,8 +1812,12 @@ async function loadSampleSeedIfNeeded() {
       for (const image of seed.images) {
         const sampleId = sampleIdOf(image);
         if (sampleId && deletedIds.has(sampleId)) continue;
+        if (sampleId && [...indexedDbImageCache.values()].some(record => record?.sampleId === sampleId)) continue;
         if (image?.id && image?.src && !indexedDbImageCache.has(image.id)) {
-          await putIndexedDbImage(cleanSampleValue(image));
+          await putIndexedDbImage({
+            ...cleanSampleValue(image),
+            isSample: true
+          });
           changed = true;
         }
       }
@@ -2474,7 +2529,10 @@ function HomeCustomize({
   };
   const deleteWorkTool = id => {
     if (window.confirm("この作業ツールを削除しますか？")) {
-      setWorkTools(items => items.filter(item => item.id !== id));
+      setWorkTools(items => {
+        rememberDeletedSampleIdsFromItems(items.find(item => item.id === id));
+        return items.filter(item => item.id !== id);
+      });
     }
   };
   const activeTheme = homeThemes.find(theme => theme.id === settings.themeId) || homeThemes[0];
@@ -2882,10 +2940,14 @@ function Library({
   const [memoPrompt, setMemoPrompt] = React.useState(null);
   const [inlineEdit, setInlineEdit] = React.useState(null);
   const [stockFrameCounts, setStockFrameCounts] = React.useState({});
+  const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
+  const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
-  const currentCategory = selectedCategory ? boardCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
-  const filteredCategories = boardCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
+  const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
+  const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
+  const isCategorySearching = !currentCategory && query.trim().length > 0;
+  const filteredCategories = orderedCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter(item => {
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
@@ -2908,7 +2970,7 @@ function Library({
     id: "",
     title: "",
     category: "ステッカーモックアップ",
-    categoryId: currentCategory?.id || boardCategories[0]?.id || "",
+    categoryId: currentCategory?.id || orderedCategories[0]?.id || "",
     description: "",
     prompt: "",
     memo: "",
@@ -2927,11 +2989,25 @@ function Library({
       coverImage,
       coverImages: coverImages.length ? coverImages : [coverImage]
     };
-    setBoardCategories(items => item.id ? items.map(category => category.id === item.id ? next : category) : [next, ...items]);
+    setBoardCategories(items => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      if (item.id) {
+        const existing = normalized.find(category => category.id === item.id);
+        return normalizeMockupCategoryOrder(normalized.map(category => category.id === item.id ? {
+          ...next,
+          order: next.order ?? existing?.order
+        } : category));
+      }
+      const maxOrder = normalized.reduce((max, category) => Math.max(max, category.order || 0), 0);
+      return normalizeMockupCategoryOrder([...normalized, {
+        ...next,
+        order: maxOrder + 1
+      }]);
+    });
     setEditingCategory(null);
   };
   const savePrompt = item => {
-    const category = boardCategories.find(category => category.id === item.categoryId) || currentCategory || boardCategories[0];
+    const category = orderedCategories.find(category => category.id === item.categoryId) || currentCategory || orderedCategories[0];
     const countForKind = boardPrompts.filter(prompt => prompt.categoryId === category.id && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
     const limit = item.isTextStock ? 100 : 20;
     if (!item.id && countForKind >= limit) {
@@ -2954,11 +3030,16 @@ function Library({
     setEditingPrompt(null);
   };
   const duplicateCategory = item => {
-    setBoardCategories(items => [{
-      ...item,
-      id: uid(),
-      title: `${item.title} コピー`
-    }, ...items]);
+    setBoardCategories(items => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      const maxOrder = normalized.reduce((max, category) => Math.max(max, category.order || 0), 0);
+      return normalizeMockupCategoryOrder([...normalized, {
+        ...item,
+        id: uid(),
+        title: `${item.title} コピー`,
+        order: maxOrder + 1
+      }]);
+    });
   };
   const duplicatePrompt = item => {
     const countForKind = boardPrompts.filter(prompt => prompt.categoryId === item.categoryId && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
@@ -2990,6 +3071,59 @@ function Library({
       [currentCategory.id]: Math.min(100, stockFrameCount + 1)
     }));
   };
+  const deleteCategory = id => {
+    setBoardCategories(items => {
+      rememberDeletedSampleIdsFromItems(items.find(item => item.id === id));
+      return normalizeMockupCategoryOrder(items.filter(item => item.id !== id));
+    });
+  };
+  const deleteBoardPrompt = id => {
+    setBoardPrompts(items => {
+      rememberDeletedSampleIdsFromItems(items.find(item => item.id === id));
+      return items.filter(item => item.id !== id);
+    });
+  };
+  const reorderCategories = (sourceId, targetId) => {
+    if (isCategorySearching || !sourceId || !targetId || sourceId === targetId) return;
+    setBoardCategories(items => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      const fromIndex = normalized.findIndex(category => category.id === sourceId);
+      const toIndex = normalized.findIndex(category => category.id === targetId);
+      if (fromIndex < 0 || toIndex < 0) return normalized;
+      const next = [...normalized];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return normalizeMockupCategoryOrder(next);
+    });
+  };
+  const startCategoryDrag = (event, categoryId) => {
+    if (isCategorySearching) {
+      event.preventDefault();
+      return;
+    }
+    event.stopPropagation();
+    setDraggedCategoryId(categoryId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", categoryId);
+  };
+  const overCategoryDrag = (event, categoryId) => {
+    if (isCategorySearching || !draggedCategoryId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverCategoryId(categoryId);
+  };
+  const dropCategoryDrag = (event, categoryId) => {
+    if (isCategorySearching) return;
+    event.preventDefault();
+    const sourceId = draggedCategoryId || event.dataTransfer.getData("text/plain");
+    reorderCategories(sourceId, categoryId);
+    setDraggedCategoryId("");
+    setDragOverCategoryId("");
+  };
+  const endCategoryDrag = () => {
+    setDraggedCategoryId("");
+    setDragOverCategoryId("");
+  };
   return /*#__PURE__*/React.createElement("section", {
     className: "page library-page"
   }, !currentCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
@@ -3014,16 +3148,31 @@ function Library({
     value: query,
     onChange: e => setQuery(e.target.value),
     placeholder: "カテゴリを検索..."
-  })), /*#__PURE__*/React.createElement("div", {
+  })), isCategorySearching && /*#__PURE__*/React.createElement("p", {
+    className: "category-sort-note"
+  }, "並び替えは検索を解除すると使用できます。"), /*#__PURE__*/React.createElement("div", {
     className: "library-category-grid"
   }, filteredCategories.map(category => /*#__PURE__*/React.createElement("article", {
-    className: "library-category-card",
-    key: category.id
-  }, /*#__PURE__*/React.createElement(MenuButton, {
+    className: `library-category-card ${draggedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
+    key: category.id,
+    onDragOver: event => overCategoryDrag(event, category.id),
+    onDrop: event => dropCategoryDrag(event, category.id),
+    onDragLeave: () => dragOverCategoryId === category.id && setDragOverCategoryId("")
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "category-drag-handle",
+    draggable: !isCategorySearching,
+    "aria-label": `${category.title}を並び替え`,
+    title: isCategorySearching ? "検索を解除すると並び替えできます" : "ドラッグして並び替え",
+    onClick: event => event.stopPropagation(),
+    onDragStart: event => startCategoryDrag(event, category.id),
+    onDragEnd: endCategoryDrag,
+    disabled: isCategorySearching
+  }, "⋮⋮"), /*#__PURE__*/React.createElement(MenuButton, {
     onEdit: () => setEditingCategory(category),
     onDuplicate: () => duplicateCategory(category),
     onImage: () => setEditingCategory(category),
-    onDelete: () => setBoardCategories(items => items.filter(item => item.id !== category.id))
+    onDelete: () => deleteCategory(category.id)
   }), /*#__PURE__*/React.createElement("button", {
     className: "category-open",
     onClick: () => {
@@ -3069,7 +3218,7 @@ function Library({
     setInlineEdit: setInlineEdit,
     updatePrompt: updatePrompt,
     duplicatePrompt: duplicatePrompt,
-    deletePrompt: () => setBoardPrompts(items => items.filter(item => item.id !== prompt.id)),
+    deletePrompt: () => deleteBoardPrompt(prompt.id),
     copyText: copyText,
     showMemo: () => setMemoPrompt(prompt)
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
@@ -3108,7 +3257,7 @@ function Library({
     onSave: saveCategory
   }), editingPrompt && /*#__PURE__*/React.createElement(LibraryPromptModal, {
     item: editingPrompt,
-    categories: boardCategories,
+    categories: orderedCategories,
     onClose: () => setEditingPrompt(null),
     onSave: savePrompt
   }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
@@ -3840,6 +3989,12 @@ function PromptBook({
       title: `${prompt.title} コピー`
     }]);
   };
+  const deletePrompt = id => {
+    setPrompts(items => {
+      rememberDeletedSampleIdsFromItems(items.find(item => item.id === id));
+      return items.filter(item => item.id !== id);
+    });
+  };
   const saveTextStockFrame = item => {
     if (!item.title.trim() && !item.prompt.trim()) return;
     save({
@@ -3892,7 +4047,7 @@ function PromptBook({
     setInlineEdit: setInlineEdit,
     updatePrompt: updatePrompt,
     duplicatePrompt: duplicatePrompt,
-    deletePrompt: () => setPrompts(items => items.filter(item => item.id !== prompt.id)),
+    deletePrompt: () => deletePrompt(prompt.id),
     copyText: copyText,
     showTranslation: () => setTranslationPrompt(prompt),
     showMemo: () => setMemoPrompt(prompt)
@@ -4218,7 +4373,10 @@ function Midjourney({
       item: item,
       highlighted: highlightedId === item.id,
       onUpdate: patch => updateSavedSetting(item.id, patch),
-      onDelete: () => setSettings(items => items.filter(setting => setting.id !== item.id)),
+      onDelete: () => setSettings(items => {
+        rememberDeletedSampleIdsFromItems(items.find(setting => setting.id === item.id));
+        return items.filter(setting => setting.id !== item.id);
+      }),
       onCopyPrompt: () => copyText(mjCommand(item), item.id),
       onCopyParams: () => copyText((item.extractedParams || []).join(" "), item.id),
       onParamClick: applyParamFromCard,
@@ -4646,7 +4804,10 @@ function GalleryPage({
     } : item));
   };
   const deleteImage = id => {
-    setImages(items => items.filter(item => item.id !== id));
+    setImages(items => {
+      rememberDeletedSampleIdsFromItems(items.find(item => item.id === id));
+      return items.filter(item => item.id !== id);
+    });
     setPreviewId("");
   };
   const pasteToJournal = image => {
@@ -4912,7 +5073,11 @@ function VideoLibrary({
       delete next[id];
       return next;
     });
-    setVideos(items => extractVideoPromptItems(items).filter(item => item.id !== id));
+    setVideos(items => {
+      const extracted = extractVideoPromptItems(items);
+      rememberDeletedSampleIdsFromItems(extracted.find(item => item.id === id));
+      return extracted.filter(item => item.id !== id);
+    });
     resetDraft();
   };
   const importThumbnail = async file => {
@@ -5502,6 +5667,7 @@ function JournalPage({
   };
   const deleteBackground = id => {
     setJournal(current => {
+      rememberDeletedSampleIdsFromItems((current.customBackgrounds || []).find(item => item.id === id));
       const nextBackgrounds = (current.customBackgrounds || []).filter(item => item.id !== id);
       return {
         ...current,
@@ -5673,10 +5839,13 @@ function JournalPage({
     })
   }), " シール風"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
-    onClick: () => setJournal(current => ({
-      ...current,
-      items: current.items.filter(item => item.id !== selected.id)
-    }))
+    onClick: () => setJournal(current => {
+      rememberDeletedSampleIdsFromItems(current.items.find(item => item.id === selected.id));
+      return {
+        ...current,
+        items: current.items.filter(item => item.id !== selected.id)
+      };
+    })
   }, "選択画像を削除"))), /*#__PURE__*/React.createElement("div", {
     ref: boardRef,
     className: `journal-board ${journal.background}`,
@@ -5785,7 +5954,10 @@ function Projects({
       onClick: () => setEditing(project)
     }, "編集"), /*#__PURE__*/React.createElement("button", {
       className: "danger",
-      onClick: () => setProjects(items => items.filter(p => p.id !== project.id))
+      onClick: () => setProjects(items => {
+        rememberDeletedSampleIdsFromItems(items.find(p => p.id === project.id));
+        return items.filter(p => p.id !== project.id);
+      })
     }, "削除"))), /*#__PURE__*/React.createElement(TagRow, {
       tags: project.tags
     }), project.dueDate && /*#__PURE__*/React.createElement("p", {
