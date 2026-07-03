@@ -93,6 +93,90 @@ const densityOptions = [{
   label: "コンパクト",
   description: "カード間隔を少し詰めて一覧性を高めます。"
 }];
+const defaultCardStyle = {
+  radius: "medium",
+  shadow: "normal",
+  transparency: "solid",
+  border: "soft"
+};
+const defaultBackgroundStyle = {
+  type: "theme",
+  color: "#fffafc",
+  gradient: "milkPink",
+  pattern: "none",
+  image: "",
+  imageFit: "cover",
+  imagePosition: "center",
+  imageBlur: "none",
+  imageOpacity: "normal",
+  showDecorations: true
+};
+const backgroundColorOptions = [["#fffafc", "ミルクホワイト"], ["#f7efe4", "ベージュ"], ["#fff0f5", "淡いピンク"], ["#eef6ff", "淡いブルー"], ["#f4efff", "淡いラベンダー"], ["#effbf4", "淡いミント"]];
+const cardStyleOptions = {
+  radius: [["small", "控えめ"], ["medium", "標準"], ["large", "大きめ"], ["pillowy", "ぷっくり"]],
+  shadow: [["none", "なし"], ["soft", "弱め"], ["normal", "標準"], ["dreamy", "ふんわり"]],
+  transparency: [["solid", "なし"], ["soft", "薄め"], ["glass", "ガラス風"]],
+  border: [["none", "なし"], ["thin", "細線"], ["soft", "淡い線"], ["dashed", "点線"]]
+};
+const backgroundStyleOptions = {
+  type: [["theme", "テーマ標準"], ["solid", "単色"], ["gradient", "グラデーション"], ["pattern", "パターン"], ["image", "画像"]],
+  gradient: [["milkPink", "ミルクピンク"], ["peachBeige", "ピーチベージュ"], ["blueMist", "ブルーミスト"], ["lavenderMilk", "ラベンダーミルク"], ["mintCream", "ミントクリーム"], ["cafeLatte", "カフェラテ"]],
+  pattern: [["none", "なし"], ["dot", "ドット"], ["stripe", "細ストライプ"], ["grid", "グリッド"], ["floral", "小花風"], ["paper", "紙テクスチャ風"]],
+  imageFit: [["contain", "全体を表示"], ["cover", "枠いっぱいに表示"]],
+  imagePosition: [["center", "中央"], ["top", "上"], ["bottom", "下"], ["left", "左"], ["right", "右"]],
+  imageBlur: [["none", "なし"], ["soft", "弱"], ["medium", "中"]],
+  imageOpacity: [["light", "薄い"], ["normal", "標準"], ["deep", "濃い"]]
+};
+const fontPresetOptions = [{
+  id: "simple",
+  label: "シンプル",
+  description: "読みやすさ優先の標準バランス。"
+}, {
+  id: "elegant",
+  label: "上品",
+  description: "細めで余白のある高級感。"
+}, {
+  id: "cute",
+  label: "かわいい",
+  description: "少し丸くやわらかい印象。"
+}, {
+  id: "korean",
+  label: "韓国風",
+  description: "カフェ風の細め文字と広い行間。"
+}, {
+  id: "handwritten",
+  label: "手書き風",
+  description: "見出しだけ少しラフに。"
+}, {
+  id: "cool",
+  label: "クール",
+  description: "すっきりシャープな印象。"
+}];
+const iconSetOptions = [{
+  id: "line",
+  label: "線画",
+  description: "細い線で軽い印象。"
+}, {
+  id: "soft",
+  label: "ぷっくり",
+  description: "丸くやわらかいアイコン。"
+}, {
+  id: "minimal",
+  label: "ミニマル",
+  description: "控えめで静かな表示。"
+}, {
+  id: "label",
+  label: "ラベル風",
+  description: "タグのような小さな見た目。"
+}, {
+  id: "pixel",
+  label: "ピクセル風",
+  description: "少し遊びのある表示。"
+}, {
+  id: "emoji",
+  label: "絵文字風",
+  description: "親しみやすい雰囲気。"
+}];
 const homeThemes = [{
   id: "cute",
   name: "キュート",
@@ -474,6 +558,10 @@ const defaultHomeSettings = {
   workToolIconStyle: "pastel",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
+  cardStyle: defaultCardStyle,
+  backgroundStyle: defaultBackgroundStyle,
+  fontPreset: "simple",
+  iconSet: "line",
   homeStatsCards: {
     mockups: true,
     prompts: true,
@@ -510,8 +598,18 @@ const normalizeHomeSettings = settings => {
     ...(settings?.homeCharacter || {})
   };
   const rawPageSettings = settings?.pageDisplaySettings || defaultHomeSettings.pageDisplaySettings;
+  const rawCardStyle = {
+    ...defaultCardStyle,
+    ...(settings?.cardStyle || {})
+  };
+  const rawBackgroundStyle = {
+    ...defaultBackgroundStyle,
+    ...(settings?.backgroundStyle || {})
+  };
   const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
   const safeDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity) ? settings.displayDensity : "normal";
+  const safeFontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset) ? settings.fontPreset : "simple";
+  const safeIconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet) ? settings.iconSet : "line";
   const safePosition = value => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
   const bannerImage = settings?.bannerImage || settings?.bannerImageUrl || "";
   return {
@@ -544,6 +642,27 @@ const normalizeHomeSettings = settings => {
         ...rawPageSettings.mockups
       }
     },
+    cardStyle: {
+      radius: ["small", "medium", "large", "pillowy"].includes(rawCardStyle.radius) ? rawCardStyle.radius : "medium",
+      shadow: ["none", "soft", "normal", "dreamy"].includes(rawCardStyle.shadow) ? rawCardStyle.shadow : "normal",
+      transparency: ["solid", "soft", "glass"].includes(rawCardStyle.transparency) ? rawCardStyle.transparency : "solid",
+      border: ["none", "thin", "soft", "dashed"].includes(rawCardStyle.border) ? rawCardStyle.border : "soft"
+    },
+    backgroundStyle: {
+      ...rawBackgroundStyle,
+      type: ["theme", "solid", "gradient", "pattern", "image"].includes(rawBackgroundStyle.type) ? rawBackgroundStyle.type : "theme",
+      gradient: ["milkPink", "peachBeige", "blueMist", "lavenderMilk", "mintCream", "cafeLatte"].includes(rawBackgroundStyle.gradient) ? rawBackgroundStyle.gradient : "milkPink",
+      pattern: ["none", "dot", "stripe", "grid", "floral", "paper"].includes(rawBackgroundStyle.pattern) ? rawBackgroundStyle.pattern : "none",
+      imageFit: ["contain", "cover"].includes(rawBackgroundStyle.imageFit) ? rawBackgroundStyle.imageFit : "cover",
+      imagePosition: ["center", "top", "bottom", "left", "right"].includes(rawBackgroundStyle.imagePosition) ? rawBackgroundStyle.imagePosition : "center",
+      imageBlur: ["none", "soft", "medium"].includes(rawBackgroundStyle.imageBlur) ? rawBackgroundStyle.imageBlur : "none",
+      imageOpacity: ["light", "normal", "deep"].includes(rawBackgroundStyle.imageOpacity) ? rawBackgroundStyle.imageOpacity : "normal",
+      color: /^#[0-9a-f]{6}$/i.test(rawBackgroundStyle.color || "") ? rawBackgroundStyle.color : "#fffafc",
+      image: rawBackgroundStyle.image || "",
+      showDecorations: rawBackgroundStyle.showDecorations !== false
+    },
+    fontPreset: safeFontPreset,
+    iconSet: safeIconSet,
     homeCharacter: {
       ...rawCharacter,
       messageMode: safeMessageMode
@@ -901,10 +1020,10 @@ const imageQualityProfiles = {
     thumbnailQuality: 0.9
   },
   background: {
-    maxSide: 1400,
-    quality: 0.92,
-    thumbnailSide: 720,
-    thumbnailQuality: 0.9
+    maxSide: 1600,
+    quality: 0.88,
+    thumbnailSide: 760,
+    thumbnailQuality: 0.86
   },
   "video-thumbnail": {
     maxSide: 1200,
@@ -1001,6 +1120,75 @@ function themeStyle(theme) {
     "--decorative-shape": decorativeMap[theme.id] || "color-mix(in srgb, var(--accent) 24%, transparent)",
     "--nav-bg": dark ? theme.vars.paper : "color-mix(in srgb, var(--paper) 88%, transparent)",
     "--nav-ink": theme.vars.ink
+  };
+}
+function customizeClassName(settings) {
+  const card = settings.cardStyle || defaultCardStyle;
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  return [`card-radius-${card.radius}`, `card-shadow-${card.shadow}`, `card-transparency-${card.transparency}`, `card-border-${card.border}`, `bg-type-${bg.type}`, `bg-pattern-${bg.pattern}`, bg.showDecorations === false ? "hide-bg-decorations" : "", `font-${settings.fontPreset || "simple"}`, `icon-set-${settings.iconSet || "line"}`].filter(Boolean).join(" ");
+}
+function customBackgroundLayers(settings) {
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  const gradients = {
+    milkPink: "linear-gradient(135deg, #fffafc 0%, #f8dce6 48%, #fff7ed 100%)",
+    peachBeige: "linear-gradient(135deg, #fff8ed 0%, #f4d3c1 48%, #efe4d4 100%)",
+    blueMist: "linear-gradient(135deg, #f8fbff 0%, #dcecff 54%, #eef5f7 100%)",
+    lavenderMilk: "linear-gradient(135deg, #fffafd 0%, #e8ddf4 48%, #f8f3ff 100%)",
+    mintCream: "linear-gradient(135deg, #fffdf7 0%, #d8efe5 48%, #f2fbf4 100%)",
+    cafeLatte: "linear-gradient(135deg, #fff8ef 0%, #ead8c3 48%, #c9ad93 100%)"
+  };
+  const patternLayers = {
+    none: "",
+    dot: "radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0 1.3px, transparent 1.8px)",
+    stripe: "repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent) 0 1px, transparent 1px 18px)",
+    grid: "linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)",
+    floral: "radial-gradient(circle at 10px 12px, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 3px), radial-gradient(circle at 15px 9px, color-mix(in srgb, var(--sage) 18%, transparent) 0 2px, transparent 3px)",
+    paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)"
+  };
+  if (bg.type === "solid") return bg.color;
+  if (bg.type === "gradient") return gradients[bg.gradient] || gradients.milkPink;
+  if (bg.type === "pattern") {
+    const pattern = patternLayers[bg.pattern] || "";
+    return pattern ? `${pattern}, var(--app-bg)` : "var(--app-bg)";
+  }
+  if (bg.type === "image" && bg.image) {
+    const src = imageDisplaySrc(bg.image);
+    if (src) return `linear-gradient(color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent), color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent)), url("${src}")`;
+  }
+  return "";
+}
+function customStyle(settings) {
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  const bodyFonts = {
+    simple: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    elegant: '"Hiragino Mincho ProN", "Yu Mincho", "Times New Roman", serif',
+    cute: '"Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
+    korean: '"Apple SD Gothic Neo", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif',
+    handwritten: '"Comic Sans MS", "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
+    cool: '"Avenir Next", "Helvetica Neue", Arial, sans-serif'
+  };
+  const headingFonts = {
+    ...bodyFonts,
+    handwritten: '"Comic Sans MS", "Hiragino Maru Gothic ProN", cursive'
+  };
+  const backgroundLayers = customBackgroundLayers(settings);
+  const backgroundPositionMap = {
+    center: "center",
+    top: "center top",
+    bottom: "center bottom",
+    left: "left center",
+    right: "right center"
+  };
+  return {
+    "--font-body": bodyFonts[settings.fontPreset || "simple"],
+    "--font-heading": headingFonts[settings.fontPreset || "simple"],
+    "--font-weight-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "760" : settings.fontPreset === "cool" ? "850" : "900",
+    "--letter-spacing-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "0.035em" : "0",
+    "--body-line-height": settings.fontPreset === "korean" ? "1.82" : settings.fontPreset === "cool" ? "1.55" : "1.68",
+    "--custom-background": backgroundLayers || "",
+    "--custom-background-size": bg.type === "pattern" && bg.pattern === "grid" ? "34px 34px" : bg.type === "pattern" && bg.pattern === "paper" ? "8px 8px" : bg.type === "pattern" ? "54px 54px" : bg.type === "image" ? bg.imageFit : "auto",
+    "--custom-background-position": bg.type === "image" ? backgroundPositionMap[bg.imagePosition] : "center",
+    "--custom-background-blur": bg.imageBlur === "medium" ? "blur(5px)" : bg.imageBlur === "soft" ? "blur(2px)" : "none"
   };
 }
 function projectDueInfo(value) {
@@ -1727,6 +1915,10 @@ function sampleHomeSettings(value) {
     workToolIconStyle: cleaned.workToolIconStyle,
     displayDensity: cleaned.displayDensity,
     pageDisplaySettings: cleaned.pageDisplaySettings,
+    cardStyle: cleaned.cardStyle,
+    backgroundStyle: cleaned.backgroundStyle,
+    fontPreset: cleaned.fontPreset,
+    iconSet: cleaned.iconSet,
     homeCharacter: cleaned.homeCharacter,
     homeStatsCards: cleaned.homeStatsCards,
     visible: cleaned.visible,
@@ -1943,7 +2135,10 @@ function App() {
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
-  const appStyle = themeStyle(activeTheme);
+  const appStyle = {
+    ...themeStyle(activeTheme),
+    ...customStyle(homeSettings)
+  };
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
@@ -2050,7 +2245,7 @@ function App() {
     setShowInstallPrompt(false);
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"}`,
+    className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`,
     style: appStyle
   }, /*#__PURE__*/React.createElement("header", {
     className: "app-header"
@@ -2691,6 +2886,34 @@ function HomeCustomize({
     bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y)))
   }, persist);
+  const updateCardStyle = patch => updateSettings({
+    cardStyle: {
+      ...defaultCardStyle,
+      ...(settingsRef.current.cardStyle || {}),
+      ...patch
+    }
+  });
+  const updateBackgroundStyle = patch => updateSettings({
+    backgroundStyle: {
+      ...defaultBackgroundStyle,
+      ...(settingsRef.current.backgroundStyle || {}),
+      ...patch
+    }
+  });
+  const importCustomBackground = async file => {
+    if (!file) return;
+    try {
+      const image = saveImageToStorage(await optimizeImage(file, "background"));
+      updateBackgroundStyle({
+        image: image.src,
+        type: "image"
+      });
+      scheduleStorageWarningCheck();
+    } catch (error) {
+      console.error("[Prompt Atelier] 背景画像の追加に失敗しました", error);
+      window.alert("背景画像を追加できませんでした。jpg / png / webp を選んでください。");
+    }
+  };
   const startBannerDrag = event => {
     if (!homeBannerImageValue(settings) || (settings.bannerFit || "contain") !== "cover") return;
     event.preventDefault();
@@ -2811,6 +3034,11 @@ function HomeCustomize({
     }
   };
   const activeTheme = homeThemes.find(theme => theme.id === settings.themeId) || homeThemes[0];
+  const previewStyle = {
+    ...themeStyle(activeTheme),
+    ...customStyle(settings)
+  };
+  const previewClassName = customizeClassName(settings);
   const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
   const handleCustomizeInstallPwa = () => {
     if (canInstallPwa) {
@@ -2976,6 +3204,173 @@ function HomeCustomize({
       displayDensity: item.id
     })
   }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "カード質感設定"), /*#__PURE__*/React.createElement("p", null, "カードの角丸・影・透明感・枠線を調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "style-control-grid"
+  }, /*#__PURE__*/React.createElement("label", null, "角丸", /*#__PURE__*/React.createElement("select", {
+    value: settings.cardStyle.radius,
+    onChange: event => updateCardStyle({
+      radius: event.target.value
+    })
+  }, cardStyleOptions.radius.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "影", /*#__PURE__*/React.createElement("select", {
+    value: settings.cardStyle.shadow,
+    onChange: event => updateCardStyle({
+      shadow: event.target.value
+    })
+  }, cardStyleOptions.shadow.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "透明感", /*#__PURE__*/React.createElement("select", {
+    value: settings.cardStyle.transparency,
+    onChange: event => updateCardStyle({
+      transparency: event.target.value
+    })
+  }, cardStyleOptions.transparency.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "枠線", /*#__PURE__*/React.createElement("select", {
+    value: settings.cardStyle.border,
+    onChange: event => updateCardStyle({
+      border: event.target.value
+    })
+  }, cardStyleOptions.border.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "背景カスタム"), /*#__PURE__*/React.createElement("p", null, "ツール全体の背景の雰囲気を調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "style-control-grid"
+  }, /*#__PURE__*/React.createElement("label", null, "背景タイプ", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.type,
+    onChange: event => updateBackgroundStyle({
+      type: event.target.value
+    })
+  }, backgroundStyleOptions.type.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景カラー", /*#__PURE__*/React.createElement("input", {
+    type: "color",
+    value: settings.backgroundStyle.color,
+    onChange: event => updateBackgroundStyle({
+      color: event.target.value,
+      type: "solid"
+    })
+  })), /*#__PURE__*/React.createElement("label", null, "グラデーション", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.gradient,
+    onChange: event => updateBackgroundStyle({
+      gradient: event.target.value,
+      type: "gradient"
+    })
+  }, backgroundStyleOptions.gradient.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景パターン", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.pattern,
+    onChange: event => updateBackgroundStyle({
+      pattern: event.target.value,
+      type: "pattern"
+    })
+  }, backgroundStyleOptions.pattern.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label))))), /*#__PURE__*/React.createElement("div", {
+    className: "preset-color-row"
+  }, backgroundColorOptions.map(([color, label]) => /*#__PURE__*/React.createElement("button", {
+    key: color,
+    type: "button",
+    onClick: () => updateBackgroundStyle({
+      color,
+      type: "solid"
+    })
+  }, /*#__PURE__*/React.createElement("i", {
+    style: {
+      background: color
+    }
+  }), /*#__PURE__*/React.createElement("span", null, label)))), /*#__PURE__*/React.createElement("div", {
+    className: "background-image-controls"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/png,image/jpeg,image/webp",
+    onChange: event => {
+      importCustomBackground(event.currentTarget.files?.[0]);
+      event.currentTarget.value = "";
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "style-control-grid"
+  }, /*#__PURE__*/React.createElement("label", null, "画像表示", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.imageFit,
+    onChange: event => updateBackgroundStyle({
+      imageFit: event.target.value
+    })
+  }, backgroundStyleOptions.imageFit.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "画像位置", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.imagePosition,
+    onChange: event => updateBackgroundStyle({
+      imagePosition: event.target.value
+    })
+  }, backgroundStyleOptions.imagePosition.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "ぼかし", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.imageBlur,
+    onChange: event => updateBackgroundStyle({
+      imageBlur: event.target.value
+    })
+  }, backgroundStyleOptions.imageBlur.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景の濃さ", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.imageOpacity,
+    onChange: event => updateBackgroundStyle({
+      imageOpacity: event.target.value
+    })
+  }, backgroundStyleOptions.imageOpacity.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label))))), /*#__PURE__*/React.createElement("div", {
+    className: "inline-buttons"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => updateBackgroundStyle({
+      image: "",
+      type: "theme"
+    })
+  }, "背景画像を削除"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "背景装飾を表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: settings.backgroundStyle.showDecorations !== false,
+    onChange: event => updateBackgroundStyle({
+      showDecorations: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "フォント雰囲気"), /*#__PURE__*/React.createElement("p", null, "見出しや本文の雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "preset-card-grid"
+  }, fontPresetOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: settings.fontPreset === item.id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      fontPreset: item.id
+    })
+  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "アイコンセット"), /*#__PURE__*/React.createElement("p", null, "メニューやカードに使うアイコンの雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "preset-card-grid"
+  }, iconSetOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: settings.iconSet === item.id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      iconSet: item.id
+    })
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `icon-set-sample icon-set-sample-${item.id}`
+  }, "✦"), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card page-display-settings"
   }, /*#__PURE__*/React.createElement("h3", null, "ページごとの表示設定"), /*#__PURE__*/React.createElement("p", null, "ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "page-display-grid"
@@ -3237,8 +3632,8 @@ function HomeCustomize({
   }, "初期設定に戻す"))), /*#__PURE__*/React.createElement("aside", {
     className: "customize-preview"
   }, /*#__PURE__*/React.createElement("span", null, "プレビュー"), /*#__PURE__*/React.createElement("div", {
-    className: "preview-shell",
-    style: themeStyle(activeTheme)
+    className: `preview-shell ${previewClassName}`,
+    style: previewStyle
   }, settings.bannerVisible && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: `preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
     onPointerDown: startBannerDrag,
@@ -3265,11 +3660,41 @@ function HomeCustomize({
       event.stopPropagation();
       updateBannerPosition(50, 50, true);
     }
-  }, "中央に戻す"))), /*#__PURE__*/React.createElement("div", {
-    className: "preview-card large"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "preview-grid"
-  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("button", {
+  }, "中央に戻す"))), /*#__PURE__*/React.createElement("section", {
+    className: "preview-style-showcase"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "preview-mini-head"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "feature-icon preview-icon"
+  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "mockup"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Preview Atelier"), /*#__PURE__*/React.createElement("small", null, "設定がここに即時反映されます"))), /*#__PURE__*/React.createElement("article", {
+    className: "preview-sample-card"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mini-pill"
+  }, "Today’s Creative Board"), /*#__PURE__*/React.createElement("h4", null, "カードの角丸・影・透明感を確認"), /*#__PURE__*/React.createElement("p", null, "フォント、背景、枠線、アイコンセットの雰囲気がこのプレビューに反映されます。"), /*#__PURE__*/React.createElement("div", {
+    className: "preview-icon-row"
+  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "mockup"
+  }), " モックアップ"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "notebook"
+  }), " プロンプト"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "folder"
+  }), " プロジェクト"))), /*#__PURE__*/React.createElement("div", {
+    className: "preview-stat-row"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "stat-card",
+    type: "button"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "stat-icon"
+  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "magic"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "stat-title"
+  }, "MJ設定"), /*#__PURE__*/React.createElement("strong", null, "18件")), /*#__PURE__*/React.createElement("button", {
+    className: "work-tool-launcher-item",
+    type: "button"
+  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "GPT")), /*#__PURE__*/React.createElement("strong", null, "作業ツール")))), /*#__PURE__*/React.createElement("button", {
     className: "primary preview-save-home",
     onClick: () => {
       setSettings(persistHomeSettings());

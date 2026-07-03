@@ -177,6 +177,39 @@ type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivi
 type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "hidden";
 type HomeCharacterMessageMode = "auto" | "fixed" | "project";
 type DisplayDensity = "comfortable" | "normal" | "compact";
+type CardRadiusStyle = "small" | "medium" | "large" | "pillowy";
+type CardShadowStyle = "none" | "soft" | "normal" | "dreamy";
+type CardTransparencyStyle = "solid" | "soft" | "glass";
+type CardBorderStyle = "none" | "thin" | "soft" | "dashed";
+type BackgroundType = "theme" | "solid" | "gradient" | "pattern" | "image";
+type BackgroundGradient = "milkPink" | "peachBeige" | "blueMist" | "lavenderMilk" | "mintCream" | "cafeLatte";
+type BackgroundPattern = "none" | "dot" | "stripe" | "grid" | "floral" | "paper";
+type BackgroundImageFit = "contain" | "cover";
+type BackgroundImagePosition = "center" | "top" | "bottom" | "left" | "right";
+type BackgroundImageBlur = "none" | "soft" | "medium";
+type BackgroundOpacity = "light" | "normal" | "deep";
+type FontPreset = "simple" | "elegant" | "cute" | "korean" | "handwritten" | "cool";
+type IconSet = "line" | "soft" | "minimal" | "label" | "pixel" | "emoji";
+
+type CardStyleSettings = {
+  radius: CardRadiusStyle;
+  shadow: CardShadowStyle;
+  transparency: CardTransparencyStyle;
+  border: CardBorderStyle;
+};
+
+type BackgroundStyleSettings = {
+  type: BackgroundType;
+  color: string;
+  gradient: BackgroundGradient;
+  pattern: BackgroundPattern;
+  image: string;
+  imageFit: BackgroundImageFit;
+  imagePosition: BackgroundImagePosition;
+  imageBlur: BackgroundImageBlur;
+  imageOpacity: BackgroundOpacity;
+  showDecorations: boolean;
+};
 
 type PageDisplaySettings = {
   gallery: {
@@ -233,6 +266,10 @@ type HomeSettings = {
   workToolIconStyle: WorkToolIconStyle;
   displayDensity: DisplayDensity;
   pageDisplaySettings: PageDisplaySettings;
+  cardStyle: CardStyleSettings;
+  backgroundStyle: BackgroundStyleSettings;
+  fontPreset: FontPreset;
+  iconSet: IconSet;
   homeCharacter: HomeCharacterSettings;
   homeStatsCards: HomeStatsCards;
   visible: Record<string, boolean>;
@@ -297,6 +334,70 @@ const densityOptions: { id: DisplayDensity; label: string; description: string }
   { id: "comfortable", label: "ゆったり", description: "余白を広めにして、見た目の余裕を優先します。" },
   { id: "normal", label: "標準", description: "現在の見た目に近いバランスです。" },
   { id: "compact", label: "コンパクト", description: "カード間隔を少し詰めて一覧性を高めます。" },
+];
+
+const defaultCardStyle: CardStyleSettings = {
+  radius: "medium",
+  shadow: "normal",
+  transparency: "solid",
+  border: "soft",
+};
+
+const defaultBackgroundStyle: BackgroundStyleSettings = {
+  type: "theme",
+  color: "#fffafc",
+  gradient: "milkPink",
+  pattern: "none",
+  image: "",
+  imageFit: "cover",
+  imagePosition: "center",
+  imageBlur: "none",
+  imageOpacity: "normal",
+  showDecorations: true,
+};
+
+const backgroundColorOptions = [
+  ["#fffafc", "ミルクホワイト"],
+  ["#f7efe4", "ベージュ"],
+  ["#fff0f5", "淡いピンク"],
+  ["#eef6ff", "淡いブルー"],
+  ["#f4efff", "淡いラベンダー"],
+  ["#effbf4", "淡いミント"],
+];
+
+const cardStyleOptions = {
+  radius: [["small", "控えめ"], ["medium", "標準"], ["large", "大きめ"], ["pillowy", "ぷっくり"]],
+  shadow: [["none", "なし"], ["soft", "弱め"], ["normal", "標準"], ["dreamy", "ふんわり"]],
+  transparency: [["solid", "なし"], ["soft", "薄め"], ["glass", "ガラス風"]],
+  border: [["none", "なし"], ["thin", "細線"], ["soft", "淡い線"], ["dashed", "点線"]],
+} as const;
+
+const backgroundStyleOptions = {
+  type: [["theme", "テーマ標準"], ["solid", "単色"], ["gradient", "グラデーション"], ["pattern", "パターン"], ["image", "画像"]],
+  gradient: [["milkPink", "ミルクピンク"], ["peachBeige", "ピーチベージュ"], ["blueMist", "ブルーミスト"], ["lavenderMilk", "ラベンダーミルク"], ["mintCream", "ミントクリーム"], ["cafeLatte", "カフェラテ"]],
+  pattern: [["none", "なし"], ["dot", "ドット"], ["stripe", "細ストライプ"], ["grid", "グリッド"], ["floral", "小花風"], ["paper", "紙テクスチャ風"]],
+  imageFit: [["contain", "全体を表示"], ["cover", "枠いっぱいに表示"]],
+  imagePosition: [["center", "中央"], ["top", "上"], ["bottom", "下"], ["left", "左"], ["right", "右"]],
+  imageBlur: [["none", "なし"], ["soft", "弱"], ["medium", "中"]],
+  imageOpacity: [["light", "薄い"], ["normal", "標準"], ["deep", "濃い"]],
+} as const;
+
+const fontPresetOptions: { id: FontPreset; label: string; description: string }[] = [
+  { id: "simple", label: "シンプル", description: "読みやすさ優先の標準バランス。" },
+  { id: "elegant", label: "上品", description: "細めで余白のある高級感。" },
+  { id: "cute", label: "かわいい", description: "少し丸くやわらかい印象。" },
+  { id: "korean", label: "韓国風", description: "カフェ風の細め文字と広い行間。" },
+  { id: "handwritten", label: "手書き風", description: "見出しだけ少しラフに。" },
+  { id: "cool", label: "クール", description: "すっきりシャープな印象。" },
+];
+
+const iconSetOptions: { id: IconSet; label: string; description: string }[] = [
+  { id: "line", label: "線画", description: "細い線で軽い印象。" },
+  { id: "soft", label: "ぷっくり", description: "丸くやわらかいアイコン。" },
+  { id: "minimal", label: "ミニマル", description: "控えめで静かな表示。" },
+  { id: "label", label: "ラベル風", description: "タグのような小さな見た目。" },
+  { id: "pixel", label: "ピクセル風", description: "少し遊びのある表示。" },
+  { id: "emoji", label: "絵文字風", description: "親しみやすい雰囲気。" },
 ];
 
 const homeThemes = [
@@ -470,6 +571,10 @@ const defaultHomeSettings: HomeSettings = {
   workToolIconStyle: "pastel",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
+  cardStyle: defaultCardStyle,
+  backgroundStyle: defaultBackgroundStyle,
+  fontPreset: "simple",
+  iconSet: "line",
   homeStatsCards: {
     mockups: true,
     prompts: true,
@@ -504,12 +609,20 @@ const defaultHomeSettings: HomeSettings = {
 const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
   const rawCharacter = { ...defaultHomeSettings.homeCharacter, ...(settings?.homeCharacter || {}) };
   const rawPageSettings = settings?.pageDisplaySettings || defaultHomeSettings.pageDisplaySettings;
+  const rawCardStyle = { ...defaultCardStyle, ...(settings?.cardStyle || {}) };
+  const rawBackgroundStyle = { ...defaultBackgroundStyle, ...(settings?.backgroundStyle || {}) };
   const safeMessageMode: HomeCharacterMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode)
     ? rawCharacter.messageMode as HomeCharacterMessageMode
     : "auto";
   const safeDensity: DisplayDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity)
     ? settings.displayDensity as DisplayDensity
     : "normal";
+  const safeFontPreset: FontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset)
+    ? settings.fontPreset as FontPreset
+    : "simple";
+  const safeIconSet: IconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet)
+    ? settings.iconSet as IconSet
+    : "line";
   const safePosition = (value: any) => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
   const bannerImage = (settings as any)?.bannerImage || settings?.bannerImageUrl || "";
   return {
@@ -527,6 +640,27 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
       projects: { ...defaultPageDisplaySettings.projects, ...(rawPageSettings as any).projects },
       mockups: { ...defaultPageDisplaySettings.mockups, ...(rawPageSettings as any).mockups },
     },
+    cardStyle: {
+      radius: ["small", "medium", "large", "pillowy"].includes(rawCardStyle.radius) ? rawCardStyle.radius : "medium",
+      shadow: ["none", "soft", "normal", "dreamy"].includes(rawCardStyle.shadow) ? rawCardStyle.shadow : "normal",
+      transparency: ["solid", "soft", "glass"].includes(rawCardStyle.transparency) ? rawCardStyle.transparency : "solid",
+      border: ["none", "thin", "soft", "dashed"].includes(rawCardStyle.border) ? rawCardStyle.border : "soft",
+    },
+    backgroundStyle: {
+      ...rawBackgroundStyle,
+      type: ["theme", "solid", "gradient", "pattern", "image"].includes(rawBackgroundStyle.type) ? rawBackgroundStyle.type : "theme",
+      gradient: ["milkPink", "peachBeige", "blueMist", "lavenderMilk", "mintCream", "cafeLatte"].includes(rawBackgroundStyle.gradient) ? rawBackgroundStyle.gradient : "milkPink",
+      pattern: ["none", "dot", "stripe", "grid", "floral", "paper"].includes(rawBackgroundStyle.pattern) ? rawBackgroundStyle.pattern : "none",
+      imageFit: ["contain", "cover"].includes(rawBackgroundStyle.imageFit) ? rawBackgroundStyle.imageFit : "cover",
+      imagePosition: ["center", "top", "bottom", "left", "right"].includes(rawBackgroundStyle.imagePosition) ? rawBackgroundStyle.imagePosition : "center",
+      imageBlur: ["none", "soft", "medium"].includes(rawBackgroundStyle.imageBlur) ? rawBackgroundStyle.imageBlur : "none",
+      imageOpacity: ["light", "normal", "deep"].includes(rawBackgroundStyle.imageOpacity) ? rawBackgroundStyle.imageOpacity : "normal",
+      color: /^#[0-9a-f]{6}$/i.test(rawBackgroundStyle.color || "") ? rawBackgroundStyle.color : "#fffafc",
+      image: rawBackgroundStyle.image || "",
+      showDecorations: rawBackgroundStyle.showDecorations !== false,
+    },
+    fontPreset: safeFontPreset,
+    iconSet: safeIconSet,
     homeCharacter: { ...rawCharacter, messageMode: safeMessageMode },
     homeStatsCards: { ...defaultHomeSettings.homeStatsCards, ...(settings?.homeStatsCards || {}) },
     visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
@@ -916,7 +1050,7 @@ const imageQualityProfiles: Record<string, { maxSide: number; quality: number; t
   banner: { maxSide: 1800, quality: 0.96, thumbnailSide: 1200, thumbnailQuality: 0.92, keepOriginalMaxSide: 1800 },
   gallery: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   journal: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
-  background: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  background: { maxSide: 1600, quality: 0.88, thumbnailSide: 760, thumbnailQuality: 0.86 },
   "video-thumbnail": { maxSide: 1200, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   character: { maxSide: 1200, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   icon: { maxSide: 900, quality: 0.9, thumbnailSide: 480, thumbnailQuality: 0.88 },
@@ -997,6 +1131,88 @@ function themeStyle(theme: any) {
     "--decorative-shape": decorativeMap[theme.id] || "color-mix(in srgb, var(--accent) 24%, transparent)",
     "--nav-bg": dark ? theme.vars.paper : "color-mix(in srgb, var(--paper) 88%, transparent)",
     "--nav-ink": theme.vars.ink,
+  } as any;
+}
+
+function customizeClassName(settings: HomeSettings) {
+  const card = settings.cardStyle || defaultCardStyle;
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  return [
+    `card-radius-${card.radius}`,
+    `card-shadow-${card.shadow}`,
+    `card-transparency-${card.transparency}`,
+    `card-border-${card.border}`,
+    `bg-type-${bg.type}`,
+    `bg-pattern-${bg.pattern}`,
+    bg.showDecorations === false ? "hide-bg-decorations" : "",
+    `font-${settings.fontPreset || "simple"}`,
+    `icon-set-${settings.iconSet || "line"}`,
+  ].filter(Boolean).join(" ");
+}
+
+function customBackgroundLayers(settings: HomeSettings) {
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  const gradients: Record<BackgroundGradient, string> = {
+    milkPink: "linear-gradient(135deg, #fffafc 0%, #f8dce6 48%, #fff7ed 100%)",
+    peachBeige: "linear-gradient(135deg, #fff8ed 0%, #f4d3c1 48%, #efe4d4 100%)",
+    blueMist: "linear-gradient(135deg, #f8fbff 0%, #dcecff 54%, #eef5f7 100%)",
+    lavenderMilk: "linear-gradient(135deg, #fffafd 0%, #e8ddf4 48%, #f8f3ff 100%)",
+    mintCream: "linear-gradient(135deg, #fffdf7 0%, #d8efe5 48%, #f2fbf4 100%)",
+    cafeLatte: "linear-gradient(135deg, #fff8ef 0%, #ead8c3 48%, #c9ad93 100%)",
+  };
+  const patternLayers: Record<BackgroundPattern, string> = {
+    none: "",
+    dot: "radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0 1.3px, transparent 1.8px)",
+    stripe: "repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent) 0 1px, transparent 1px 18px)",
+    grid: "linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)",
+    floral: "radial-gradient(circle at 10px 12px, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 3px), radial-gradient(circle at 15px 9px, color-mix(in srgb, var(--sage) 18%, transparent) 0 2px, transparent 3px)",
+    paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)",
+  };
+  if (bg.type === "solid") return bg.color;
+  if (bg.type === "gradient") return gradients[bg.gradient] || gradients.milkPink;
+  if (bg.type === "pattern") {
+    const pattern = patternLayers[bg.pattern] || "";
+    return pattern ? `${pattern}, var(--app-bg)` : "var(--app-bg)";
+  }
+  if (bg.type === "image" && bg.image) {
+    const src = imageDisplaySrc(bg.image);
+    if (src) return `linear-gradient(color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent), color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent)), url("${src}")`;
+  }
+  return "";
+}
+
+function customStyle(settings: HomeSettings) {
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  const bodyFonts: Record<FontPreset, string> = {
+    simple: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    elegant: '"Hiragino Mincho ProN", "Yu Mincho", "Times New Roman", serif',
+    cute: '"Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
+    korean: '"Apple SD Gothic Neo", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif',
+    handwritten: '"Comic Sans MS", "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
+    cool: '"Avenir Next", "Helvetica Neue", Arial, sans-serif',
+  };
+  const headingFonts: Record<FontPreset, string> = {
+    ...bodyFonts,
+    handwritten: '"Comic Sans MS", "Hiragino Maru Gothic ProN", cursive',
+  };
+  const backgroundLayers = customBackgroundLayers(settings);
+  const backgroundPositionMap: Record<BackgroundImagePosition, string> = {
+    center: "center",
+    top: "center top",
+    bottom: "center bottom",
+    left: "left center",
+    right: "right center",
+  };
+  return {
+    "--font-body": bodyFonts[settings.fontPreset || "simple"],
+    "--font-heading": headingFonts[settings.fontPreset || "simple"],
+    "--font-weight-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "760" : settings.fontPreset === "cool" ? "850" : "900",
+    "--letter-spacing-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "0.035em" : "0",
+    "--body-line-height": settings.fontPreset === "korean" ? "1.82" : settings.fontPreset === "cool" ? "1.55" : "1.68",
+    "--custom-background": backgroundLayers || "",
+    "--custom-background-size": bg.type === "pattern" && bg.pattern === "grid" ? "34px 34px" : bg.type === "pattern" && bg.pattern === "paper" ? "8px 8px" : bg.type === "pattern" ? "54px 54px" : bg.type === "image" ? bg.imageFit : "auto",
+    "--custom-background-position": bg.type === "image" ? backgroundPositionMap[bg.imagePosition] : "center",
+    "--custom-background-blur": bg.imageBlur === "medium" ? "blur(5px)" : bg.imageBlur === "soft" ? "blur(2px)" : "none",
   } as any;
 }
 
@@ -1745,6 +1961,10 @@ function sampleHomeSettings(value: any) {
     workToolIconStyle: cleaned.workToolIconStyle,
     displayDensity: cleaned.displayDensity,
     pageDisplaySettings: cleaned.pageDisplaySettings,
+    cardStyle: cleaned.cardStyle,
+    backgroundStyle: cleaned.backgroundStyle,
+    fontPreset: cleaned.fontPreset,
+    iconSet: cleaned.iconSet,
     homeCharacter: cleaned.homeCharacter,
     homeStatsCards: cleaned.homeStatsCards,
     visible: cleaned.visible,
@@ -1962,7 +2182,7 @@ function App() {
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
-  const appStyle = themeStyle(activeTheme);
+  const appStyle = { ...themeStyle(activeTheme), ...customStyle(homeSettings) };
 
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
@@ -2082,7 +2302,7 @@ function App() {
   };
 
   return (
-    <div className={`app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"}`} style={appStyle}>
+    <div className={`app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`} style={appStyle}>
       <header className="app-header">
         <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>
@@ -2628,6 +2848,23 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
   }, persist);
+  const updateCardStyle = (patch: Partial<CardStyleSettings>) => updateSettings({
+    cardStyle: { ...defaultCardStyle, ...(settingsRef.current.cardStyle || {}), ...patch },
+  });
+  const updateBackgroundStyle = (patch: Partial<BackgroundStyleSettings>) => updateSettings({
+    backgroundStyle: { ...defaultBackgroundStyle, ...(settingsRef.current.backgroundStyle || {}), ...patch },
+  });
+  const importCustomBackground = async (file?: File) => {
+    if (!file) return;
+    try {
+      const image = saveImageToStorage(await optimizeImage(file, "background"));
+      updateBackgroundStyle({ image: image.src, type: "image" });
+      scheduleStorageWarningCheck();
+    } catch (error) {
+      console.error("[Prompt Atelier] 背景画像の追加に失敗しました", error);
+      window.alert("背景画像を追加できませんでした。jpg / png / webp を選んでください。");
+    }
+  };
   const startBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!homeBannerImageValue(settings) || (settings.bannerFit || "contain") !== "cover") return;
     event.preventDefault();
@@ -2735,6 +2972,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     }
   };
   const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
+  const previewStyle = { ...themeStyle(activeTheme), ...customStyle(settings) };
+  const previewClassName = customizeClassName(settings);
   const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
   const handleCustomizeInstallPwa = () => {
     if (canInstallPwa) {
@@ -2887,6 +3126,125 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                   className={settings.displayDensity === item.id ? "active-soft" : ""}
                   onClick={() => updateSettings({ displayDensity: item.id })}
                 >
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="customize-card">
+            <h3>カード質感設定</h3>
+            <p>カードの角丸・影・透明感・枠線を調整できます。</p>
+            <div className="style-control-grid">
+              <label>角丸
+                <select value={settings.cardStyle.radius} onChange={(event) => updateCardStyle({ radius: event.target.value as CardRadiusStyle })}>
+                  {cardStyleOptions.radius.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+              <label>影
+                <select value={settings.cardStyle.shadow} onChange={(event) => updateCardStyle({ shadow: event.target.value as CardShadowStyle })}>
+                  {cardStyleOptions.shadow.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+              <label>透明感
+                <select value={settings.cardStyle.transparency} onChange={(event) => updateCardStyle({ transparency: event.target.value as CardTransparencyStyle })}>
+                  {cardStyleOptions.transparency.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+              <label>枠線
+                <select value={settings.cardStyle.border} onChange={(event) => updateCardStyle({ border: event.target.value as CardBorderStyle })}>
+                  {cardStyleOptions.border.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="customize-card">
+            <h3>背景カスタム</h3>
+            <p>ツール全体の背景の雰囲気を調整できます。</p>
+            <div className="style-control-grid">
+              <label>背景タイプ
+                <select value={settings.backgroundStyle.type} onChange={(event) => updateBackgroundStyle({ type: event.target.value as BackgroundType })}>
+                  {backgroundStyleOptions.type.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+              <label>背景カラー
+                <input type="color" value={settings.backgroundStyle.color} onChange={(event) => updateBackgroundStyle({ color: event.target.value, type: "solid" })} />
+              </label>
+              <label>グラデーション
+                <select value={settings.backgroundStyle.gradient} onChange={(event) => updateBackgroundStyle({ gradient: event.target.value as BackgroundGradient, type: "gradient" })}>
+                  {backgroundStyleOptions.gradient.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+              <label>背景パターン
+                <select value={settings.backgroundStyle.pattern} onChange={(event) => updateBackgroundStyle({ pattern: event.target.value as BackgroundPattern, type: "pattern" })}>
+                  {backgroundStyleOptions.pattern.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="preset-color-row">
+              {backgroundColorOptions.map(([color, label]) => (
+                <button key={color} type="button" onClick={() => updateBackgroundStyle({ color, type: "solid" })}>
+                  <i style={{ background: color }} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="background-image-controls">
+              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { importCustomBackground(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+              <div className="style-control-grid">
+                <label>画像表示
+                  <select value={settings.backgroundStyle.imageFit} onChange={(event) => updateBackgroundStyle({ imageFit: event.target.value as BackgroundImageFit })}>
+                    {backgroundStyleOptions.imageFit.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                  </select>
+                </label>
+                <label>画像位置
+                  <select value={settings.backgroundStyle.imagePosition} onChange={(event) => updateBackgroundStyle({ imagePosition: event.target.value as BackgroundImagePosition })}>
+                    {backgroundStyleOptions.imagePosition.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                  </select>
+                </label>
+                <label>ぼかし
+                  <select value={settings.backgroundStyle.imageBlur} onChange={(event) => updateBackgroundStyle({ imageBlur: event.target.value as BackgroundImageBlur })}>
+                    {backgroundStyleOptions.imageBlur.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                  </select>
+                </label>
+                <label>背景の濃さ
+                  <select value={settings.backgroundStyle.imageOpacity} onChange={(event) => updateBackgroundStyle({ imageOpacity: event.target.value as BackgroundOpacity })}>
+                    {backgroundStyleOptions.imageOpacity.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="inline-buttons">
+                <button type="button" onClick={() => updateBackgroundStyle({ image: "", type: "theme" })}>背景画像を削除</button>
+              </div>
+            </div>
+            <label className="switch-row">
+              <span>背景装飾を表示</span>
+              <input type="checkbox" checked={settings.backgroundStyle.showDecorations !== false} onChange={(event) => updateBackgroundStyle({ showDecorations: event.target.checked })} />
+            </label>
+          </section>
+
+          <section className="customize-card">
+            <h3>フォント雰囲気</h3>
+            <p>見出しや本文の雰囲気を変更できます。</p>
+            <div className="preset-card-grid">
+              {fontPresetOptions.map((item) => (
+                <button key={item.id} className={settings.fontPreset === item.id ? "active-soft" : ""} onClick={() => updateSettings({ fontPreset: item.id })}>
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="customize-card">
+            <h3>アイコンセット</h3>
+            <p>メニューやカードに使うアイコンの雰囲気を変更できます。</p>
+            <div className="preset-card-grid">
+              {iconSetOptions.map((item) => (
+                <button key={item.id} className={settings.iconSet === item.id ? "active-soft" : ""} onClick={() => updateSettings({ iconSet: item.id })}>
+                  <span className={`icon-set-sample icon-set-sample-${item.id}`}>✦</span>
                   <strong>{item.label}</strong>
                   <small>{item.description}</small>
                 </button>
@@ -3079,7 +3437,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
 
         <aside className="customize-preview">
           <span>プレビュー</span>
-          <div className="preview-shell" style={themeStyle(activeTheme)}>
+          <div className={`preview-shell ${previewClassName}`} style={previewStyle}>
             {settings.bannerVisible && (
               <>
                 <div
@@ -3116,10 +3474,29 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 )}
               </>
             )}
-            <div className="preview-card large"></div>
-            <div className="preview-grid">
-              <i></i><i></i><i></i><i></i>
-            </div>
+            <section className="preview-style-showcase">
+              <div className="preview-mini-head">
+                <span className="feature-icon preview-icon"><FeatureIcon name="mockup" /></span>
+                <div>
+                  <strong>Preview Atelier</strong>
+                  <small>設定がここに即時反映されます</small>
+                </div>
+              </div>
+              <article className="preview-sample-card">
+                <span className="mini-pill">Today’s Creative Board</span>
+                <h4>カードの角丸・影・透明感を確認</h4>
+                <p>フォント、背景、枠線、アイコンセットの雰囲気がこのプレビューに反映されます。</p>
+                <div className="preview-icon-row">
+                  <span><FeatureIcon name="mockup" /> モックアップ</span>
+                  <span><FeatureIcon name="notebook" /> プロンプト</span>
+                  <span><FeatureIcon name="folder" /> プロジェクト</span>
+                </div>
+              </article>
+              <div className="preview-stat-row">
+                <button className="stat-card" type="button"><span className="stat-icon"><FeatureIcon name="magic" /></span><span className="stat-title">MJ設定</span><strong>18件</strong></button>
+                <button className="work-tool-launcher-item" type="button"><span><b>GPT</b></span><strong>作業ツール</strong></button>
+              </div>
+            </section>
             <button className="primary preview-save-home" onClick={() => { setSettings(persistHomeSettings()); setScreen("home"); }}>
               保存してホームへ
             </button>

@@ -30,9 +30,22 @@
   --nav-bg: color-mix(in srgb, var(--paper) 88%, transparent);
   --nav-ink: var(--ink);
   --shadow-soft: 0 18px 46px rgba(73, 58, 45, 0.09);
+  --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-heading: var(--font-body);
+  --font-weight-heading: 900;
+  --letter-spacing-heading: 0;
+  --body-line-height: 1.68;
+  --custom-background: none;
+  --custom-background-size: auto;
+  --custom-background-position: center;
+  --custom-background-blur: none;
+  --custom-card-radius: 24px;
+  --custom-card-shadow: 0 14px 34px rgba(73, 58, 45, 0.065);
+  --custom-card-bg: var(--card-bg);
+  --custom-card-border: var(--card-border);
   color: var(--text-main);
   background: var(--app-bg);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
 }
 
 * {
@@ -49,12 +62,37 @@ body {
 }
 
 .app-shell {
+  position: relative;
   min-height: 100vh;
   background:
+    var(--custom-background),
     radial-gradient(circle at top left, color-mix(in srgb, var(--shell) 48%, transparent), transparent 34%),
     radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--sage) 58%, transparent), transparent 28%),
     var(--app-bg);
+  background-position: var(--custom-background-position), center, center, center;
+  background-size: var(--custom-background-size), auto, auto, auto;
+  background-attachment: scroll;
   color: var(--text-main);
+  font-family: var(--font-body);
+  line-height: var(--body-line-height);
+}
+
+.app-shell.bg-type-image::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  backdrop-filter: var(--custom-background-blur);
+  pointer-events: none;
+}
+
+.app-shell.hide-bg-decorations {
+  background: var(--custom-background), var(--app-bg);
+}
+
+.app-shell > * {
+  position: relative;
+  z-index: 1;
 }
 
 button,
@@ -62,6 +100,18 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+.feature-title,
+.stat-card strong,
+.brand strong {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  letter-spacing: var(--letter-spacing-heading);
 }
 
 button {
@@ -1317,6 +1367,64 @@ main {
 .feature-icon .icon-fill {
   fill: color-mix(in srgb, var(--accent) 35%, transparent);
   stroke: currentColor;
+}
+
+.icon-set-line .feature-icon,
+.icon-set-line .stat-icon {
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.icon-set-line .feature-icon svg,
+.icon-set-line .stat-icon svg {
+  stroke-width: 2.4;
+}
+
+.icon-set-soft .feature-icon,
+.icon-set-soft .stat-icon {
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--card-bg));
+  box-shadow: inset 0 -8px 18px rgba(126, 99, 82, 0.08), 0 12px 24px rgba(73, 58, 45, 0.08);
+}
+
+.icon-set-minimal .feature-icon,
+.icon-set-minimal .stat-icon {
+  width: 58px;
+  height: 58px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.icon-set-minimal .feature-icon svg {
+  width: 34px;
+  height: 34px;
+}
+
+.icon-set-label .feature-icon,
+.icon-set-label .stat-icon {
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+}
+
+.icon-set-pixel .feature-icon,
+.icon-set-pixel .stat-icon {
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.icon-set-pixel .feature-icon svg,
+.icon-set-pixel .stat-icon svg {
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+.icon-set-emoji .feature-icon,
+.icon-set-emoji .stat-icon {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--card-bg));
+  transform: rotate(-2deg);
 }
 
 .feature-title {
@@ -3080,6 +3188,87 @@ main {
   font-weight: 800;
 }
 
+.style-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.style-control-grid label {
+  display: grid;
+  gap: 7px;
+  color: var(--customize-ink);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.preset-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.preset-card-grid button {
+  display: grid;
+  min-height: 112px;
+  align-content: start;
+  gap: 7px;
+  border-radius: 18px;
+  padding: 14px;
+  text-align: left;
+}
+
+.preset-card-grid small {
+  line-height: 1.5;
+}
+
+.preset-color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 13px 0;
+}
+
+.preset-color-row button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.preset-color-row i {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--customize-line);
+  border-radius: 999px;
+}
+
+.background-image-controls {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--customize-line));
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--customize-card));
+  padding: 14px;
+}
+
+.icon-set-sample {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--customize-line);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--customize-card));
+  color: var(--accent);
+  font-weight: 900;
+}
+
 .inline-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -3194,7 +3383,12 @@ main {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: var(--ivory);
+  background:
+    var(--custom-background),
+    radial-gradient(circle at top left, color-mix(in srgb, var(--shell) 38%, transparent), transparent 34%),
+    var(--ivory);
+  background-position: var(--custom-background-position), center, center;
+  background-size: var(--custom-background-size), auto, auto;
   padding: 14px;
 }
 
@@ -3273,6 +3467,81 @@ main {
   display: flex;
   justify-content: flex-end;
   margin-top: -4px;
+}
+
+.preview-style-showcase {
+  display: grid;
+  gap: 12px;
+  border-radius: calc(var(--custom-card-radius) + 4px);
+}
+
+.preview-mini-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview-mini-head strong,
+.preview-sample-card h4 {
+  color: var(--text-main);
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-heading);
+  letter-spacing: var(--letter-spacing-heading);
+}
+
+.preview-mini-head small,
+.preview-sample-card p {
+  color: var(--text-sub);
+  line-height: var(--body-line-height);
+}
+
+.preview-sample-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--custom-card-border);
+  border-radius: var(--custom-card-radius);
+  background: var(--custom-card-bg);
+  box-shadow: var(--custom-card-shadow);
+  padding: 16px;
+}
+
+.preview-sample-card h4,
+.preview-sample-card p {
+  margin: 0;
+}
+
+.preview-icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preview-icon-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+  color: var(--text-sub);
+  font-size: 11px;
+  font-weight: 850;
+  padding: 7px 9px;
+}
+
+.preview-icon-row svg {
+  width: 16px;
+  height: 16px;
+}
+
+.preview-stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.preview-stat-row .stat-card,
+.preview-stat-row .work-tool-launcher-item {
+  min-height: 112px;
 }
 
 .banner-reset-position {
@@ -4652,6 +4921,69 @@ p {
   gap: 18px;
 }
 
+.card-radius-small { --custom-card-radius: 12px; }
+.card-radius-medium { --custom-card-radius: 24px; }
+.card-radius-large { --custom-card-radius: 32px; }
+.card-radius-pillowy { --custom-card-radius: 42px; }
+
+.card-shadow-none { --custom-card-shadow: none; }
+.card-shadow-soft { --custom-card-shadow: 0 10px 24px rgba(73, 58, 45, 0.045); }
+.card-shadow-normal { --custom-card-shadow: 0 14px 34px rgba(73, 58, 45, 0.065); }
+.card-shadow-dreamy { --custom-card-shadow: 0 22px 58px rgba(73, 58, 45, 0.13); }
+
+.card-transparency-solid { --custom-card-bg: var(--card-bg); }
+.card-transparency-soft { --custom-card-bg: color-mix(in srgb, var(--card-bg) 88%, transparent); }
+.card-transparency-glass { --custom-card-bg: color-mix(in srgb, var(--card-bg) 72%, transparent); }
+.card-border-none { --custom-card-border: transparent; }
+.card-border-thin { --custom-card-border: color-mix(in srgb, var(--line) 82%, transparent); }
+.card-border-soft { --custom-card-border: color-mix(in srgb, var(--accent) 18%, var(--line)); }
+.card-border-dashed { --custom-card-border: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+
+.card-transparency-glass .home-feature-card,
+.card-transparency-glass .stat-card,
+.card-transparency-glass .library-category-card,
+.card-transparency-glass .library-prompt-card,
+.card-transparency-glass .gallery-card,
+.card-transparency-glass .video-card,
+.card-transparency-glass .project-card,
+.card-transparency-glass .mj-card,
+.card-transparency-glass .customize-card,
+.card-transparency-glass .preview-shell {
+  backdrop-filter: blur(12px);
+}
+
+.card-border-dashed .home-feature-card,
+.card-border-dashed .stat-card,
+.card-border-dashed .library-category-card,
+.card-border-dashed .library-prompt-card,
+.card-border-dashed .gallery-card,
+.card-border-dashed .video-card,
+.card-border-dashed .project-card,
+.card-border-dashed .mj-card,
+.card-border-dashed .customize-card,
+.card-border-dashed .preview-shell {
+  border-style: dashed;
+}
+
+.app-shell .home-feature-card,
+.app-shell .stat-card,
+.app-shell .library-category-card,
+.app-shell .library-prompt-card,
+.app-shell .gallery-card,
+.app-shell .video-card,
+.app-shell .project-card,
+.app-shell .mj-card,
+.app-shell .prompt-card,
+.app-shell .panel,
+.app-shell .customize-card,
+.app-shell .customize-preview,
+.app-shell .preview-shell {
+  border-color: var(--custom-card-border);
+  border-radius: var(--custom-card-radius);
+  background: var(--custom-card-bg);
+  box-shadow: var(--custom-card-shadow);
+}
+
 .card-grid.compact {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: 32px;
@@ -5202,7 +5534,10 @@ summary {
   }
 
   .density-choice-grid,
-  .page-display-grid {
+  .page-display-grid,
+  .style-control-grid,
+  .preset-card-grid,
+  .preview-stat-row {
     grid-template-columns: 1fr;
   }
 
