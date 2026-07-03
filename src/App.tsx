@@ -803,6 +803,16 @@ const indexedDbThumbRef = (id: string) => `indexeddb-thumb:${id}`;
 const isIndexedDbImageRef = (value: string) => /^indexeddb(?:-thumb)?:/.test(value);
 const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = (value: unknown) => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
+const imageQualityProfiles: Record<string, { maxSide: number; quality: number; thumbnailSide: number; thumbnailQuality: number; keepOriginalMaxSide?: number }> = {
+  banner: { maxSide: 1600, quality: 0.94, thumbnailSide: 960, thumbnailQuality: 0.9, keepOriginalMaxSide: 1600 },
+  gallery: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  journal: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  background: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  "video-thumbnail": { maxSide: 1200, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  character: { maxSide: 1200, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  icon: { maxSide: 900, quality: 0.9, thumbnailSide: 480, thumbnailQuality: 0.88 },
+  default: { maxSide: 1200, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+};
 
 const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
 const readableTextOn = (hex: string) => {
@@ -1115,7 +1125,7 @@ function readFileAsDataUrl(file: File) {
   });
 }
 
-function canvasDataUrl(image: HTMLImageElement, maxSide: number, quality = 0.82) {
+function canvasDataUrl(image: HTMLImageElement, maxSide: number, quality = 0.92, preserveTransparency = true) {
   const sourceWidth = image.naturalWidth || image.width;
   const sourceHeight = image.naturalHeight || image.height;
   const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
@@ -1128,11 +1138,11 @@ function canvasDataUrl(image: HTMLImageElement, maxSide: number, quality = 0.82)
   if (!context) throw new Error("画像処理を開始できませんでした");
   context.drawImage(image, 0, 0, width, height);
   const webp = canvas.toDataURL("image/webp", quality);
-  const dataUrl = webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", quality);
+  const dataUrl = webp.startsWith("data:image/webp") ? webp : canvas.toDataURL(preserveTransparency ? "image/png" : "image/jpeg", quality);
   return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
 }
 
-function videoFrameDataUrl(video: HTMLVideoElement, maxSide = 720, quality = 0.8) {
+function videoFrameDataUrl(video: HTMLVideoElement, maxSide = 720, quality = 0.9) {
   const sourceWidth = video.videoWidth || 1280;
   const sourceHeight = video.videoHeight || 720;
   const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
@@ -1279,8 +1289,9 @@ async function storeExistingImageValue(value: any, category = "gallery", title =
 async function optimizeImage(file: File, category = "gallery"): Promise<OptimizedImageData> {
   if (!isSupportedImageFile(file)) throw new Error("対応していない画像形式です");
   const image = await loadImageFromFile(file);
-  const full = canvasDataUrl(image, 1200, 0.82);
-  const thumbnail = canvasDataUrl(image, 360, 0.76);
+  const profile = imageQualityProfiles[category] || imageQualityProfiles.default;
+  const full = canvasDataUrl(image, profile.maxSide, profile.quality, true);
+  const thumbnail = canvasDataUrl(image, profile.thumbnailSide, profile.thumbnailQuality, true);
   const optimized = {
     id: uid(),
     src: full.dataUrl,
@@ -1297,10 +1308,11 @@ async function optimizeImage(file: File, category = "gallery"): Promise<Optimize
 async function optimizeBannerImage(file: File): Promise<OptimizedImageData> {
   if (!isSupportedImageFile(file)) throw new Error("対応していない画像形式です");
   const image = await loadImageFromFile(file);
+  const profile = imageQualityProfiles.banner;
   const sourceWidth = image.naturalWidth || image.width;
   const sourceHeight = image.naturalHeight || image.height;
   const maxSide = Math.max(sourceWidth, sourceHeight);
-  const keepOriginal = maxSide <= 1600;
+  const keepOriginal = maxSide <= (profile.keepOriginalMaxSide || profile.maxSide);
   const full = keepOriginal
     ? {
       dataUrl: await readFileAsDataUrl(file),
@@ -1308,8 +1320,8 @@ async function optimizeBannerImage(file: File): Promise<OptimizedImageData> {
       height: sourceHeight,
       mimeType: file.type || "image/*",
     }
-    : canvasDataUrl(image, 1600, 0.94);
-  const thumbnail = canvasDataUrl(image, 720, 0.88);
+    : canvasDataUrl(image, profile.maxSide, profile.quality, true);
+  const thumbnail = canvasDataUrl(image, profile.thumbnailSide, profile.thumbnailQuality, true);
   const optimized = {
     id: uid(),
     src: full.dataUrl,
@@ -1343,8 +1355,9 @@ async function createVideoThumbnail(file: File) {
       video.onerror = () => reject(new Error("動画サムネイルを作成できませんでした"));
       video.currentTime = targetTime;
     });
-    const full = videoFrameDataUrl(video, 1200, 0.82);
-    const thumbnail = videoFrameDataUrl(video, 300, 0.78);
+    const profile = imageQualityProfiles["video-thumbnail"];
+    const full = videoFrameDataUrl(video, profile.maxSide, profile.quality);
+    const thumbnail = videoFrameDataUrl(video, profile.thumbnailSide, profile.thumbnailQuality);
     const image: OptimizedImageData = {
       id: uid(),
       src: full.dataUrl,
@@ -1363,7 +1376,7 @@ async function createVideoThumbnail(file: File) {
 
 async function createThumbnail(file: File) {
   const image = await loadImageFromFile(file);
-  return canvasDataUrl(image, 360, 0.76).dataUrl;
+  return canvasDataUrl(image, imageQualityProfiles.default.thumbnailSide, imageQualityProfiles.default.thumbnailQuality, true).dataUrl;
 }
 
 function saveImageToStorage(image: OptimizedImageData) {
@@ -4296,7 +4309,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     if (!file) return;
     try {
       const image = await optimizeImage(file, "video-thumbnail");
-      updateDraft({ thumbnail: image.thumbnail || image.src });
+      updateDraft({ thumbnail: image.src || image.thumbnail });
       scheduleStorageWarningCheck();
     } catch {
       window.alert("サムネイル画像を追加できませんでした。jpg / png / webp を選んでください。");
@@ -4308,7 +4321,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       const image = await createVideoThumbnail(file);
       updateDraft({
         title: draft.title || file.name.replace(/\.[^.]+$/, ""),
-        thumbnail: image.thumbnail || image.src,
+        thumbnail: image.src || image.thumbnail,
       });
       scheduleStorageWarningCheck();
     } catch {
