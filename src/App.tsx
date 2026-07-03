@@ -163,6 +163,11 @@ type VideoPromptStock = {
   updatedAt?: string;
 };
 
+type PwaInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice?: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
 type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos";
 
 type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites" | "atelier";
@@ -1862,6 +1867,9 @@ function App() {
   const [videoStocks, setVideoStocks] = useStoredState<VideoPromptStock[]>("promptAtelierVideoPromptStocks", []);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
+  const [installPrompt, setInstallPrompt] = React.useState<PwaInstallPromptEvent | null>(null);
+  const [showInstallPrompt, setShowInstallPrompt] = React.useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = React.useState(false);
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -1921,6 +1929,69 @@ function App() {
     };
   }, []);
 
+  React.useEffect(() => {
+    const isStandalone =
+      window.matchMedia?.("(display-mode: standalone)")?.matches ||
+      (window.navigator as any).standalone === true;
+    setIsStandaloneApp(isStandalone);
+    if (isStandalone) return;
+
+    const dismissedInSession = sessionStorage.getItem("promptAtelierPwaInstallDismissed") === "true";
+    if (!dismissedInSession) setShowInstallPrompt(true);
+    const existingPrompt = (window as any).__promptAtelierInstallPrompt;
+    if (existingPrompt) setInstallPrompt(existingPrompt as PwaInstallPromptEvent);
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as PwaInstallPromptEvent);
+    };
+    const handleInstallReady = () => {
+      const promptEvent = (window as any).__promptAtelierInstallPrompt;
+      if (promptEvent) {
+        setInstallPrompt(promptEvent as PwaInstallPromptEvent);
+        if (!sessionStorage.getItem("promptAtelierPwaInstallDismissed")) setShowInstallPrompt(true);
+      }
+    };
+    const handleInstalled = () => {
+      setInstallPrompt(null);
+      (window as any).__promptAtelierInstallPrompt = null;
+      setShowInstallPrompt(false);
+      setIsStandaloneApp(true);
+      setToast("Prompt Atelierをアプリとして追加しました");
+      window.setTimeout(() => setToast(""), 1800);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("promptatelierinstallready", handleInstallReady);
+    window.addEventListener("appinstalled", handleInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("promptatelierinstallready", handleInstallReady);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
+
+  const installPwa = async () => {
+    const promptEvent = installPrompt || ((window as any).__promptAtelierInstallPrompt as PwaInstallPromptEvent | null);
+    if (!promptEvent) {
+      window.alert("Chromeでインストール条件を確認中、または条件を満たしていない可能性があります。\n\n本番公開URL（https）をChromeで開いているか確認してください。\nそれでも出ない場合は、右上メニューから「保存して共有」→「ページをアプリとしてインストール」を選んでください。");
+      return;
+    }
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice?.catch(() => null);
+    if (choice?.outcome === "accepted") {
+      setInstallPrompt(null);
+      (window as any).__promptAtelierInstallPrompt = null;
+      setShowInstallPrompt(false);
+      return;
+    }
+    setShowInstallPrompt(true);
+  };
+
+  const dismissInstallPrompt = () => {
+    sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
+    setShowInstallPrompt(false);
+  };
+
   return (
     <div className={`app-shell ${themeClassName(activeTheme.id)}`} style={appStyle}>
       <header className="app-header">
@@ -1949,6 +2020,9 @@ function App() {
       </header>
 
       <main>
+        {showInstallPrompt && !isStandaloneApp && (
+          <PwaInstallCard canInstall={Boolean(installPrompt)} onInstall={installPwa} onDismiss={dismissInstallPrompt} />
+        )}
         {screen === "home" && (
           <Home
             setScreen={setScreen}
@@ -1971,6 +2045,9 @@ function App() {
             workTools={workTools}
             setWorkTools={setWorkTools}
             projects={projects}
+            canInstallPwa={Boolean(installPrompt || (window as any).__promptAtelierInstallPrompt)}
+            isStandaloneApp={isStandaloneApp}
+            onInstallPwa={installPwa}
           />
         )}
         {screen === "library" && <Library copyText={copyText} setScreen={setScreen} />}
@@ -1997,6 +2074,80 @@ function App() {
       )}
       {toast && <div className="toast">{toast}</div>}
     </div>
+  );
+}
+
+function PwaInstallCard({ canInstall, onInstall, onDismiss }: { canInstall: boolean; onInstall: () => void; onDismiss: () => void }) {
+  return (
+    <section className="pwa-install-card" role="dialog" aria-label="Prompt Atelierをアプリとして追加">
+      <div className="pwa-install-icon">PA</div>
+      <div>
+        <strong>Prompt Atelierをアプリとして追加</strong>
+        <p>ChromeでDockに追加すると、アプリのように起動できます。保存済みデータはこのブラウザ内に残ります。</p>
+        {!canInstall && (
+          <small className="pwa-install-help">
+            Chrome推奨です。ポップアップが出ない場合は、本番公開URLをChromeで開き、右上メニューから「保存して共有」→「ページをアプリとしてインストール」を選んでください。
+          </small>
+        )}
+      </div>
+      <div className="pwa-install-actions">
+        <button className="primary" onClick={onInstall}>{canInstall ? "アプリとして追加" : "追加方法を見る"}</button>
+        <button onClick={onDismiss}>あとで</button>
+      </div>
+    </section>
+  );
+}
+
+function PwaInstallInstructionsModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="modal-backdrop" role="dialog" aria-modal="true">
+      <div className="modal pwa-instructions-modal">
+        <div className="modal-head">
+          <h3>ChromeでDockに追加する方法</h3>
+          <button onClick={onClose}>閉じる</button>
+        </div>
+        <p className="pwa-instruction-alert">この環境では自動追加画面を表示できません。Chromeのメニューから追加してください。</p>
+        <ol className="pwa-instruction-steps">
+          <li>ChromeでPrompt Atelierを開きます</li>
+          <li>右上の「︙」メニューを開きます</li>
+          <li>「キャスト、保存、共有」または「保存して共有」を選びます</li>
+          <li>「ページをアプリとしてインストール」または「ショートカットを作成」を選びます</li>
+          <li>「ウィンドウとして開く」にチェックを入れます</li>
+          <li>作成後、Dockに追加して使えます</li>
+        </ol>
+        <p className="pwa-instruction-note">Chromeのバージョンによって、メニュー名が少し異なる場合があります。</p>
+        <div className="modal-actions">
+          <button className="primary" onClick={onClose}>わかりました</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PwaCustomizeCard({ canInstallPwa, isStandaloneApp, onInstall, onShowInstructions }: any) {
+  return (
+    <section className="customize-card pwa-customize-card">
+      <h3>アプリとして使う</h3>
+      <p>ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。</p>
+      {isStandaloneApp ? (
+        <div className="pwa-status-pill">アプリモードで起動中です</div>
+      ) : (
+        <>
+          <div className="pwa-customize-actions">
+            <button className="primary" onClick={onInstall}>アプリとして追加</button>
+            <button onClick={onShowInstructions}>追加方法を見る</button>
+          </div>
+          <small className="pwa-install-help">
+            Chrome推奨です。環境によっては確認画面が表示されない場合があります。
+          </small>
+          {!canInstallPwa && (
+            <small className="pwa-install-help">
+              自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。
+            </small>
+          )}
+        </>
+      )}
+    </section>
   );
 }
 
@@ -2354,8 +2505,9 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
   );
 }
 
-function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects }: any) {
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
+  const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
   const bannerDragRef = React.useRef<{ startX: number; startY: number; x: number; y: number; width: number; height: number } | null>(null);
   const settingsRef = React.useRef<HomeSettings>(settings);
@@ -2470,6 +2622,13 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   };
   const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
   const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
+  const handleCustomizeInstallPwa = () => {
+    if (canInstallPwa) {
+      onInstallPwa();
+      return;
+    }
+    setShowPwaInstructions(true);
+  };
   return (
     <section className="page customize-page">
       <PageHead
@@ -2478,6 +2637,13 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       />
       <div className="customize-layout">
         <div className="customize-settings">
+          <PwaCustomizeCard
+            canInstallPwa={canInstallPwa}
+            isStandaloneApp={isStandaloneApp}
+            onInstall={handleCustomizeInstallPwa}
+            onShowInstructions={() => setShowPwaInstructions(true)}
+          />
+
           <section className="customize-card">
             <h3>テーマ</h3>
             <p>ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。</p>
@@ -2649,6 +2815,9 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           <section className="customize-card backup-card">
             <h3>バックアップ</h3>
             <p>大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。</p>
+            <p className="backup-storage-note">
+              Prompt Atelierのデータは、このブラウザ内に保存されます。Dockのショートカットを削除しても通常は残りますが、ブラウザのサイトデータ削除や別ブラウザ利用では引き継がれない場合があります。大切なデータは定期的にバックアップを書き出してください。
+            </p>
             <div className="backup-actions">
               <button className="primary" onClick={exportPromptAtelierBackup}>バックアップを書き出す</button>
               <button onClick={() => backupInputRef.current?.click()}>バックアップを読み込む</button>
@@ -2726,6 +2895,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           </div>
         </aside>
       </div>
+      {showPwaInstructions && <PwaInstallInstructionsModal onClose={() => setShowPwaInstructions(false)} />}
       <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
