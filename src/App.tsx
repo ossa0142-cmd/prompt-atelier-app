@@ -186,6 +186,8 @@ type HomeSettings = {
   bannerVisible: boolean;
   bannerSize: "small" | "medium" | "large";
   bannerFit: "contain" | "cover";
+  bannerPositionX: number;
+  bannerPositionY: number;
   workToolIconStyle: WorkToolIconStyle;
   homeCharacter: HomeCharacterSettings;
   visible: Record<string, boolean>;
@@ -393,6 +395,8 @@ const defaultHomeSettings: HomeSettings = {
   bannerVisible: true,
   bannerSize: "medium",
   bannerFit: "contain",
+  bannerPositionX: 50,
+  bannerPositionY: 50,
   workToolIconStyle: "pastel",
   homeCharacter: {
     image: "",
@@ -423,9 +427,12 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
   const safeMessageMode: HomeCharacterMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode)
     ? rawCharacter.messageMode as HomeCharacterMessageMode
     : "auto";
+  const safePosition = (value: any) => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
   return {
     ...defaultHomeSettings,
     ...settings,
+    bannerPositionX: safePosition(settings?.bannerPositionX),
+    bannerPositionY: safePosition(settings?.bannerPositionY),
     homeCharacter: { ...rawCharacter, messageMode: safeMessageMode },
     visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
     order: [
@@ -1525,6 +1532,8 @@ function sampleHomeSettings(value: any) {
     bannerVisible: cleaned.bannerVisible,
     bannerSize: cleaned.bannerSize,
     bannerFit: cleaned.bannerFit,
+    bannerPositionX: cleaned.bannerPositionX,
+    bannerPositionY: cleaned.bannerPositionY,
     workToolIconStyle: cleaned.workToolIconStyle,
     homeCharacter: cleaned.homeCharacter,
     visible: cleaned.visible,
@@ -2002,7 +2011,11 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
       {settings.bannerVisible && (
         <div className={`home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
           {settings.bannerImageUrl ? (
-            <img src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)} alt="" />
+            <img
+              src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)}
+              alt=""
+              style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
+            />
           ) : (
             <>
               <span>✦</span>
@@ -2195,7 +2208,35 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
 function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
+  const bannerDragRef = React.useRef<{ startX: number; startY: number; x: number; y: number; width: number; height: number } | null>(null);
   const updateSettings = (patch: Partial<HomeSettings>) => setSettings(normalizeHomeSettings({ ...settings, ...patch }));
+  const updateBannerPosition = (x: number, y: number) => updateSettings({
+    bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
+    bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
+  });
+  const startBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!settings.bannerImageUrl) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    bannerDragRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      x: settings.bannerPositionX ?? 50,
+      y: settings.bannerPositionY ?? 50,
+      width: bounds.width || 1,
+      height: bounds.height || 1,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = bannerDragRef.current;
+    if (!drag) return;
+    const nextX = drag.x - ((event.clientX - drag.startX) / drag.width) * 100;
+    const nextY = drag.y - ((event.clientY - drag.startY) / drag.height) * 100;
+    updateBannerPosition(nextX, nextY);
+  };
+  const endBannerDrag = () => {
+    bannerDragRef.current = null;
+  };
   const updateVisible = (id: string, value: boolean) => updateSettings({ visible: { ...settings.visible, [id]: value } });
   const moveSection = (id: HomeSectionId, direction: -1 | 1) => {
     const index = settings.order.indexOf(id);
@@ -2326,6 +2367,36 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               </div>
               <p>「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。</p>
             </div>
+            <div className="banner-position-controls">
+              <div>
+                <strong>バナー位置調整</strong>
+                <p>画像が切れる場合は、プレビュー上でドラッグして表示位置を調整できます。</p>
+              </div>
+              <label>
+                <span>横位置 {settings.bannerPositionX ?? 50}%</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={settings.bannerPositionX ?? 50}
+                  onChange={(event) => updateBannerPosition(Number(event.target.value), settings.bannerPositionY ?? 50)}
+                />
+              </label>
+              <label>
+                <span>縦位置 {settings.bannerPositionY ?? 50}%</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={settings.bannerPositionY ?? 50}
+                  onChange={(event) => updateBannerPosition(settings.bannerPositionX ?? 50, Number(event.target.value))}
+                />
+              </label>
+              <button onClick={() => updateBannerPosition(50, 50)}>中央に戻す</button>
+              {(settings.bannerFit || "contain") === "contain" && (
+                <small>全体を表示では画像が切れにくいため、位置調整は枠いっぱい表示の時に効果が分かりやすくなります。</small>
+              )}
+            </div>
           </section>
 
           <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} projects={projects} />
@@ -2441,8 +2512,24 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           <span>プレビュー</span>
           <div className="preview-shell" style={themeStyle(activeTheme)}>
             {settings.bannerVisible && (
-              <div className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
-                {settings.bannerImageUrl && <img src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)} alt="" />}
+              <div
+                className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${settings.bannerImageUrl ? "is-draggable" : ""}`}
+                onPointerDown={startBannerDrag}
+                onPointerMove={moveBannerDrag}
+                onPointerUp={endBannerDrag}
+                onPointerCancel={endBannerDrag}
+              >
+                {settings.bannerImageUrl && (
+                  <>
+                    <img
+                      src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)}
+                      alt=""
+                      draggable={false}
+                      style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
+                    />
+                    <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>
+                  </>
+                )}
               </div>
             )}
             <div className="preview-card large"></div>
