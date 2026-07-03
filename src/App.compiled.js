@@ -2071,7 +2071,9 @@ function PwaInstallInstructionsModal({
     className: "modal-head"
   }, /*#__PURE__*/React.createElement("h3", null, "ChromeでDockに追加する方法"), /*#__PURE__*/React.createElement("button", {
     onClick: onClose
-  }, "閉じる")), /*#__PURE__*/React.createElement("ol", {
+  }, "閉じる")), /*#__PURE__*/React.createElement("p", {
+    className: "pwa-instruction-alert"
+  }, "この環境では自動追加画面を表示できません。Chromeのメニューから追加してください。"), /*#__PURE__*/React.createElement("ol", {
     className: "pwa-instruction-steps"
   }, /*#__PURE__*/React.createElement("li", null, "ChromeでPrompt Atelierを開きます"), /*#__PURE__*/React.createElement("li", null, "右上の「︙」メニューを開きます"), /*#__PURE__*/React.createElement("li", null, "「キャスト、保存、共有」または「保存して共有」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ページをアプリとしてインストール」または「ショートカットを作成」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ウィンドウとして開く」にチェックを入れます"), /*#__PURE__*/React.createElement("li", null, "作成後、Dockに追加して使えます")), /*#__PURE__*/React.createElement("p", {
     className: "pwa-instruction-note"
@@ -2081,6 +2083,29 @@ function PwaInstallInstructionsModal({
     className: "primary",
     onClick: onClose
   }, "わかりました"))));
+}
+function PwaCustomizeCard({
+  canInstallPwa,
+  isStandaloneApp,
+  onInstall,
+  onShowInstructions
+}) {
+  return /*#__PURE__*/React.createElement("section", {
+    className: "customize-card pwa-customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "アプリとして使う"), /*#__PURE__*/React.createElement("p", null, "ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。"), isStandaloneApp ? /*#__PURE__*/React.createElement("div", {
+    className: "pwa-status-pill"
+  }, "アプリモードで起動中です") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "pwa-customize-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onInstall
+  }, "アプリとして追加"), /*#__PURE__*/React.createElement("button", {
+    onClick: onShowInstructions
+  }, "追加方法を見る")), /*#__PURE__*/React.createElement("small", {
+    className: "pwa-install-help"
+  }, "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"), !canInstallPwa && /*#__PURE__*/React.createElement("small", {
+    className: "pwa-install-help"
+  }, "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。")));
 }
 function Home({
   setScreen,
@@ -2672,7 +2697,12 @@ function HomeCustomize({
     className: "customize-layout"
   }, /*#__PURE__*/React.createElement("div", {
     className: "customize-settings"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, /*#__PURE__*/React.createElement(PwaCustomizeCard, {
+    canInstallPwa: canInstallPwa,
+    isStandaloneApp: isStandaloneApp,
+    onInstall: handleCustomizeInstallPwa,
+    onShowInstructions: () => setShowPwaInstructions(true)
+  }), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "テーマ"), /*#__PURE__*/React.createElement("p", null, "ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。"), /*#__PURE__*/React.createElement("div", {
     className: "theme-grid"
@@ -2821,19 +2851,6 @@ function HomeCustomize({
       }
     })
   }))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card pwa-customize-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "アプリとして使う"), /*#__PURE__*/React.createElement("p", null, "ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。"), isStandaloneApp ? /*#__PURE__*/React.createElement("div", {
-    className: "pwa-status-pill"
-  }, "アプリモードで起動中です") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "backup-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: handleCustomizeInstallPwa
-  }, "アプリとして追加"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setShowPwaInstructions(true)
-  }, "追加方法を見る")), /*#__PURE__*/React.createElement("small", {
-    className: "pwa-install-help"
-  }, "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "order-list"
