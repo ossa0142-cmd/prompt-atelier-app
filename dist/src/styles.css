@@ -458,8 +458,9 @@ main {
 }
 
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
 }
 
@@ -497,6 +498,8 @@ main {
 .stat-card {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
+  flex: 1 1 168px;
+  max-width: 220px;
   min-height: 96px;
   align-content: center;
   align-items: center;

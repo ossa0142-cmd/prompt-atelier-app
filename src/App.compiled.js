@@ -34,6 +34,22 @@ const homeFeatures = [{
   id: "projects",
   label: "プロジェクト"
 }];
+const homeStatsCardOptions = [{
+  id: "mockups",
+  label: "モックアップカードを表示"
+}, {
+  id: "prompts",
+  label: "プロンプト帳カードを表示"
+}, {
+  id: "mjSettings",
+  label: "MJ設定カードを表示"
+}, {
+  id: "projects",
+  label: "プロジェクトカードを表示"
+}, {
+  id: "achievement",
+  label: "達成予定カードを表示"
+}];
 const homeThemes = [{
   id: "cute",
   name: "キュート",
@@ -410,6 +426,13 @@ const defaultHomeSettings = {
   bannerPositionX: 50,
   bannerPositionY: 50,
   workToolIconStyle: "pastel",
+  homeStatsCards: {
+    mockups: true,
+    prompts: true,
+    mjSettings: true,
+    projects: true,
+    achievement: true
+  },
   homeCharacter: {
     image: "",
     position: "right-bottom",
@@ -451,6 +474,10 @@ const normalizeHomeSettings = settings => {
     homeCharacter: {
       ...rawCharacter,
       messageMode: safeMessageMode
+    },
+    homeStatsCards: {
+      ...defaultHomeSettings.homeStatsCards,
+      ...(settings?.homeStatsCards || {})
     },
     visible: {
       ...defaultHomeSettings.visible,
@@ -1582,6 +1609,7 @@ function sampleHomeSettings(value) {
     bannerPositionY: cleaned.bannerPositionY,
     workToolIconStyle: cleaned.workToolIconStyle,
     homeCharacter: cleaned.homeCharacter,
+    homeStatsCards: cleaned.homeStatsCards,
     visible: cleaned.visible,
     order: cleaned.order
   };
@@ -1914,42 +1942,49 @@ function Home({
   })[0];
   const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
   const dashboardItems = [{
+    id: "mockups",
     screen: "library",
     title: "モックアップ",
     value: `${Math.max(libraryPrompts.length, 128)}件`,
     icon: "mockup"
   }, {
+    id: "prompts",
     screen: "prompts",
     title: "プロンプト帳",
     value: `${Math.max(myPrompts.length, 42)}件`,
     icon: "notebook"
   }, {
+    id: "mjSettings",
     screen: "mj",
     title: "MJ設定",
     value: `${Math.max(mjSettings.length, 18)}件`,
     icon: "magic"
   }, {
+    id: "projects",
     screen: "projects",
     title: "プロジェクト",
     value: `${Math.min(projects.length, 30)}件`,
     icon: "folder"
   }, {
+    id: "achievement",
     screen: "projects",
     title: reminderInfo?.expired ? "期限超過" : "達成予定",
     value: nextReminder ? reminderInfo?.text || "" : "リマインドなし",
     icon: "alarm",
     note: nextReminder?.name || ""
   }];
+  const visibleDashboardItems = dashboardItems.filter(item => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false);
   const normalizedTools = workTools.slice(0, 10);
   const renderSection = sectionId => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
+      if (!visibleDashboardItems.length) return null;
       return /*#__PURE__*/React.createElement("section", {
         className: "dashboard-panel home-module",
         key: sectionId
       }, /*#__PURE__*/React.createElement("div", {
         className: "dashboard-grid"
-      }, dashboardItems.map(item => /*#__PURE__*/React.createElement("button", {
+      }, visibleDashboardItems.map(item => /*#__PURE__*/React.createElement("button", {
         className: "stat-card",
         key: `${item.title}-${item.icon}`,
         onClick: () => setScreen(item.screen)
@@ -2588,6 +2623,22 @@ function HomeCustomize({
     type: "checkbox",
     checked: settings.visible[item.id] !== false,
     onChange: event => updateVisible(item.id, event.target.checked)
+  }))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "ホーム件数カード設定"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する件数カードを選択できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "toggle-list"
+  }, homeStatsCardOptions.map(item => /*#__PURE__*/React.createElement("label", {
+    className: "switch-row",
+    key: item.id
+  }, /*#__PURE__*/React.createElement("span", null, item.label), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false,
+    onChange: event => updateSettings({
+      homeStatsCards: {
+        ...(settings.homeStatsCards || defaultHomeSettings.homeStatsCards),
+        [item.id]: event.target.checked
+      }
+    })
   }))))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {

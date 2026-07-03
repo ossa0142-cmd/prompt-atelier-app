@@ -180,6 +180,9 @@ type HomeCharacterSettings = {
   selectedProjectId?: string;
 };
 
+type HomeStatsCardId = "mockups" | "prompts" | "mjSettings" | "projects" | "achievement";
+type HomeStatsCards = Record<HomeStatsCardId, boolean>;
+
 type HomeSettings = {
   themeId: string;
   bannerImage: string;
@@ -191,6 +194,7 @@ type HomeSettings = {
   bannerPositionY: number;
   workToolIconStyle: WorkToolIconStyle;
   homeCharacter: HomeCharacterSettings;
+  homeStatsCards: HomeStatsCards;
   visible: Record<string, boolean>;
   order: HomeSectionId[];
 };
@@ -229,6 +233,14 @@ const homeFeatures: { id: HomeFeatureId; label: string }[] = [
   { id: "videos", label: "動画プロンプト帳" },
   { id: "mj", label: "MJ設定" },
   { id: "projects", label: "プロジェクト" },
+];
+
+const homeStatsCardOptions: { id: HomeStatsCardId; label: string }[] = [
+  { id: "mockups", label: "モックアップカードを表示" },
+  { id: "prompts", label: "プロンプト帳カードを表示" },
+  { id: "mjSettings", label: "MJ設定カードを表示" },
+  { id: "projects", label: "プロジェクトカードを表示" },
+  { id: "achievement", label: "達成予定カードを表示" },
 ];
 
 const homeThemes = [
@@ -400,6 +412,13 @@ const defaultHomeSettings: HomeSettings = {
   bannerPositionX: 50,
   bannerPositionY: 50,
   workToolIconStyle: "pastel",
+  homeStatsCards: {
+    mockups: true,
+    prompts: true,
+    mjSettings: true,
+    projects: true,
+    achievement: true,
+  },
   homeCharacter: {
     image: "",
     position: "right-bottom",
@@ -439,6 +458,7 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
     bannerPositionX: safePosition(settings?.bannerPositionX),
     bannerPositionY: safePosition(settings?.bannerPositionY),
     homeCharacter: { ...rawCharacter, messageMode: safeMessageMode },
+    homeStatsCards: { ...defaultHomeSettings.homeStatsCards, ...(settings?.homeStatsCards || {}) },
     visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
     order: [
       ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
@@ -1610,6 +1630,7 @@ function sampleHomeSettings(value: any) {
     bannerPositionY: cleaned.bannerPositionY,
     workToolIconStyle: cleaned.workToolIconStyle,
     homeCharacter: cleaned.homeCharacter,
+    homeStatsCards: cleaned.homeStatsCards,
     visible: cleaned.visible,
     order: cleaned.order,
   };
@@ -1953,11 +1974,12 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     })[0];
   const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
   const dashboardItems = [
-    { screen: "library", title: "モックアップ", value: `${Math.max(libraryPrompts.length, 128)}件`, icon: "mockup" },
-    { screen: "prompts", title: "プロンプト帳", value: `${Math.max(myPrompts.length, 42)}件`, icon: "notebook" },
-    { screen: "mj", title: "MJ設定", value: `${Math.max(mjSettings.length, 18)}件`, icon: "magic" },
-    { screen: "projects", title: "プロジェクト", value: `${Math.min(projects.length, 30)}件`, icon: "folder" },
+    { id: "mockups", screen: "library", title: "モックアップ", value: `${Math.max(libraryPrompts.length, 128)}件`, icon: "mockup" },
+    { id: "prompts", screen: "prompts", title: "プロンプト帳", value: `${Math.max(myPrompts.length, 42)}件`, icon: "notebook" },
+    { id: "mjSettings", screen: "mj", title: "MJ設定", value: `${Math.max(mjSettings.length, 18)}件`, icon: "magic" },
+    { id: "projects", screen: "projects", title: "プロジェクト", value: `${Math.min(projects.length, 30)}件`, icon: "folder" },
     {
+      id: "achievement",
       screen: "projects",
       title: reminderInfo?.expired ? "期限超過" : "達成予定",
       value: nextReminder ? reminderInfo?.text || "" : "リマインドなし",
@@ -1965,14 +1987,16 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
       note: nextReminder?.name || "",
     },
   ];
+  const visibleDashboardItems = dashboardItems.filter((item) => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id as HomeStatsCardId] !== false);
   const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
+      if (!visibleDashboardItems.length) return null;
       return (
         <section className="dashboard-panel home-module" key={sectionId}>
           <div className="dashboard-grid">
-            {dashboardItems.map((item) => (
+            {visibleDashboardItems.map((item) => (
               <button className="stat-card" key={`${item.title}-${item.icon}`} onClick={() => setScreen(item.screen as Screen)}>
                 <span className="stat-icon"><FeatureIcon name={item.icon} /></span>
                 <span className="stat-title">{item.title}</span>
@@ -2523,6 +2547,28 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 <label className="switch-row" key={item.id}>
                   <span>{item.label}</span>
                   <input type="checkbox" checked={settings.visible[item.id] !== false} onChange={(event) => updateVisible(item.id, event.target.checked)} />
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="customize-card">
+            <h3>ホーム件数カード設定</h3>
+            <p>ホーム上部に表示する件数カードを選択できます。</p>
+            <div className="toggle-list">
+              {homeStatsCardOptions.map((item) => (
+                <label className="switch-row" key={item.id}>
+                  <span>{item.label}</span>
+                  <input
+                    type="checkbox"
+                    checked={(settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false}
+                    onChange={(event) => updateSettings({
+                      homeStatsCards: {
+                        ...(settings.homeStatsCards || defaultHomeSettings.homeStatsCards),
+                        [item.id]: event.target.checked,
+                      },
+                    })}
+                  />
                 </label>
               ))}
             </div>
