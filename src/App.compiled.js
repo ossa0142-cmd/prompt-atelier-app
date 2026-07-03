@@ -405,6 +405,7 @@ const defaultHomeSettings = {
   bannerImageUrl: "",
   bannerVisible: true,
   bannerSize: "medium",
+  bannerFit: "contain",
   workToolIconStyle: "pastel",
   homeCharacter: {
     image: "",
@@ -1462,6 +1463,7 @@ function sampleHomeSettings(value) {
     bannerImageUrl: cleaned.bannerImageUrl,
     bannerVisible: cleaned.bannerVisible,
     bannerSize: cleaned.bannerSize,
+    bannerFit: cleaned.bannerFit,
     workToolIconStyle: cleaned.workToolIconStyle,
     homeCharacter: cleaned.homeCharacter,
     visible: cleaned.visible,
@@ -1950,11 +1952,11 @@ function Home({
   }, /*#__PURE__*/React.createElement("div", {
     className: "home-topbar"
   }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
-    className: `home-banner ${settings.bannerSize}`,
-    style: settings.bannerImageUrl ? {
-      backgroundImage: `url(${imageSrc(settings.bannerImageUrl)})`
-    } : undefined
-  }, !settings.bannerImageUrl && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)), /*#__PURE__*/React.createElement(HomeCharacter, {
+    className: `home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`
+  }, settings.bannerImageUrl ? /*#__PURE__*/React.createElement("img", {
+    src: imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl),
+    alt: ""
+  }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)), /*#__PURE__*/React.createElement(HomeCharacter, {
     settings: settings.homeCharacter,
     projects: projects,
     prompts: myPrompts
@@ -2332,7 +2334,21 @@ function HomeCustomize({
     onClick: () => updateSettings({
       bannerImageUrl: ""
     })
-  }, "画像を削除"))), /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
+  }, "画像を削除")), /*#__PURE__*/React.createElement("div", {
+    className: "banner-fit-controls"
+  }, /*#__PURE__*/React.createElement("strong", null, "バナー表示方法"), /*#__PURE__*/React.createElement("div", {
+    className: "inline-buttons"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: (settings.bannerFit || "contain") === "contain" ? "active-soft" : "",
+    onClick: () => updateSettings({
+      bannerFit: "contain"
+    })
+  }, "全体を表示"), /*#__PURE__*/React.createElement("button", {
+    className: settings.bannerFit === "cover" ? "active-soft" : "",
+    onClick: () => updateSettings({
+      bannerFit: "cover"
+    })
+  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。"))), /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
     settings: settings,
     updateSettings: updateSettings,
     projects: projects
@@ -2445,11 +2461,11 @@ function HomeCustomize({
     className: "preview-shell",
     style: themeStyle(activeTheme)
   }, settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
-    className: `preview-banner ${settings.bannerSize}`,
-    style: settings.bannerImageUrl ? {
-      backgroundImage: `url(${imageSrc(settings.bannerImageUrl)})`
-    } : undefined
-  }), /*#__PURE__*/React.createElement("div", {
+    className: `preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`
+  }, settings.bannerImageUrl && /*#__PURE__*/React.createElement("img", {
+    src: imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl),
+    alt: ""
+  })), /*#__PURE__*/React.createElement("div", {
     className: "preview-card large"
   }), /*#__PURE__*/React.createElement("div", {
     className: "preview-grid"

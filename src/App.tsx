@@ -185,6 +185,7 @@ type HomeSettings = {
   bannerImageUrl: string;
   bannerVisible: boolean;
   bannerSize: "small" | "medium" | "large";
+  bannerFit: "contain" | "cover";
   workToolIconStyle: WorkToolIconStyle;
   homeCharacter: HomeCharacterSettings;
   visible: Record<string, boolean>;
@@ -391,6 +392,7 @@ const defaultHomeSettings: HomeSettings = {
   bannerImageUrl: "",
   bannerVisible: true,
   bannerSize: "medium",
+  bannerFit: "contain",
   workToolIconStyle: "pastel",
   homeCharacter: {
     image: "",
@@ -1522,6 +1524,7 @@ function sampleHomeSettings(value: any) {
     bannerImageUrl: cleaned.bannerImageUrl,
     bannerVisible: cleaned.bannerVisible,
     bannerSize: cleaned.bannerSize,
+    bannerFit: cleaned.bannerFit,
     workToolIconStyle: cleaned.workToolIconStyle,
     homeCharacter: cleaned.homeCharacter,
     visible: cleaned.visible,
@@ -1997,11 +2000,10 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
         <span>Prompt Atelier Home</span>
       </div>
       {settings.bannerVisible && (
-        <div
-          className={`home-banner ${settings.bannerSize}`}
-          style={settings.bannerImageUrl ? { backgroundImage: `url(${imageSrc(settings.bannerImageUrl)})` } : undefined}
-        >
-          {!settings.bannerImageUrl && (
+        <div className={`home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
+          {settings.bannerImageUrl ? (
+            <img src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)} alt="" />
+          ) : (
             <>
               <span>✦</span>
               <i></i>
@@ -2312,6 +2314,18 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               ))}
               <button onClick={() => updateSettings({ bannerImageUrl: "" })}>画像を削除</button>
             </div>
+            <div className="banner-fit-controls">
+              <strong>バナー表示方法</strong>
+              <div className="inline-buttons">
+                <button className={(settings.bannerFit || "contain") === "contain" ? "active-soft" : ""} onClick={() => updateSettings({ bannerFit: "contain" })}>
+                  全体を表示
+                </button>
+                <button className={settings.bannerFit === "cover" ? "active-soft" : ""} onClick={() => updateSettings({ bannerFit: "cover" })}>
+                  枠いっぱいに表示
+                </button>
+              </div>
+              <p>「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。</p>
+            </div>
           </section>
 
           <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} projects={projects} />
@@ -2426,7 +2440,11 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
         <aside className="customize-preview">
           <span>プレビュー</span>
           <div className="preview-shell" style={themeStyle(activeTheme)}>
-            {settings.bannerVisible && <div className={`preview-banner ${settings.bannerSize}`} style={settings.bannerImageUrl ? { backgroundImage: `url(${imageSrc(settings.bannerImageUrl)})` } : undefined} />}
+            {settings.bannerVisible && (
+              <div className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
+                {settings.bannerImageUrl && <img src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)} alt="" />}
+              </div>
+            )}
             <div className="preview-card large"></div>
             <div className="preview-grid">
               <i></i><i></i><i></i><i></i>

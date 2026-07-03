@@ -211,27 +211,43 @@ main {
 
 .home-banner {
   position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 30px;
   background:
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.76), transparent 28%),
     linear-gradient(135deg, var(--shell), var(--sage), var(--sand));
-  background-position: center;
-  background-size: cover;
   box-shadow: 0 16px 40px rgba(73, 58, 45, 0.075);
 }
 
 .home-banner.small {
-  height: 150px;
+  aspect-ratio: 3 / 2;
 }
 
 .home-banner.medium {
-  height: 230px;
+  aspect-ratio: 2 / 1;
 }
 
 .home-banner.large {
-  height: 320px;
+  aspect-ratio: 3 / 1;
+}
+
+.home-banner img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-position: center;
+}
+
+.home-banner.fit-contain img {
+  object-fit: contain;
+}
+
+.home-banner.fit-cover img {
+  object-fit: cover;
 }
 
 .home-banner span {
@@ -2652,6 +2668,25 @@ main {
   font-size: 12px;
 }
 
+.banner-fit-controls {
+  display: grid;
+  gap: 8px;
+  border-top: 1px dashed var(--customize-line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.banner-fit-controls > strong {
+  font-size: 13px;
+}
+
+.banner-fit-controls p {
+  margin: 0;
+  color: var(--customize-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .character-settings-card {
   display: grid;
   gap: 13px;
@@ -2872,21 +2907,40 @@ main {
 }
 
 .preview-banner {
-  height: 78px;
+  display: grid;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
   border-radius: 16px;
   background:
     radial-gradient(circle at 20% 24%, rgba(255, 255, 255, 0.76), transparent 28%),
     linear-gradient(135deg, var(--shell), var(--sage), var(--sand));
-  background-position: center;
-  background-size: cover;
 }
 
 .preview-banner.small {
-  height: 52px;
+  aspect-ratio: 3 / 2;
+}
+
+.preview-banner.medium {
+  aspect-ratio: 2 / 1;
 }
 
 .preview-banner.large {
-  height: 112px;
+  aspect-ratio: 3 / 1;
+}
+
+.preview-banner img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-position: center;
+}
+
+.preview-banner.fit-contain img {
+  object-fit: contain;
+}
+
+.preview-banner.fit-cover img {
+  object-fit: cover;
 }
 
 .preview-card {
@@ -4811,18 +4865,6 @@ summary {
   .order-row {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .home-banner.small {
-    height: 110px;
-  }
-
-  .home-banner.medium {
-    height: 170px;
-  }
-
-  .home-banner.large {
-    height: 230px;
   }
 
   .home-character {
