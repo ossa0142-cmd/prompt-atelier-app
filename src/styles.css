@@ -236,9 +236,11 @@ main {
 }
 
 .home-banner img {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: inherit;
+  image-rendering: auto;
   object-position: center;
 }
 
@@ -2902,6 +2904,14 @@ main {
   line-height: 1.6;
 }
 
+.banner-quality-note {
+  display: block;
+  margin-top: 8px;
+  color: var(--customize-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .character-settings-card {
   display: grid;
   gap: 13px;
@@ -3161,9 +3171,11 @@ main {
 }
 
 .preview-banner img {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: inherit;
+  image-rendering: auto;
   object-position: center;
   user-select: none;
   pointer-events: none;

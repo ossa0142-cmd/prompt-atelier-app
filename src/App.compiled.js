@@ -809,11 +809,11 @@ const indexedDbIdFromRef = value => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = value => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles = {
   banner: {
-    maxSide: 1600,
-    quality: 0.95,
-    thumbnailSide: 960,
-    thumbnailQuality: 0.9,
-    keepOriginalMaxSide: 1600
+    maxSide: 1800,
+    quality: 0.96,
+    thumbnailSide: 1200,
+    thumbnailQuality: 0.92,
+    keepOriginalMaxSide: 1800
   },
   gallery: {
     maxSide: 1400,
@@ -1181,6 +1181,27 @@ function canvasDataUrl(image, maxSide, quality = 0.92, preserveTransparency = tr
     mimeType: dataUrl.slice(5, dataUrl.indexOf(";"))
   };
 }
+function canvasDataUrlWithMime(image, maxSide, mimeType, quality = 0.96) {
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(1, Math.round(sourceWidth * ratio));
+  const height = Math.max(1, Math.round(sourceHeight * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("画像処理を開始できませんでした");
+  context.drawImage(image, 0, 0, width, height);
+  const safeMimeType = /image\/png/i.test(mimeType) ? "image/png" : /image\/jpe?g/i.test(mimeType) ? "image/jpeg" : "image/webp";
+  const dataUrl = safeMimeType === "image/png" ? canvas.toDataURL("image/png") : canvas.toDataURL(safeMimeType, quality);
+  return {
+    dataUrl,
+    width,
+    height,
+    mimeType: dataUrl.slice(5, dataUrl.indexOf(";"))
+  };
+}
 function videoFrameDataUrl(video, maxSide = 720, quality = 0.9) {
   const sourceWidth = video.videoWidth || 1280;
   const sourceHeight = video.videoHeight || 720;
@@ -1363,7 +1384,7 @@ async function optimizeBannerImage(file) {
     width: sourceWidth,
     height: sourceHeight,
     mimeType: file.type || "image/*"
-  } : canvasDataUrl(image, profile.maxSide, profile.quality, true);
+  } : canvasDataUrlWithMime(image, profile.maxSide, file.type || "image/webp", profile.quality);
   const thumbnail = canvasDataUrl(image, profile.thumbnailSide, profile.thumbnailQuality, true);
   const optimized = {
     id: uid(),
@@ -2739,11 +2760,12 @@ function HomeCustomize({
   }), /*#__PURE__*/React.createElement("input", {
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
-    onChange: event => readImage(event, bannerImage => updateSettings({
-      bannerImage,
-      bannerImageUrl: bannerImage
-    }), "banner")
-  }), /*#__PURE__*/React.createElement("div", {
+    onChange: event => readBannerImage(event, bannerImage => updateSettings({
+      bannerImage
+    }))
+  }), /*#__PURE__*/React.createElement("small", {
+    className: "banner-quality-note"
+  }, "高画質設定を反映するには、バナー画像を再アップロードしてください。"), /*#__PURE__*/React.createElement("div", {
     className: "inline-buttons"
   }, ["small", "medium", "large"].map(size => /*#__PURE__*/React.createElement("button", {
     key: size,
@@ -3964,6 +3986,19 @@ async function readImage(event, onLoad, category = "prompt") {
   } catch (error) {
     console.error("[Prompt Atelier] 画像の最適化に失敗しました", error);
     window.alert("画像を追加できませんでした。jpg / png / webp を選んでください。");
+  }
+}
+async function readBannerImage(event, onLoad) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const image = await optimizeBannerImage(file);
+    onLoad(image.src);
+  } catch (error) {
+    console.error("[Prompt Atelier] バナー画像の最適化に失敗しました", error);
+    window.alert("バナー画像を追加できませんでした。jpg / png / webp を選んでください。");
   }
 }
 function MockupCategoryModal({
