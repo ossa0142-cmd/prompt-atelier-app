@@ -2209,11 +2209,30 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
   const bannerDragRef = React.useRef<{ startX: number; startY: number; x: number; y: number; width: number; height: number } | null>(null);
-  const updateSettings = (patch: Partial<HomeSettings>) => setSettings(normalizeHomeSettings({ ...settings, ...patch }));
-  const updateBannerPosition = (x: number, y: number) => updateSettings({
+  const settingsRef = React.useRef<HomeSettings>(settings);
+  React.useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+  const persistHomeSettings = (nextSettings = settingsRef.current) => {
+    const normalized = normalizeHomeSettings(nextSettings);
+    settingsRef.current = normalized;
+    try {
+      localStorage.setItem("promptAtelierHomeSettings", JSON.stringify(normalized));
+    } catch (error) {
+      console.warn("[Prompt Atelier] ホーム設定の保存に失敗しました", error);
+    }
+    return normalized;
+  };
+  const updateSettings = (patch: Partial<HomeSettings>, persist = false) => {
+    const next = normalizeHomeSettings({ ...settingsRef.current, ...patch });
+    settingsRef.current = next;
+    setSettings(next);
+    if (persist) persistHomeSettings(next);
+  };
+  const updateBannerPosition = (x: number, y: number, persist = false) => updateSettings({
     bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
-  });
+  }, persist);
   const startBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!settings.bannerImageUrl || (settings.bannerFit || "contain") !== "cover") return;
     event.preventDefault();
@@ -2237,6 +2256,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     updateBannerPosition(nextX, nextY);
   };
   const endBannerDrag = () => {
+    if (bannerDragRef.current) persistHomeSettings();
     bannerDragRef.current = null;
   };
   const updateVisible = (id: string, value: boolean) => updateSettings({ visible: { ...settings.visible, [id]: value } });
@@ -2512,7 +2532,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                       type="button"
                       className="banner-reset-position"
                       onPointerDown={(event) => event.stopPropagation()}
-                      onClick={(event) => { event.stopPropagation(); updateBannerPosition(50, 50); }}
+                      onClick={(event) => { event.stopPropagation(); updateBannerPosition(50, 50, true); }}
                     >
                       中央に戻す
                     </button>
@@ -2524,7 +2544,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             <div className="preview-grid">
               <i></i><i></i><i></i><i></i>
             </div>
-            <button className="primary preview-save-home" onClick={() => { setSettings(normalizeHomeSettings(settings)); setScreen("home"); }}>
+            <button className="primary preview-save-home" onClick={() => { setSettings(persistHomeSettings()); setScreen("home"); }}>
               保存してホームへ
             </button>
           </div>

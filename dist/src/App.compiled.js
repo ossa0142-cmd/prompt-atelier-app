@@ -2215,14 +2215,33 @@ function HomeCustomize({
   const [editingTool, setEditingTool] = React.useState(null);
   const backupInputRef = React.useRef(null);
   const bannerDragRef = React.useRef(null);
-  const updateSettings = patch => setSettings(normalizeHomeSettings({
-    ...settings,
-    ...patch
-  }));
-  const updateBannerPosition = (x, y) => updateSettings({
+  const settingsRef = React.useRef(settings);
+  React.useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+  const persistHomeSettings = (nextSettings = settingsRef.current) => {
+    const normalized = normalizeHomeSettings(nextSettings);
+    settingsRef.current = normalized;
+    try {
+      localStorage.setItem("promptAtelierHomeSettings", JSON.stringify(normalized));
+    } catch (error) {
+      console.warn("[Prompt Atelier] ホーム設定の保存に失敗しました", error);
+    }
+    return normalized;
+  };
+  const updateSettings = (patch, persist = false) => {
+    const next = normalizeHomeSettings({
+      ...settingsRef.current,
+      ...patch
+    });
+    settingsRef.current = next;
+    setSettings(next);
+    if (persist) persistHomeSettings(next);
+  };
+  const updateBannerPosition = (x, y, persist = false) => updateSettings({
     bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y)))
-  });
+  }, persist);
   const startBannerDrag = event => {
     if (!settings.bannerImageUrl || (settings.bannerFit || "contain") !== "cover") return;
     event.preventDefault();
@@ -2246,6 +2265,7 @@ function HomeCustomize({
     updateBannerPosition(nextX, nextY);
   };
   const endBannerDrag = () => {
+    if (bannerDragRef.current) persistHomeSettings();
     bannerDragRef.current = null;
   };
   const updateVisible = (id, value) => updateSettings({
@@ -2525,7 +2545,7 @@ function HomeCustomize({
     onPointerDown: event => event.stopPropagation(),
     onClick: event => {
       event.stopPropagation();
-      updateBannerPosition(50, 50);
+      updateBannerPosition(50, 50, true);
     }
   }, "中央に戻す"))), /*#__PURE__*/React.createElement("div", {
     className: "preview-card large"
@@ -2534,7 +2554,7 @@ function HomeCustomize({
   }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("button", {
     className: "primary preview-save-home",
     onClick: () => {
-      setSettings(normalizeHomeSettings(settings));
+      setSettings(persistHomeSettings());
       setScreen("home");
     }
   }, "保存してホームへ")))), /*#__PURE__*/React.createElement(PageBackButton, {
