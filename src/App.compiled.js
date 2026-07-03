@@ -1142,7 +1142,7 @@ function customBackgroundLayers(settings) {
     dot: "radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0 1.3px, transparent 1.8px)",
     stripe: "repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent) 0 1px, transparent 1px 18px)",
     grid: "linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)",
-    floral: "radial-gradient(circle at 10px 12px, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 3px), radial-gradient(circle at 15px 9px, color-mix(in srgb, var(--sage) 18%, transparent) 0 2px, transparent 3px)",
+    floral: "radial-gradient(circle at 18px 18px, color-mix(in srgb, var(--accent) 24%, transparent) 0 1.5px, transparent 2px), radial-gradient(ellipse at 18px 11px, color-mix(in srgb, var(--accent) 14%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 18px 25px, color-mix(in srgb, var(--accent) 14%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 11px 18px, color-mix(in srgb, var(--sage) 18%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 25px 18px, color-mix(in srgb, var(--sage) 18%, transparent) 0 3px, transparent 4px)",
     paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)"
   };
   if (bg.type === "solid") return `linear-gradient(${bg.color}, ${bg.color})`;
@@ -3643,8 +3643,8 @@ function HomeCustomize({
     onClick: reset
   }, "初期設定に戻す"))), /*#__PURE__*/React.createElement("aside", {
     className: "customize-preview"
-  }, /*#__PURE__*/React.createElement("span", null, "プレビュー"), /*#__PURE__*/React.createElement("div", {
-    className: `preview-shell density-${settings.displayDensity || "normal"} ${previewClassName}`,
+  }, /*#__PURE__*/React.createElement("span", null, "ホームプレビュー"), /*#__PURE__*/React.createElement("div", {
+    className: `preview-shell home-mini-preview density-${settings.displayDensity || "normal"} ${previewClassName}`,
     "data-density": settings.displayDensity || "normal",
     "data-card-radius": settings.cardStyle.radius,
     "data-card-shadow": settings.cardStyle.shadow,
@@ -3654,14 +3654,16 @@ function HomeCustomize({
     "data-font-preset": settings.fontPreset || "simple",
     "data-icon-set": settings.iconSet || "line",
     style: previewStyle
-  }, settings.bannerVisible && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: `preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "home-mini-topbar"
+  }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("span", null, "Home Mini Preview")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+    className: `preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
     onPointerDown: startBannerDrag,
     onPointerMove: moveBannerDrag,
     onPointerUp: endBannerDrag,
     onPointerCancel: endBannerDrag,
     onLostPointerCapture: endBannerDrag
-  }, bannerSrc && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
+  }, bannerSrc ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     src: bannerSrc,
     alt: "",
     draggable: false,
@@ -3670,7 +3672,9 @@ function HomeCustomize({
     }
   }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
     className: "banner-drag-hint"
-  }, "画像をドラッグして表示位置を調整"))), bannerImageValue && /*#__PURE__*/React.createElement("div", {
+  }, "ドラッグで位置調整")) : /*#__PURE__*/React.createElement("div", {
+    className: "home-mini-banner-placeholder"
+  }, /*#__PURE__*/React.createElement("span", null, "今日の制作ボード"), /*#__PURE__*/React.createElement("strong", null, "Creative Board"))), bannerImageValue && /*#__PURE__*/React.createElement("div", {
     className: "preview-banner-actions"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
@@ -3680,58 +3684,43 @@ function HomeCustomize({
       event.stopPropagation();
       updateBannerPosition(50, 50, true);
     }
-  }, "中央に戻す"))), /*#__PURE__*/React.createElement("section", {
-    className: "preview-style-showcase"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "preview-demo-banner"
-  }, /*#__PURE__*/React.createElement("span", null, "Sample Banner"), /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier Preview")), /*#__PURE__*/React.createElement("div", {
-    className: "preview-mini-head"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "feature-icon preview-icon"
-  }, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "mockup"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier Preview"), /*#__PURE__*/React.createElement("small", null, "今日の制作ボード / Creative Board"))), /*#__PURE__*/React.createElement("article", {
-    className: "preview-sample-card"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "mini-pill"
-  }, "Today’s Creative Board"), /*#__PURE__*/React.createElement("h4", null, "今日の制作ボード"), /*#__PURE__*/React.createElement("h5", null, "Creative Board"), /*#__PURE__*/React.createElement("strong", {
-    className: "preview-number-text"
-  }, "12 Projects / 48 Prompts / 300DPI"), /*#__PURE__*/React.createElement("p", null, "カード密度・角丸・影・透明感・背景・フォント・アイコンの変化を確認できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "preview-icon-row"
-  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "mockup"
-  }), " モックアップ"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "notebook"
-  }), " プロンプト"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "folder"
-  }), " プロジェクト")), /*#__PURE__*/React.createElement("div", {
-    className: "preview-button-row"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button"
-  }, "小さなボタン"), /*#__PURE__*/React.createElement("span", {
-    className: "mini-pill"
-  }, "#sample"))), /*#__PURE__*/React.createElement("div", {
-    className: "preview-stat-row"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "stat-card",
-    type: "button"
+  }, "中央に戻す")), /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-stats",
+    "aria-label": "ミニ件数カード"
+  }, [["mockup", "Mockup", "12"], ["notebook", "Prompt", "48"], ["magic", "MJ", "18"], ["folder", "Project", "03"]].map(([icon, label, value]) => /*#__PURE__*/React.createElement("article", {
+    className: "home-mini-stat",
+    key: label
   }, /*#__PURE__*/React.createElement("span", {
     className: "stat-icon"
   }, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "magic"
-  })), /*#__PURE__*/React.createElement("span", {
-    className: "stat-title"
-  }, "MJ設定"), /*#__PURE__*/React.createElement("strong", null, "18件")), /*#__PURE__*/React.createElement("button", {
-    className: "work-tool-launcher-item",
-    type: "button"
-  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "GPT")), /*#__PURE__*/React.createElement("strong", null, "作業ツール"))), /*#__PURE__*/React.createElement("nav", {
-    className: "preview-nav-sample",
-    "aria-label": "プレビュー用ナビ"
+    name: icon
+  })), /*#__PURE__*/React.createElement("small", null, label), /*#__PURE__*/React.createElement("strong", null, value)))), /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-main-card"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "mini-pill"
+  }, "今日の制作ボード"), /*#__PURE__*/React.createElement("h4", null, "Creative Board"), /*#__PURE__*/React.createElement("strong", {
+    className: "preview-number-text"
+  }, "12 / 48 / 300DPI")), /*#__PURE__*/React.createElement("p", null, "Prompt Atelier")), /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-tools",
+    "aria-label": "ミニ作業ツール"
+  }, ["GPT", "MJ", "Run"].map(label => /*#__PURE__*/React.createElement("article", {
+    className: "home-mini-tool",
+    key: label
+  }, /*#__PURE__*/React.createElement("span", null, label), /*#__PURE__*/React.createElement("small", null, label === "Run" ? "Video" : label)))), /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-recent",
+    "aria-label": "ミニ最近カード"
+  }, /*#__PURE__*/React.createElement("article", null, /*#__PURE__*/React.createElement("span", {
+    className: "mini-pill"
+  }, "Mockup"), /*#__PURE__*/React.createElement("strong", null, "Soft Sticker")), /*#__PURE__*/React.createElement("article", null, /*#__PURE__*/React.createElement("span", {
+    className: "mini-pill"
+  }, "Prompt"), /*#__PURE__*/React.createElement("strong", null, "Pastel Clipart"))), /*#__PURE__*/React.createElement("nav", {
+    className: "home-mini-nav",
+    "aria-label": "ミニナビ"
   }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "spark"
-  }), " Home"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "image"
-  }), " Gallery"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "mockup"
+  }), " Mockup"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: "notebook"
+  }), " Prompt"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
     name: "video"
   }), " Video"))), /*#__PURE__*/React.createElement("button", {
     className: "primary preview-save-home",
@@ -3739,7 +3728,7 @@ function HomeCustomize({
       setSettings(persistHomeSettings());
       setScreen("home");
     }
-  }, "保存してホームへ")))), showPwaInstructions && /*#__PURE__*/React.createElement(PwaInstallInstructionsModal, {
+  }, "保存してホームへ"))), showPwaInstructions && /*#__PURE__*/React.createElement(PwaInstallInstructionsModal, {
     onClose: () => setShowPwaInstructions(false)
   }), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",

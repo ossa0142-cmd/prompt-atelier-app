@@ -1165,7 +1165,7 @@ function customBackgroundLayers(settings: HomeSettings) {
     dot: "radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0 1.3px, transparent 1.8px)",
     stripe: "repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent) 0 1px, transparent 1px 18px)",
     grid: "linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)",
-    floral: "radial-gradient(circle at 10px 12px, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 3px), radial-gradient(circle at 15px 9px, color-mix(in srgb, var(--sage) 18%, transparent) 0 2px, transparent 3px)",
+    floral: "radial-gradient(circle at 18px 18px, color-mix(in srgb, var(--accent) 24%, transparent) 0 1.5px, transparent 2px), radial-gradient(ellipse at 18px 11px, color-mix(in srgb, var(--accent) 14%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 18px 25px, color-mix(in srgb, var(--accent) 14%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 11px 18px, color-mix(in srgb, var(--sage) 18%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 25px 18px, color-mix(in srgb, var(--sage) 18%, transparent) 0 3px, transparent 4px)",
     paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)",
   };
   if (bg.type === "solid") return `linear-gradient(${bg.color}, ${bg.color})`;
@@ -3451,9 +3451,9 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
         </div>
 
         <aside className="customize-preview">
-          <span>プレビュー</span>
+          <span>ホームプレビュー</span>
           <div
-            className={`preview-shell density-${settings.displayDensity || "normal"} ${previewClassName}`}
+            className={`preview-shell home-mini-preview density-${settings.displayDensity || "normal"} ${previewClassName}`}
             data-density={settings.displayDensity || "normal"}
             data-card-radius={settings.cardStyle.radius}
             data-card-shadow={settings.cardStyle.shadow}
@@ -3464,84 +3464,98 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             data-icon-set={settings.iconSet || "line"}
             style={previewStyle}
           >
+            <div className="home-mini-topbar">
+              <strong>Prompt Atelier</strong>
+              <span>Home Mini Preview</span>
+            </div>
             {settings.bannerVisible && (
-              <>
-                <div
-                  className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`}
-                  onPointerDown={startBannerDrag}
-                  onPointerMove={moveBannerDrag}
-                  onPointerUp={endBannerDrag}
-                  onPointerCancel={endBannerDrag}
-                  onLostPointerCapture={endBannerDrag}
-                >
-                  {bannerSrc && (
-                    <>
-                      <img
-                        src={bannerSrc}
-                        alt=""
-                        draggable={false}
-                        style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
-                      />
-                      {bannerCanDrag && <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>}
-                    </>
-                  )}
-                </div>
-                {bannerImageValue && (
-                  <div className="preview-banner-actions">
-                    <button
-                      type="button"
-                      className="banner-reset-position"
-                      onPointerDown={(event) => event.stopPropagation()}
-                      onClick={(event) => { event.stopPropagation(); updateBannerPosition(50, 50, true); }}
-                    >
-                      中央に戻す
-                    </button>
+              <div
+                className={`preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`}
+                onPointerDown={startBannerDrag}
+                onPointerMove={moveBannerDrag}
+                onPointerUp={endBannerDrag}
+                onPointerCancel={endBannerDrag}
+                onLostPointerCapture={endBannerDrag}
+              >
+                {bannerSrc ? (
+                  <>
+                    <img
+                      src={bannerSrc}
+                      alt=""
+                      draggable={false}
+                      style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
+                    />
+                    {bannerCanDrag && <span className="banner-drag-hint">ドラッグで位置調整</span>}
+                  </>
+                ) : (
+                  <div className="home-mini-banner-placeholder">
+                    <span>今日の制作ボード</span>
+                    <strong>Creative Board</strong>
                   </div>
                 )}
-              </>
+              </div>
             )}
-            <section className="preview-style-showcase">
-              <div className="preview-demo-banner">
-                <span>Sample Banner</span>
-                <strong>Prompt Atelier Preview</strong>
+            {bannerImageValue && (
+              <div className="preview-banner-actions">
+                <button
+                  type="button"
+                  className="banner-reset-position"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => { event.stopPropagation(); updateBannerPosition(50, 50, true); }}
+                >
+                  中央に戻す
+                </button>
               </div>
-              <div className="preview-mini-head">
-                <span className="feature-icon preview-icon"><FeatureIcon name="mockup" /></span>
-                <div>
-                  <strong>Prompt Atelier Preview</strong>
-                  <small>今日の制作ボード / Creative Board</small>
-                </div>
-              </div>
-              <article className="preview-sample-card">
-                <span className="mini-pill">Today’s Creative Board</span>
-                <h4>今日の制作ボード</h4>
-                <h5>Creative Board</h5>
-                <strong className="preview-number-text">12 Projects / 48 Prompts / 300DPI</strong>
-                <p>カード密度・角丸・影・透明感・背景・フォント・アイコンの変化を確認できます。</p>
-                <div className="preview-icon-row">
-                  <span><FeatureIcon name="mockup" /> モックアップ</span>
-                  <span><FeatureIcon name="notebook" /> プロンプト</span>
-                  <span><FeatureIcon name="folder" /> プロジェクト</span>
-                </div>
-                <div className="preview-button-row">
-                  <button type="button">小さなボタン</button>
-                  <span className="mini-pill">#sample</span>
-                </div>
-              </article>
-              <div className="preview-stat-row">
-                <button className="stat-card" type="button"><span className="stat-icon"><FeatureIcon name="magic" /></span><span className="stat-title">MJ設定</span><strong>18件</strong></button>
-                <button className="work-tool-launcher-item" type="button"><span><b>GPT</b></span><strong>作業ツール</strong></button>
-              </div>
-              <nav className="preview-nav-sample" aria-label="プレビュー用ナビ">
-                <span><FeatureIcon name="spark" /> Home</span>
-                <span><FeatureIcon name="image" /> Gallery</span>
-                <span><FeatureIcon name="video" /> Video</span>
-              </nav>
+            )}
+            <section className="home-mini-stats" aria-label="ミニ件数カード">
+              {[
+                ["mockup", "Mockup", "12"],
+                ["notebook", "Prompt", "48"],
+                ["magic", "MJ", "18"],
+                ["folder", "Project", "03"],
+              ].map(([icon, label, value]) => (
+                <article className="home-mini-stat" key={label}>
+                  <span className="stat-icon"><FeatureIcon name={icon} /></span>
+                  <small>{label}</small>
+                  <strong>{value}</strong>
+                </article>
+              ))}
             </section>
-            <button className="primary preview-save-home" onClick={() => { setSettings(persistHomeSettings()); setScreen("home"); }}>
-              保存してホームへ
-            </button>
+            <section className="home-mini-main-card">
+              <div>
+                <span className="mini-pill">今日の制作ボード</span>
+                <h4>Creative Board</h4>
+                <strong className="preview-number-text">12 / 48 / 300DPI</strong>
+              </div>
+              <p>Prompt Atelier</p>
+            </section>
+            <section className="home-mini-tools" aria-label="ミニ作業ツール">
+              {["GPT", "MJ", "Run"].map((label) => (
+                <article className="home-mini-tool" key={label}>
+                  <span>{label}</span>
+                  <small>{label === "Run" ? "Video" : label}</small>
+                </article>
+              ))}
+            </section>
+            <section className="home-mini-recent" aria-label="ミニ最近カード">
+              <article>
+                <span className="mini-pill">Mockup</span>
+                <strong>Soft Sticker</strong>
+              </article>
+              <article>
+                <span className="mini-pill">Prompt</span>
+                <strong>Pastel Clipart</strong>
+              </article>
+            </section>
+            <nav className="home-mini-nav" aria-label="ミニナビ">
+              <span><FeatureIcon name="mockup" /> Mockup</span>
+              <span><FeatureIcon name="notebook" /> Prompt</span>
+              <span><FeatureIcon name="video" /> Video</span>
+            </nav>
           </div>
+          <button className="primary preview-save-home" onClick={() => { setSettings(persistHomeSettings()); setScreen("home"); }}>
+            保存してホームへ
+          </button>
         </aside>
       </div>
       {showPwaInstructions && <PwaInstallInstructionsModal onClose={() => setShowPwaInstructions(false)} />}
