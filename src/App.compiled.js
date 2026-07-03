@@ -50,6 +50,49 @@ const homeStatsCardOptions = [{
   id: "achievement",
   label: "達成予定カードを表示"
 }];
+const defaultPageDisplaySettings = {
+  gallery: {
+    gap: "normal",
+    ratio: "square",
+    showHeart: true,
+    columns: "auto"
+  },
+  prompts: {
+    viewMode: "card",
+    showTags: true,
+    showMemo: true,
+    imageSize: "normal"
+  },
+  videoPrompts: {
+    viewMode: "card",
+    showTags: true,
+    showMemo: true,
+    thumbnailSize: "normal"
+  },
+  projects: {
+    sortBy: "deadline",
+    showCompleted: true,
+    showAlarms: true
+  },
+  mockups: {
+    categoryCardSize: "normal",
+    showDescription: true,
+    showCount: true
+  }
+};
+const densityOptions = [{
+  id: "comfortable",
+  label: "ゆったり",
+  description: "余白を広めにして、見た目の余裕を優先します。"
+}, {
+  id: "normal",
+  label: "標準",
+  description: "現在の見た目に近いバランスです。"
+}, {
+  id: "compact",
+  label: "コンパクト",
+  description: "カード間隔を少し詰めて一覧性を高めます。"
+}];
 const homeThemes = [{
   id: "cute",
   name: "キュート",
@@ -304,21 +347,24 @@ const defaultWorkTools = [{
   url: "https://www.midjourney.com/",
   iconText: "MJ",
   iconImage: "",
-  memo: "画像生成"
+  memo: "画像生成",
+  visible: true
 }, {
   id: "tool-pinterest",
   name: "Pinterest",
   url: "https://www.pinterest.com/",
   iconText: "P",
   iconImage: "",
-  memo: "参考画像"
+  memo: "参考画像",
+  visible: true
 }, {
   id: "tool-chatgpt",
   name: "ChatGPT",
   url: "https://chatgpt.com/",
   iconText: "GPT",
   iconImage: "",
-  memo: "文章づくり"
+  memo: "文章づくり",
+  visible: true
 }];
 const sampleAtelierImages = [];
 const defaultJournal = {
@@ -426,6 +472,8 @@ const defaultHomeSettings = {
   bannerPositionX: 50,
   bannerPositionY: 50,
   workToolIconStyle: "pastel",
+  displayDensity: "normal",
+  pageDisplaySettings: defaultPageDisplaySettings,
   homeStatsCards: {
     mockups: true,
     prompts: true,
@@ -461,7 +509,9 @@ const normalizeHomeSettings = settings => {
     ...defaultHomeSettings.homeCharacter,
     ...(settings?.homeCharacter || {})
   };
+  const rawPageSettings = settings?.pageDisplaySettings || defaultHomeSettings.pageDisplaySettings;
   const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
+  const safeDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity) ? settings.displayDensity : "normal";
   const safePosition = value => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
   const bannerImage = settings?.bannerImage || settings?.bannerImageUrl || "";
   return {
@@ -471,6 +521,29 @@ const normalizeHomeSettings = settings => {
     bannerImageUrl: settings?.bannerImageUrl || bannerImage,
     bannerPositionX: safePosition(settings?.bannerPositionX),
     bannerPositionY: safePosition(settings?.bannerPositionY),
+    displayDensity: safeDensity,
+    pageDisplaySettings: {
+      gallery: {
+        ...defaultPageDisplaySettings.gallery,
+        ...rawPageSettings.gallery
+      },
+      prompts: {
+        ...defaultPageDisplaySettings.prompts,
+        ...rawPageSettings.prompts
+      },
+      videoPrompts: {
+        ...defaultPageDisplaySettings.videoPrompts,
+        ...rawPageSettings.videoPrompts
+      },
+      projects: {
+        ...defaultPageDisplaySettings.projects,
+        ...rawPageSettings.projects
+      },
+      mockups: {
+        ...defaultPageDisplaySettings.mockups,
+        ...rawPageSettings.mockups
+      }
+    },
     homeCharacter: {
       ...rawCharacter,
       messageMode: safeMessageMode
@@ -1652,6 +1725,8 @@ function sampleHomeSettings(value) {
     bannerPositionX: cleaned.bannerPositionX,
     bannerPositionY: cleaned.bannerPositionY,
     workToolIconStyle: cleaned.workToolIconStyle,
+    displayDensity: cleaned.displayDensity,
+    pageDisplaySettings: cleaned.pageDisplaySettings,
     homeCharacter: cleaned.homeCharacter,
     homeStatsCards: cleaned.homeStatsCards,
     visible: cleaned.visible,
@@ -1975,7 +2050,7 @@ function App() {
     setShowInstallPrompt(false);
   };
   return /*#__PURE__*/React.createElement("div", {
-    className: `app-shell ${themeClassName(activeTheme.id)}`,
+    className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"}`,
     style: appStyle
   }, /*#__PURE__*/React.createElement("header", {
     className: "app-header"
@@ -2016,12 +2091,14 @@ function App() {
     onInstallPwa: installPwa
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: setScreen,
+    homeSettings: homeSettings
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: setScreen,
+    homeSettings: homeSettings
   }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
@@ -2032,6 +2109,7 @@ function App() {
     setProjects: setProjects,
     prompts: myPrompts,
     settings: mjSettings,
+    homeSettings: homeSettings,
     copyText: copyText,
     setScreen: setScreen
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
@@ -2044,13 +2122,15 @@ function App() {
     images: galleryImages,
     setImages: setGalleryImages,
     setJournal: setJournal,
-    setScreen: setScreen
+    setScreen: setScreen,
+    homeSettings: homeSettings
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
-    setScreen: setScreen
+    setScreen: setScreen,
+    homeSettings: homeSettings
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
     className: "image-migration-overlay"
   }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
@@ -2187,7 +2267,7 @@ function Home({
     note: nextReminder?.name || ""
   }];
   const visibleDashboardItems = dashboardItems.filter(item => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false);
-  const normalizedTools = workTools.slice(0, 10);
+  const normalizedTools = workTools.filter(tool => tool.visible !== false).slice(0, 10);
   const renderSection = sectionId => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
@@ -2514,6 +2594,7 @@ function WorkToolEditor({
   onSave
 }) {
   const [draft, setDraft] = React.useState({
+    visible: true,
     ...tool
   });
   const update = (key, value) => setDraft({
@@ -2553,7 +2634,13 @@ function WorkToolEditor({
     value: draft.memo || "",
     onChange: event => update("memo", event.target.value),
     placeholder: "メモ（任意）"
-  }), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "ホームに表示する"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: draft.visible !== false,
+    onChange: event => update("visible", event.target.checked)
+  })), /*#__PURE__*/React.createElement("div", {
     className: "quick-link-editor-actions"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onClose
@@ -2663,7 +2750,25 @@ function HomeCustomize({
       window.alert("バックアップファイルを読み込めませんでした。");
     }
   };
-  const normalizedTools = workTools.slice(0, 10);
+  const pageSettings = settings.pageDisplaySettings || defaultPageDisplaySettings;
+  const updatePageDisplay = (page, patch) => {
+    const current = settingsRef.current.pageDisplaySettings || defaultPageDisplaySettings;
+    updateSettings({
+      pageDisplaySettings: {
+        ...defaultPageDisplaySettings,
+        ...current,
+        [page]: {
+          ...defaultPageDisplaySettings[page],
+          ...current[page],
+          ...patch
+        }
+      }
+    });
+  };
+  const normalizedTools = workTools.map(tool => ({
+    visible: true,
+    ...tool
+  })).slice(0, 10);
   const saveWorkTool = tool => {
     const rawUrl = tool.url.trim();
     const safeUrl = rawUrl ? /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}` : "https://";
@@ -2674,10 +2779,18 @@ function HomeCustomize({
       url: safeUrl,
       iconText: tool.iconText || (tool.name || "TL").slice(0, 3).toUpperCase(),
       iconImage: tool.iconImage || "",
-      memo: tool.memo || ""
+      memo: tool.memo || "",
+      visible: tool.visible !== false,
+      color: tool.color || ""
     };
     setWorkTools(items => tool.id ? items.map(item => item.id === tool.id ? next : item).slice(0, 10) : [...items, next].slice(0, 10));
     setEditingTool(null);
+  };
+  const toggleWorkToolVisible = (id, visible) => {
+    setWorkTools(items => items.map(item => item.id === id ? {
+      ...item,
+      visible
+    } : item));
   };
   const moveWorkTool = (id, direction) => {
     setWorkTools(items => {
@@ -2798,7 +2911,7 @@ function HomeCustomize({
     projects: projects
   }), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール設定"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
     className: "icon-style-choices"
   }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"], ["vivid", "ビビッド"], ["cute", "キュート"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
@@ -2816,7 +2929,13 @@ function HomeCustomize({
   }, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
     src: imageThumbnail(tool.iconImage),
     alt: ""
-  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, tool.name), /*#__PURE__*/React.createElement("small", null, tool.url)), /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, tool.name), /*#__PURE__*/React.createElement("small", null, tool.url)), /*#__PURE__*/React.createElement("label", {
+    className: "work-tool-visible-toggle"
+  }, /*#__PURE__*/React.createElement("span", null, "表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: tool.visible !== false,
+    onChange: event => toggleWorkToolVisible(tool.id, event.target.checked)
+  })), /*#__PURE__*/React.createElement("div", {
     className: "work-tool-edit-actions"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setEditingTool(tool)
@@ -2837,7 +2956,8 @@ function HomeCustomize({
       url: "",
       iconText: "",
       iconImage: "",
-      memo: ""
+      memo: "",
+      visible: true
     })
   }, "＋ 作業ツールを追加") : /*#__PURE__*/React.createElement("p", {
     className: "limit-message"
@@ -2846,6 +2966,203 @@ function HomeCustomize({
     onClose: () => setEditingTool(null),
     onSave: saveWorkTool
   })), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "カード密度"), /*#__PURE__*/React.createElement("p", null, "ホームや各一覧ページのカード間隔を調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "density-choice-grid"
+  }, densityOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: settings.displayDensity === item.id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      displayDensity: item.id
+    })
+  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card page-display-settings"
+  }, /*#__PURE__*/React.createElement("h3", null, "ページごとの表示設定"), /*#__PURE__*/React.createElement("p", null, "ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-grid"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "ギャラリー"), /*#__PURE__*/React.createElement("label", null, "余白", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.gallery.gap,
+    onChange: event => updatePageDisplay("gallery", {
+      gap: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "narrow"
+  }, "狭め"), /*#__PURE__*/React.createElement("option", {
+    value: "normal"
+  }, "標準"), /*#__PURE__*/React.createElement("option", {
+    value: "wide"
+  }, "広め"))), /*#__PURE__*/React.createElement("label", null, "画像比率", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.gallery.ratio,
+    onChange: event => updatePageDisplay("gallery", {
+      ratio: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "square"
+  }, "正方形"), /*#__PURE__*/React.createElement("option", {
+    value: "portrait"
+  }, "縦長"), /*#__PURE__*/React.createElement("option", {
+    value: "landscape"
+  }, "横長"), /*#__PURE__*/React.createElement("option", {
+    value: "original"
+  }, "元画像に近く"))), /*#__PURE__*/React.createElement("label", null, "列数", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.gallery.columns,
+    onChange: event => updatePageDisplay("gallery", {
+      columns: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "auto"
+  }, "自動"), /*#__PURE__*/React.createElement("option", {
+    value: "2"
+  }, "2列"), /*#__PURE__*/React.createElement("option", {
+    value: "3"
+  }, "3列"), /*#__PURE__*/React.createElement("option", {
+    value: "4"
+  }, "4列"), /*#__PURE__*/React.createElement("option", {
+    value: "5"
+  }, "5列"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "お気に入りハート"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.gallery.showHeart,
+    onChange: event => updatePageDisplay("gallery", {
+      showHeart: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "プロンプト帳"), /*#__PURE__*/React.createElement("label", null, "表示形式", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.prompts.viewMode,
+    onChange: event => updatePageDisplay("prompts", {
+      viewMode: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "card"
+  }, "カード"), /*#__PURE__*/React.createElement("option", {
+    value: "list"
+  }, "リスト寄り"))), /*#__PURE__*/React.createElement("label", null, "画像サイズ", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.prompts.imageSize,
+    onChange: event => updatePageDisplay("prompts", {
+      imageSize: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "small"
+  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+    value: "normal"
+  }, "標準"), /*#__PURE__*/React.createElement("option", {
+    value: "large"
+  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "タグを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.prompts.showTags,
+    onChange: event => updatePageDisplay("prompts", {
+      showTags: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "メモを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.prompts.showMemo,
+    onChange: event => updatePageDisplay("prompts", {
+      showMemo: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "動画プロンプト帳"), /*#__PURE__*/React.createElement("label", null, "表示形式", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.videoPrompts.viewMode,
+    onChange: event => updatePageDisplay("videoPrompts", {
+      viewMode: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "card"
+  }, "カード"), /*#__PURE__*/React.createElement("option", {
+    value: "list"
+  }, "リスト寄り"))), /*#__PURE__*/React.createElement("label", null, "サムネイルサイズ", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.videoPrompts.thumbnailSize,
+    onChange: event => updatePageDisplay("videoPrompts", {
+      thumbnailSize: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "small"
+  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+    value: "normal"
+  }, "標準"), /*#__PURE__*/React.createElement("option", {
+    value: "large"
+  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "タグを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.videoPrompts.showTags,
+    onChange: event => updatePageDisplay("videoPrompts", {
+      showTags: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "メモを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.videoPrompts.showMemo,
+    onChange: event => updatePageDisplay("videoPrompts", {
+      showMemo: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "プロジェクト"), /*#__PURE__*/React.createElement("label", null, "並び順", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.projects.sortBy,
+    onChange: event => updatePageDisplay("projects", {
+      sortBy: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "deadline"
+  }, "期限順"), /*#__PURE__*/React.createElement("option", {
+    value: "created"
+  }, "作成順"), /*#__PURE__*/React.createElement("option", {
+    value: "manual"
+  }, "保存順"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "完了済みを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.projects.showCompleted,
+    onChange: event => updatePageDisplay("projects", {
+      showCompleted: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "期限アラームを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.projects.showAlarms,
+    onChange: event => updatePageDisplay("projects", {
+      showAlarms: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "モックアップ"), /*#__PURE__*/React.createElement("label", null, "カテゴリカードサイズ", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.mockups.categoryCardSize,
+    onChange: event => updatePageDisplay("mockups", {
+      categoryCardSize: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "small"
+  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+    value: "normal"
+  }, "標準"), /*#__PURE__*/React.createElement("option", {
+    value: "large"
+  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "説明文を表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.mockups.showDescription,
+    onChange: event => updatePageDisplay("mockups", {
+      showDescription: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "件数を表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.mockups.showCount,
+    onChange: event => updatePageDisplay("mockups", {
+      showCount: event.target.checked
+    })
+  }))))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "表示項目"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"), /*#__PURE__*/React.createElement("div", {
     className: "toggle-list"
@@ -3110,7 +3427,8 @@ function HomePromptCard({
 }
 function Library({
   copyText,
-  setScreen
+  setScreen,
+  homeSettings
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -3123,6 +3441,7 @@ function Library({
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
+  const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
@@ -3304,7 +3623,7 @@ function Library({
     setDragOverCategoryId("");
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page library-page"
+    className: `page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`
   }, !currentCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
     title: "モックアップライブラリ",
     action: /*#__PURE__*/React.createElement("div", {
@@ -3362,7 +3681,9 @@ function Library({
     item: category,
     className: "category-cover-carousel",
     placeholderLabel: "カテゴリ"
-  }), /*#__PURE__*/React.createElement("span", null, category.title), /*#__PURE__*/React.createElement("small", null, category.description))))), /*#__PURE__*/React.createElement(PageBackButton, {
+  }), /*#__PURE__*/React.createElement("span", null, category.title), mockupDisplay.showDescription !== false && /*#__PURE__*/React.createElement("small", null, category.description), mockupDisplay.showCount !== false && /*#__PURE__*/React.createElement("em", {
+    className: "category-count-label"
+  }, boardPrompts.filter(prompt => prompt.categoryId === category.id).length, "件"))))), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -3399,7 +3720,9 @@ function Library({
     duplicatePrompt: duplicatePrompt,
     deletePrompt: () => deleteBoardPrompt(prompt.id),
     copyText: copyText,
-    showMemo: () => setMemoPrompt(prompt)
+    showMemo: () => setMemoPrompt(prompt),
+    showTags: true,
+    showMemoButton: true
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `empty-prompt-${index}`,
@@ -3598,7 +3921,9 @@ function LibraryImagePromptCard({
   duplicatePrompt,
   deletePrompt,
   copyText,
-  showMemo
+  showMemo,
+  showTags = true,
+  showMemoButton = true
 }) {
   const updateCoverImages = coverImages => updatePrompt(prompt.id, {
     coverImages,
@@ -3653,6 +3978,8 @@ function LibraryImagePromptCard({
       });
       setInlineEdit(null);
     }
+  }), showTags && Array.isArray(prompt.tags) && prompt.tags.length > 0 && /*#__PURE__*/React.createElement(TagRow, {
+    tags: prompt.tags.slice(0, 4)
   }), /*#__PURE__*/React.createElement("div", {
     className: "prompt-card-actions"
   }, /*#__PURE__*/React.createElement("button", {
@@ -3661,7 +3988,7 @@ function LibraryImagePromptCard({
       event.stopPropagation();
       copyText(prompt.prompt, prompt.id);
     }
-  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+  }, "📋 プロンプトをコピー"), showMemoButton && /*#__PURE__*/React.createElement("button", {
     onClick: event => {
       event.stopPropagation();
       showMemo();
@@ -4116,7 +4443,8 @@ function PromptBook({
   prompts,
   setPrompts,
   copyText,
-  setScreen
+  setScreen,
+  homeSettings
 }) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
@@ -4126,6 +4454,7 @@ function PromptBook({
   const [memoPrompt, setMemoPrompt] = React.useState(null);
   const [inlineEdit, setInlineEdit] = React.useState(null);
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
+  const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
   const tags = Array.from(new Set(prompts.flatMap(p => p.tags))).sort();
   const filtered = prompts.filter(item => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
@@ -4200,7 +4529,7 @@ function PromptBook({
     setStockFrameCount(count => Math.min(100, count + 1));
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page prompt-book-page"
+    className: `page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`
   }, /*#__PURE__*/React.createElement(PageHead, {
     title: "プロンプト帳",
     action: /*#__PURE__*/React.createElement("div", {
@@ -4242,7 +4571,9 @@ function PromptBook({
     deletePrompt: () => deletePrompt(prompt.id),
     copyText: copyText,
     showTranslation: () => setTranslationPrompt(prompt),
-    showMemo: () => setMemoPrompt(prompt)
+    showMemo: () => setMemoPrompt(prompt),
+    showTags: promptDisplay.showTags !== false,
+    showMemoButton: promptDisplay.showMemo !== false
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `my-empty-prompt-${index}`,
@@ -4946,13 +5277,15 @@ function GalleryPage({
   images,
   setImages,
   setJournal,
-  setScreen
+  setScreen,
+  homeSettings
 }) {
   const fileInputRef = React.useRef(null);
   const loadMoreRef = React.useRef(null);
   const [previewId, setPreviewId] = React.useState("");
   const [visibleCount, setVisibleCount] = React.useState(20);
   const preview = images.find(image => image.id === previewId) || null;
+  const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
   React.useEffect(() => {
     setVisibleCount(20);
   }, [images.length]);
@@ -5021,7 +5354,7 @@ function GalleryPage({
     setScreen("journal");
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page gallery-page",
+    className: `page gallery-page gallery-gap-${galleryDisplay.gap || "normal"} gallery-ratio-${galleryDisplay.ratio || "square"} gallery-columns-${galleryDisplay.columns || "auto"}`,
     tabIndex: 0,
     onDragOver: event => event.preventDefault(),
     onDrop: event => {
@@ -5066,7 +5399,7 @@ function GalleryPage({
   }, images.slice(0, visibleCount).map(image => /*#__PURE__*/React.createElement("article", {
     className: "gallery-card",
     key: image.id
-  }, /*#__PURE__*/React.createElement("button", {
+  }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
     className: "gallery-favorite-button",
     "aria-label": "お気に入り",
     onClick: () => updateImage(image.id, {
@@ -5148,7 +5481,8 @@ function VideoLibrary({
   setVideos,
   videoStocks,
   setVideoStocks,
-  setScreen
+  setScreen,
+  homeSettings
 }) {
   const thumbnailInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
@@ -5169,6 +5503,7 @@ function VideoLibrary({
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const [memoStock, setMemoStock] = React.useState(null);
   const videoItems = extractVideoPromptItems(videos);
+  const videoDisplay = homeSettings?.pageDisplaySettings?.videoPrompts || defaultPageDisplaySettings.videoPrompts;
   React.useEffect(() => {
     uploadedVideoUrlRef.current = uploadedVideoUrl;
   }, [uploadedVideoUrl]);
@@ -5398,7 +5733,7 @@ function VideoLibrary({
   }, (_, index) => normalizedVideos[index] || null);
   if (selectedId) {
     return /*#__PURE__*/React.createElement("section", {
-      className: "page video-page",
+      className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`,
       tabIndex: 0,
       onPaste: event => {
         const files = clipboardImageFiles(event);
@@ -5597,7 +5932,7 @@ function VideoLibrary({
     })));
   }
   return /*#__PURE__*/React.createElement("section", {
-    className: "page video-page"
+    className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`
   }, /*#__PURE__*/React.createElement(PageHead, {
     title: "動画プロンプト帳",
     action: /*#__PURE__*/React.createElement("div", {
@@ -5697,7 +6032,7 @@ function VideoLibrary({
       className: "video-meta-row"
     }, /*#__PURE__*/React.createElement("span", {
       className: "mini-pill"
-    }, item.model || "その他"), !!(item.tags || []).length && /*#__PURE__*/React.createElement("div", {
+    }, item.model || "その他"), videoDisplay.showTags !== false && !!(item.tags || []).length && /*#__PURE__*/React.createElement("div", {
       className: "video-tags"
     }, item.tags.slice(0, 2).map(tag => /*#__PURE__*/React.createElement("span", {
       key: tag
@@ -5707,7 +6042,7 @@ function VideoLibrary({
       className: "primary",
       onClick: event => copyVideoPrompt(item, event),
       disabled: !item.prompt.trim()
-    }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+    }, "📋 プロンプトをコピー"), videoDisplay.showMemo !== false && /*#__PURE__*/React.createElement("button", {
       onClick: event => {
         event.stopPropagation();
         editVideo(item);
@@ -6093,13 +6428,17 @@ function Projects({
   setProjects,
   prompts,
   settings,
+  homeSettings,
   copyText,
   setScreen
 }) {
   const [editing, setEditing] = React.useState(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
-  const filtered = sortProjectsForDisplay(projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query)));
+  const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
+  const projectMatchesDisplay = item => projectDisplay.showCompleted !== false || !item.completed && item.status !== "completed";
+  const filteredBase = projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query) && projectMatchesDisplay(item));
+  const filtered = projectDisplay.sortBy === "manual" ? filteredBase : projectDisplay.sortBy === "created" ? [...filteredBase].sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || ""))) : sortProjectsForDisplay(filteredBase);
   const save = item => {
     const next = {
       ...item,
@@ -6110,7 +6449,7 @@ function Projects({
     setEditing(null);
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page"
+    className: `page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`
   }, /*#__PURE__*/React.createElement(PageHead, {
     title: "プロジェクト管理",
     action: /*#__PURE__*/React.createElement("div", {
@@ -6152,7 +6491,7 @@ function Projects({
       })
     }, "削除"))), /*#__PURE__*/React.createElement(TagRow, {
       tags: project.tags
-    }), project.dueDate && /*#__PURE__*/React.createElement("p", {
+    }), projectDisplay.showAlarms !== false && project.dueDate && /*#__PURE__*/React.createElement("p", {
       className: "project-due-line"
     }, projectDueText(project.dueDate)), project.note && /*#__PURE__*/React.createElement("p", {
       className: "note"
