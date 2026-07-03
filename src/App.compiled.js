@@ -1841,6 +1841,8 @@ function App() {
   const [videoStocks, setVideoStocks] = useStoredState("promptAtelierVideoPromptStocks", []);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
+  const [installPrompt, setInstallPrompt] = React.useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = React.useState(false);
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -1894,6 +1896,43 @@ function App() {
       cancelled = true;
     };
   }, []);
+  React.useEffect(() => {
+    const isStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
+    if (isStandalone) return;
+    const dismissedInSession = sessionStorage.getItem("promptAtelierPwaInstallDismissed") === "true";
+    const handleBeforeInstallPrompt = event => {
+      event.preventDefault();
+      setInstallPrompt(event);
+      if (!dismissedInSession) setShowInstallPrompt(true);
+    };
+    const handleInstalled = () => {
+      setInstallPrompt(null);
+      setShowInstallPrompt(false);
+      setToast("Prompt Atelierをアプリとして追加しました");
+      window.setTimeout(() => setToast(""), 1800);
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
+  const installPwa = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice?.catch(() => null);
+    if (choice?.outcome === "accepted") {
+      setInstallPrompt(null);
+      setShowInstallPrompt(false);
+      return;
+    }
+    setShowInstallPrompt(false);
+  };
+  const dismissInstallPrompt = () => {
+    sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
+    setShowInstallPrompt(false);
+  };
   return /*#__PURE__*/React.createElement("div", {
     className: `app-shell ${themeClassName(activeTheme.id)}`,
     style: appStyle
@@ -1909,7 +1948,10 @@ function App() {
     key: id,
     className: screen === id ? "active" : "",
     onClick: () => setScreen(id)
-  }, label)))), /*#__PURE__*/React.createElement("main", null, screen === "home" && /*#__PURE__*/React.createElement(Home, {
+  }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && installPrompt && /*#__PURE__*/React.createElement(PwaInstallCard, {
+    onInstall: installPwa,
+    onDismiss: dismissInstallPrompt
+  }), screen === "home" && /*#__PURE__*/React.createElement(Home, {
     setScreen: setScreen,
     recent: recentPrompts,
     favorites: favorites,
@@ -1969,6 +2011,25 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
     className: "toast"
   }, toast));
+}
+function PwaInstallCard({
+  onInstall,
+  onDismiss
+}) {
+  return /*#__PURE__*/React.createElement("section", {
+    className: "pwa-install-card",
+    role: "dialog",
+    "aria-label": "Prompt Atelierをアプリとして追加"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pwa-install-icon"
+  }, "PA"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelierをアプリにしますか？"), /*#__PURE__*/React.createElement("p", null, "Dockからすぐ開けるようになります。保存済みデータはこのブラウザ内に残ります。")), /*#__PURE__*/React.createElement("div", {
+    className: "pwa-install-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onInstall
+  }, "はい、追加する"), /*#__PURE__*/React.createElement("button", {
+    onClick: onDismiss
+  }, "あとで")));
 }
 function Home({
   setScreen,
@@ -2713,7 +2774,9 @@ function HomeCustomize({
     }, "下へ")));
   }))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card backup-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "バックアップ"), /*#__PURE__*/React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h3", null, "バックアップ"), /*#__PURE__*/React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), /*#__PURE__*/React.createElement("p", {
+    className: "backup-storage-note"
+  }, "Prompt Atelierのデータは、このブラウザ内に保存されます。Dockのショートカットを削除しても通常は残りますが、ブラウザのサイトデータ削除や別ブラウザ利用では引き継がれない場合があります。大切なデータは定期的にバックアップを書き出してください。"), /*#__PURE__*/React.createElement("div", {
     className: "backup-actions"
   }, /*#__PURE__*/React.createElement("button", {
     className: "primary",

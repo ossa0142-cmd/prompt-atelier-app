@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7eaf1" />
+    <meta name="description" content="AIイラスト・AI動画制作を一元管理するデスクトップ風クリエイターツール" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Prompt Atelier" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Prompt Atelier</title>
+    <link rel="manifest" href="./public/manifest.webmanifest" />
+    <link rel="icon" href="./public/icons/prompt-atelier-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./public/icons/prompt-atelier-icon-192.png" />
     <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
@@ -11,5 +19,14 @@
     <script src="./public/vendor/react.development.js"></script>
     <script src="./public/vendor/react-dom.development.js"></script>
     <script src="./src/App.compiled.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("./service-worker.js").catch(function (error) {
+            console.warn("[Prompt Atelier] service worker registration failed", error);
+          });
+        });
+      }
+    </script>
   </body>
 </html>
