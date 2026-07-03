@@ -176,6 +176,38 @@ type HomeFeatureId = "library" | "prompts" | "videos" | "mj" | "projects";
 type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
 type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "hidden";
 type HomeCharacterMessageMode = "auto" | "fixed" | "project";
+type DisplayDensity = "comfortable" | "normal" | "compact";
+
+type PageDisplaySettings = {
+  gallery: {
+    gap: "narrow" | "normal" | "wide";
+    ratio: "square" | "portrait" | "landscape" | "original";
+    showHeart: boolean;
+    columns: "auto" | "2" | "3" | "4" | "5";
+  };
+  prompts: {
+    viewMode: "card" | "list";
+    showTags: boolean;
+    showMemo: boolean;
+    imageSize: "small" | "normal" | "large";
+  };
+  videoPrompts: {
+    viewMode: "card" | "list";
+    showTags: boolean;
+    showMemo: boolean;
+    thumbnailSize: "small" | "normal" | "large";
+  };
+  projects: {
+    sortBy: "deadline" | "created" | "manual";
+    showCompleted: boolean;
+    showAlarms: boolean;
+  };
+  mockups: {
+    categoryCardSize: "small" | "normal" | "large";
+    showDescription: boolean;
+    showCount: boolean;
+  };
+};
 
 type HomeCharacterSettings = {
   image: any;
@@ -199,6 +231,8 @@ type HomeSettings = {
   bannerPositionX: number;
   bannerPositionY: number;
   workToolIconStyle: WorkToolIconStyle;
+  displayDensity: DisplayDensity;
+  pageDisplaySettings: PageDisplaySettings;
   homeCharacter: HomeCharacterSettings;
   homeStatsCards: HomeStatsCards;
   visible: Record<string, boolean>;
@@ -212,6 +246,8 @@ type WorkTool = {
   iconText: string;
   iconImage: string;
   memo: string;
+  visible?: boolean;
+  color?: string;
 };
 
 const categories: Category[] = [
@@ -247,6 +283,20 @@ const homeStatsCardOptions: { id: HomeStatsCardId; label: string }[] = [
   { id: "mjSettings", label: "MJ設定カードを表示" },
   { id: "projects", label: "プロジェクトカードを表示" },
   { id: "achievement", label: "達成予定カードを表示" },
+];
+
+const defaultPageDisplaySettings: PageDisplaySettings = {
+  gallery: { gap: "normal", ratio: "square", showHeart: true, columns: "auto" },
+  prompts: { viewMode: "card", showTags: true, showMemo: true, imageSize: "normal" },
+  videoPrompts: { viewMode: "card", showTags: true, showMemo: true, thumbnailSize: "normal" },
+  projects: { sortBy: "deadline", showCompleted: true, showAlarms: true },
+  mockups: { categoryCardSize: "normal", showDescription: true, showCount: true },
+};
+
+const densityOptions: { id: DisplayDensity; label: string; description: string }[] = [
+  { id: "comfortable", label: "ゆったり", description: "余白を広めにして、見た目の余裕を優先します。" },
+  { id: "normal", label: "標準", description: "現在の見た目に近いバランスです。" },
+  { id: "compact", label: "コンパクト", description: "カード間隔を少し詰めて一覧性を高めます。" },
 ];
 
 const homeThemes = [
@@ -297,9 +347,9 @@ const mjParamValue = (params: string[], key: string) => {
 };
 const mjReplaceKeys = ["--ar", "--stylize", "--chaos", "--seed", "--profile", "--v", "--niji", "--quality", "--weird"];
 const defaultWorkTools: WorkTool[] = [
-  { id: "tool-midjourney", name: "Midjourney", url: "https://www.midjourney.com/", iconText: "MJ", iconImage: "", memo: "画像生成" },
-  { id: "tool-pinterest", name: "Pinterest", url: "https://www.pinterest.com/", iconText: "P", iconImage: "", memo: "参考画像" },
-  { id: "tool-chatgpt", name: "ChatGPT", url: "https://chatgpt.com/", iconText: "GPT", iconImage: "", memo: "文章づくり" },
+  { id: "tool-midjourney", name: "Midjourney", url: "https://www.midjourney.com/", iconText: "MJ", iconImage: "", memo: "画像生成", visible: true },
+  { id: "tool-pinterest", name: "Pinterest", url: "https://www.pinterest.com/", iconText: "P", iconImage: "", memo: "参考画像", visible: true },
+  { id: "tool-chatgpt", name: "ChatGPT", url: "https://chatgpt.com/", iconText: "GPT", iconImage: "", memo: "文章づくり", visible: true },
 ];
 
 const sampleAtelierImages: AtelierImage[] = [];
@@ -418,6 +468,8 @@ const defaultHomeSettings: HomeSettings = {
   bannerPositionX: 50,
   bannerPositionY: 50,
   workToolIconStyle: "pastel",
+  displayDensity: "normal",
+  pageDisplaySettings: defaultPageDisplaySettings,
   homeStatsCards: {
     mockups: true,
     prompts: true,
@@ -451,9 +503,13 @@ const defaultHomeSettings: HomeSettings = {
 
 const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
   const rawCharacter = { ...defaultHomeSettings.homeCharacter, ...(settings?.homeCharacter || {}) };
+  const rawPageSettings = settings?.pageDisplaySettings || defaultHomeSettings.pageDisplaySettings;
   const safeMessageMode: HomeCharacterMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode)
     ? rawCharacter.messageMode as HomeCharacterMessageMode
     : "auto";
+  const safeDensity: DisplayDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity)
+    ? settings.displayDensity as DisplayDensity
+    : "normal";
   const safePosition = (value: any) => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
   const bannerImage = (settings as any)?.bannerImage || settings?.bannerImageUrl || "";
   return {
@@ -463,6 +519,14 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
     bannerImageUrl: settings?.bannerImageUrl || bannerImage,
     bannerPositionX: safePosition(settings?.bannerPositionX),
     bannerPositionY: safePosition(settings?.bannerPositionY),
+    displayDensity: safeDensity,
+    pageDisplaySettings: {
+      gallery: { ...defaultPageDisplaySettings.gallery, ...(rawPageSettings as any).gallery },
+      prompts: { ...defaultPageDisplaySettings.prompts, ...(rawPageSettings as any).prompts },
+      videoPrompts: { ...defaultPageDisplaySettings.videoPrompts, ...(rawPageSettings as any).videoPrompts },
+      projects: { ...defaultPageDisplaySettings.projects, ...(rawPageSettings as any).projects },
+      mockups: { ...defaultPageDisplaySettings.mockups, ...(rawPageSettings as any).mockups },
+    },
     homeCharacter: { ...rawCharacter, messageMode: safeMessageMode },
     homeStatsCards: { ...defaultHomeSettings.homeStatsCards, ...(settings?.homeStatsCards || {}) },
     visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
@@ -849,7 +913,7 @@ const isIndexedDbImageRef = (value: string) => /^indexeddb(?:-thumb)?:/.test(val
 const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = (value: unknown) => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles: Record<string, { maxSide: number; quality: number; thumbnailSide: number; thumbnailQuality: number; keepOriginalMaxSide?: number }> = {
-  banner: { maxSide: 1600, quality: 0.95, thumbnailSide: 960, thumbnailQuality: 0.9, keepOriginalMaxSide: 1600 },
+  banner: { maxSide: 1800, quality: 0.96, thumbnailSide: 1200, thumbnailQuality: 0.92, keepOriginalMaxSide: 1800 },
   gallery: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   journal: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   background: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
@@ -1204,6 +1268,29 @@ function canvasDataUrl(image: HTMLImageElement, maxSide: number, quality = 0.92,
   return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
 }
 
+function canvasDataUrlWithMime(image: HTMLImageElement, maxSide: number, mimeType: string, quality = 0.96) {
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(1, Math.round(sourceWidth * ratio));
+  const height = Math.max(1, Math.round(sourceHeight * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("画像処理を開始できませんでした");
+  context.drawImage(image, 0, 0, width, height);
+  const safeMimeType = /image\/png/i.test(mimeType)
+    ? "image/png"
+    : /image\/jpe?g/i.test(mimeType)
+      ? "image/jpeg"
+      : "image/webp";
+  const dataUrl = safeMimeType === "image/png"
+    ? canvas.toDataURL("image/png")
+    : canvas.toDataURL(safeMimeType, quality);
+  return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
+}
+
 function videoFrameDataUrl(video: HTMLVideoElement, maxSide = 720, quality = 0.9) {
   const sourceWidth = video.videoWidth || 1280;
   const sourceHeight = video.videoHeight || 720;
@@ -1382,7 +1469,7 @@ async function optimizeBannerImage(file: File): Promise<OptimizedImageData> {
       height: sourceHeight,
       mimeType: file.type || "image/*",
     }
-    : canvasDataUrl(image, profile.maxSide, profile.quality, true);
+    : canvasDataUrlWithMime(image, profile.maxSide, file.type || "image/webp", profile.quality);
   const thumbnail = canvasDataUrl(image, profile.thumbnailSide, profile.thumbnailQuality, true);
   const optimized = {
     id: uid(),
@@ -1656,6 +1743,8 @@ function sampleHomeSettings(value: any) {
     bannerPositionX: cleaned.bannerPositionX,
     bannerPositionY: cleaned.bannerPositionY,
     workToolIconStyle: cleaned.workToolIconStyle,
+    displayDensity: cleaned.displayDensity,
+    pageDisplaySettings: cleaned.pageDisplaySettings,
     homeCharacter: cleaned.homeCharacter,
     homeStatsCards: cleaned.homeStatsCards,
     visible: cleaned.visible,
@@ -1973,7 +2062,7 @@ function App() {
   const installPwa = async () => {
     const promptEvent = installPrompt || ((window as any).__promptAtelierInstallPrompt as PwaInstallPromptEvent | null);
     if (!promptEvent) {
-      window.alert("Chromeでインストール条件を確認中、または条件を満たしていない可能性があります。\n\n本番公開URL（https）をChromeで開いているか確認してください。\nそれでも出ない場合は、右上メニューから「保存して共有」→「ページをアプリとしてインストール」を選んでください。");
+      window.alert("Chromeでインストール条件を確認中、または条件を満たしていない可能性があります。\n\n本番公開URL（https）をChromeで開いているか確認してください。\nそれでも出ない場合は、Chrome右上の「︙」メニューを開き、「キャスト、保存、共有」から「ページをアプリとしてインストール」または「ショートカットを作成」を選んでください。");
       return;
     }
     await promptEvent.prompt();
@@ -1993,7 +2082,7 @@ function App() {
   };
 
   return (
-    <div className={`app-shell ${themeClassName(activeTheme.id)}`} style={appStyle}>
+    <div className={`app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"}`} style={appStyle}>
       <header className="app-header">
         <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>
@@ -2050,8 +2139,8 @@ function App() {
             onInstallPwa={installPwa}
           />
         )}
-        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} />}
-        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} />}
+        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} />}
         {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={setScreen} />}
         {screen === "projects" && (
           <Projects
@@ -2059,13 +2148,14 @@ function App() {
             setProjects={setProjects}
             prompts={myPrompts}
             settings={mjSettings}
+            homeSettings={homeSettings}
             copyText={copyText}
             setScreen={setScreen}
           />
         )}
         {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
-        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} />}
-        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={setScreen} />}
+        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} homeSettings={homeSettings} />}
+        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={setScreen} homeSettings={homeSettings} />}
       </main>
       {isImageMigrating && (
         <div className="image-migration-overlay">
@@ -2086,7 +2176,7 @@ function PwaInstallCard({ canInstall, onInstall, onDismiss }: { canInstall: bool
         <p>ChromeでDockに追加すると、アプリのように起動できます。保存済みデータはこのブラウザ内に残ります。</p>
         {!canInstall && (
           <small className="pwa-install-help">
-            Chrome推奨です。ポップアップが出ない場合は、本番公開URLをChromeで開き、右上メニューから「保存して共有」→「ページをアプリとしてインストール」を選んでください。
+            Chrome推奨です。ポップアップが出ない場合は、Chrome右上の「︙」メニューを開き、「キャスト、保存、共有」から「ページをアプリとしてインストール」または「ショートカットを作成」を選んでください。
           </small>
         )}
       </div>
@@ -2110,12 +2200,12 @@ function PwaInstallInstructionsModal({ onClose }: { onClose: () => void }) {
         <ol className="pwa-instruction-steps">
           <li>ChromeでPrompt Atelierを開きます</li>
           <li>右上の「︙」メニューを開きます</li>
-          <li>「キャスト、保存、共有」または「保存して共有」を選びます</li>
+          <li>「キャスト、保存、共有」を選びます</li>
           <li>「ページをアプリとしてインストール」または「ショートカットを作成」を選びます</li>
-          <li>「ウィンドウとして開く」にチェックを入れます</li>
+          <li>「ショートカットを作成」の場合は、「ウィンドウとして開く」にチェックを入れます</li>
           <li>作成後、Dockに追加して使えます</li>
         </ol>
-        <p className="pwa-instruction-note">Chromeのバージョンによって、メニュー名が少し異なる場合があります。</p>
+        <p className="pwa-instruction-note">Chromeのバージョンによっては、「キャスト、保存、共有」が「保存して共有」や「その他のツール」と表示される場合があります。</p>
         <div className="modal-actions">
           <button className="primary" onClick={onClose}>わかりました</button>
         </div>
@@ -2189,7 +2279,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     },
   ];
   const visibleDashboardItems = dashboardItems.filter((item) => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id as HomeStatsCardId] !== false);
-  const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
+  const normalizedTools = (workTools as WorkTool[]).filter((tool) => tool.visible !== false).slice(0, 10);
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
@@ -2483,8 +2573,8 @@ function HomeCharacterSettingsPanel({ settings, updateSettings, projects }: any)
 }
 
 function WorkToolEditor({ tool, onClose, onSave }: any) {
-  const [draft, setDraft] = React.useState({ ...tool });
-  const update = (key: keyof WorkTool, value: string) => setDraft({ ...draft, [key]: value });
+  const [draft, setDraft] = React.useState({ visible: true, ...tool });
+  const update = (key: keyof WorkTool, value: any) => setDraft({ ...draft, [key]: value });
   return (
     <div className="quick-link-editor">
       <div className="quick-link-editor-head">
@@ -2497,6 +2587,10 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
       <input value={draft.iconImage} onChange={(event) => update("iconImage", event.target.value)} placeholder="アイコン画像URL" />
       <input type="file" accept="image/*" onChange={(event) => readImage(event, (iconImage) => setDraft({ ...draft, iconImage }), "icon")} />
       <input value={draft.memo || ""} onChange={(event) => update("memo", event.target.value)} placeholder="メモ（任意）" />
+      <label className="switch-row">
+        <span>ホームに表示する</span>
+        <input type="checkbox" checked={draft.visible !== false} onChange={(event) => update("visible", event.target.checked)} />
+      </label>
       <div className="quick-link-editor-actions">
         <button onClick={onClose}>キャンセル</button>
         <button className="primary" onClick={() => onSave(draft)}>保存する</button>
@@ -2586,7 +2680,22 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       window.alert("バックアップファイルを読み込めませんでした。");
     }
   };
-  const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
+  const pageSettings = settings.pageDisplaySettings || defaultPageDisplaySettings;
+  const updatePageDisplay = (page: keyof PageDisplaySettings, patch: any) => {
+    const current = settingsRef.current.pageDisplaySettings || defaultPageDisplaySettings;
+    updateSettings({
+      pageDisplaySettings: {
+        ...defaultPageDisplaySettings,
+        ...current,
+        [page]: {
+          ...defaultPageDisplaySettings[page],
+          ...(current as any)[page],
+          ...patch,
+        },
+      },
+    });
+  };
+  const normalizedTools = (workTools as WorkTool[]).map((tool) => ({ visible: true, ...tool })).slice(0, 10);
   const saveWorkTool = (tool: WorkTool) => {
     const rawUrl = tool.url.trim();
     const safeUrl = rawUrl ? (/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`) : "https://";
@@ -2598,9 +2707,14 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       iconText: tool.iconText || (tool.name || "TL").slice(0, 3).toUpperCase(),
       iconImage: tool.iconImage || "",
       memo: tool.memo || "",
+      visible: tool.visible !== false,
+      color: tool.color || "",
     };
     setWorkTools((items: WorkTool[]) => tool.id ? items.map((item) => item.id === tool.id ? next : item).slice(0, 10) : [...items, next].slice(0, 10));
     setEditingTool(null);
+  };
+  const toggleWorkToolVisible = (id: string, visible: boolean) => {
+    setWorkTools((items: WorkTool[]) => items.map((item) => item.id === id ? { ...item, visible } : item));
   };
   const moveWorkTool = (id: string, direction: -1 | 1) => {
     setWorkTools((items: WorkTool[]) => {
@@ -2689,7 +2803,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <input type="checkbox" checked={settings.bannerVisible} onChange={(event) => updateSettings({ bannerVisible: event.target.checked })} />
             </label>
             <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value, bannerImage: event.target.value })} placeholder="バナー画像URL" />
-            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (bannerImage) => updateSettings({ bannerImage, bannerImageUrl: bannerImage }), "banner")} />
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readBannerImage(event, (bannerImage) => updateSettings({ bannerImage }))} />
+            <small className="banner-quality-note">高画質設定を反映するには、バナー画像を再アップロードしてください。</small>
             <div className="inline-buttons">
               {(["small", "medium", "large"] as const).map((size) => (
                 <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => updateSettings({ bannerSize: size })}>
@@ -2715,7 +2830,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} projects={projects} />
 
           <section className="customize-card">
-            <h3>作業ツール</h3>
+            <h3>作業ツール設定</h3>
             <p>ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。</p>
             <div className="icon-style-choices">
               <strong>アイコンテイスト</strong>
@@ -2741,6 +2856,10 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                     <strong>{tool.name}</strong>
                     <small>{tool.url}</small>
                   </div>
+                  <label className="work-tool-visible-toggle">
+                    <span>表示</span>
+                    <input type="checkbox" checked={tool.visible !== false} onChange={(event) => toggleWorkToolVisible(tool.id, event.target.checked)} />
+                  </label>
                   <div className="work-tool-edit-actions">
                     <button onClick={() => setEditingTool(tool)}>編集</button>
                     <button onClick={() => moveWorkTool(tool.id, -1)} disabled={index === 0}>左へ</button>
@@ -2751,11 +2870,123 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               ))}
             </div>
             {normalizedTools.length < 10 ? (
-              <button className="add-work-tool-button" onClick={() => setEditingTool({ id: "", name: "", url: "", iconText: "", iconImage: "", memo: "" })}>
+              <button className="add-work-tool-button" onClick={() => setEditingTool({ id: "", name: "", url: "", iconText: "", iconImage: "", memo: "", visible: true })}>
                 ＋ 作業ツールを追加
               </button>
             ) : <p className="limit-message">作業ツールは最大10件まで登録できます</p>}
             {editingTool && <WorkToolEditor tool={editingTool} onClose={() => setEditingTool(null)} onSave={saveWorkTool} />}
+          </section>
+
+          <section className="customize-card">
+            <h3>カード密度</h3>
+            <p>ホームや各一覧ページのカード間隔を調整できます。</p>
+            <div className="density-choice-grid">
+              {densityOptions.map((item) => (
+                <button
+                  key={item.id}
+                  className={settings.displayDensity === item.id ? "active-soft" : ""}
+                  onClick={() => updateSettings({ displayDensity: item.id })}
+                >
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="customize-card page-display-settings">
+            <h3>ページごとの表示設定</h3>
+            <p>ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。</p>
+            <div className="page-display-grid">
+              <div className="page-display-panel">
+                <strong>ギャラリー</strong>
+                <label>余白
+                  <select value={pageSettings.gallery.gap} onChange={(event) => updatePageDisplay("gallery", { gap: event.target.value })}>
+                    <option value="narrow">狭め</option>
+                    <option value="normal">標準</option>
+                    <option value="wide">広め</option>
+                  </select>
+                </label>
+                <label>画像比率
+                  <select value={pageSettings.gallery.ratio} onChange={(event) => updatePageDisplay("gallery", { ratio: event.target.value })}>
+                    <option value="square">正方形</option>
+                    <option value="portrait">縦長</option>
+                    <option value="landscape">横長</option>
+                    <option value="original">元画像に近く</option>
+                  </select>
+                </label>
+                <label>列数
+                  <select value={pageSettings.gallery.columns} onChange={(event) => updatePageDisplay("gallery", { columns: event.target.value })}>
+                    <option value="auto">自動</option>
+                    <option value="2">2列</option>
+                    <option value="3">3列</option>
+                    <option value="4">4列</option>
+                    <option value="5">5列</option>
+                  </select>
+                </label>
+                <label className="switch-row"><span>お気に入りハート</span><input type="checkbox" checked={pageSettings.gallery.showHeart} onChange={(event) => updatePageDisplay("gallery", { showHeart: event.target.checked })} /></label>
+              </div>
+              <div className="page-display-panel">
+                <strong>プロンプト帳</strong>
+                <label>表示形式
+                  <select value={pageSettings.prompts.viewMode} onChange={(event) => updatePageDisplay("prompts", { viewMode: event.target.value })}>
+                    <option value="card">カード</option>
+                    <option value="list">リスト寄り</option>
+                  </select>
+                </label>
+                <label>画像サイズ
+                  <select value={pageSettings.prompts.imageSize} onChange={(event) => updatePageDisplay("prompts", { imageSize: event.target.value })}>
+                    <option value="small">小さめ</option>
+                    <option value="normal">標準</option>
+                    <option value="large">大きめ</option>
+                  </select>
+                </label>
+                <label className="switch-row"><span>タグを表示</span><input type="checkbox" checked={pageSettings.prompts.showTags} onChange={(event) => updatePageDisplay("prompts", { showTags: event.target.checked })} /></label>
+                <label className="switch-row"><span>メモを表示</span><input type="checkbox" checked={pageSettings.prompts.showMemo} onChange={(event) => updatePageDisplay("prompts", { showMemo: event.target.checked })} /></label>
+              </div>
+              <div className="page-display-panel">
+                <strong>動画プロンプト帳</strong>
+                <label>表示形式
+                  <select value={pageSettings.videoPrompts.viewMode} onChange={(event) => updatePageDisplay("videoPrompts", { viewMode: event.target.value })}>
+                    <option value="card">カード</option>
+                    <option value="list">リスト寄り</option>
+                  </select>
+                </label>
+                <label>サムネイルサイズ
+                  <select value={pageSettings.videoPrompts.thumbnailSize} onChange={(event) => updatePageDisplay("videoPrompts", { thumbnailSize: event.target.value })}>
+                    <option value="small">小さめ</option>
+                    <option value="normal">標準</option>
+                    <option value="large">大きめ</option>
+                  </select>
+                </label>
+                <label className="switch-row"><span>タグを表示</span><input type="checkbox" checked={pageSettings.videoPrompts.showTags} onChange={(event) => updatePageDisplay("videoPrompts", { showTags: event.target.checked })} /></label>
+                <label className="switch-row"><span>メモを表示</span><input type="checkbox" checked={pageSettings.videoPrompts.showMemo} onChange={(event) => updatePageDisplay("videoPrompts", { showMemo: event.target.checked })} /></label>
+              </div>
+              <div className="page-display-panel">
+                <strong>プロジェクト</strong>
+                <label>並び順
+                  <select value={pageSettings.projects.sortBy} onChange={(event) => updatePageDisplay("projects", { sortBy: event.target.value })}>
+                    <option value="deadline">期限順</option>
+                    <option value="created">作成順</option>
+                    <option value="manual">保存順</option>
+                  </select>
+                </label>
+                <label className="switch-row"><span>完了済みを表示</span><input type="checkbox" checked={pageSettings.projects.showCompleted} onChange={(event) => updatePageDisplay("projects", { showCompleted: event.target.checked })} /></label>
+                <label className="switch-row"><span>期限アラームを表示</span><input type="checkbox" checked={pageSettings.projects.showAlarms} onChange={(event) => updatePageDisplay("projects", { showAlarms: event.target.checked })} /></label>
+              </div>
+              <div className="page-display-panel">
+                <strong>モックアップ</strong>
+                <label>カテゴリカードサイズ
+                  <select value={pageSettings.mockups.categoryCardSize} onChange={(event) => updatePageDisplay("mockups", { categoryCardSize: event.target.value })}>
+                    <option value="small">小さめ</option>
+                    <option value="normal">標準</option>
+                    <option value="large">大きめ</option>
+                  </select>
+                </label>
+                <label className="switch-row"><span>説明文を表示</span><input type="checkbox" checked={pageSettings.mockups.showDescription} onChange={(event) => updatePageDisplay("mockups", { showDescription: event.target.checked })} /></label>
+                <label className="switch-row"><span>件数を表示</span><input type="checkbox" checked={pageSettings.mockups.showCount} onChange={(event) => updatePageDisplay("mockups", { showCount: event.target.checked })} /></label>
+              </div>
+            </div>
           </section>
 
           <section className="customize-card">
@@ -2984,7 +3215,7 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
   );
 }
 
-function Library({ copyText, setScreen }: any) {
+function Library({ copyText, setScreen, homeSettings }: any) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
@@ -2996,6 +3227,7 @@ function Library({ copyText, setScreen }: any) {
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
+  const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
@@ -3145,7 +3377,7 @@ function Library({ copyText, setScreen }: any) {
     setDragOverCategoryId("");
   };
   return (
-    <section className="page library-page">
+    <section className={`page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`}>
       {!currentCategory ? (
         <>
           <PageHead
@@ -3190,7 +3422,8 @@ function Library({ copyText, setScreen }: any) {
                 <button className="category-open" onClick={() => { setSelectedCategory(category); setQuery(""); }}>
                   <CoverImageCarousel item={category} className="category-cover-carousel" placeholderLabel="カテゴリ" />
                   <span>{category.title}</span>
-                  <small>{category.description}</small>
+                  {mockupDisplay.showDescription !== false && <small>{category.description}</small>}
+                  {mockupDisplay.showCount !== false && <em className="category-count-label">{boardPrompts.filter((prompt) => prompt.categoryId === category.id).length}件</em>}
                 </button>
               </article>
             ))}
@@ -3230,6 +3463,8 @@ function Library({ copyText, setScreen }: any) {
                   deletePrompt={() => deleteBoardPrompt(prompt.id)}
                   copyText={copyText}
                   showMemo={() => setMemoPrompt(prompt)}
+                  showTags={true}
+                  showMemoButton={true}
                 />
               ) : canAddImagePrompt ? (
                 <button className="add-prompt-card" key={`empty-prompt-${index}`} onClick={() => setEditingPrompt(createBlankLibraryPrompt())}>
@@ -3402,7 +3637,7 @@ function CoverImageUploader({ item, onChange, category = "prompt" }: any) {
   );
 }
 
-function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showMemo }: any) {
+function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showMemo, showTags = true, showMemoButton = true }: any) {
   const updateCoverImages = (coverImages: any[]) => updatePrompt(prompt.id, { coverImages, imageUrl: coverImages[0] || "" });
   return (
     <article className="library-prompt-card">
@@ -3431,9 +3666,10 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
           onEdit={() => setInlineEdit({ id: prompt.id, field: "prompt" })}
           onSave={(promptText: string) => { updatePrompt(prompt.id, { prompt: promptText }); setInlineEdit(null); }}
         />
+        {showTags && Array.isArray(prompt.tags) && prompt.tags.length > 0 && <TagRow tags={prompt.tags.slice(0, 4)} />}
         <div className="prompt-card-actions">
           <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
-          <button onClick={(event) => { event.stopPropagation(); showMemo(); }}>メモ</button>
+          {showMemoButton && <button onClick={(event) => { event.stopPropagation(); showMemo(); }}>メモ</button>}
         </div>
       </div>
     </article>
@@ -3669,6 +3905,20 @@ async function readImage(event: any, onLoad: (value: string) => void, category =
   }
 }
 
+async function readBannerImage(event: any, onLoad: (value: string) => void) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const image = await optimizeBannerImage(file);
+    onLoad(image.src);
+  } catch (error) {
+    console.error("[Prompt Atelier] バナー画像の最適化に失敗しました", error);
+    window.alert("バナー画像を追加できませんでした。jpg / png / webp を選んでください。");
+  }
+}
+
 function MockupCategoryModal({ item, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item });
   const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, coverImage: coverImages[0] || "" });
@@ -3705,7 +3955,7 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   );
 }
 
-function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
+function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: any) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
@@ -3714,6 +3964,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
   const [memoPrompt, setMemoPrompt] = React.useState<MyPrompt | null>(null);
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
+  const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
   const tags = Array.from(new Set(prompts.flatMap((p: MyPrompt) => p.tags))).sort();
   const filtered = prompts.filter((item: MyPrompt) => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
@@ -3773,7 +4024,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
     setStockFrameCount((count) => Math.min(100, count + 1));
   };
   return (
-    <section className="page prompt-book-page">
+    <section className={`page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`}>
       <PageHead title="プロンプト帳" action={<div className="actions"><span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>} />
       <Filters>
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="検索" />
@@ -3803,6 +4054,8 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
               copyText={copyText}
               showTranslation={() => setTranslationPrompt(prompt)}
               showMemo={() => setMemoPrompt(prompt)}
+              showTags={promptDisplay.showTags !== false}
+              showMemoButton={promptDisplay.showMemo !== false}
             />
           ) : canAddImagePrompt ? (
             <button className="add-prompt-card" key={`my-empty-prompt-${index}`} onClick={() => setEditing(blankPrompt())}>
@@ -4435,12 +4688,13 @@ function mjCommandLegacy(item: MjSetting) {
   ].filter(Boolean).join(" ");
 }
 
-function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
+function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   const [previewId, setPreviewId] = React.useState("");
   const [visibleCount, setVisibleCount] = React.useState(20);
   const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
+  const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
   React.useEffect(() => {
     setVisibleCount(20);
   }, [images.length]);
@@ -4502,7 +4756,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
   };
   return (
     <section
-      className="page gallery-page"
+      className={`page gallery-page gallery-gap-${galleryDisplay.gap || "normal"} gallery-ratio-${galleryDisplay.ratio || "square"} gallery-columns-${galleryDisplay.columns || "auto"}`}
       tabIndex={0}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
@@ -4537,9 +4791,9 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
         <div className="gallery-grid">
           {images.slice(0, visibleCount).map((image: AtelierImage) => (
             <article className="gallery-card" key={image.id}>
-              <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
+              {galleryDisplay.showHeart !== false && <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
                 {image.favorite ? "♥" : "♡"}
-              </button>
+              </button>}
               <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
                 <img src={imageDisplaySrc(image)} alt="" />
               </button>
@@ -4593,7 +4847,7 @@ function VideoPlaceholder() {
   );
 }
 
-function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen }: any) {
+function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen, homeSettings }: any) {
   const thumbnailInputRef = React.useRef<HTMLInputElement | null>(null);
   const videoInputRef = React.useRef<HTMLInputElement | null>(null);
   const uploadVideoInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -4613,6 +4867,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const [memoStock, setMemoStock] = React.useState<VideoPromptStock | null>(null);
   const videoItems = extractVideoPromptItems(videos);
+  const videoDisplay = homeSettings?.pageDisplaySettings?.videoPrompts || defaultPageDisplaySettings.videoPrompts;
   React.useEffect(() => {
     uploadedVideoUrlRef.current = uploadedVideoUrl;
   }, [uploadedVideoUrl]);
@@ -4826,7 +5081,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   if (selectedId) {
     return (
       <section
-        className="page video-page"
+        className={`page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`}
         tabIndex={0}
         onPaste={(event) => {
           const files = clipboardImageFiles(event);
@@ -4917,7 +5172,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     );
   }
   return (
-    <section className="page video-page">
+    <section className={`page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`}>
       <PageHead
         title="動画プロンプト帳"
         action={<div className="actions"><span className="prompt-count-pill">動画 {normalizedVideos.length} / 20・ストック {stockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>}
@@ -4973,11 +5228,11 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
                 <p>{item.prompt || item.memo || item.url}</p>
                 <div className="video-meta-row">
                   <span className="mini-pill">{item.model || "その他"}</span>
-                  {!!(item.tags || []).length && <div className="video-tags">{item.tags.slice(0, 2).map((tag) => <span key={tag}>#{tag}</span>)}</div>}
+                  {videoDisplay.showTags !== false && !!(item.tags || []).length && <div className="video-tags">{item.tags.slice(0, 2).map((tag) => <span key={tag}>#{tag}</span>)}</div>}
                 </div>
                 <div className="prompt-card-actions video-card-actions">
                   <button className="primary" onClick={(event) => copyVideoPrompt(item, event)} disabled={!item.prompt.trim()}>📋 プロンプトをコピー</button>
-                  <button onClick={(event) => { event.stopPropagation(); editVideo(item); }}>メモ</button>
+                  {videoDisplay.showMemo !== false && <button onClick={(event) => { event.stopPropagation(); editVideo(item); }}>メモ</button>}
                 </div>
               </div>
             </article>
@@ -5266,18 +5521,25 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   );
 }
 
-function Projects({ projects, setProjects, prompts, settings, copyText, setScreen }: any) {
+function Projects({ projects, setProjects, prompts, settings, homeSettings, copyText, setScreen }: any) {
   const [editing, setEditing] = React.useState<Project | null>(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
-  const filtered = sortProjectsForDisplay(projects.filter((item: Project) => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query)));
+  const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
+  const projectMatchesDisplay = (item: Project) => projectDisplay.showCompleted !== false || !(item as any).completed && (item as any).status !== "completed";
+  const filteredBase = projects.filter((item: Project) => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query) && projectMatchesDisplay(item));
+  const filtered = projectDisplay.sortBy === "manual"
+    ? filteredBase
+    : projectDisplay.sortBy === "created"
+      ? [...filteredBase].sort((a: any, b: any) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || "")))
+      : sortProjectsForDisplay(filteredBase);
   const save = (item: Project) => {
     const next = { ...item, id: item.id || uid(), updatedAt: new Date().toISOString() };
     setProjects((items: Project[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
   };
   return (
-    <section className="page">
+    <section className={`page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`}>
       <PageHead
         title="プロジェクト管理"
         action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} />{canAddProject ? <button className="primary" onClick={() => setEditing(blankProject())}>追加する</button> : <span className="limit-message">プロジェクトは最大30件まで登録できます</span>}</div>}
@@ -5304,7 +5566,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText, setScree
                 </div>
               </div>
               <TagRow tags={project.tags} />
-              {project.dueDate && <p className="project-due-line">{projectDueText(project.dueDate)}</p>}
+              {projectDisplay.showAlarms !== false && project.dueDate && <p className="project-due-line">{projectDueText(project.dueDate)}</p>}
               {project.note && <p className="note">{project.note}</p>}
               <h4>関連プロンプト</h4>
               <div className="mini-list">
