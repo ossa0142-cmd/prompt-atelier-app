@@ -2287,15 +2287,15 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <div>
                 <span>
                   <b>大バナー</b>
-                  <small>1920 × 640px / 3:1</small>
-                </span>
-                <span>
-                  <b>中バナー</b>
                   <small>1200 × 600px / 2:1</small>
                 </span>
                 <span>
+                  <b>中バナー</b>
+                  <small>1200 × 400px / 3:1</small>
+                </span>
+                <span>
                   <b>小バナー</b>
-                  <small>900 × 600px / 3:2</small>
+                  <small>1200 × 200px / 6:1</small>
                 </span>
               </div>
               <p>推奨サイズに近い画像を使用すると、トリミングや表示崩れが少なくなります。</p>
@@ -2449,6 +2449,9 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             <div className="preview-grid">
               <i></i><i></i><i></i><i></i>
             </div>
+            <button className="primary preview-save-home" onClick={() => { setSettings(normalizeHomeSettings(settings)); setScreen("home"); }}>
+              保存してホームへ
+            </button>
           </div>
         </aside>
       </div>

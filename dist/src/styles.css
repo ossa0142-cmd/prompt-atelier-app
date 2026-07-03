@@ -224,15 +224,15 @@ main {
 }
 
 .home-banner.small {
-  aspect-ratio: 3 / 2;
+  aspect-ratio: 6 / 1;
 }
 
 .home-banner.medium {
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 3 / 1;
 }
 
 .home-banner.large {
-  aspect-ratio: 3 / 1;
+  aspect-ratio: 2 / 1;
 }
 
 .home-banner img {
@@ -2908,7 +2908,9 @@ main {
 
 .preview-banner {
   display: grid;
-  aspect-ratio: 2 / 1;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 1;
   overflow: hidden;
   border-radius: 16px;
   background:
@@ -2917,15 +2919,15 @@ main {
 }
 
 .preview-banner.small {
-  aspect-ratio: 3 / 2;
+  aspect-ratio: 6 / 1;
 }
 
 .preview-banner.medium {
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 3 / 1;
 }
 
 .preview-banner.large {
-  aspect-ratio: 3 / 1;
+  aspect-ratio: 2 / 1;
 }
 
 .preview-banner img {
@@ -2941,6 +2943,14 @@ main {
 
 .preview-banner.fit-cover img {
   object-fit: cover;
+}
+
+.preview-save-home {
+  width: 100%;
+  min-height: 46px;
+  justify-content: center;
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgba(73, 58, 45, 0.08);
 }
 
 .preview-card {
