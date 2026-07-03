@@ -1989,7 +1989,10 @@ function App() {
     setScreen: setScreen,
     workTools: workTools,
     setWorkTools: setWorkTools,
-    projects: projects
+    projects: projects,
+    canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
+    isStandaloneApp: isStandaloneApp,
+    onInstallPwa: installPwa
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
     setScreen: setScreen
@@ -2054,6 +2057,30 @@ function PwaInstallCard({
   }, canInstall ? "アプリとして追加" : "追加方法を見る"), /*#__PURE__*/React.createElement("button", {
     onClick: onDismiss
   }, "あとで")));
+}
+function PwaInstallInstructionsModal({
+  onClose
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "modal-backdrop",
+    role: "dialog",
+    "aria-modal": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "modal pwa-instructions-modal"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "modal-head"
+  }, /*#__PURE__*/React.createElement("h3", null, "ChromeでDockに追加する方法"), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose
+  }, "閉じる")), /*#__PURE__*/React.createElement("ol", {
+    className: "pwa-instruction-steps"
+  }, /*#__PURE__*/React.createElement("li", null, "ChromeでPrompt Atelierを開きます"), /*#__PURE__*/React.createElement("li", null, "右上の「︙」メニューを開きます"), /*#__PURE__*/React.createElement("li", null, "「キャスト、保存、共有」または「保存して共有」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ページをアプリとしてインストール」または「ショートカットを作成」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ウィンドウとして開く」にチェックを入れます"), /*#__PURE__*/React.createElement("li", null, "作成後、Dockに追加して使えます")), /*#__PURE__*/React.createElement("p", {
+    className: "pwa-instruction-note"
+  }, "Chromeのバージョンによって、メニュー名が少し異なる場合があります。"), /*#__PURE__*/React.createElement("div", {
+    className: "modal-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onClose
+  }, "わかりました"))));
 }
 function Home({
   setScreen,
@@ -2495,9 +2522,13 @@ function HomeCustomize({
   setScreen,
   workTools,
   setWorkTools,
-  projects
+  projects,
+  canInstallPwa,
+  isStandaloneApp,
+  onInstallPwa
 }) {
   const [editingTool, setEditingTool] = React.useState(null);
+  const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
   const backupInputRef = React.useRef(null);
   const bannerDragRef = React.useRef(null);
   const settingsRef = React.useRef(settings);
@@ -2622,6 +2653,13 @@ function HomeCustomize({
   };
   const activeTheme = homeThemes.find(theme => theme.id === settings.themeId) || homeThemes[0];
   const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
+  const handleCustomizeInstallPwa = () => {
+    if (canInstallPwa) {
+      onInstallPwa();
+      return;
+    }
+    setShowPwaInstructions(true);
+  };
   return /*#__PURE__*/React.createElement("section", {
     className: "page customize-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -2783,6 +2821,19 @@ function HomeCustomize({
       }
     })
   }))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card pwa-customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "アプリとして使う"), /*#__PURE__*/React.createElement("p", null, "ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。"), isStandaloneApp ? /*#__PURE__*/React.createElement("div", {
+    className: "pwa-status-pill"
+  }, "アプリモードで起動中です") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "backup-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: handleCustomizeInstallPwa
+  }, "アプリとして追加"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowPwaInstructions(true)
+  }, "追加方法を見る")), /*#__PURE__*/React.createElement("small", {
+    className: "pwa-install-help"
+  }, "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "order-list"
@@ -2868,7 +2919,9 @@ function HomeCustomize({
       setSettings(persistHomeSettings());
       setScreen("home");
     }
-  }, "保存してホームへ")))), /*#__PURE__*/React.createElement(PageBackButton, {
+  }, "保存してホームへ")))), showPwaInstructions && /*#__PURE__*/React.createElement(PwaInstallInstructionsModal, {
+    onClose: () => setShowPwaInstructions(false)
+  }), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")

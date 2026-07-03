@@ -513,6 +513,65 @@ main {
   line-height: 1.6;
 }
 
+.pwa-customize-card {
+  overflow: hidden;
+  position: relative;
+}
+
+.pwa-customize-card::after {
+  content: "";
+  position: absolute;
+  right: -26px;
+  top: -30px;
+  width: 112px;
+  height: 112px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  pointer-events: none;
+}
+
+.pwa-customize-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.pwa-status-pill {
+  width: fit-content;
+  border: 1px solid var(--customize-border);
+  border-radius: 999px;
+  margin-top: 12px;
+  padding: 9px 14px;
+  background: color-mix(in srgb, var(--customize-surface) 84%, var(--accent) 12%);
+  color: var(--customize-ink);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.pwa-instructions-modal {
+  max-width: 560px;
+}
+
+.pwa-instruction-steps {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 16px;
+  padding-left: 24px;
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.pwa-instruction-note {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card-bg) 86%, var(--accent) 6%);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 0;
+  padding: 11px 13px;
+}
+
 .pwa-install-actions {
   display: flex;
   flex-wrap: wrap;
