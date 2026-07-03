@@ -402,6 +402,7 @@ function normalizeVideoPrompt(item) {
 }
 const defaultHomeSettings = {
   themeId: "cute",
+  bannerImage: "",
   bannerImageUrl: "",
   bannerVisible: true,
   bannerSize: "medium",
@@ -439,9 +440,12 @@ const normalizeHomeSettings = settings => {
   };
   const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
   const safePosition = value => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
+  const bannerImage = settings?.bannerImage || settings?.bannerImageUrl || "";
   return {
     ...defaultHomeSettings,
     ...settings,
+    bannerImage,
+    bannerImageUrl: settings?.bannerImageUrl || bannerImage,
     bannerPositionX: safePosition(settings?.bannerPositionX),
     bannerPositionY: safePosition(settings?.bannerPositionY),
     homeCharacter: {
@@ -763,7 +767,7 @@ const isDataImageUrl = value => typeof value === "string" && /^data:image\/(png|
 const imageQualityProfiles = {
   banner: {
     maxSide: 1600,
-    quality: 0.94,
+    quality: 0.95,
     thumbnailSide: 960,
     thumbnailQuality: 0.9,
     keepOriginalMaxSide: 1600
@@ -979,6 +983,13 @@ function imageDisplaySrc(image) {
   if (!image) return "";
   const value = typeof image === "string" ? image : image.displayImage || image.bannerImage || image.coverImage || image.image || image.previewImage || image.src || image.imageUrl || image.thumbnail || "";
   return resolveIndexedDbImage(value, false) || imageThumbnail(image);
+}
+function homeBannerImageValue(settings) {
+  return settings?.bannerImage || settings?.bannerImageUrl || "";
+}
+function homeBannerSrc(settings) {
+  const value = homeBannerImageValue(settings);
+  return imageSrc(value) || imageThumbnail(value);
 }
 function getCoverImages(item) {
   const existing = Array.isArray(item?.coverImages) ? item.coverImages.filter(Boolean) : [];
@@ -1562,6 +1573,7 @@ function sampleHomeSettings(value) {
   const cleaned = cleanSampleValue(value);
   return {
     themeId: cleaned.themeId,
+    bannerImage: cleaned.bannerImage || cleaned.bannerImageUrl,
     bannerImageUrl: cleaned.bannerImageUrl,
     bannerVisible: cleaned.bannerVisible,
     bannerSize: cleaned.bannerSize,
@@ -2051,14 +2063,15 @@ function Home({
     }
     return null;
   };
+  const bannerSrc = homeBannerSrc(settings);
   return /*#__PURE__*/React.createElement("section", {
     className: "page home-page"
   }, /*#__PURE__*/React.createElement("div", {
     className: "home-topbar"
   }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`
-  }, settings.bannerImageUrl ? /*#__PURE__*/React.createElement("img", {
-    src: imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl),
+  }, bannerSrc ? /*#__PURE__*/React.createElement("img", {
+    src: bannerSrc,
     alt: "",
     style: {
       objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%`
@@ -2340,7 +2353,7 @@ function HomeCustomize({
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y)))
   }, persist);
   const startBannerDrag = event => {
-    if (!settings.bannerImageUrl || (settings.bannerFit || "contain") !== "cover") return;
+    if (!homeBannerImageValue(settings) || (settings.bannerFit || "contain") !== "cover") return;
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     bannerDragRef.current = {
@@ -2353,6 +2366,8 @@ function HomeCustomize({
     };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
+  const bannerImageValue = homeBannerImageValue(settings);
+  const bannerSrc = homeBannerSrc(settings);
   const moveBannerDrag = event => {
     const drag = bannerDragRef.current;
     if (!drag) return;
@@ -2428,7 +2443,7 @@ function HomeCustomize({
     }
   };
   const activeTheme = homeThemes.find(theme => theme.id === settings.themeId) || homeThemes[0];
-  const bannerCanDrag = Boolean(settings.bannerImageUrl) && (settings.bannerFit || "contain") === "cover";
+  const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
   return /*#__PURE__*/React.createElement("section", {
     className: "page customize-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -2471,14 +2486,16 @@ function HomeCustomize({
   })), /*#__PURE__*/React.createElement("input", {
     value: settings.bannerImageUrl,
     onChange: event => updateSettings({
-      bannerImageUrl: event.target.value
+      bannerImageUrl: event.target.value,
+      bannerImage: event.target.value
     }),
     placeholder: "バナー画像URL"
   }), /*#__PURE__*/React.createElement("input", {
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
-    onChange: event => readImage(event, bannerImageUrl => updateSettings({
-      bannerImageUrl
+    onChange: event => readImage(event, bannerImage => updateSettings({
+      bannerImage,
+      bannerImageUrl: bannerImage
     }), "banner")
   }), /*#__PURE__*/React.createElement("div", {
     className: "inline-buttons"
@@ -2490,6 +2507,7 @@ function HomeCustomize({
     })
   }, size === "small" ? "小" : size === "medium" ? "中" : "大")), /*#__PURE__*/React.createElement("button", {
     onClick: () => updateSettings({
+      bannerImage: "",
       bannerImageUrl: ""
     })
   }, "画像を削除")), /*#__PURE__*/React.createElement("div", {
@@ -2625,8 +2643,8 @@ function HomeCustomize({
     onPointerUp: endBannerDrag,
     onPointerCancel: endBannerDrag,
     onLostPointerCapture: endBannerDrag
-  }, settings.bannerImageUrl && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
-    src: imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl),
+  }, bannerSrc && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
+    src: bannerSrc,
     alt: "",
     draggable: false,
     style: {
@@ -2634,7 +2652,7 @@ function HomeCustomize({
     }
   }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
     className: "banner-drag-hint"
-  }, "画像をドラッグして表示位置を調整"))), settings.bannerImageUrl && /*#__PURE__*/React.createElement("div", {
+  }, "画像をドラッグして表示位置を調整"))), bannerImageValue && /*#__PURE__*/React.createElement("div", {
     className: "preview-banner-actions"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",

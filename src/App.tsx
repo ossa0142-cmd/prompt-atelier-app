@@ -182,6 +182,7 @@ type HomeCharacterSettings = {
 
 type HomeSettings = {
   themeId: string;
+  bannerImage: string;
   bannerImageUrl: string;
   bannerVisible: boolean;
   bannerSize: "small" | "medium" | "large";
@@ -391,6 +392,7 @@ function normalizeVideoPrompt(item: any): VideoItem {
 
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
+  bannerImage: "",
   bannerImageUrl: "",
   bannerVisible: true,
   bannerSize: "medium",
@@ -428,9 +430,12 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
     ? rawCharacter.messageMode as HomeCharacterMessageMode
     : "auto";
   const safePosition = (value: any) => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
+  const bannerImage = (settings as any)?.bannerImage || settings?.bannerImageUrl || "";
   return {
     ...defaultHomeSettings,
     ...settings,
+    bannerImage,
+    bannerImageUrl: settings?.bannerImageUrl || bannerImage,
     bannerPositionX: safePosition(settings?.bannerPositionX),
     bannerPositionY: safePosition(settings?.bannerPositionY),
     homeCharacter: { ...rawCharacter, messageMode: safeMessageMode },
@@ -804,7 +809,7 @@ const isIndexedDbImageRef = (value: string) => /^indexeddb(?:-thumb)?:/.test(val
 const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = (value: unknown) => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles: Record<string, { maxSide: number; quality: number; thumbnailSide: number; thumbnailQuality: number; keepOriginalMaxSide?: number }> = {
-  banner: { maxSide: 1600, quality: 0.94, thumbnailSide: 960, thumbnailQuality: 0.9, keepOriginalMaxSide: 1600 },
+  banner: { maxSide: 1600, quality: 0.95, thumbnailSide: 960, thumbnailQuality: 0.9, keepOriginalMaxSide: 1600 },
   gallery: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   journal: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   background: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
@@ -990,6 +995,15 @@ function imageDisplaySrc(image: any) {
     ? image
     : image.displayImage || image.bannerImage || image.coverImage || image.image || image.previewImage || image.src || image.imageUrl || image.thumbnail || "";
   return resolveIndexedDbImage(value, false) || imageThumbnail(image);
+}
+
+function homeBannerImageValue(settings: HomeSettings) {
+  return (settings as any)?.bannerImage || settings?.bannerImageUrl || "";
+}
+
+function homeBannerSrc(settings: HomeSettings) {
+  const value = homeBannerImageValue(settings);
+  return imageSrc(value) || imageThumbnail(value);
 }
 
 function getCoverImages(item: any) {
@@ -1587,6 +1601,7 @@ function sampleHomeSettings(value: any) {
   const cleaned = cleanSampleValue(value);
   return {
     themeId: cleaned.themeId,
+    bannerImage: cleaned.bannerImage || cleaned.bannerImageUrl,
     bannerImageUrl: cleaned.bannerImageUrl,
     bannerVisible: cleaned.bannerVisible,
     bannerSize: cleaned.bannerSize,
@@ -2062,6 +2077,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     }
     return null;
   };
+  const bannerSrc = homeBannerSrc(settings);
   return (
     <section className="page home-page">
       <div className="home-topbar">
@@ -2069,9 +2085,9 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
       </div>
       {settings.bannerVisible && (
         <div className={`home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
-          {settings.bannerImageUrl ? (
+          {bannerSrc ? (
             <img
-              src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)}
+              src={bannerSrc}
               alt=""
               style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
             />
@@ -2293,7 +2309,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
   }, persist);
   const startBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!settings.bannerImageUrl || (settings.bannerFit || "contain") !== "cover") return;
+    if (!homeBannerImageValue(settings) || (settings.bannerFit || "contain") !== "cover") return;
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     bannerDragRef.current = {
@@ -2306,6 +2322,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
+  const bannerImageValue = homeBannerImageValue(settings);
+  const bannerSrc = homeBannerSrc(settings);
   const moveBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = bannerDragRef.current;
     if (!drag) return;
@@ -2374,7 +2392,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     }
   };
   const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
-  const bannerCanDrag = Boolean(settings.bannerImageUrl) && (settings.bannerFit || "contain") === "cover";
+  const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
   return (
     <section className="page customize-page">
       <PageHead
@@ -2427,15 +2445,15 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <span>バナー表示</span>
               <input type="checkbox" checked={settings.bannerVisible} onChange={(event) => updateSettings({ bannerVisible: event.target.checked })} />
             </label>
-            <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value })} placeholder="バナー画像URL" />
-            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (bannerImageUrl) => updateSettings({ bannerImageUrl }), "banner")} />
+            <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value, bannerImage: event.target.value })} placeholder="バナー画像URL" />
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (bannerImage) => updateSettings({ bannerImage, bannerImageUrl: bannerImage }), "banner")} />
             <div className="inline-buttons">
               {(["small", "medium", "large"] as const).map((size) => (
                 <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => updateSettings({ bannerSize: size })}>
                   {size === "small" ? "小" : size === "medium" ? "中" : "大"}
                 </button>
               ))}
-              <button onClick={() => updateSettings({ bannerImageUrl: "" })}>画像を削除</button>
+              <button onClick={() => updateSettings({ bannerImage: "", bannerImageUrl: "" })}>画像を削除</button>
             </div>
             <div className="banner-fit-controls">
               <strong>バナー表示方法</strong>
@@ -2573,10 +2591,10 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                   onPointerCancel={endBannerDrag}
                   onLostPointerCapture={endBannerDrag}
                 >
-                  {settings.bannerImageUrl && (
+                  {bannerSrc && (
                     <>
                       <img
-                        src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)}
+                        src={bannerSrc}
                         alt=""
                         draggable={false}
                         style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
@@ -2585,7 +2603,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                     </>
                   )}
                 </div>
-                {settings.bannerImageUrl && (
+                {bannerImageValue && (
                   <div className="preview-banner-actions">
                     <button
                       type="button"
