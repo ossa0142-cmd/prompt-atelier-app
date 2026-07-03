@@ -2501,7 +2501,7 @@ function HomeCustomize({
   }, /*#__PURE__*/React.createElement("span", null, "プレビュー"), /*#__PURE__*/React.createElement("div", {
     className: "preview-shell",
     style: themeStyle(activeTheme)
-  }, settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+  }, settings.bannerVisible && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: `preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
     onPointerDown: startBannerDrag,
     onPointerMove: moveBannerDrag,
@@ -2517,7 +2517,9 @@ function HomeCustomize({
     }
   }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
     className: "banner-drag-hint"
-  }, "画像をドラッグして表示位置を調整"), /*#__PURE__*/React.createElement("button", {
+  }, "画像をドラッグして表示位置を調整"))), settings.bannerImageUrl && /*#__PURE__*/React.createElement("div", {
+    className: "preview-banner-actions"
+  }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     className: "banner-reset-position",
     onPointerDown: event => event.stopPropagation(),

@@ -2485,23 +2485,29 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           <span>プレビュー</span>
           <div className="preview-shell" style={themeStyle(activeTheme)}>
             {settings.bannerVisible && (
-              <div
-                className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`}
-                onPointerDown={startBannerDrag}
-                onPointerMove={moveBannerDrag}
-                onPointerUp={endBannerDrag}
-                onPointerCancel={endBannerDrag}
-                onLostPointerCapture={endBannerDrag}
-              >
+              <>
+                <div
+                  className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`}
+                  onPointerDown={startBannerDrag}
+                  onPointerMove={moveBannerDrag}
+                  onPointerUp={endBannerDrag}
+                  onPointerCancel={endBannerDrag}
+                  onLostPointerCapture={endBannerDrag}
+                >
+                  {settings.bannerImageUrl && (
+                    <>
+                      <img
+                        src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)}
+                        alt=""
+                        draggable={false}
+                        style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
+                      />
+                      {bannerCanDrag && <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>}
+                    </>
+                  )}
+                </div>
                 {settings.bannerImageUrl && (
-                  <>
-                    <img
-                      src={imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl)}
-                      alt=""
-                      draggable={false}
-                      style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
-                    />
-                    {bannerCanDrag && <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>}
+                  <div className="preview-banner-actions">
                     <button
                       type="button"
                       className="banner-reset-position"
@@ -2510,9 +2516,9 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                     >
                       中央に戻す
                     </button>
-                  </>
+                  </div>
                 )}
-              </div>
+              </>
             )}
             <div className="preview-card large"></div>
             <div className="preview-grid">

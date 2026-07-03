@@ -2960,7 +2960,7 @@ main {
 .banner-drag-hint {
   position: absolute;
   left: 50%;
-  top: 10px;
+  bottom: 10px;
   transform: translateX(-50%);
   max-width: calc(100% - 28px);
   padding: 6px 12px;
@@ -2975,16 +2975,20 @@ main {
   pointer-events: none;
 }
 
+.preview-banner-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+}
+
 .banner-reset-position {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
   min-height: 30px;
-  padding: 0 11px;
+  padding: 0 12px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--button-bg), transparent 8%);
   color: var(--button-text);
   font-size: 11px;
+  line-height: 1;
   box-shadow: 0 8px 20px rgba(73, 58, 45, 0.12);
   cursor: pointer;
 }
