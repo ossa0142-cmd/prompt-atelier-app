@@ -984,6 +984,14 @@ function imageThumbnail(image: any) {
   return resolveIndexedDbImage(value, true);
 }
 
+function imageDisplaySrc(image: any) {
+  if (!image) return "";
+  const value = typeof image === "string"
+    ? image
+    : image.displayImage || image.bannerImage || image.coverImage || image.image || image.previewImage || image.src || image.imageUrl || image.thumbnail || "";
+  return resolveIndexedDbImage(value, false) || imageThumbnail(image);
+}
+
 function getCoverImages(item: any) {
   const existing = Array.isArray(item?.coverImages)
     ? item.coverImages.filter(Boolean)
@@ -2041,7 +2049,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
               <div className="atelier-track">
                 {[...atelierImages, ...atelierImages].map((image: AtelierImage, index: number) => (
                   <figure key={`${image.id}-${index}`}>
-                    <img src={imageThumbnail(image)} alt="" />
+                    <img src={imageDisplaySrc(image)} alt="" />
                   </figure>
                 ))}
               </div>
@@ -2674,7 +2682,7 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
   return (
     <article className="home-prompt-card">
       <button className="heart-button" aria-label="お気に入り">{favorite ? "♥" : "♡"}</button>
-      <img src={imageThumbnail(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+      <img src={imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       <div className="home-prompt-body">
         <span className="mini-pill">{prompt.category}</span>
         <h3>{prompt.title}</h3>
@@ -2921,7 +2929,7 @@ function CoverImageCarousel({ item, className = "", placeholderLabel = "画像" 
       onMouseLeave={() => setIsHovering(false)}
     >
       {currentImage ? (
-        <img src={imageThumbnail(currentImage)} alt="" />
+        <img src={imageDisplaySrc(currentImage)} alt="" />
       ) : (
         <div className="image-placeholder" aria-label={`${placeholderLabel}未設定`}>
           <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -2995,8 +3003,8 @@ function CoverImageUploader({ item, onChange, category = "prompt" }: any) {
     >
       <div className="cover-image-strip">
         {images.map((image: any, index: number) => (
-          <div className="cover-image-thumb" key={`${imageThumbnail(image)}-${index}`}>
-            <img src={imageThumbnail(image)} alt="" />
+          <div className="cover-image-thumb" key={`${imageDisplaySrc(image)}-${index}`}>
+            <img src={imageDisplaySrc(image)} alt="" />
             <button type="button" onClick={() => applyImages(images.filter((_: any, imageIndex: number) => imageIndex !== index))}>削除</button>
           </div>
         ))}
@@ -3099,7 +3107,7 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
 }
 
 function PromptThumbnail({ imageUrl }: { imageUrl?: string }) {
-  if (imageUrl) return <img src={imageThumbnail(imageUrl)} alt="" />;
+  if (imageUrl) return <img src={imageDisplaySrc(imageUrl)} alt="" />;
   return (
     <div className="image-placeholder" aria-label="画像未設定">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -3667,7 +3675,7 @@ function Midjourney({ settings, setSettings, copyText, setScreen }: any) {
               <div className="mj-image-search-grid">
                 {imageSearchItems.length ? imageSearchItems.map((item) => (
                   <button key={`${item.cardId}-${item.index}-${imageSrc(item.image)}`} onClick={() => jumpToCard(item.cardId)}>
-                    <img src={imageThumbnail(item.image)} alt="" />
+                    <img src={imageDisplaySrc(item.image)} alt="" />
                   </button>
                 )) : <small>画像を登録すると、ここから探せます。</small>}
               </div>
@@ -3875,7 +3883,7 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
         {images.length ? (
           <>
             <div className="mj-card-image image-only-button">
-              <img src={imageThumbnail(images[slideIndex] || images[0])} alt="" />
+              <img src={imageDisplaySrc(images[slideIndex] || images[0])} alt="" />
               {images.length > 1 && (
                 <span className="image-dots">
                   {images.map((_: any, dotIndex: number) => <i key={dotIndex} className={dotIndex === slideIndex ? "active" : ""} />)}
@@ -4145,7 +4153,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
                 {image.favorite ? "♥" : "♡"}
               </button>
               <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
-                <img src={imageThumbnail(image)} alt="" />
+                <img src={imageDisplaySrc(image)} alt="" />
               </button>
             </article>
           ))}
@@ -4466,7 +4474,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
                 importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
               }}
             >
-              {draft.thumbnail ? <img src={imageThumbnail(draft.thumbnail)} alt="" /> : <VideoPlaceholder />}
+              {draft.thumbnail ? <img src={imageDisplaySrc(draft.thumbnail)} alt="" /> : <VideoPlaceholder />}
               <small>クリック・ドロップ・貼り付けでサムネイル追加</small>
             </div>
             <div className="video-thumbnail-tools">
@@ -4565,7 +4573,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
                 {hoverVideoId === item.id && (isPlayableVideoUrl(previewUrl) || previewUrl.startsWith("blob:")) ? (
                   <video src={previewUrl} autoPlay muted loop playsInline />
                 ) : item.thumbnail ? (
-                  <img src={imageThumbnail(item.thumbnail)} alt="" />
+                  <img src={imageDisplaySrc(item.thumbnail)} alt="" />
                 ) : <VideoPlaceholder />}
               </button>
               <div className="prompt-card-content video-card-body">
@@ -4807,7 +4815,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
           <strong>画像ストック</strong>
           <div className="journal-stock">
             {images.slice(0, 18).map((image: AtelierImage) => (
-              <button key={image.id} onClick={() => addJournalItem(image)}><img src={imageThumbnail(image)} alt="" /></button>
+              <button key={image.id} onClick={() => addJournalItem(image)}><img src={imageDisplaySrc(image)} alt="" /></button>
             ))}
           </div>
           {selected && (
@@ -4852,7 +4860,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
                 setDraggingId(item.id);
               }}
             >
-              <img className={isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image"} src={imageThumbnail(item)} alt="" draggable={false} />
+              <img className={isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image"} src={imageDisplaySrc(item)} alt="" draggable={false} />
             </div>
           )) : <div className="journal-empty">画像を追加して、シール帳のように並べられます。</div>}
         </div>
@@ -4920,7 +4928,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText, setScree
 function PromptCard({ prompt, onCopy, extra }: any) {
   return (
     <article className="prompt-card">
-      <img src={imageThumbnail(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+      <img src={imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       <div>
         <span className="pill">{prompt.category}</span>
         <h3>{prompt.title}</h3>

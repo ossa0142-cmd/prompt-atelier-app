@@ -975,6 +975,11 @@ function imageThumbnail(image) {
   const value = typeof image === "string" ? image : image.thumbnail || image.src || "";
   return resolveIndexedDbImage(value, true);
 }
+function imageDisplaySrc(image) {
+  if (!image) return "";
+  const value = typeof image === "string" ? image : image.displayImage || image.bannerImage || image.coverImage || image.image || image.previewImage || image.src || image.imageUrl || image.thumbnail || "";
+  return resolveIndexedDbImage(value, false) || imageThumbnail(image);
+}
 function getCoverImages(item) {
   const existing = Array.isArray(item?.coverImages) ? item.coverImages.filter(Boolean) : [];
   if (existing.length) return existing.slice(0, 3);
@@ -2038,7 +2043,7 @@ function Home({
       }, [...atelierImages, ...atelierImages].map((image, index) => /*#__PURE__*/React.createElement("figure", {
         key: `${image.id}-${index}`
       }, /*#__PURE__*/React.createElement("img", {
-        src: imageThumbnail(image),
+        src: imageDisplaySrc(image),
         alt: ""
       }))))) : /*#__PURE__*/React.createElement("div", {
         className: "atelier-empty"
@@ -2780,7 +2785,7 @@ function HomePromptCard({
     className: "heart-button",
     "aria-label": "お気に入り"
   }, favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
+    src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", {
     className: "home-prompt-body"
@@ -3072,7 +3077,7 @@ function CoverImageCarousel({
     onMouseEnter: () => setIsHovering(true),
     onMouseLeave: () => setIsHovering(false)
   }, currentImage ? /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(currentImage),
+    src: imageDisplaySrc(currentImage),
     alt: ""
   }) : /*#__PURE__*/React.createElement("div", {
     className: "image-placeholder",
@@ -3159,9 +3164,9 @@ function CoverImageUploader({
     className: "cover-image-strip"
   }, images.map((image, index) => /*#__PURE__*/React.createElement("div", {
     className: "cover-image-thumb",
-    key: `${imageThumbnail(image)}-${index}`
+    key: `${imageDisplaySrc(image)}-${index}`
   }, /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(image),
+    src: imageDisplaySrc(image),
     alt: ""
   }), /*#__PURE__*/React.createElement("button", {
     type: "button",
@@ -3335,7 +3340,7 @@ function PromptThumbnail({
   imageUrl
 }) {
   if (imageUrl) return /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(imageUrl),
+    src: imageDisplaySrc(imageUrl),
     alt: ""
   });
   return /*#__PURE__*/React.createElement("div", {
@@ -4126,7 +4131,7 @@ function Midjourney({
     key: `${item.cardId}-${item.index}-${imageSrc(item.image)}`,
     onClick: () => jumpToCard(item.cardId)
   }, /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(item.image),
+    src: imageDisplaySrc(item.image),
     alt: ""
   }))) : /*#__PURE__*/React.createElement("small", null, "画像を登録すると、ここから探せます。")))), /*#__PURE__*/React.createElement("div", {
     className: "mj-card-grid"
@@ -4348,7 +4353,7 @@ function MJEditableCard({
   }, images.length ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "mj-card-image image-only-button"
   }, /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(images[slideIndex] || images[0]),
+    src: imageDisplaySrc(images[slideIndex] || images[0]),
     alt: ""
   }), images.length > 1 && /*#__PURE__*/React.createElement("span", {
     className: "image-dots"
@@ -4649,7 +4654,7 @@ function GalleryPage({
     className: "gallery-image-button",
     onClick: () => setPreviewId(image.id)
   }, /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(image),
+    src: imageDisplaySrc(image),
     alt: ""
   }))))) : /*#__PURE__*/React.createElement(Empty, {
     text: "画像を追加すると、ここにギャラリーが表示されます。"
@@ -5059,7 +5064,7 @@ function VideoLibrary({
         importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
       }
     }, draft.thumbnail ? /*#__PURE__*/React.createElement("img", {
-      src: imageThumbnail(draft.thumbnail),
+      src: imageDisplaySrc(draft.thumbnail),
       alt: ""
     }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null), /*#__PURE__*/React.createElement("small", null, "クリック・ドロップ・貼り付けでサムネイル追加")), /*#__PURE__*/React.createElement("div", {
       className: "video-thumbnail-tools"
@@ -5258,7 +5263,7 @@ function VideoLibrary({
       loop: true,
       playsInline: true
     }) : item.thumbnail ? /*#__PURE__*/React.createElement("img", {
-      src: imageThumbnail(item.thumbnail),
+      src: imageDisplaySrc(item.thumbnail),
       alt: ""
     }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null)), /*#__PURE__*/React.createElement("div", {
       className: "prompt-card-content video-card-body"
@@ -5569,7 +5574,7 @@ function JournalPage({
     key: image.id,
     onClick: () => addJournalItem(image)
   }, /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(image),
+    src: imageDisplaySrc(image),
     alt: ""
   })))), selected && /*#__PURE__*/React.createElement("div", {
     className: "journal-edit-panel"
@@ -5642,7 +5647,7 @@ function JournalPage({
     }
   }, /*#__PURE__*/React.createElement("img", {
     className: isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image",
-    src: imageThumbnail(item),
+    src: imageDisplaySrc(item),
     alt: "",
     draggable: false
   }))) : /*#__PURE__*/React.createElement("div", {
@@ -5749,7 +5754,7 @@ function PromptCard({
   return /*#__PURE__*/React.createElement("article", {
     className: "prompt-card"
   }, /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
+    src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "pill"
