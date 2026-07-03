@@ -168,6 +168,16 @@ type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | 
 type HomeFeatureId = "library" | "prompts" | "videos" | "mj" | "projects";
 
 type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
+type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "hidden";
+type HomeCharacterMessageMode = "auto" | "fixed" | "project" | "memo";
+
+type HomeCharacterSettings = {
+  image: any;
+  position: HomeCharacterPosition;
+  speechEnabled: boolean;
+  messageMode: HomeCharacterMessageMode;
+  fixedMessage: string;
+};
 
 type HomeSettings = {
   themeId: string;
@@ -175,6 +185,7 @@ type HomeSettings = {
   bannerVisible: boolean;
   bannerSize: "small" | "medium" | "large";
   workToolIconStyle: WorkToolIconStyle;
+  homeCharacter: HomeCharacterSettings;
   visible: Record<string, boolean>;
   order: HomeSectionId[];
 };
@@ -380,6 +391,13 @@ const defaultHomeSettings: HomeSettings = {
   bannerVisible: true,
   bannerSize: "medium",
   workToolIconStyle: "pastel",
+  homeCharacter: {
+    image: "",
+    position: "right-bottom",
+    speechEnabled: true,
+    messageMode: "auto",
+    fixedMessage: "今日も制作がんばろう♡",
+  },
   visible: {
     library: true,
     prompts: true,
@@ -399,6 +417,7 @@ const defaultHomeSettings: HomeSettings = {
 const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => ({
   ...defaultHomeSettings,
   ...settings,
+  homeCharacter: { ...defaultHomeSettings.homeCharacter, ...(settings?.homeCharacter || {}) },
   visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
   order: [
     ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
@@ -741,6 +760,22 @@ const SAMPLE_EXPORT_KEYS = [
   "promptAtelierHomeSettings",
   "promptAtelierWorkTools",
 ];
+const SAMPLE_DATA_STORAGE_MAP: Record<string, string> = {
+  libraryItems: "prompt-atelier-mockup-categories-v2",
+  mockupItems: "prompt-atelier-library-prompts-v5",
+  mockupStocks: "prompt-atelier-library-prompts-v5",
+  promptCards: "prompt-atelier-prompts-ja-v2",
+  promptStocks: "prompt-atelier-prompts-ja-v2",
+  videoPromptCards: "promptAtelierVideoPrompts",
+  videoPromptStocks: "promptAtelierVideoPromptStocks",
+  midjourneySettings: "promptAtelierMidjourneySettings",
+  projects: "prompt-atelier-projects-ja-v2",
+  galleryItems: "promptAtelierGallery",
+  journalItems: "promptAtelierJournal",
+  journalBackgrounds: "promptAtelierJournal",
+  homeSettings: "promptAtelierHomeSettings",
+  workTools: "promptAtelierWorkTools",
+};
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const IMAGE_DB_NAME = "PromptAtelierDB";
 const IMAGE_DB_VERSION = 1;
@@ -1308,6 +1343,7 @@ function useStoredState<T>(key: string, fallback: T) {
 }
 
 function categoryForImageField(key: string) {
+  if (/character/i.test(key)) return "character";
   if (/banner/i.test(key)) return "banner";
   if (/icon/i.test(key)) return "icon";
   if (/cover|background/i.test(key)) return "background";
@@ -1425,21 +1461,6 @@ function padSampleIndex(index: number) {
   return String(index + 1).padStart(3, "0");
 }
 
-function samplePrefixForKey(key: string) {
-  if (key.includes("mockup-categories")) return "sample-mockup-category";
-  if (key.includes("library-prompts")) return "sample-mockup-card";
-  if (key.includes("prompts-ja")) return "sample-prompt-card";
-  if (key.includes("VideoPromptStocks")) return "sample-video-stock";
-  if (key.includes("VideoPrompts")) return "sample-video-prompt";
-  if (key.includes("Midjourney")) return "sample-mj-setting";
-  if (key.includes("projects")) return "sample-project";
-  if (key.includes("Gallery")) return "sample-gallery-image";
-  if (key.includes("Journal")) return "sample-journal";
-  if (key.includes("HomeSettings")) return "sample-home-setting";
-  if (key.includes("WorkTools")) return "sample-work-tool";
-  return "sample-item";
-}
-
 function cleanSampleValue(value: any): any {
   if (typeof value === "string") {
     if (value.startsWith("blob:")) return "";
@@ -1459,40 +1480,6 @@ function cleanSampleValue(value: any): any {
   return next;
 }
 
-function addSampleMeta(value: any, prefix: string): any {
-  if (Array.isArray(value)) {
-    return value.map((item, index) => {
-      if (!item || typeof item !== "object") return item;
-      return {
-        ...cleanSampleValue(item),
-        isSample: true,
-        sampleId: item.sampleId || `${prefix}-${padSampleIndex(index)}`,
-      };
-    });
-  }
-  if (value?.items && Array.isArray(value.items)) {
-    return {
-      ...cleanSampleValue(value),
-      items: value.items.map((item: any, index: number) => ({
-        ...cleanSampleValue(item),
-        isSample: true,
-        sampleId: item.sampleId || `${prefix}-item-${padSampleIndex(index)}`,
-      })),
-    };
-  }
-  if (value?.customBackgrounds && Array.isArray(value.customBackgrounds)) {
-    return {
-      ...cleanSampleValue(value),
-      customBackgrounds: value.customBackgrounds.map((item: any, index: number) => ({
-        ...cleanSampleValue(item),
-        isSample: true,
-        sampleId: item.sampleId || `sample-background-${padSampleIndex(index)}`,
-      })),
-    };
-  }
-  return cleanSampleValue(value);
-}
-
 function parseStorageValueForSample(key: string) {
   const raw = localStorage.getItem(key);
   if (!raw) return null;
@@ -1503,14 +1490,76 @@ function parseStorageValueForSample(key: string) {
   }
 }
 
+function withSampleMeta(item: any, prefix: string, index: number) {
+  if (!item || typeof item !== "object") return item;
+  const sampleId = item.sampleId || `${prefix}-${padSampleIndex(index)}`;
+  return {
+    ...cleanSampleValue(item),
+    id: item.id || sampleId,
+    isSample: true,
+    createdFromSeedExport: true,
+    sampleId,
+  };
+}
+
+function sampleArray(value: any, prefix: string) {
+  return Array.isArray(value) ? value.map((item, index) => withSampleMeta(item, prefix, index)) : [];
+}
+
+function sampleHomeSettings(value: any) {
+  if (!value || typeof value !== "object") return {};
+  const cleaned = cleanSampleValue(value);
+  return {
+    themeId: cleaned.themeId,
+    bannerImageUrl: cleaned.bannerImageUrl,
+    bannerVisible: cleaned.bannerVisible,
+    bannerSize: cleaned.bannerSize,
+    workToolIconStyle: cleaned.workToolIconStyle,
+    homeCharacter: cleaned.homeCharacter,
+    visible: cleaned.visible,
+    order: cleaned.order,
+  };
+}
+
+function createSampleSeedData() {
+  const mockupCategories = parseStorageValueForSample("prompt-atelier-mockup-categories-v2") || [];
+  const libraryPromptsValue = parseStorageValueForSample("prompt-atelier-library-prompts-v5") || [];
+  const promptBookValue = parseStorageValueForSample("prompt-atelier-prompts-ja-v2") || [];
+  const videoPromptsValue = parseStorageValueForSample("promptAtelierVideoPrompts") || [];
+  const videoStocksValue = parseStorageValueForSample("promptAtelierVideoPromptStocks") || [];
+  const midjourneyValue = parseStorageValueForSample("promptAtelierMidjourneySettings") || [];
+  const projectsValue = parseStorageValueForSample("prompt-atelier-projects-ja-v2") || [];
+  const galleryValue = parseStorageValueForSample("promptAtelierGallery") || [];
+  const journalValue = parseStorageValueForSample("promptAtelierJournal") || {};
+  const homeSettingsValue = parseStorageValueForSample("promptAtelierHomeSettings") || {};
+  const workToolsValue = parseStorageValueForSample("promptAtelierWorkTools") || [];
+  const libraryPrompts = Array.isArray(libraryPromptsValue) ? libraryPromptsValue : [];
+  const promptBook = Array.isArray(promptBookValue) ? promptBookValue : [];
+  return {
+    libraryItems: sampleArray(mockupCategories, "sample-library"),
+    mockupItems: sampleArray(libraryPrompts.filter((item: any) => !item.isTextStock), "sample-mockup"),
+    mockupStocks: sampleArray(libraryPrompts.filter((item: any) => item.isTextStock), "sample-mockup-stock"),
+    promptCards: sampleArray(promptBook.filter((item: any) => !item.isTextStock), "sample-prompt-card"),
+    promptStocks: sampleArray(promptBook.filter((item: any) => item.isTextStock), "sample-prompt-stock"),
+    videoPromptCards: sampleArray(videoPromptsValue, "sample-video-card").map((item: any) => ({
+      ...item,
+      url: typeof item.url === "string" && item.url.startsWith("blob:") ? "" : item.url,
+      videoUrl: typeof item.videoUrl === "string" && item.videoUrl.startsWith("blob:") ? "" : item.videoUrl,
+    })),
+    videoPromptStocks: sampleArray(videoStocksValue, "sample-video-stock"),
+    midjourneySettings: sampleArray(midjourneyValue, "sample-mj-setting"),
+    projects: sampleArray(projectsValue, "sample-project"),
+    galleryItems: sampleArray(galleryValue, "sample-gallery"),
+    journalItems: sampleArray(journalValue?.items || [], "sample-journal-item"),
+    journalBackgrounds: sampleArray(journalValue?.customBackgrounds || [], "sample-journal-bg"),
+    homeSettings: sampleHomeSettings(homeSettingsValue),
+    workTools: sampleArray(workToolsValue, "sample-work-tool"),
+  };
+}
+
 async function exportPromptAtelierSampleSeed() {
   if (!window.confirm("現在のデータを配布用サンプルデータとして書き出します。よろしいですか？")) return;
-  const data: Record<string, any> = {};
-  SAMPLE_EXPORT_KEYS.forEach((key) => {
-    const value = parseStorageValueForSample(key);
-    if (value === null || value === undefined) return;
-    data[key] = addSampleMeta(value, samplePrefixForKey(key));
-  });
+  const data = createSampleSeedData();
   const images = (await getAllIndexedDbImages()).map((image, index) => ({
     ...cleanSampleValue(image),
     src: image.src,
@@ -1520,7 +1569,7 @@ async function exportPromptAtelierSampleSeed() {
   }));
   const payload = {
     app: "Prompt Atelier",
-    type: "sample-seed",
+    type: "prompt-atelier-sample-seed",
     version: 1,
     exportedAt: new Date().toISOString(),
     data,
@@ -1570,15 +1619,46 @@ function mergeSampleValue(existing: any, incoming: any, key: string, deletedIds:
   return mergeSampleCollection(existing, incoming, deletedIds);
 }
 
+function sampleSeedDataToStorage(seedData: Record<string, any>) {
+  const storageData: Record<string, any> = {};
+  const append = (key: string, values: any[]) => {
+    if (!values.length) return;
+    storageData[key] = [...(storageData[key] || []), ...values];
+  };
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
+  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
+  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
+  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
+  append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
+  append("promptAtelierVideoPromptStocks", Array.isArray(seedData.videoPromptStocks) ? seedData.videoPromptStocks : []);
+  append("promptAtelierMidjourneySettings", Array.isArray(seedData.midjourneySettings) ? seedData.midjourneySettings : []);
+  append("prompt-atelier-projects-ja-v2", Array.isArray(seedData.projects) ? seedData.projects : []);
+  append("promptAtelierGallery", Array.isArray(seedData.galleryItems) ? seedData.galleryItems : []);
+  if (Array.isArray(seedData.journalItems) || Array.isArray(seedData.journalBackgrounds)) {
+    storageData.promptAtelierJournal = {
+      background: seedData.journalBackground || "paper",
+      items: Array.isArray(seedData.journalItems) ? seedData.journalItems : [],
+      customBackgrounds: Array.isArray(seedData.journalBackgrounds) ? seedData.journalBackgrounds : [],
+    };
+  }
+  if (seedData.homeSettings && typeof seedData.homeSettings === "object") storageData.promptAtelierHomeSettings = seedData.homeSettings;
+  append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
+  return storageData;
+}
+
 async function loadSampleSeedIfNeeded() {
   try {
     const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
     if (!response.ok) return false;
     const seed = await response.json();
-    if (seed?.type !== "sample-seed" || !seed?.data) return false;
+    if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) return false;
     const deletedIds = new Set<string>(JSON.parse(localStorage.getItem(DELETED_SAMPLE_IDS_KEY) || "[]"));
     let changed = false;
-    Object.entries(seed.data).forEach(([key, incoming]) => {
+    const storageData = Object.keys(SAMPLE_DATA_STORAGE_MAP).some((key) => key in seed.data)
+      ? sampleSeedDataToStorage(seed.data)
+      : seed.data;
+    Object.entries(storageData).forEach(([key, incoming]) => {
       if (!SAMPLE_EXPORT_KEYS.includes(key)) return;
       const existing = parseStorageValueForSample(key);
       const merged = mergeSampleValue(existing, incoming, key, deletedIds);
@@ -1922,6 +2002,132 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
         </div>
       )}
       {settings.order.map((sectionId: HomeSectionId) => renderSection(sectionId))}
+      <HomeCharacter settings={settings.homeCharacter} projects={projects} prompts={myPrompts} />
+    </section>
+  );
+}
+
+function shortMemoText(value: string) {
+  const text = (value || "").replace(/\s+/g, " ").trim();
+  return text.length > 34 ? `${text.slice(0, 34)}…` : text;
+}
+
+function characterProjectMessage(projects: Project[]) {
+  const active = projects.filter((project) => !projectDueInfo(project.dueDate || "").expired || !project.dueDate);
+  const dueToday = projects.find((project) => project.dueDate && projectDueInfo(project.dueDate).diff === 0);
+  if (dueToday) return "今日が期限のプロジェクトがあります";
+  const near = projects
+    .filter((project) => project.dueDate)
+    .map((project) => ({ project, info: projectDueInfo(project.dueDate || "") }))
+    .filter((item) => item.info.diff > 0 && item.info.diff <= 3)
+    .sort((a, b) => a.info.diff - b.info.diff)[0];
+  if (near) return `あと${near.info.diff}日で期限のプロジェクトがあります`;
+  if (active.length) return `進行中のプロジェクトが${active.length}件あります`;
+  return "";
+}
+
+function characterMemoMessage(projects: Project[], prompts: MyPrompt[]) {
+  const projectMemo = [...projects].reverse().find((project) => shortMemoText(project.note || ""));
+  if (projectMemo) return `最近のメモ：${shortMemoText(projectMemo.note)}`;
+  const promptMemo = [...prompts].reverse().find((prompt) => shortMemoText(prompt.memo || prompt.note || ""));
+  if (promptMemo) return `メモにアイデアがあります：${shortMemoText(promptMemo.memo || promptMemo.note)}`;
+  return "";
+}
+
+function characterMessage(settings: HomeCharacterSettings, projects: Project[], prompts: MyPrompt[]) {
+  if (settings.messageMode === "fixed") return settings.fixedMessage || "今日も制作がんばろう";
+  if (settings.messageMode === "project") return characterProjectMessage(projects) || "プロジェクトを少しずつ進めよう";
+  if (settings.messageMode === "memo") return characterMemoMessage(projects, prompts) || "メモに新しいアイデアを残してみよう";
+  return characterProjectMessage(projects) || characterMemoMessage(projects, prompts) || "今日も制作がんばろう";
+}
+
+function CharacterSpeechBubble({ message }: { message: string }) {
+  return <div className="character-speech-bubble">{message}</div>;
+}
+
+function HomeCharacter({ settings, projects, prompts }: { settings: HomeCharacterSettings; projects: Project[]; prompts: MyPrompt[] }) {
+  if (!settings?.image || settings.position === "hidden") return null;
+  const message = characterMessage(settings, projects, prompts);
+  return (
+    <aside className={`home-character ${settings.position}`} aria-label="アトリエキャラクター">
+      {settings.speechEnabled && <CharacterSpeechBubble message={message} />}
+      <img src={imageSrc(settings.image) || imageThumbnail(settings.image)} alt="アトリエキャラクター" />
+    </aside>
+  );
+}
+
+function HomeCharacterSettingsPanel({ settings, updateSettings }: any) {
+  const character: HomeCharacterSettings = settings.homeCharacter || defaultHomeSettings.homeCharacter;
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const updateCharacter = (patch: Partial<HomeCharacterSettings>) => updateSettings({ homeCharacter: { ...character, ...patch } });
+  const importFiles = async (files: FileList | File[]) => {
+    const file = Array.from(files).find(isSupportedImageFile);
+    if (!file) return;
+    try {
+      const image = saveImageToStorage(await optimizeImage(file, "character"));
+      updateCharacter({ image: image.src });
+    } catch (error) {
+      console.error("[Prompt Atelier] キャラクター画像の追加に失敗しました", error);
+      window.alert("画像を追加できませんでした。png / jpg / webp を選んでください。");
+    }
+  };
+  return (
+    <section className="customize-card character-settings-card">
+      <h3>ホームキャラクター設定</h3>
+      <p>透過PNGなどのキャラクター画像を、ホーム画面にアトリエ案内役として表示できます。</p>
+      <div
+        className="character-upload-area"
+        tabIndex={0}
+        onClick={() => fileInputRef.current?.click()}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          importFiles(event.dataTransfer.files);
+        }}
+        onPaste={(event) => {
+          const files = clipboardImageFiles(event);
+          if (!files.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          importFiles(files);
+        }}
+      >
+        {character.image ? <img src={imageThumbnail(character.image)} alt="" /> : <span>＋ キャラクター画像を追加</span>}
+        <small>PNG / WebP / JPG対応。透過PNG推奨です。</small>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          style={{ display: "none" }}
+          onChange={(event) => {
+            if (event.currentTarget.files) importFiles(event.currentTarget.files);
+            event.currentTarget.value = "";
+          }}
+        />
+      </div>
+      {character.image && <button onClick={() => updateCharacter({ image: "" })}>画像を削除</button>}
+      <label>表示位置
+        <select value={character.position} onChange={(event) => updateCharacter({ position: event.target.value as HomeCharacterPosition })}>
+          <option value="right-bottom">右下</option>
+          <option value="right-center">右側中央</option>
+          <option value="left-bottom">左下</option>
+          <option value="hidden">非表示</option>
+        </select>
+      </label>
+      <label className="switch-row">
+        <span>吹き出し表示</span>
+        <input type="checkbox" checked={character.speechEnabled} onChange={(event) => updateCharacter({ speechEnabled: event.target.checked })} />
+      </label>
+      <label>吹き出しメッセージタイプ
+        <select value={character.messageMode} onChange={(event) => updateCharacter({ messageMode: event.target.value as HomeCharacterMessageMode })}>
+          <option value="auto">自動</option>
+          <option value="fixed">固定メッセージ</option>
+          <option value="project">プロジェクト優先</option>
+          <option value="memo">メモ優先</option>
+        </select>
+      </label>
+      <textarea value={character.fixedMessage} onChange={(event) => updateCharacter({ fixedMessage: event.target.value })} placeholder="固定メッセージ（例：今日も制作がんばろう♡）" />
     </section>
   );
 }
@@ -2073,6 +2279,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             </div>
           </section>
 
+          <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} />
+
           <section className="customize-card">
             <h3>作業ツール</h3>
             <p>ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。</p>
@@ -2156,11 +2364,11 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <button className="primary" onClick={exportPromptAtelierBackup}>バックアップを書き出す</button>
               <button onClick={() => backupInputRef.current?.click()}>バックアップを読み込む</button>
             </div>
-            <details className="developer-tools">
-              <summary>開発者向け</summary>
-              <p>現在の登録内容を、配布版の初期サンプルとして使えるJSONに変換します。</p>
+            <div className="developer-tools">
+              <strong>配布用サンプルデータ</strong>
+              <p>現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。</p>
               <button onClick={exportPromptAtelierSampleSeed}>現在のデータをサンプルとして書き出す</button>
-            </details>
+            </div>
             <input
               ref={backupInputRef}
               type="file"

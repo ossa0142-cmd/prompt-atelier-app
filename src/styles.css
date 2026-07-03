@@ -271,6 +271,70 @@ main {
   position: relative;
 }
 
+.home-character {
+  position: fixed;
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  max-width: min(320px, 24vw);
+  pointer-events: none;
+}
+
+.home-character.right-bottom {
+  right: clamp(18px, 4vw, 54px);
+  bottom: clamp(18px, 4vw, 48px);
+}
+
+.home-character.right-center {
+  right: clamp(18px, 4vw, 54px);
+  top: 50%;
+  transform: translateY(-38%);
+}
+
+.home-character.left-bottom {
+  left: clamp(18px, 4vw, 54px);
+  bottom: clamp(18px, 4vw, 48px);
+}
+
+.home-character img {
+  display: block;
+  max-width: min(260px, 22vw);
+  max-height: 360px;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 20px rgba(73, 58, 45, 0.14));
+}
+
+.character-speech-bubble {
+  position: relative;
+  max-width: 260px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 22px 22px 22px 8px;
+  background:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--accent-soft) 42%, transparent), transparent 42%),
+    color-mix(in srgb, var(--card-bg) 92%, white);
+  box-shadow: 0 14px 34px rgba(73, 58, 45, 0.08);
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.55;
+  padding: 13px 15px;
+  text-align: left;
+}
+
+.character-speech-bubble::after {
+  content: "";
+  position: absolute;
+  right: 28px;
+  bottom: -8px;
+  width: 16px;
+  height: 16px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card-bg) 92%, white);
+  transform: rotate(45deg);
+}
+
 .home-hero {
   position: relative;
   display: grid;
@@ -2588,6 +2652,58 @@ main {
   font-size: 12px;
 }
 
+.character-settings-card {
+  display: grid;
+  gap: 13px;
+}
+
+.character-settings-card label:not(.switch-row) {
+  display: grid;
+  gap: 7px;
+  color: var(--customize-ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.character-upload-area {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  gap: 8px;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 24%, var(--customize-line));
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 34%),
+    color-mix(in srgb, var(--customize-card) 82%, var(--customize-input));
+  padding: 18px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.character-upload-area:hover,
+.character-upload-area:focus {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--customize-line));
+  outline: none;
+}
+
+.character-upload-area img {
+  max-width: 180px;
+  max-height: 190px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 16px rgba(73, 58, 45, 0.12));
+}
+
+.character-upload-area span {
+  display: grid;
+  width: min(100%, 260px);
+  min-height: 92px;
+  place-items: center;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--customize-card));
+  color: var(--customize-muted);
+  font-weight: 900;
+}
+
 .theme-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2692,10 +2808,9 @@ main {
   padding-top: 12px;
 }
 
-.developer-tools summary {
+.developer-tools strong {
   width: fit-content;
-  cursor: pointer;
-  color: var(--customize-muted);
+  color: var(--customize-ink);
   font-size: 13px;
   font-weight: 800;
 }
@@ -4607,6 +4722,19 @@ summary {
   .library-prompt-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .home-character {
+    max-width: 210px;
+  }
+
+  .home-character img {
+    max-width: 190px;
+  }
+
+  .character-speech-bubble {
+    max-width: 210px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 620px) {
@@ -4695,6 +4823,10 @@ summary {
 
   .home-banner.large {
     height: 230px;
+  }
+
+  .home-character {
+    display: none;
   }
 
   .theme-grid {
