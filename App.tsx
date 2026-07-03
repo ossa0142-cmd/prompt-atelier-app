@@ -15,6 +15,7 @@ type LibraryPrompt = {
   prompt: string;
   tags: string[];
   imageUrl: string;
+  coverImages?: any[];
 };
 
 type MockupCategory = {
@@ -22,6 +23,8 @@ type MockupCategory = {
   title: string;
   description: string;
   coverImage: string;
+  coverImages?: any[];
+  order?: number;
 };
 
 type LibraryBoardPrompt = LibraryPrompt & {
@@ -44,7 +47,7 @@ type MjSetting = {
   title: string;
   description: string;
   imageUrl?: string;
-  images?: string[];
+  images?: any[];
   prompt?: string;
   promptEn?: string;
   promptJa?: string;
@@ -81,19 +84,118 @@ type Project = {
   updatedAt?: string;
 };
 
-type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize";
+type AtelierImage = {
+  id: string;
+  src: string;
+  thumbnail?: string;
+  dbId?: string;
+  originalName?: string;
+  mimeType?: string;
+  width?: number;
+  height?: number;
+  title: string;
+  memo: string;
+  createdAt: string;
+  source: string;
+  favorite: boolean;
+};
 
-type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites";
-type HomeFeatureId = "library" | "prompts" | "mj" | "projects";
+type JournalItem = {
+  id: string;
+  imageId: string;
+  src: string;
+  thumbnail?: string;
+  x: number;
+  y: number;
+  width: number;
+  rotate: number;
+  stickerEffect?: boolean;
+  sticker?: boolean;
+};
+
+type OptimizedImageData = {
+  id: string;
+  dbId?: string;
+  category?: string;
+  src: string;
+  thumbnail: string;
+  originalName: string;
+  mimeType: string;
+  width: number;
+  height: number;
+  createdAt: string;
+};
+
+type IndexedDbImageRecord = OptimizedImageData & {
+  category: string;
+  title?: string;
+  memo?: string;
+  favorite?: boolean;
+  updatedAt: string;
+};
+
+type JournalState = {
+  background: string;
+  customBackgrounds?: AtelierImage[];
+  items: JournalItem[];
+};
+
+type VideoItem = {
+  id: string;
+  title: string;
+  url: string;
+  model: string;
+  thumbnail?: string;
+  prompt: string;
+  memo: string;
+  tags: string[];
+  favorite: boolean;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+type VideoPromptStock = {
+  id: string;
+  title: string;
+  prompt: string;
+  memo: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos";
+
+type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites" | "atelier";
+type HomeFeatureId = "library" | "prompts" | "videos" | "mj" | "projects";
 
 type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
+type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "hidden";
+type HomeCharacterMessageMode = "auto" | "fixed" | "project";
+
+type HomeCharacterSettings = {
+  image: any;
+  position: HomeCharacterPosition;
+  speechEnabled: boolean;
+  messageMode: HomeCharacterMessageMode;
+  fixedMessage: string;
+  selectedProjectId?: string;
+};
+
+type HomeStatsCardId = "mockups" | "prompts" | "mjSettings" | "projects" | "achievement";
+type HomeStatsCards = Record<HomeStatsCardId, boolean>;
 
 type HomeSettings = {
   themeId: string;
+  bannerImage: string;
   bannerImageUrl: string;
   bannerVisible: boolean;
   bannerSize: "small" | "medium" | "large";
+  bannerFit: "contain" | "cover";
+  bannerPositionX: number;
+  bannerPositionY: number;
   workToolIconStyle: WorkToolIconStyle;
+  homeCharacter: HomeCharacterSettings;
+  homeStatsCards: HomeStatsCards;
   visible: Record<string, boolean>;
   order: HomeSectionId[];
 };
@@ -123,13 +225,23 @@ const homeSections: { id: HomeSectionId; label: string }[] = [
   { id: "search", label: "検索バー" },
   { id: "featureCards", label: "メイン機能カード" },
   { id: "favorites", label: "お気に入り" },
+  { id: "atelier", label: "アトリエコーナー" },
 ];
 
 const homeFeatures: { id: HomeFeatureId; label: string }[] = [
   { id: "library", label: "モックアップライブラリ" },
   { id: "prompts", label: "プロンプト帳" },
+  { id: "videos", label: "動画プロンプト帳" },
   { id: "mj", label: "MJ設定" },
   { id: "projects", label: "プロジェクト" },
+];
+
+const homeStatsCardOptions: { id: HomeStatsCardId; label: string }[] = [
+  { id: "mockups", label: "モックアップカードを表示" },
+  { id: "prompts", label: "プロンプト帳カードを表示" },
+  { id: "mjSettings", label: "MJ設定カードを表示" },
+  { id: "projects", label: "プロジェクトカードを表示" },
+  { id: "achievement", label: "達成予定カードを表示" },
 ];
 
 const homeThemes = [
@@ -185,35 +297,176 @@ const defaultWorkTools: WorkTool[] = [
   { id: "tool-chatgpt", name: "ChatGPT", url: "https://chatgpt.com/", iconText: "GPT", iconImage: "", memo: "文章づくり" },
 ];
 
+const sampleAtelierImages: AtelierImage[] = [];
+
+const defaultJournal: JournalState = {
+  background: "paper",
+  items: [],
+};
+
+const sampleVideos: VideoItem[] = [
+  {
+    id: "video-sample-1",
+    title: "淡いステッカー紹介動画",
+    url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+    model: "Runway",
+    thumbnail: "",
+    prompt: "soft pastel clipart sticker sheet reveal, gentle camera push in, cozy stationery desk, clean white background, smooth motion",
+    memo: "Etsyのサムネイル動画やSNS用に使いやすい構成。",
+    tags: ["sticker", "pastel", "reveal"],
+    favorite: true,
+    createdAt: "2026-07-02T00:00:00.000Z",
+  },
+  {
+    id: "video-sample-2",
+    title: "招待状モックアップ動画",
+    url: "",
+    model: "Kling",
+    thumbnail: "",
+    prompt: "wedding invitation card mockup on linen fabric, slow top-down camera movement, elegant natural light, warm ivory tone",
+    memo: "招待状パックの販売ページ用。",
+    tags: ["invitation", "mockup", "wedding"],
+    favorite: false,
+    createdAt: "2026-07-02T00:00:00.000Z",
+  },
+];
+const videoModels = ["Runway", "Kling", "Veo", "Hailuo", "Pika", "Luma", "その他"];
+const blankVideoPrompt = (): VideoItem => ({
+  id: "",
+  title: "",
+  url: "",
+  model: "Runway",
+  thumbnail: "",
+  prompt: "",
+  memo: "",
+  tags: [],
+  favorite: false,
+  createdAt: "",
+});
+const blankVideoPromptStock = (): VideoPromptStock => ({
+  id: "",
+  title: "",
+  prompt: "",
+  memo: "",
+  createdAt: "",
+});
+
+function initialVideoPrompts() {
+  return loadStoredVideoPrompts() || sampleVideos;
+}
+
+function loadStoredVideoPrompts() {
+  try {
+    const keys = ["promptAtelierVideoPrompts", "promptAtelierVideos", "promptAtelierVideoPromptBook", "videoPrompts"];
+    for (const key of keys) {
+      const saved = localStorage.getItem(key);
+      if (!saved) continue;
+      const items = JSON.parse(saved);
+      const extracted = extractVideoPromptItems(items);
+      if (extracted.length) return extracted.map(normalizeVideoPrompt).slice(0, 20);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function extractVideoPromptItems(value: any): any[] {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+  if (Array.isArray(value.cards)) return value.cards;
+  if (Array.isArray(value.prompts)) return value.prompts;
+  if (Array.isArray(value.videoPrompts)) return value.videoPrompts;
+  if (Array.isArray(value.items)) return value.items;
+  return [];
+}
+
+function normalizeVideoPrompt(item: any): VideoItem {
+  const base = blankVideoPrompt();
+  const prompt = item?.prompt || item?.videoPrompt || item?.description || "";
+  const title = item?.title || prompt.slice(0, 28) || item?.memo || "動画プロンプト";
+  const tags = Array.isArray(item?.tags) ? item.tags : splitTags(item?.tags || "");
+  return {
+    ...base,
+    ...item,
+    id: item?.id || uid(),
+    title,
+    url: item?.url || item?.videoUrl || item?.link || "",
+    model: item?.model || item?.aiModel || "その他",
+    thumbnail: item?.thumbnail || item?.thumbnailUrl || item?.imageUrl || item?.image || "",
+    prompt,
+    memo: item?.memo || item?.note || "",
+    tags,
+    favorite: Boolean(item?.favorite),
+    createdAt: item?.createdAt || new Date().toISOString(),
+    updatedAt: item?.updatedAt || item?.createdAt || "",
+  };
+}
+
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
+  bannerImage: "",
   bannerImageUrl: "",
   bannerVisible: true,
   bannerSize: "medium",
+  bannerFit: "contain",
+  bannerPositionX: 50,
+  bannerPositionY: 50,
   workToolIconStyle: "pastel",
+  homeStatsCards: {
+    mockups: true,
+    prompts: true,
+    mjSettings: true,
+    projects: true,
+    achievement: true,
+  },
+  homeCharacter: {
+    image: "",
+    position: "right-bottom",
+    speechEnabled: true,
+    messageMode: "auto",
+    fixedMessage: "今日も制作がんばろう♡",
+    selectedProjectId: "",
+  },
   visible: {
     library: true,
     prompts: true,
+    videos: true,
     mj: true,
     projects: true,
     favorites: true,
+    atelier: true,
     dashboard: true,
     quickActions: true,
     search: true,
     featureCards: true,
   },
-  order: ["dashboard", "quickActions", "search", "featureCards", "favorites"],
+  order: ["dashboard", "quickActions", "search", "featureCards", "favorites", "atelier"],
 };
 
-const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => ({
-  ...defaultHomeSettings,
-  ...settings,
-  visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
-  order: [
-    ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
-    ...defaultHomeSettings.order.filter((id) => !(settings?.order || []).includes(id)),
-  ],
-});
+const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
+  const rawCharacter = { ...defaultHomeSettings.homeCharacter, ...(settings?.homeCharacter || {}) };
+  const safeMessageMode: HomeCharacterMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode)
+    ? rawCharacter.messageMode as HomeCharacterMessageMode
+    : "auto";
+  const safePosition = (value: any) => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
+  const bannerImage = (settings as any)?.bannerImage || settings?.bannerImageUrl || "";
+  return {
+    ...defaultHomeSettings,
+    ...settings,
+    bannerImage,
+    bannerImageUrl: settings?.bannerImageUrl || bannerImage,
+    bannerPositionX: safePosition(settings?.bannerPositionX),
+    bannerPositionY: safePosition(settings?.bannerPositionY),
+    homeCharacter: { ...rawCharacter, messageMode: safeMessageMode },
+    homeStatsCards: { ...defaultHomeSettings.homeStatsCards, ...(settings?.homeStatsCards || {}) },
+    visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
+    order: [
+      ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
+      ...defaultHomeSettings.order.filter((id) => !(settings?.order || []).includes(id)),
+    ],
+  };
+};
 
 const art = (label: string, a: string, b: string) =>
   `data:image/svg+xml,${encodeURIComponent(`
@@ -350,6 +603,17 @@ const defaultMockupCategories: MockupCategory[] = [
     coverImage: art("Keychain", "#f6e6ec", "#e8edf5"),
   },
 ];
+
+function normalizeMockupCategoryOrder(items: MockupCategory[]) {
+  return [...(items || [])]
+    .map((category, index) => ({
+      ...category,
+      order: Number.isFinite(Number(category.order)) ? Number(category.order) : index + 1,
+      __index: index,
+    }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0) || a.__index - b.__index)
+    .map(({ __index, ...category }, index) => ({ ...category, order: index + 1 }));
+}
 
 const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
   ...libraryPrompts.map((prompt) => ({
@@ -496,6 +760,7 @@ const blankPrompt = (textOnly = false): MyPrompt => ({
   note: "",
   tags: [],
   imageUrl: "",
+  coverImages: [],
   favorite: false,
   japaneseTranslation: "",
   memo: "",
@@ -532,11 +797,85 @@ const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = (value: string) => value.split(",").map((tag) => tag.trim()).filter(Boolean);
 const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
+const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
+const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
+const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
+const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
+const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
+const SAMPLE_EXPORT_KEYS = [
+  "prompt-atelier-mockup-categories-v2",
+  "prompt-atelier-library-prompts-v5",
+  "prompt-atelier-prompts-ja-v2",
+  "promptAtelierVideoPrompts",
+  "promptAtelierVideoPromptStocks",
+  "promptAtelierMidjourneySettings",
+  "prompt-atelier-projects-ja-v2",
+  "promptAtelierJournal",
+  "promptAtelierGallery",
+  "promptAtelierHomeSettings",
+  "promptAtelierWorkTools",
+];
+const SAMPLE_DATA_STORAGE_MAP: Record<string, string> = {
+  libraryItems: "prompt-atelier-mockup-categories-v2",
+  mockupCategories: "prompt-atelier-mockup-categories-v2",
+  mockupItems: "prompt-atelier-library-prompts-v5",
+  mockupStocks: "prompt-atelier-library-prompts-v5",
+  promptCards: "prompt-atelier-prompts-ja-v2",
+  promptStocks: "prompt-atelier-prompts-ja-v2",
+  videoPromptCards: "promptAtelierVideoPrompts",
+  videoPromptStocks: "promptAtelierVideoPromptStocks",
+  midjourneySettings: "promptAtelierMidjourneySettings",
+  projects: "prompt-atelier-projects-ja-v2",
+  galleryItems: "promptAtelierGallery",
+  journalItems: "promptAtelierJournal",
+  journalBackgrounds: "promptAtelierJournal",
+  homeSettings: "promptAtelierHomeSettings",
+  customizeSettings: "promptAtelierHomeSettings",
+  workTools: "promptAtelierWorkTools",
+};
+const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
+const IMAGE_DB_NAME = "PromptAtelierDB";
+const IMAGE_DB_VERSION = 1;
+const IMAGE_STORE_NAME = "images";
+const indexedDbImageCache = new Map<string, IndexedDbImageRecord>();
+const indexedDbRef = (id: string) => `indexeddb:${id}`;
+const indexedDbThumbRef = (id: string) => `indexeddb-thumb:${id}`;
+const isIndexedDbImageRef = (value: string) => /^indexeddb(?:-thumb)?:/.test(value);
+const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb)?:/, "");
+const isDataImageUrl = (value: unknown) => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
+const imageQualityProfiles: Record<string, { maxSide: number; quality: number; thumbnailSide: number; thumbnailQuality: number; keepOriginalMaxSide?: number }> = {
+  banner: { maxSide: 1600, quality: 0.95, thumbnailSide: 960, thumbnailQuality: 0.9, keepOriginalMaxSide: 1600 },
+  gallery: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  journal: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  background: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  "video-thumbnail": { maxSide: 1200, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  character: { maxSide: 1200, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+  icon: { maxSide: 900, quality: 0.9, thumbnailSide: 480, thumbnailQuality: 0.88 },
+  default: { maxSide: 1200, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
+};
 
 const isDarkTheme = (id: string) => ["dark", "night-lavender"].includes(id);
+const readableTextOn = (hex: string) => {
+  const normalized = hex.replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return "#fffdf9";
+  const [r, g, b] = [0, 2, 4].map((start) => parseInt(normalized.slice(start, start + 2), 16) / 255);
+  const [lr, lg, lb] = [r, g, b].map((value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb > 0.58 ? "#2f2924" : "#fffdf9";
+};
+
+function themeClassName(id: string) {
+  if (["cute", "girly", "kstationery", "pastel", "lavender"].includes(id)) return "theme-cute";
+  if (["cool", "simple", "pop-blue"].includes(id)) return "theme-cool";
+  if (["dark", "night-lavender"].includes(id)) return "theme-dark";
+  if (["vivid-pink", "emerald", "retro-orange"].includes(id)) return "theme-vivid";
+  if (["natural", "cafe", "antique"].includes(id)) return "theme-natural";
+  return "theme-cute";
+}
 
 function themeStyle(theme: any) {
   const dark = isDarkTheme(theme.id);
+  const accentText = readableTextOn(theme.vars.accent);
+  const buttonText = readableTextOn(dark ? theme.vars.accent : theme.vars.paper);
   const decorativeMap: Record<string, string> = {
     cute: "color-mix(in srgb, #f8cdd5 42%, var(--card-bg))",
     cool: "color-mix(in srgb, #b9c8d5 38%, transparent)",
@@ -578,10 +917,10 @@ function themeStyle(theme: any) {
     "--card-border": theme.vars.line,
     "--border": theme.vars.line,
     "--button-bg": dark ? theme.vars.accent : theme.vars.paper,
-    "--button-text": dark ? theme.vars.ivory : theme.vars.ink,
-    "--button-ink": dark ? theme.vars.ivory : theme.vars.ink,
+    "--button-text": buttonText,
+    "--button-ink": buttonText,
     "--primary-bg": theme.vars.accent,
-    "--primary-ink": dark ? theme.vars.ivory : "#fffdf9",
+    "--primary-ink": accentText,
     "--input-bg": dark ? theme.vars.shell : "#fffdf9",
     "--input-ink": theme.vars.ink,
     "--icon-bg": dark ? theme.vars.shell : theme.vars.paper,
@@ -630,23 +969,883 @@ function sortProjectsForDisplay(items: Project[]) {
   });
 }
 
+function collectAtelierImages(prompts: MyPrompt[], mjSettings: MjSetting[], galleryImages: AtelierImage[]) {
+  const promptImages = prompts
+    .filter((prompt) => prompt.imageUrl)
+    .map((prompt) => ({
+      id: `prompt-${prompt.id}`,
+      src: prompt.imageUrl,
+      thumbnail: prompt.imageUrl,
+      title: prompt.title || "プロンプト画像",
+      memo: prompt.note || prompt.description || "",
+      createdAt: prompt.id,
+      source: "prompt",
+      favorite: Boolean(prompt.favorite),
+    }));
+  const mjImages = mjSettings.flatMap((setting) => (setting.images || (setting.imageUrl ? [setting.imageUrl] : [])).map((src, index) => ({
+    id: `mj-${setting.id}-${index}`,
+    src: typeof src === "string" ? src : src.src || "",
+    thumbnail: typeof src === "string" ? src : src.thumbnail || src.src || "",
+    title: setting.title || "MJ画像",
+    memo: setting.memo || setting.note || "",
+    createdAt: setting.createdAt || setting.id,
+    source: "midjourney",
+    favorite: false,
+  })));
+  const normalizedGalleryImages = galleryImages.map((item) => ({ ...item, src: item.src, thumbnail: item.thumbnail || item.src }));
+  const merged = [...promptImages, ...mjImages, ...normalizedGalleryImages].filter((item) => item.src);
+  const seen = new Set<string>();
+  return merged
+    .filter((item) => {
+      if (seen.has(item.src)) return false;
+      seen.add(item.src);
+      return true;
+    })
+    .sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.createdAt).localeCompare(String(a.createdAt)))
+    .slice(0, 24);
+}
+
+function resolveIndexedDbImage(value: string, preferThumbnail = false) {
+  if (!isIndexedDbImageRef(value)) return value;
+  const record = indexedDbImageCache.get(indexedDbIdFromRef(value));
+  if (!record) return "";
+  return preferThumbnail ? record.thumbnail || record.src : record.src || record.thumbnail || "";
+}
+
+function imageSrc(image: any) {
+  if (!image) return "";
+  const value = typeof image === "string" ? image : image.src || image.thumbnail || "";
+  return resolveIndexedDbImage(value, false);
+}
+
+function imageThumbnail(image: any) {
+  if (!image) return "";
+  const value = typeof image === "string" ? image : image.thumbnail || image.src || "";
+  return resolveIndexedDbImage(value, true);
+}
+
+function imageDisplaySrc(image: any) {
+  if (!image) return "";
+  const value = typeof image === "string"
+    ? image
+    : image.displayImage || image.bannerImage || image.coverImage || image.image || image.previewImage || image.src || image.imageUrl || image.thumbnail || "";
+  return resolveIndexedDbImage(value, false) || imageThumbnail(image);
+}
+
+function homeBannerImageValue(settings: HomeSettings) {
+  return (settings as any)?.bannerImage || settings?.bannerImageUrl || "";
+}
+
+function homeBannerSrc(settings: HomeSettings) {
+  const value = homeBannerImageValue(settings);
+  return imageSrc(value) || imageThumbnail(value);
+}
+
+function getCoverImages(item: any) {
+  const existing = Array.isArray(item?.coverImages)
+    ? item.coverImages.filter(Boolean)
+    : [];
+  if (existing.length) return existing.slice(0, 3);
+  const fallback = item?.coverImage || item?.thumbnail || item?.image || item?.imageUrl || item?.previewImage;
+  return fallback ? [fallback] : [];
+}
+
+function primaryCoverImage(item: any) {
+  return getCoverImages(item)[0] || "";
+}
+
+function imageReference(id: string, category = "gallery", title = ""): OptimizedImageData {
+  const record = indexedDbImageCache.get(id);
+  return {
+    id,
+    dbId: id,
+    category,
+    src: indexedDbRef(id),
+    thumbnail: indexedDbThumbRef(id),
+    originalName: record?.originalName || title || "image",
+    mimeType: record?.mimeType || "image/*",
+    width: Number(record?.width || 0),
+    height: Number(record?.height || 0),
+    createdAt: record?.createdAt || new Date().toISOString(),
+  };
+}
+
+function normalizeImageData(image: any): OptimizedImageData {
+  if (image && typeof image === "object" && image.src) {
+    const id = image.dbId || (isIndexedDbImageRef(image.src) ? indexedDbIdFromRef(image.src) : image.id || uid());
+    return {
+      id: image.id || id,
+      dbId: image.dbId || (isIndexedDbImageRef(image.src) ? indexedDbIdFromRef(image.src) : undefined),
+      category: image.category || image.source || "gallery",
+      src: image.src,
+      thumbnail: image.thumbnail || image.src,
+      originalName: image.originalName || image.title || "image",
+      mimeType: image.mimeType || "image/*",
+      width: Number(image.width || 0),
+      height: Number(image.height || 0),
+      createdAt: image.createdAt || new Date().toISOString(),
+    };
+  }
+  const src = String(image || "");
+  const dbId = isIndexedDbImageRef(src) ? indexedDbIdFromRef(src) : undefined;
+  return {
+    id: dbId || uid(),
+    dbId,
+    src,
+    thumbnail: src,
+    originalName: "existing-image",
+    mimeType: src.startsWith("data:") ? src.slice(5, src.indexOf(";")) : "image/url",
+    width: 0,
+    height: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function getPromptAtelierStorageUsage() {
+  let total = 0;
+  for (let index = 0; index < localStorage.length; index++) {
+    const key = localStorage.key(index);
+    if (!key || !key.startsWith("promptAtelier")) continue;
+    const value = localStorage.getItem(key) || "";
+    total += new Blob([key + value]).size;
+  }
+  return total;
+}
+
+function shouldShowStorageWarning() {
+  const usage = getPromptAtelierStorageUsage();
+  const ratio = usage / STORAGE_LIMIT_BYTES;
+  return {
+    usage,
+    ratio,
+    level: ratio >= 0.9 ? "strong" : ratio >= 0.7 ? "light" : "none",
+  };
+}
+
+function formatStoragePercent(ratio: number) {
+  return `${Math.round(ratio * 100)}%`;
+}
+
+function showStorageWarningIfNeeded() {
+  const result = shouldShowStorageWarning();
+  const shownLevel = sessionStorage.getItem(IMAGE_WARNING_KEY);
+  if (result.level === "none") {
+    sessionStorage.removeItem(IMAGE_WARNING_KEY);
+    return;
+  }
+  if (result.level === "strong") {
+    if (shownLevel === "strong") return;
+    sessionStorage.setItem(IMAGE_WARNING_KEY, "strong");
+    window.alert("保存容量が残り少なくなっています。バックアップ後、不要な画像を削除してください。");
+    return;
+  }
+  if (shownLevel) return;
+  sessionStorage.setItem(IMAGE_WARNING_KEY, "light");
+  window.alert("画像データが増えています。バックアップや不要画像の整理をおすすめします。");
+}
+
+function scheduleStorageWarningCheck() {
+  window.setTimeout(showStorageWarningIfNeeded, 300);
+}
+
+function isStickerEffectOn(item?: Partial<JournalItem> | null) {
+  if (!item) return false;
+  return item.stickerEffect ?? item.sticker ?? true;
+}
+
+function isSupportedImageFile(file: File) {
+  return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+}
+
+function loadImageFromFile(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("画像を読み込めませんでした"));
+    };
+    image.src = url;
+  });
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("画像を読み込めませんでした"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function canvasDataUrl(image: HTMLImageElement, maxSide: number, quality = 0.92, preserveTransparency = true) {
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(1, Math.round(sourceWidth * ratio));
+  const height = Math.max(1, Math.round(sourceHeight * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("画像処理を開始できませんでした");
+  context.drawImage(image, 0, 0, width, height);
+  const webp = canvas.toDataURL("image/webp", quality);
+  const dataUrl = webp.startsWith("data:image/webp") ? webp : canvas.toDataURL(preserveTransparency ? "image/png" : "image/jpeg", quality);
+  return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
+}
+
+function videoFrameDataUrl(video: HTMLVideoElement, maxSide = 720, quality = 0.9) {
+  const sourceWidth = video.videoWidth || 1280;
+  const sourceHeight = video.videoHeight || 720;
+  const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(1, Math.round(sourceWidth * ratio));
+  const height = Math.max(1, Math.round(sourceHeight * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("動画サムネイルを作成できませんでした");
+  context.drawImage(video, 0, 0, width, height);
+  const webp = canvas.toDataURL("image/webp", quality);
+  const dataUrl = webp.startsWith("data:image/webp") ? webp : canvas.toDataURL("image/jpeg", quality);
+  return { dataUrl, width, height, mimeType: dataUrl.slice(5, dataUrl.indexOf(";")) };
+}
+
+function openImageDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(IMAGE_DB_NAME, IMAGE_DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(IMAGE_STORE_NAME)) {
+        const store = db.createObjectStore(IMAGE_STORE_NAME, { keyPath: "id" });
+        store.createIndex("category", "category", { unique: false });
+        store.createIndex("createdAt", "createdAt", { unique: false });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function putIndexedDbImage(record: IndexedDbImageRecord) {
+  const db = await openImageDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(IMAGE_STORE_NAME, "readwrite");
+    transaction.objectStore(IMAGE_STORE_NAME).put(record);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  indexedDbImageCache.set(record.id, record);
+}
+
+async function getAllIndexedDbImages() {
+  const db = await openImageDb();
+  const records = await new Promise<IndexedDbImageRecord[]>((resolve, reject) => {
+    const request = db.transaction(IMAGE_STORE_NAME, "readonly").objectStore(IMAGE_STORE_NAME).getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return records;
+}
+
+async function deleteIndexedDbImage(id: string) {
+  const db = await openImageDb();
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(IMAGE_STORE_NAME, "readwrite");
+    transaction.objectStore(IMAGE_STORE_NAME).delete(id);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+  db.close();
+  indexedDbImageCache.delete(id);
+}
+
+async function refreshIndexedDbImageCache() {
+  const records = await getAllIndexedDbImages();
+  indexedDbImageCache.clear();
+  records.forEach((record) => indexedDbImageCache.set(record.id, record));
+  return records;
+}
+
+async function storeOptimizedImage(image: OptimizedImageData, category = "gallery", patch: Partial<IndexedDbImageRecord> = {}) {
+  const id = image.dbId || image.id || uid();
+  const now = new Date().toISOString();
+  const record: IndexedDbImageRecord = {
+    ...image,
+    ...patch,
+    id,
+    dbId: id,
+    category,
+    src: imageSrc(image.src) || image.src,
+    thumbnail: imageThumbnail(image.thumbnail) || image.thumbnail || image.src,
+    createdAt: image.createdAt || now,
+    updatedAt: now,
+  };
+  await putIndexedDbImage(record);
+  return imageReference(id, category, patch.title || image.originalName || "image");
+}
+
+async function storeExistingImageValue(value: any, category = "gallery", title = "image") {
+  if (!value) return value;
+  if (typeof value === "string") {
+    if (isIndexedDbImageRef(value) || !isDataImageUrl(value)) return value;
+    const id = uid();
+    const now = new Date().toISOString();
+    await putIndexedDbImage({
+      id,
+      dbId: id,
+      category,
+      src: value,
+      thumbnail: value,
+      originalName: title,
+      mimeType: value.slice(5, value.indexOf(";")) || "image/*",
+      width: 0,
+      height: 0,
+      title,
+      memo: "",
+      favorite: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return indexedDbRef(id);
+  }
+  if (typeof value === "object" && value.src && isDataImageUrl(value.src)) {
+    const id = value.dbId || value.id || uid();
+    const now = new Date().toISOString();
+    await putIndexedDbImage({
+      ...value,
+      id,
+      dbId: id,
+      category: value.category || value.source || category,
+      src: value.src,
+      thumbnail: value.thumbnail || value.src,
+      title: value.title || title,
+      memo: value.memo || "",
+      favorite: Boolean(value.favorite),
+      createdAt: value.createdAt || now,
+      updatedAt: now,
+    });
+    return {
+      ...value,
+      id,
+      dbId: id,
+      src: indexedDbRef(id),
+      thumbnail: indexedDbThumbRef(id),
+    };
+  }
+  return value;
+}
+
+async function optimizeImage(file: File, category = "gallery"): Promise<OptimizedImageData> {
+  if (!isSupportedImageFile(file)) throw new Error("対応していない画像形式です");
+  const image = await loadImageFromFile(file);
+  const profile = imageQualityProfiles[category] || imageQualityProfiles.default;
+  const full = canvasDataUrl(image, profile.maxSide, profile.quality, true);
+  const thumbnail = canvasDataUrl(image, profile.thumbnailSide, profile.thumbnailQuality, true);
+  const optimized = {
+    id: uid(),
+    src: full.dataUrl,
+    thumbnail: thumbnail.dataUrl,
+    originalName: file.name,
+    mimeType: full.mimeType,
+    width: full.width,
+    height: full.height,
+    createdAt: new Date().toISOString(),
+  };
+  return storeOptimizedImage(optimized, category, { title: file.name, memo: "", favorite: false });
+}
+
+async function optimizeBannerImage(file: File): Promise<OptimizedImageData> {
+  if (!isSupportedImageFile(file)) throw new Error("対応していない画像形式です");
+  const image = await loadImageFromFile(file);
+  const profile = imageQualityProfiles.banner;
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const maxSide = Math.max(sourceWidth, sourceHeight);
+  const keepOriginal = maxSide <= (profile.keepOriginalMaxSide || profile.maxSide);
+  const full = keepOriginal
+    ? {
+      dataUrl: await readFileAsDataUrl(file),
+      width: sourceWidth,
+      height: sourceHeight,
+      mimeType: file.type || "image/*",
+    }
+    : canvasDataUrl(image, profile.maxSide, profile.quality, true);
+  const thumbnail = canvasDataUrl(image, profile.thumbnailSide, profile.thumbnailQuality, true);
+  const optimized = {
+    id: uid(),
+    src: full.dataUrl,
+    thumbnail: thumbnail.dataUrl,
+    originalName: file.name,
+    mimeType: full.mimeType,
+    width: full.width,
+    height: full.height,
+    createdAt: new Date().toISOString(),
+  };
+  return storeOptimizedImage(optimized, "banner", { title: file.name, memo: "ホームバナー画像", favorite: false });
+}
+
+async function createVideoThumbnail(file: File) {
+  if (!file.type.startsWith("video/")) throw new Error("動画ファイルを選んでください");
+  const url = URL.createObjectURL(file);
+  try {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    const loaded = new Promise<void>((resolve, reject) => {
+      video.onloadedmetadata = () => resolve();
+      video.onerror = () => reject(new Error("動画を読み込めませんでした"));
+    });
+    video.src = url;
+    await loaded;
+    const targetTime = Math.min(1, Math.max(0, (video.duration || 1) - 0.1));
+    await new Promise<void>((resolve, reject) => {
+      video.onseeked = () => resolve();
+      video.onerror = () => reject(new Error("動画サムネイルを作成できませんでした"));
+      video.currentTime = targetTime;
+    });
+    const profile = imageQualityProfiles["video-thumbnail"];
+    const full = videoFrameDataUrl(video, profile.maxSide, profile.quality);
+    const thumbnail = videoFrameDataUrl(video, profile.thumbnailSide, profile.thumbnailQuality);
+    const image: OptimizedImageData = {
+      id: uid(),
+      src: full.dataUrl,
+      thumbnail: thumbnail.dataUrl,
+      originalName: `${file.name}-thumbnail`,
+      mimeType: full.mimeType,
+      width: full.width,
+      height: full.height,
+      createdAt: new Date().toISOString(),
+    };
+    return storeOptimizedImage(image, "video-thumbnail", { title: file.name, memo: "動画から自動生成", favorite: false });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function createThumbnail(file: File) {
+  const image = await loadImageFromFile(file);
+  return canvasDataUrl(image, imageQualityProfiles.default.thumbnailSide, imageQualityProfiles.default.thumbnailQuality, true).dataUrl;
+}
+
+function saveImageToStorage(image: OptimizedImageData) {
+  scheduleStorageWarningCheck();
+  return image;
+}
+
+function clipboardImageFiles(event: React.ClipboardEvent) {
+  return Array.from(event.clipboardData?.items || [])
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file) && isSupportedImageFile(file));
+}
+
 function useStoredState<T>(key: string, fallback: T) {
+  const hasStoredValueRef = React.useRef(false);
   const [value, setValue] = React.useState<T>(() => {
     try {
       const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : fallback;
+      if (saved) {
+        hasStoredValueRef.current = true;
+        return JSON.parse(saved);
+      }
+      return fallback;
     } catch {
       return fallback;
     }
   });
   React.useEffect(() => {
     try {
+      if (!hasStoredValueRef.current && JSON.stringify(value) === JSON.stringify(fallback)) return;
       localStorage.setItem(key, JSON.stringify(value));
+      hasStoredValueRef.current = true;
     } catch (error) {
       console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
     }
   }, [key, value]);
   return [value, setValue] as const;
+}
+
+function categoryForImageField(key: string) {
+  if (/character/i.test(key)) return "character";
+  if (/banner/i.test(key)) return "banner";
+  if (/icon/i.test(key)) return "icon";
+  if (/cover|background/i.test(key)) return "background";
+  if (/project/i.test(key)) return "project";
+  if (/midjourney|mj/i.test(key)) return "midjourney";
+  if (/gallery/i.test(key)) return "gallery";
+  if (/journal/i.test(key)) return "journal";
+  if (/mockup|library/i.test(key)) return "mockup";
+  if (/prompt/i.test(key)) return "prompt";
+  return "gallery";
+}
+
+async function migrateImageFields(value: any, storageKey: string): Promise<any> {
+  if (Array.isArray(value)) {
+    const next = [];
+    for (const item of value) next.push(await migrateImageFields(item, storageKey));
+    return next;
+  }
+  if (!value || typeof value !== "object") return value;
+  if (value.src && isDataImageUrl(value.src)) {
+    return storeExistingImageValue(value, categoryForImageField(storageKey), value.title || value.originalName || storageKey);
+  }
+  const next: any = { ...value };
+  for (const [key, item] of Object.entries(value)) {
+    const looksLikeImageField = /^(src|thumbnail|imageUrl|coverImage|bannerImageUrl|iconImage)$/i.test(key) || /image/i.test(key);
+    if (looksLikeImageField && isDataImageUrl(item)) {
+      next[key] = await storeExistingImageValue(item, categoryForImageField(`${storageKey}-${key}`), key);
+    } else {
+      next[key] = await migrateImageFields(item, `${storageKey}-${key}`);
+    }
+  }
+  return next;
+}
+
+async function migrateLocalStorageImagesToIndexedDb() {
+  if (localStorage.getItem(IMAGE_MIGRATION_KEY) === "done") return false;
+  const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+    .filter((key): key is string => Boolean(key) && (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")));
+  let changed = false;
+  for (const key of keys) {
+    if (key === IMAGE_MIGRATION_KEY) continue;
+    const raw = localStorage.getItem(key);
+    if (!raw || !raw.includes("data:image/")) continue;
+    try {
+      const parsed = JSON.parse(raw);
+      const migrated = await migrateImageFields(parsed, key);
+      localStorage.setItem(key, JSON.stringify(migrated));
+      changed = true;
+    } catch {
+      if (isDataImageUrl(raw)) {
+        const migrated = await storeExistingImageValue(raw, categoryForImageField(key), key);
+        localStorage.setItem(key, migrated);
+        changed = true;
+      }
+    }
+  }
+  localStorage.setItem(IMAGE_MIGRATION_KEY, "done");
+  return changed;
+}
+
+function collectPromptAtelierStorage() {
+  const data: Record<string, string> = {};
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+    if (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")) {
+      const value = localStorage.getItem(key);
+      if (value !== null) data[key] = value;
+    }
+  }
+  return data;
+}
+
+async function exportPromptAtelierBackup() {
+  const today = new Date().toISOString().slice(0, 10);
+  const payload = {
+    app: "Prompt Atelier",
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    data: collectPromptAtelierStorage(),
+    images: await getAllIndexedDbImages(),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `prompt-atelier-backup-${today}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function restorePromptAtelierBackup(file: File) {
+  const text = await file.text();
+  const parsed = JSON.parse(text);
+  const data = parsed?.data && typeof parsed.data === "object" ? parsed.data : parsed;
+  if (!data || typeof data !== "object") throw new Error("Invalid backup data");
+  const existingKeys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+    .filter((key): key is string => Boolean(key) && (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")));
+  existingKeys.forEach((key) => localStorage.removeItem(key));
+  Object.entries(data).forEach(([key, value]) => {
+    if (key.startsWith("promptAtelier") || key.startsWith("prompt-atelier")) {
+      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+    }
+  });
+  if (Array.isArray(parsed?.images)) {
+    for (const image of parsed.images) {
+      if (image?.id && image?.src) await putIndexedDbImage(image);
+    }
+  }
+}
+
+function padSampleIndex(index: number) {
+  return String(index + 1).padStart(3, "0");
+}
+
+function cleanSampleValue(value: any): any {
+  if (typeof value === "string") {
+    if (value.startsWith("blob:")) return "";
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(cleanSampleValue).filter((item) => item !== undefined);
+  if (!value || typeof value !== "object") return value;
+  const next: any = {};
+  Object.entries(value).forEach(([key, item]) => {
+    if (/objectUrl|previewUrl|temporary|temp/i.test(key)) return;
+    if ((key === "videoUrl" || key === "url") && typeof item === "string" && item.startsWith("blob:")) {
+      next[key] = "";
+      return;
+    }
+    next[key] = cleanSampleValue(item);
+  });
+  return next;
+}
+
+function parseStorageValueForSample(key: string) {
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function withSampleMeta(item: any, prefix: string, index: number) {
+  if (!item || typeof item !== "object") return item;
+  const sampleId = item.sampleId || `${prefix}-${padSampleIndex(index)}`;
+  return {
+    ...cleanSampleValue(item),
+    id: item.id || sampleId,
+    isSample: true,
+    createdFromSeedExport: true,
+    sampleId,
+  };
+}
+
+function sampleArray(value: any, prefix: string) {
+  return Array.isArray(value) ? value.map((item, index) => withSampleMeta(item, prefix, index)) : [];
+}
+
+function sampleHomeSettings(value: any) {
+  if (!value || typeof value !== "object") return {};
+  const cleaned = cleanSampleValue(value);
+  return {
+    themeId: cleaned.themeId,
+    bannerImage: cleaned.bannerImage || cleaned.bannerImageUrl,
+    bannerImageUrl: cleaned.bannerImageUrl,
+    bannerVisible: cleaned.bannerVisible,
+    bannerSize: cleaned.bannerSize,
+    bannerFit: cleaned.bannerFit,
+    bannerPositionX: cleaned.bannerPositionX,
+    bannerPositionY: cleaned.bannerPositionY,
+    workToolIconStyle: cleaned.workToolIconStyle,
+    homeCharacter: cleaned.homeCharacter,
+    homeStatsCards: cleaned.homeStatsCards,
+    visible: cleaned.visible,
+    order: cleaned.order,
+  };
+}
+
+function createSampleSeedData() {
+  const mockupCategories = parseStorageValueForSample("prompt-atelier-mockup-categories-v2") || [];
+  const libraryPromptsValue = parseStorageValueForSample("prompt-atelier-library-prompts-v5") || [];
+  const promptBookValue = parseStorageValueForSample("prompt-atelier-prompts-ja-v2") || [];
+  const videoPromptsValue = parseStorageValueForSample("promptAtelierVideoPrompts") || [];
+  const videoStocksValue = parseStorageValueForSample("promptAtelierVideoPromptStocks") || [];
+  const midjourneyValue = parseStorageValueForSample("promptAtelierMidjourneySettings") || [];
+  const projectsValue = parseStorageValueForSample("prompt-atelier-projects-ja-v2") || [];
+  const galleryValue = parseStorageValueForSample("promptAtelierGallery") || [];
+  const journalValue = parseStorageValueForSample("promptAtelierJournal") || {};
+  const homeSettingsValue = parseStorageValueForSample("promptAtelierHomeSettings") || {};
+  const workToolsValue = parseStorageValueForSample("promptAtelierWorkTools") || [];
+  const libraryPrompts = Array.isArray(libraryPromptsValue) ? libraryPromptsValue : [];
+  const promptBook = Array.isArray(promptBookValue) ? promptBookValue : [];
+  return {
+    libraryItems: sampleArray(mockupCategories, "sample-library"),
+    mockupItems: sampleArray(libraryPrompts.filter((item: any) => !item.isTextStock), "sample-mockup"),
+    mockupStocks: sampleArray(libraryPrompts.filter((item: any) => item.isTextStock), "sample-mockup-stock"),
+    promptCards: sampleArray(promptBook.filter((item: any) => !item.isTextStock), "sample-prompt-card"),
+    promptStocks: sampleArray(promptBook.filter((item: any) => item.isTextStock), "sample-prompt-stock"),
+    videoPromptCards: sampleArray(videoPromptsValue, "sample-video-card").map((item: any) => ({
+      ...item,
+      url: typeof item.url === "string" && item.url.startsWith("blob:") ? "" : item.url,
+      videoUrl: typeof item.videoUrl === "string" && item.videoUrl.startsWith("blob:") ? "" : item.videoUrl,
+    })),
+    videoPromptStocks: sampleArray(videoStocksValue, "sample-video-stock"),
+    midjourneySettings: sampleArray(midjourneyValue, "sample-mj-setting"),
+    projects: sampleArray(projectsValue, "sample-project"),
+    galleryItems: sampleArray(galleryValue, "sample-gallery"),
+    journalItems: sampleArray(journalValue?.items || [], "sample-journal-item"),
+    journalBackgrounds: sampleArray(journalValue?.customBackgrounds || [], "sample-journal-bg"),
+    homeSettings: sampleHomeSettings(homeSettingsValue),
+    workTools: sampleArray(workToolsValue, "sample-work-tool"),
+  };
+}
+
+async function exportPromptAtelierSampleSeed() {
+  if (!window.confirm("現在のデータを配布用サンプルデータとして書き出します。よろしいですか？")) return;
+  const data = createSampleSeedData();
+  const images = (await getAllIndexedDbImages()).map((image, index) => ({
+    ...cleanSampleValue(image),
+    src: image.src,
+    thumbnail: image.thumbnail || image.src,
+    isSample: true,
+    sampleId: image.sampleId || `sample-image-${padSampleIndex(index)}`,
+  }));
+  const payload = {
+    app: "Prompt Atelier",
+    type: "prompt-atelier-sample-seed",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data,
+    images,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "prompt-atelier-sample-seed.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function sampleIdOf(item: any) {
+  return item?.sampleId || "";
+}
+
+function readDeletedSampleIds() {
+  const values = [DELETED_SAMPLE_IDS_KEY, LEGACY_DELETED_SAMPLE_IDS_KEY].flatMap((key) => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+  return new Set<string>(values.filter(Boolean));
+}
+
+function writeDeletedSampleIds(ids: Set<string>) {
+  localStorage.setItem(DELETED_SAMPLE_IDS_KEY, JSON.stringify([...ids]));
+}
+
+function rememberDeletedSampleIdsFromItems(items: any) {
+  const list = Array.isArray(items) ? items : [items];
+  const sampleIds = list.map(sampleIdOf).filter(Boolean);
+  if (!sampleIds.length) return;
+  const deletedIds = readDeletedSampleIds();
+  sampleIds.forEach((sampleId) => deletedIds.add(sampleId));
+  writeDeletedSampleIds(deletedIds);
+}
+
+function mergeSampleCollection(existing: any, incoming: any, deletedIds: Set<string>) {
+  if (!Array.isArray(incoming)) return existing ?? incoming;
+  const current = Array.isArray(existing) ? existing : [];
+  const currentSampleIds = new Set(current.map(sampleIdOf).filter(Boolean));
+  const next = [...current];
+  incoming.forEach((item) => {
+    const sampleId = sampleIdOf(item);
+    if (!sampleId || deletedIds.has(sampleId) || currentSampleIds.has(sampleId)) return;
+    next.push({ ...cleanSampleValue(item), isSample: true, sampleId });
+    currentSampleIds.add(sampleId);
+  });
+  return next;
+}
+
+function mergeJournalSample(existing: any, incoming: any, deletedIds: Set<string>) {
+  const current = existing && typeof existing === "object" ? existing : {};
+  const next = { ...current };
+  if (!next.background && incoming?.background) next.background = incoming.background;
+  if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds);
+  if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds);
+  return next;
+}
+
+function mergeSampleValue(existing: any, incoming: any, key: string, deletedIds: Set<string>) {
+  if (key.includes("HomeSettings")) return existing ?? incoming;
+  if (key.includes("Journal")) return mergeJournalSample(existing, incoming, deletedIds);
+  return mergeSampleCollection(existing, incoming, deletedIds);
+}
+
+function sampleSeedDataToStorage(seedData: Record<string, any>) {
+  const storageData: Record<string, any> = {};
+  const append = (key: string, values: any[]) => {
+    if (!values.length) return;
+    storageData[key] = [...(storageData[key] || []), ...values];
+  };
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
+  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
+  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
+  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
+  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
+  append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
+  append("promptAtelierVideoPromptStocks", Array.isArray(seedData.videoPromptStocks) ? seedData.videoPromptStocks : []);
+  append("promptAtelierMidjourneySettings", Array.isArray(seedData.midjourneySettings) ? seedData.midjourneySettings : []);
+  append("prompt-atelier-projects-ja-v2", Array.isArray(seedData.projects) ? seedData.projects : []);
+  append("promptAtelierGallery", Array.isArray(seedData.galleryItems) ? seedData.galleryItems : []);
+  if (Array.isArray(seedData.journalItems) || Array.isArray(seedData.journalBackgrounds)) {
+    storageData.promptAtelierJournal = {
+      background: seedData.journalBackground || "paper",
+      items: Array.isArray(seedData.journalItems) ? seedData.journalItems : [],
+      customBackgrounds: Array.isArray(seedData.journalBackgrounds) ? seedData.journalBackgrounds : [],
+    };
+  }
+  if (seedData.homeSettings && typeof seedData.homeSettings === "object") storageData.promptAtelierHomeSettings = seedData.homeSettings;
+  if (seedData.customizeSettings && typeof seedData.customizeSettings === "object") storageData.promptAtelierHomeSettings = seedData.customizeSettings;
+  append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
+  return storageData;
+}
+
+async function loadSampleSeedIfNeeded() {
+  try {
+    const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
+    if (!response.ok) return false;
+    const seed = await response.json();
+    if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) return false;
+    const deletedIds = readDeletedSampleIds();
+    let changed = false;
+    const storageData = Object.keys(SAMPLE_DATA_STORAGE_MAP).some((key) => key in seed.data)
+      ? sampleSeedDataToStorage(seed.data)
+      : seed.data;
+    Object.entries(storageData).forEach(([key, incoming]) => {
+      if (!SAMPLE_EXPORT_KEYS.includes(key)) return;
+      const existing = parseStorageValueForSample(key);
+      const merged = mergeSampleValue(existing, incoming, key, deletedIds);
+      if (JSON.stringify(existing) !== JSON.stringify(merged)) {
+        localStorage.setItem(key, JSON.stringify(merged));
+        changed = true;
+      }
+    });
+    if (Array.isArray(seed.images)) {
+      for (const image of seed.images) {
+        const sampleId = sampleIdOf(image);
+        if (sampleId && deletedIds.has(sampleId)) continue;
+        if (sampleId && [...indexedDbImageCache.values()].some((record: any) => record?.sampleId === sampleId)) continue;
+        if (image?.id && image?.src && !indexedDbImageCache.has(image.id)) {
+          await putIndexedDbImage({ ...cleanSampleValue(image), isSample: true });
+          changed = true;
+        }
+      }
+    }
+    return changed;
+  } catch {
+    return false;
+  }
 }
 
 function App() {
@@ -657,7 +1856,13 @@ function App() {
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
   const [rawHomeSettings, setRawHomeSettings] = useStoredState<HomeSettings>("promptAtelierHomeSettings", defaultHomeSettings);
   const [workTools, setWorkTools] = useStoredState<WorkTool[]>("promptAtelierWorkTools", defaultWorkTools);
+  const [galleryImages, setGalleryImages] = useStoredState<AtelierImage[]>("promptAtelierGallery", sampleAtelierImages);
+  const [journal, setJournal] = useStoredState<JournalState>("promptAtelierJournal", defaultJournal);
+  const [videos, setVideos] = useStoredState<VideoItem[]>("promptAtelierVideoPrompts", initialVideoPrompts());
+  const [videoStocks, setVideoStocks] = useStoredState<VideoPromptStock[]>("promptAtelierVideoPromptStocks", []);
   const [toast, setToast] = React.useState("");
+  const [isImageMigrating, setIsImageMigrating] = React.useState(false);
+  const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
   const appStyle = themeStyle(activeTheme);
@@ -665,6 +1870,7 @@ function App() {
   const allPrompts = [...myPrompts, ...libraryPrompts];
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
   const favorites = myPrompts.filter((p) => p.favorite).slice(0, 4);
+  const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
 
   const copyText = async (text: string, id?: string) => {
     await navigator.clipboard.writeText(text);
@@ -673,14 +1879,56 @@ function App() {
     window.setTimeout(() => setToast(""), 1600);
   };
 
+  React.useEffect(() => {
+    if (extractVideoPromptItems(videos).length) return;
+    const legacyVideos = loadStoredVideoPrompts();
+    setVideos(legacyVideos?.length ? legacyVideos : sampleVideos);
+  }, []);
+
+  React.useEffect(() => {
+    const message = sessionStorage.getItem("promptAtelierRestoreMessage");
+    if (!message) return;
+    sessionStorage.removeItem("promptAtelierRestoreMessage");
+    setToast(message);
+    window.setTimeout(() => setToast(""), 2200);
+  }, []);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const prepareImages = async () => {
+      try {
+        setIsImageMigrating(true);
+        await refreshIndexedDbImageCache();
+        const migrated = await migrateLocalStorageImagesToIndexedDb();
+        await refreshIndexedDbImageCache();
+        const sampleSeedImported = await loadSampleSeedIfNeeded();
+        if (cancelled) return;
+        if (migrated || sampleSeedImported) {
+          sessionStorage.setItem("promptAtelierRestoreMessage", sampleSeedImported ? "サンプルデータを読み込みました" : "画像データを最適化しました");
+          window.location.reload();
+          return;
+        }
+        setImageCacheVersion((version) => version + 1);
+      } catch (error) {
+        console.error("[Prompt Atelier] 画像データベースの準備に失敗しました", error);
+      } finally {
+        if (!cancelled) setIsImageMigrating(false);
+      }
+    };
+    prepareImages();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <div className="app-shell" style={appStyle}>
+    <div className={`app-shell ${themeClassName(activeTheme.id)}`} style={appStyle}>
       <header className="app-header">
         <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>
           <span>
             <strong>Prompt Atelier</strong>
-            <small>デジタル素材クリエイター向け</small>
+            <small>AIイラストクリエイター向け</small>
           </span>
         </button>
         <nav>
@@ -690,6 +1938,7 @@ function App() {
             ["prompts", "マイプロンプト"],
             ["mj", "ミッドジャーニー設定"],
             ["projects", "プロジェクト"],
+            ["videos", "動画プロンプト"],
             ["customize", "カスタマイズ"],
           ].map(([id, label]) => (
             <button key={id} className={screen === id ? "active" : ""} onClick={() => setScreen(id as Screen)}>
@@ -711,6 +1960,7 @@ function App() {
             copyText={copyText}
             settings={homeSettings}
             workTools={workTools}
+            atelierImages={atelierImages}
           />
         )}
         {screen === "customize" && (
@@ -720,11 +1970,12 @@ function App() {
             setScreen={setScreen}
             workTools={workTools}
             setWorkTools={setWorkTools}
+            projects={projects}
           />
         )}
-        {screen === "library" && <Library copyText={copyText} />}
-        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} />}
-        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} />}
+        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} />}
+        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={setScreen} />}
         {screen === "projects" && (
           <Projects
             projects={projects}
@@ -732,20 +1983,30 @@ function App() {
             prompts={myPrompts}
             settings={mjSettings}
             copyText={copyText}
+            setScreen={setScreen}
           />
         )}
+        {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
+        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} />}
+        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={setScreen} />}
       </main>
+      {isImageMigrating && (
+        <div className="image-migration-overlay">
+          <div>画像データを最適化しています…</div>
+        </div>
+      )}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, copyText, settings, workTools }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, copyText, settings, workTools, atelierImages }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
     ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
     ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"],
+    ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"],
     ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"],
     ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"],
   ];
@@ -763,11 +2024,12 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     })[0];
   const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
   const dashboardItems = [
-    { screen: "library", title: "モックアップ", value: `${Math.max(libraryPrompts.length, 128)}件`, icon: "mockup" },
-    { screen: "prompts", title: "プロンプト帳", value: `${Math.max(myPrompts.length, 42)}件`, icon: "notebook" },
-    { screen: "mj", title: "MJ設定", value: `${Math.max(mjSettings.length, 18)}件`, icon: "magic" },
-    { screen: "projects", title: "プロジェクト", value: `${Math.min(projects.length, 30)}件`, icon: "folder" },
+    { id: "mockups", screen: "library", title: "モックアップ", value: `${Math.max(libraryPrompts.length, 128)}件`, icon: "mockup" },
+    { id: "prompts", screen: "prompts", title: "プロンプト帳", value: `${Math.max(myPrompts.length, 42)}件`, icon: "notebook" },
+    { id: "mjSettings", screen: "mj", title: "MJ設定", value: `${Math.max(mjSettings.length, 18)}件`, icon: "magic" },
+    { id: "projects", screen: "projects", title: "プロジェクト", value: `${Math.min(projects.length, 30)}件`, icon: "folder" },
     {
+      id: "achievement",
       screen: "projects",
       title: reminderInfo?.expired ? "期限超過" : "達成予定",
       value: nextReminder ? reminderInfo?.text || "" : "リマインドなし",
@@ -775,14 +2037,16 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
       note: nextReminder?.name || "",
     },
   ];
+  const visibleDashboardItems = dashboardItems.filter((item) => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id as HomeStatsCardId] !== false);
   const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
+      if (!visibleDashboardItems.length) return null;
       return (
         <section className="dashboard-panel home-module" key={sectionId}>
           <div className="dashboard-grid">
-            {dashboardItems.map((item) => (
+            {visibleDashboardItems.map((item) => (
               <button className="stat-card" key={`${item.title}-${item.icon}`} onClick={() => setScreen(item.screen as Screen)}>
                 <span className="stat-icon"><FeatureIcon name={item.icon} /></span>
                 <span className="stat-title">{item.title}</span>
@@ -801,7 +2065,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
           <div className="work-tools-launcher">
             {normalizedTools.map((tool: WorkTool) => (
               <a className="work-tool-launcher-item" href={tool.url} target="_blank" rel="noopener noreferrer" key={tool.id} aria-label={`${tool.name}を開く`}>
-                <span>{tool.iconImage ? <img src={tool.iconImage} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
+                <span>{tool.iconImage ? <img src={imageThumbnail(tool.iconImage)} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
                 <strong>{tool.name}</strong>
               </a>
             ))}
@@ -857,19 +2121,51 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
         </section>
       );
     }
+    if (sectionId === "atelier") {
+      return (
+        <section className="atelier-corner home-module" key={sectionId}>
+          <div className="atelier-head">
+            <div>
+              <h2>アトリエコーナー</h2>
+            </div>
+            <div className="atelier-actions">
+              <button onClick={() => setScreen("journal")}>ジャーナルページへ</button>
+              <button className="primary" onClick={() => setScreen("gallery")}>ギャラリーへ</button>
+            </div>
+          </div>
+          {atelierImages.length ? (
+            <div className="atelier-tape" aria-label="アトリエ画像">
+              <div className="atelier-track">
+                {[...atelierImages, ...atelierImages].map((image: AtelierImage, index: number) => (
+                  <figure key={`${image.id}-${index}`}>
+                    <img src={imageDisplaySrc(image)} alt="" />
+                  </figure>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="atelier-empty">画像を追加すると、ここにアトリエが表示されます。</div>
+          )}
+        </section>
+      );
+    }
     return null;
   };
+  const bannerSrc = homeBannerSrc(settings);
   return (
     <section className="page home-page">
       <div className="home-topbar">
         <span>Prompt Atelier Home</span>
       </div>
       {settings.bannerVisible && (
-        <div
-          className={`home-banner ${settings.bannerSize}`}
-          style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined}
-        >
-          {!settings.bannerImageUrl && (
+        <div className={`home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
+          {bannerSrc ? (
+            <img
+              src={bannerSrc}
+              alt=""
+              style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
+            />
+          ) : (
             <>
               <span>✦</span>
               <i></i>
@@ -879,6 +2175,158 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
         </div>
       )}
       {settings.order.map((sectionId: HomeSectionId) => renderSection(sectionId))}
+      <HomeCharacter settings={settings.homeCharacter} projects={projects} prompts={myPrompts} />
+    </section>
+  );
+}
+
+function shortMemoText(value: string) {
+  const text = (value || "").replace(/\s+/g, " ").trim();
+  return text.length > 34 ? `${text.slice(0, 34)}…` : text;
+}
+
+function characterProjectMessage(projects: Project[]) {
+  const active = projects.filter((project) => !projectDueInfo(project.dueDate || "").expired || !project.dueDate);
+  const dueToday = projects.find((project) => project.dueDate && projectDueInfo(project.dueDate).diff === 0);
+  if (dueToday) return "今日が期限のプロジェクトがあります";
+  const near = projects
+    .filter((project) => project.dueDate)
+    .map((project) => ({ project, info: projectDueInfo(project.dueDate || "") }))
+    .filter((item) => item.info.diff > 0 && item.info.diff <= 3)
+    .sort((a, b) => a.info.diff - b.info.diff)[0];
+  if (near) return `あと${near.info.diff}日で期限のプロジェクトがあります`;
+  if (active.length) return `進行中のプロジェクトが${active.length}件あります`;
+  return "";
+}
+
+function selectedProjectMessage(project?: Project) {
+  if (!project) return "";
+  if (!project.dueDate) return `『${project.name}』を進行中です`;
+  const info = projectDueInfo(project.dueDate);
+  if (info.expired) return `『${project.name}』の期限が過ぎています`;
+  if (info.diff === 0) return `『${project.name}』は今日が期限です`;
+  return `『${project.name}』はあと${info.diff}日で期限です`;
+}
+
+function characterMemoMessage(projects: Project[], prompts: MyPrompt[]) {
+  const projectMemo = [...projects].reverse().find((project) => shortMemoText(project.note || ""));
+  if (projectMemo) return `最近のメモ：${shortMemoText(projectMemo.note)}`;
+  const promptMemo = [...prompts].reverse().find((prompt) => shortMemoText(prompt.memo || prompt.note || ""));
+  if (promptMemo) return `メモにアイデアがあります：${shortMemoText(promptMemo.memo || promptMemo.note)}`;
+  return "";
+}
+
+function characterMessage(settings: HomeCharacterSettings, projects: Project[], prompts: MyPrompt[]) {
+  if (settings.messageMode === "fixed") return settings.fixedMessage || "今日も制作がんばろう";
+  if (settings.messageMode === "project") {
+    const selectedProject = projects.find((project) => project.id === settings.selectedProjectId);
+    return selectedProjectMessage(selectedProject) || characterProjectMessage(projects) || "プロジェクトを少しずつ進めよう";
+  }
+  return characterProjectMessage(projects) || characterMemoMessage(projects, prompts) || "今日も制作がんばろう";
+}
+
+function CharacterSpeechBubble({ message }: { message: string }) {
+  return <div className="character-speech-bubble">{message}</div>;
+}
+
+function HomeCharacter({ settings, projects, prompts }: { settings: HomeCharacterSettings; projects: Project[]; prompts: MyPrompt[] }) {
+  if (!settings?.image || settings.position === "hidden") return null;
+  const message = characterMessage(settings, projects, prompts);
+  return (
+    <aside className={`home-character ${settings.position}`} aria-label="アトリエキャラクター">
+      {settings.speechEnabled && <CharacterSpeechBubble message={message} />}
+      <img src={imageSrc(settings.image) || imageThumbnail(settings.image)} alt="アトリエキャラクター" />
+    </aside>
+  );
+}
+
+function HomeCharacterSettingsPanel({ settings, updateSettings, projects }: any) {
+  const character: HomeCharacterSettings = settings.homeCharacter || defaultHomeSettings.homeCharacter;
+  const projectChoices = sortProjectsForDisplay(projects || []);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const updateCharacter = (patch: Partial<HomeCharacterSettings>) => updateSettings({ homeCharacter: { ...character, ...patch } });
+  const importFiles = async (files: FileList | File[]) => {
+    const file = Array.from(files).find(isSupportedImageFile);
+    if (!file) return;
+    try {
+      const image = saveImageToStorage(await optimizeImage(file, "character"));
+      updateCharacter({ image: image.src });
+    } catch (error) {
+      console.error("[Prompt Atelier] キャラクター画像の追加に失敗しました", error);
+      window.alert("画像を追加できませんでした。png / jpg / webp を選んでください。");
+    }
+  };
+  return (
+    <section className="customize-card character-settings-card">
+      <h3>ホームキャラクター設定</h3>
+      <p>透過PNGなどのキャラクター画像を、ホーム画面にアトリエ案内役として表示できます。</p>
+      <div
+        className="character-upload-area"
+        tabIndex={0}
+        onClick={() => fileInputRef.current?.click()}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          importFiles(event.dataTransfer.files);
+        }}
+        onPaste={(event) => {
+          const files = clipboardImageFiles(event);
+          if (!files.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          importFiles(files);
+        }}
+      >
+        {character.image ? <img src={imageThumbnail(character.image)} alt="" /> : <span>＋ キャラクター画像を追加</span>}
+        <small>PNG / WebP / JPG対応。透過PNG推奨です。</small>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          style={{ display: "none" }}
+          onChange={(event) => {
+            if (event.currentTarget.files) importFiles(event.currentTarget.files);
+            event.currentTarget.value = "";
+          }}
+        />
+      </div>
+      {character.image && <button onClick={() => updateCharacter({ image: "" })}>画像を削除</button>}
+      <label>表示位置
+        <select value={character.position} onChange={(event) => updateCharacter({ position: event.target.value as HomeCharacterPosition })}>
+          <option value="right-bottom">右下</option>
+          <option value="right-center">右側中央</option>
+          <option value="left-bottom">左下</option>
+          <option value="hidden">非表示</option>
+        </select>
+      </label>
+      <label className="switch-row">
+        <span>吹き出し表示</span>
+        <input type="checkbox" checked={character.speechEnabled} onChange={(event) => updateCharacter({ speechEnabled: event.target.checked })} />
+      </label>
+      <label>吹き出しメッセージタイプ
+        <select value={character.messageMode} onChange={(event) => updateCharacter({ messageMode: event.target.value as HomeCharacterMessageMode })}>
+          <option value="auto">自動</option>
+          <option value="fixed">固定メッセージ</option>
+          <option value="project">プロジェクト優先</option>
+        </select>
+      </label>
+      {character.messageMode === "project" && (
+        <label>表示するプロジェクト
+          <select value={character.selectedProjectId || ""} onChange={(event) => updateCharacter({ selectedProjectId: event.target.value })} disabled={!projectChoices.length}>
+            <option value="">未選択</option>
+            {projectChoices.map((project: Project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}{project.dueDate ? ` / 期限：${project.dueDate}` : ""}
+              </option>
+            ))}
+          </select>
+          {!projectChoices.length && <small>登録済みプロジェクトがありません</small>}
+        </label>
+      )}
+      {character.messageMode === "fixed" && (
+        <textarea value={character.fixedMessage} onChange={(event) => updateCharacter({ fixedMessage: event.target.value })} placeholder="固定メッセージ（例：今日も制作がんばろう♡）" />
+      )}
     </section>
   );
 }
@@ -896,7 +2344,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
       <input value={draft.url} onChange={(event) => update("url", event.target.value)} placeholder="URL" />
       <input value={draft.iconText} onChange={(event) => update("iconText", event.target.value)} placeholder="アイコン文字（例：MJ / P / GPT）" />
       <input value={draft.iconImage} onChange={(event) => update("iconImage", event.target.value)} placeholder="アイコン画像URL" />
-      <input type="file" accept="image/*" onChange={(event) => readImage(event, (iconImage) => setDraft({ ...draft, iconImage }))} />
+      <input type="file" accept="image/*" onChange={(event) => readImage(event, (iconImage) => setDraft({ ...draft, iconImage }), "icon")} />
       <input value={draft.memo || ""} onChange={(event) => update("memo", event.target.value)} placeholder="メモ（任意）" />
       <div className="quick-link-editor-actions">
         <button onClick={onClose}>キャンセル</button>
@@ -906,9 +2354,62 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
   );
 }
 
-function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools }: any) {
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
-  const updateSettings = (patch: Partial<HomeSettings>) => setSettings(normalizeHomeSettings({ ...settings, ...patch }));
+  const backupInputRef = React.useRef<HTMLInputElement | null>(null);
+  const bannerDragRef = React.useRef<{ startX: number; startY: number; x: number; y: number; width: number; height: number } | null>(null);
+  const settingsRef = React.useRef<HomeSettings>(settings);
+  React.useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+  const persistHomeSettings = (nextSettings = settingsRef.current) => {
+    const normalized = normalizeHomeSettings(nextSettings);
+    settingsRef.current = normalized;
+    try {
+      localStorage.setItem("promptAtelierHomeSettings", JSON.stringify(normalized));
+    } catch (error) {
+      console.warn("[Prompt Atelier] ホーム設定の保存に失敗しました", error);
+    }
+    return normalized;
+  };
+  const updateSettings = (patch: Partial<HomeSettings>, persist = false) => {
+    const next = normalizeHomeSettings({ ...settingsRef.current, ...patch });
+    settingsRef.current = next;
+    setSettings(next);
+    if (persist) persistHomeSettings(next);
+  };
+  const updateBannerPosition = (x: number, y: number, persist = false) => updateSettings({
+    bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
+    bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
+  }, persist);
+  const startBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!homeBannerImageValue(settings) || (settings.bannerFit || "contain") !== "cover") return;
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    bannerDragRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      x: settings.bannerPositionX ?? 50,
+      y: settings.bannerPositionY ?? 50,
+      width: bounds.width || 1,
+      height: bounds.height || 1,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const bannerImageValue = homeBannerImageValue(settings);
+  const bannerSrc = homeBannerSrc(settings);
+  const moveBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = bannerDragRef.current;
+    if (!drag) return;
+    event.preventDefault();
+    const nextX = drag.x + ((event.clientX - drag.startX) / drag.width) * 100;
+    const nextY = drag.y + ((event.clientY - drag.startY) / drag.height) * 100;
+    updateBannerPosition(nextX, nextY);
+  };
+  const endBannerDrag = () => {
+    if (bannerDragRef.current) persistHomeSettings();
+    bannerDragRef.current = null;
+  };
   const updateVisible = (id: string, value: boolean) => updateSettings({ visible: { ...settings.visible, [id]: value } });
   const moveSection = (id: HomeSectionId, direction: -1 | 1) => {
     const index = settings.order.indexOf(id);
@@ -920,6 +2421,18 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   };
   const reset = () => {
     if (window.confirm("ホーム設定を初期化しますか？")) setSettings(defaultHomeSettings);
+  };
+  const importBackup = async (file?: File) => {
+    if (!file) return;
+    if (!window.confirm("現在のデータを上書きしてバックアップを復元しますか？")) return;
+    try {
+      await restorePromptAtelierBackup(file);
+      sessionStorage.setItem("promptAtelierRestoreMessage", "バックアップを復元しました");
+      window.location.reload();
+    } catch (error) {
+      console.error("[Prompt Atelier] バックアップ復元に失敗しました", error);
+      window.alert("バックアップファイルを読み込めませんでした。");
+    }
   };
   const normalizedTools = (workTools as WorkTool[]).slice(0, 10);
   const saveWorkTool = (tool: WorkTool) => {
@@ -949,15 +2462,19 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   };
   const deleteWorkTool = (id: string) => {
     if (window.confirm("この作業ツールを削除しますか？")) {
-      setWorkTools((items: WorkTool[]) => items.filter((item) => item.id !== id));
+      setWorkTools((items: WorkTool[]) => {
+        rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+        return items.filter((item) => item.id !== id);
+      });
     }
   };
   const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
+  const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
   return (
     <section className="page customize-page">
       <PageHead
         title="ホームカスタマイズ"
-        action={<button className="primary" onClick={() => setScreen("home")}>ホームへ戻る</button>}
+        action={<PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} />}
       />
       <div className="customize-layout">
         <div className="customize-settings">
@@ -983,20 +2500,53 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           <section className="customize-card">
             <h3>バナー</h3>
             <p>ホーム上部に表示する横長画像を設定できます。</p>
+            <div className="banner-size-guide">
+              <strong>バナー画像の推奨サイズ</strong>
+              <div>
+                <span>
+                  <b>大バナー</b>
+                  <small>1200 × 600px / 2:1</small>
+                </span>
+                <span>
+                  <b>中バナー</b>
+                  <small>1200 × 400px / 3:1</small>
+                </span>
+                <span>
+                  <b>小バナー</b>
+                  <small>1200 × 200px / 6:1</small>
+                </span>
+              </div>
+              <p>推奨サイズに近い画像を使用すると、トリミングや表示崩れが少なくなります。</p>
+            </div>
             <label className="switch-row">
               <span>バナー表示</span>
               <input type="checkbox" checked={settings.bannerVisible} onChange={(event) => updateSettings({ bannerVisible: event.target.checked })} />
             </label>
-            <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value })} placeholder="バナー画像URL" />
+            <input value={settings.bannerImageUrl} onChange={(event) => updateSettings({ bannerImageUrl: event.target.value, bannerImage: event.target.value })} placeholder="バナー画像URL" />
+            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (bannerImage) => updateSettings({ bannerImage, bannerImageUrl: bannerImage }), "banner")} />
             <div className="inline-buttons">
               {(["small", "medium", "large"] as const).map((size) => (
                 <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => updateSettings({ bannerSize: size })}>
                   {size === "small" ? "小" : size === "medium" ? "中" : "大"}
                 </button>
               ))}
-              <button onClick={() => updateSettings({ bannerImageUrl: "" })}>画像を削除</button>
+              <button onClick={() => updateSettings({ bannerImage: "", bannerImageUrl: "" })}>画像を削除</button>
+            </div>
+            <div className="banner-fit-controls">
+              <strong>バナー表示方法</strong>
+              <div className="inline-buttons">
+                <button className={(settings.bannerFit || "contain") === "contain" ? "active-soft" : ""} onClick={() => updateSettings({ bannerFit: "contain" })}>
+                  全体を表示
+                </button>
+                <button className={settings.bannerFit === "cover" ? "active-soft" : ""} onClick={() => updateSettings({ bannerFit: "cover" })}>
+                  枠いっぱいに表示
+                </button>
+              </div>
+              <p>「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。</p>
             </div>
           </section>
+
+          <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} projects={projects} />
 
           <section className="customize-card">
             <h3>作業ツール</h3>
@@ -1020,7 +2570,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             <div className={`work-tool-edit-list ${settings.workToolIconStyle || "pastel"}`}>
               {normalizedTools.map((tool: WorkTool, index: number) => (
                 <article className="work-tool-edit-row" key={tool.id}>
-                  <span className="work-tool-edit-icon">{tool.iconImage ? <img src={tool.iconImage} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
+                  <span className="work-tool-edit-icon">{tool.iconImage ? <img src={imageThumbnail(tool.iconImage)} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
                   <div>
                     <strong>{tool.name}</strong>
                     <small>{tool.url}</small>
@@ -1056,6 +2606,28 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           </section>
 
           <section className="customize-card">
+            <h3>ホーム件数カード設定</h3>
+            <p>ホーム上部に表示する件数カードを選択できます。</p>
+            <div className="toggle-list">
+              {homeStatsCardOptions.map((item) => (
+                <label className="switch-row" key={item.id}>
+                  <span>{item.label}</span>
+                  <input
+                    type="checkbox"
+                    checked={(settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false}
+                    onChange={(event) => updateSettings({
+                      homeStatsCards: {
+                        ...(settings.homeStatsCards || defaultHomeSettings.homeStatsCards),
+                        [item.id]: event.target.checked,
+                      },
+                    })}
+                  />
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="customize-card">
             <h3>並び順</h3>
             <p>ホームの表示順を「上へ」「下へ」で調整できます。</p>
             <div className="order-list">
@@ -1074,6 +2646,30 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             </div>
           </section>
 
+          <section className="customize-card backup-card">
+            <h3>バックアップ</h3>
+            <p>大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。</p>
+            <div className="backup-actions">
+              <button className="primary" onClick={exportPromptAtelierBackup}>バックアップを書き出す</button>
+              <button onClick={() => backupInputRef.current?.click()}>バックアップを読み込む</button>
+            </div>
+            <div className="developer-tools">
+              <strong>配布用サンプルデータ</strong>
+              <p>現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。</p>
+              <button onClick={exportPromptAtelierSampleSeed}>現在のデータをサンプルとして書き出す</button>
+            </div>
+            <input
+              ref={backupInputRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: "none" }}
+              onChange={(event) => {
+                importBackup(event.currentTarget.files?.[0]);
+                event.currentTarget.value = "";
+              }}
+            />
+          </section>
+
           <section className="customize-card danger-zone">
             <h3>初期化</h3>
             <p>テーマ、バナー、表示項目、並び順を初期設定に戻します。</p>
@@ -1084,14 +2680,53 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
         <aside className="customize-preview">
           <span>プレビュー</span>
           <div className="preview-shell" style={themeStyle(activeTheme)}>
-            {settings.bannerVisible && <div className={`preview-banner ${settings.bannerSize}`} style={settings.bannerImageUrl ? { backgroundImage: `url(${settings.bannerImageUrl})` } : undefined} />}
+            {settings.bannerVisible && (
+              <>
+                <div
+                  className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`}
+                  onPointerDown={startBannerDrag}
+                  onPointerMove={moveBannerDrag}
+                  onPointerUp={endBannerDrag}
+                  onPointerCancel={endBannerDrag}
+                  onLostPointerCapture={endBannerDrag}
+                >
+                  {bannerSrc && (
+                    <>
+                      <img
+                        src={bannerSrc}
+                        alt=""
+                        draggable={false}
+                        style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
+                      />
+                      {bannerCanDrag && <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>}
+                    </>
+                  )}
+                </div>
+                {bannerImageValue && (
+                  <div className="preview-banner-actions">
+                    <button
+                      type="button"
+                      className="banner-reset-position"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => { event.stopPropagation(); updateBannerPosition(50, 50, true); }}
+                    >
+                      中央に戻す
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
             <div className="preview-card large"></div>
             <div className="preview-grid">
               <i></i><i></i><i></i><i></i>
             </div>
+            <button className="primary preview-save-home" onClick={() => { setSettings(persistHomeSettings()); setScreen("home"); }}>
+              保存してホームへ
+            </button>
           </div>
         </aside>
       </div>
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
@@ -1129,6 +2764,17 @@ function FeatureIcon({ name }: { name: string }) {
       </svg>
     );
   }
+  if (name === "video") {
+    return (
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect x="10" y="16" width="44" height="32" rx="8" />
+        <path d="M27 25l13 7-13 7V25z" className="icon-fill" />
+        <path d="M16 16v32M48 16v32" />
+        <path d="M16 24h-5M16 32h-5M16 40h-5M58 24h-5M58 32h-5M58 40h-5" />
+        <path d="M45 9l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z" />
+      </svg>
+    );
+  }
   if (name === "alarm") {
     return (
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -1153,7 +2799,7 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
   return (
     <article className="home-prompt-card">
       <button className="heart-button" aria-label="お気に入り">{favorite ? "♥" : "♡"}</button>
-      <img src={prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+      <img src={imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       <div className="home-prompt-body">
         <span className="mini-pill">{prompt.category}</span>
         <h3>{prompt.title}</h3>
@@ -1168,19 +2814,22 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
   );
 }
 
-function Library({ copyText }: any) {
+function Library({ copyText, setScreen }: any) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
   const [editingPrompt, setEditingPrompt] = React.useState<LibraryBoardPrompt | null>(null);
-  const [translationPrompt, setTranslationPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [memoPrompt, setMemoPrompt] = React.useState<LibraryBoardPrompt | null>(null);
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [stockFrameCounts, setStockFrameCounts] = React.useState<Record<string, number>>({});
+  const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
+  const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [boardPrompts, setBoardPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
-  const currentCategory = selectedCategory ? boardCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
-  const filteredCategories = boardCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
+  const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
+  const currentCategory = selectedCategory ? orderedCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
+  const isCategorySearching = !currentCategory && query.trim().length > 0;
+  const filteredCategories = orderedCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter((item) => {
     const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
@@ -1201,22 +2850,33 @@ function Library({ copyText }: any) {
     id: "",
     title: "",
     category: "ステッカーモックアップ" as Category,
-    categoryId: currentCategory?.id || boardCategories[0]?.id || "",
+    categoryId: currentCategory?.id || orderedCategories[0]?.id || "",
     description: "",
     prompt: "",
     memo: "",
     tags: [],
     imageUrl: "",
+    coverImages: [],
     japaneseTranslation: "",
     isTextStock: textOnly,
   });
   const saveCategory = (item: MockupCategory) => {
-    const next = { ...item, id: item.id || uid(), coverImage: item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7") };
-    setBoardCategories((items: MockupCategory[]) => item.id ? items.map((category) => category.id === item.id ? next : category) : [next, ...items]);
+    const coverImages = getCoverImages(item);
+    const coverImage = coverImages[0] || item.coverImage || art("カテゴリ", "#f8e6e1", "#dce7d7");
+    const next = { ...item, id: item.id || uid(), coverImage, coverImages: coverImages.length ? coverImages : [coverImage] };
+    setBoardCategories((items: MockupCategory[]) => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      if (item.id) {
+        const existing = normalized.find((category) => category.id === item.id);
+        return normalizeMockupCategoryOrder(normalized.map((category) => category.id === item.id ? { ...next, order: next.order ?? existing?.order } : category));
+      }
+      const maxOrder = normalized.reduce((max, category) => Math.max(max, category.order || 0), 0);
+      return normalizeMockupCategoryOrder([...normalized, { ...next, order: maxOrder + 1 }]);
+    });
     setEditingCategory(null);
   };
   const savePrompt = (item: LibraryBoardPrompt) => {
-    const category = boardCategories.find((category) => category.id === item.categoryId) || currentCategory || boardCategories[0];
+    const category = orderedCategories.find((category) => category.id === item.categoryId) || currentCategory || orderedCategories[0];
     const countForKind = boardPrompts.filter((prompt) => prompt.categoryId === category.id && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
     const limit = item.isTextStock ? 100 : 20;
     if (!item.id && countForKind >= limit) {
@@ -1228,7 +2888,8 @@ function Library({ copyText }: any) {
       id: item.id || uid(),
       categoryId: item.categoryId || category.id,
       category: "ステッカーモックアップ" as Category,
-      imageUrl: item.imageUrl || "",
+      coverImages: item.isTextStock ? [] : getCoverImages(item),
+      imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || "",
       tags: item.tags || [],
@@ -1238,7 +2899,11 @@ function Library({ copyText }: any) {
     setEditingPrompt(null);
   };
   const duplicateCategory = (item: MockupCategory) => {
-    setBoardCategories((items: MockupCategory[]) => [{ ...item, id: uid(), title: `${item.title} コピー` }, ...items]);
+    setBoardCategories((items: MockupCategory[]) => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      const maxOrder = normalized.reduce((max, category) => Math.max(max, category.order || 0), 0);
+      return normalizeMockupCategoryOrder([...normalized, { ...item, id: uid(), title: `${item.title} コピー`, order: maxOrder + 1 }]);
+    });
   };
   const duplicatePrompt = (item: LibraryBoardPrompt) => {
     const countForKind = boardPrompts.filter((prompt) => prompt.categoryId === item.categoryId && Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
@@ -1256,13 +2921,66 @@ function Library({ copyText }: any) {
     if (!currentCategory || !canAddTextStock) return;
     setStockFrameCounts((counts) => ({ ...counts, [currentCategory.id]: Math.min(100, stockFrameCount + 1) }));
   };
+  const deleteCategory = (id: string) => {
+    setBoardCategories((items: MockupCategory[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return normalizeMockupCategoryOrder(items.filter((item) => item.id !== id));
+    });
+  };
+  const deleteBoardPrompt = (id: string) => {
+    setBoardPrompts((items: LibraryBoardPrompt[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return items.filter((item) => item.id !== id);
+    });
+  };
+  const reorderCategories = (sourceId: string, targetId: string) => {
+    if (isCategorySearching || !sourceId || !targetId || sourceId === targetId) return;
+    setBoardCategories((items: MockupCategory[]) => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      const fromIndex = normalized.findIndex((category) => category.id === sourceId);
+      const toIndex = normalized.findIndex((category) => category.id === targetId);
+      if (fromIndex < 0 || toIndex < 0) return normalized;
+      const next = [...normalized];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return normalizeMockupCategoryOrder(next);
+    });
+  };
+  const startCategoryDrag = (event: React.DragEvent, categoryId: string) => {
+    if (isCategorySearching) {
+      event.preventDefault();
+      return;
+    }
+    event.stopPropagation();
+    setDraggedCategoryId(categoryId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", categoryId);
+  };
+  const overCategoryDrag = (event: React.DragEvent, categoryId: string) => {
+    if (isCategorySearching || !draggedCategoryId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverCategoryId(categoryId);
+  };
+  const dropCategoryDrag = (event: React.DragEvent, categoryId: string) => {
+    if (isCategorySearching) return;
+    event.preventDefault();
+    const sourceId = draggedCategoryId || event.dataTransfer.getData("text/plain");
+    reorderCategories(sourceId, categoryId);
+    setDraggedCategoryId("");
+    setDragOverCategoryId("");
+  };
+  const endCategoryDrag = () => {
+    setDraggedCategoryId("");
+    setDragOverCategoryId("");
+  };
   return (
     <section className="page library-page">
       {!currentCategory ? (
         <>
           <PageHead
             title="モックアップライブラリ"
-            action={<button className="primary" onClick={() => setEditingCategory({ id: "", title: "", description: "", coverImage: "" })}>＋ カテゴリを追加</button>}
+            action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button className="primary" onClick={() => setEditingCategory({ id: "", title: "", description: "", coverImage: "" })}>＋ カテゴリを追加</button></div>}
           />
           <div className="library-intro">
             <p>販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。</p>
@@ -1270,28 +2988,50 @@ function Library({ copyText }: any) {
           <Filters>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="カテゴリを検索..." />
           </Filters>
+          {isCategorySearching && <p className="category-sort-note">並び替えは検索を解除すると使用できます。</p>}
           <div className="library-category-grid">
             {filteredCategories.map((category) => (
-              <article className="library-category-card" key={category.id}>
+              <article
+                className={`library-category-card ${draggedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`}
+                key={category.id}
+                onDragOver={(event) => overCategoryDrag(event, category.id)}
+                onDrop={(event) => dropCategoryDrag(event, category.id)}
+                onDragLeave={() => dragOverCategoryId === category.id && setDragOverCategoryId("")}
+              >
+                <button
+                  type="button"
+                  className="category-drag-handle"
+                  draggable={!isCategorySearching}
+                  aria-label={`${category.title}を並び替え`}
+                  title={isCategorySearching ? "検索を解除すると並び替えできます" : "ドラッグして並び替え"}
+                  onClick={(event) => event.stopPropagation()}
+                  onDragStart={(event) => startCategoryDrag(event, category.id)}
+                  onDragEnd={endCategoryDrag}
+                  disabled={isCategorySearching}
+                >
+                  ⋮⋮
+                </button>
                 <MenuButton
                   onEdit={() => setEditingCategory(category)}
                   onDuplicate={() => duplicateCategory(category)}
                   onImage={() => setEditingCategory(category)}
-                  onDelete={() => setBoardCategories((items: MockupCategory[]) => items.filter((item) => item.id !== category.id))}
+                  onDelete={() => deleteCategory(category.id)}
                 />
                 <button className="category-open" onClick={() => { setSelectedCategory(category); setQuery(""); }}>
-                  <img src={category.coverImage} alt="" />
+                  <CoverImageCarousel item={category} className="category-cover-carousel" placeholderLabel="カテゴリ" />
                   <span>{category.title}</span>
                   <small>{category.description}</small>
                 </button>
               </article>
             ))}
           </div>
+          <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
         </>
       ) : (
         <>
+          <PageBackButton label="ライブラリへ戻る" onClick={() => { setSelectedCategory(null); setQuery(""); }} />
           <div className="library-detail-head">
-            <img className="library-detail-cover" src={currentCategory.coverImage} alt="" />
+            <CoverImageCarousel item={currentCategory} className="library-detail-cover" placeholderLabel="カテゴリ" />
             <div>
               <h2>{currentCategory.title}</h2>
               <p>{currentCategory.description}</p>
@@ -1317,9 +3057,8 @@ function Library({ copyText }: any) {
                   setInlineEdit={setInlineEdit}
                   updatePrompt={updatePrompt}
                   duplicatePrompt={duplicatePrompt}
-                  deletePrompt={() => setBoardPrompts((items: LibraryBoardPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+                  deletePrompt={() => deleteBoardPrompt(prompt.id)}
                   copyText={copyText}
-                  showTranslation={() => setTranslationPrompt(prompt)}
                   showMemo={() => setMemoPrompt(prompt)}
                 />
               ) : canAddImagePrompt ? (
@@ -1346,7 +3085,6 @@ function Library({ copyText }: any) {
                   onCreate={saveTextStockFrame}
                   onUpdate={updatePrompt}
                   copyText={copyText}
-                  showTranslation={() => prompt && setTranslationPrompt(prompt)}
                   showMemo={() => prompt && setMemoPrompt(prompt)}
                 />
               ))}
@@ -1356,12 +3094,11 @@ function Library({ copyText }: any) {
             )}
             {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
           </section>
-          <button className="back-to-library" onClick={() => { setSelectedCategory(null); setQuery(""); }}>← ライブラリへ戻る</button>
+          <PageBackButton className="page-bottom-back" label="ライブラリへ戻る" onClick={() => { setSelectedCategory(null); setQuery(""); }} />
         </>
       )}
       {editingCategory && <MockupCategoryModal item={editingCategory} onClose={() => setEditingCategory(null)} onSave={saveCategory} />}
-      {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={boardCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
-      {translationPrompt && <TranslationModal prompt={translationPrompt} onClose={() => setTranslationPrompt(null)} copyText={copyText} />}
+      {editingPrompt && <LibraryPromptModal item={editingPrompt} categories={orderedCategories} onClose={() => setEditingPrompt(null)} onSave={savePrompt} />}
       {memoPrompt && (
         <MemoModal
           prompt={memoPrompt}
@@ -1376,21 +3113,136 @@ function Library({ copyText }: any) {
   );
 }
 
-function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showTranslation, showMemo }: any) {
+function CoverImageCarousel({ item, className = "", placeholderLabel = "画像" }: any) {
+  const images = getCoverImages(item);
+  const [isHovering, setIsHovering] = React.useState(false);
+  const [index, setIndex] = React.useState(0);
+  React.useEffect(() => {
+    if (!isHovering || images.length <= 1) {
+      setIndex(0);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % images.length);
+    }, 1800);
+    return () => window.clearInterval(timer);
+  }, [isHovering, images.length]);
+  const currentImage = images[index] || images[0];
+  return (
+    <div
+      className={`cover-image-carousel ${className}`}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      {currentImage ? (
+        <img src={imageDisplaySrc(currentImage)} alt="" />
+      ) : (
+        <div className="image-placeholder" aria-label={`${placeholderLabel}未設定`}>
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect x="12" y="16" width="40" height="32" rx="7" />
+            <path d="M18 41l10-10 8 8 5-5 7 7" />
+            <circle cx="42" cy="25" r="4" />
+          </svg>
+        </div>
+      )}
+      {images.length > 1 && (
+        <div className="cover-image-dots" aria-hidden="true">
+          {images.map((_: any, dotIndex: number) => <span className={dotIndex === index ? "active" : ""} key={dotIndex} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CoverImageUploader({ item, onChange, category = "prompt" }: any) {
+  const [message, setMessage] = React.useState("");
+  const [urlDraft, setUrlDraft] = React.useState("");
+  const images = getCoverImages(item);
+  const applyImages = (nextImages: any[]) => {
+    onChange(nextImages.filter(Boolean).slice(0, 3));
+  };
+  const addImages = async (files: FileList | File[]) => {
+    const supported = Array.from(files).filter(isSupportedImageFile);
+    if (!supported.length) return;
+    const available = Math.max(0, 3 - images.length);
+    if (!available) {
+      setMessage("見出し画像は最大3枚までです");
+      return;
+    }
+    if (supported.length > available) setMessage("見出し画像は最大3枚までです");
+    try {
+      const optimized = await Promise.all(supported.slice(0, available).map(async (file) => saveImageToStorage(await optimizeImage(file, category))));
+      applyImages([...images, ...optimized]);
+    } catch (error) {
+      console.error("[Prompt Atelier] 見出し画像の追加に失敗しました", error);
+      setMessage("画像を追加できませんでした。jpg / png / webp を選んでください。");
+    }
+  };
+  const addUrl = () => {
+    const value = urlDraft.trim();
+    if (!value) return;
+    if (images.length >= 3) {
+      setMessage("見出し画像は最大3枚までです");
+      return;
+    }
+    applyImages([...images, value]);
+    setUrlDraft("");
+    setMessage("");
+  };
+  return (
+    <div
+      className="cover-image-uploader"
+      onClick={(event) => event.stopPropagation()}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        addImages(event.dataTransfer.files);
+      }}
+      onPaste={(event) => {
+        const files = clipboardImageFiles(event);
+        if (!files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        addImages(files);
+      }}
+    >
+      <div className="cover-image-strip">
+        {images.map((image: any, index: number) => (
+          <div className="cover-image-thumb" key={`${imageDisplaySrc(image)}-${index}`}>
+            <img src={imageDisplaySrc(image)} alt="" />
+            <button type="button" onClick={() => applyImages(images.filter((_: any, imageIndex: number) => imageIndex !== index))}>削除</button>
+          </div>
+        ))}
+        {images.length < 3 && (
+          <label className="cover-image-add">
+            <span>＋</span>
+            <small>画像を追加</small>
+            <input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(event) => addImages(event.target.files || [])} />
+          </label>
+        )}
+      </div>
+      <p className="cover-image-help">見出し画像は最大3枚まで設定できます</p>
+      <div className="cover-image-url-row">
+        <input value={urlDraft} onChange={(event) => setUrlDraft(event.target.value)} placeholder="画像URLを追加" />
+        <button type="button" onClick={addUrl}>追加</button>
+      </div>
+      {message && <p className="cover-image-message">{message}</p>}
+    </div>
+  );
+}
+
+function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showMemo }: any) {
+  const updateCoverImages = (coverImages: any[]) => updatePrompt(prompt.id, { coverImages, imageUrl: coverImages[0] || "" });
   return (
     <article className="library-prompt-card">
       <PromptMenuButton
         onDuplicate={() => duplicatePrompt(prompt)}
-        onClearImage={() => updatePrompt(prompt.id, { imageUrl: "" })}
+        onClearImage={() => updatePrompt(prompt.id, { imageUrl: "", coverImages: [] })}
         onDelete={deletePrompt}
       />
-      <EditableThumbnail
-        prompt={prompt}
-        isEditing={inlineEdit?.id === prompt.id && inlineEdit.field === "imageUrl"}
-        onEdit={() => setInlineEdit({ id: prompt.id, field: "imageUrl" })}
-        onCancel={() => setInlineEdit(null)}
-        onSave={(imageUrl: string) => { updatePrompt(prompt.id, { imageUrl }); setInlineEdit(null); }}
-      />
+      <CoverImageCarousel item={prompt} placeholderLabel="プロンプト画像" />
+      <CoverImageUploader item={prompt} category="prompt" onChange={updateCoverImages} />
       <div className="prompt-card-content">
         <InlineEditable
           className="inline-title"
@@ -1411,7 +3263,6 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
         />
         <div className="prompt-card-actions">
           <button className="primary" onClick={(event) => { event.stopPropagation(); copyText(prompt.prompt, prompt.id); }}>📋 プロンプトをコピー</button>
-          <button onClick={(event) => { event.stopPropagation(); showTranslation(); }}>和訳</button>
           <button onClick={(event) => { event.stopPropagation(); showMemo(); }}>メモ</button>
         </div>
       </div>
@@ -1419,7 +3270,7 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
   );
 }
 
-function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showTranslation, showMemo }: any) {
+function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showMemo }: any) {
   const [title, setTitle] = React.useState(prompt?.title || "");
   const [promptText, setPromptText] = React.useState(prompt?.prompt || "");
   React.useEffect(() => {
@@ -1455,7 +3306,6 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
       />
       <div className="text-stock-actions">
         <button className="primary" onClick={copyStockPrompt} disabled={!promptText.trim()}>📋 プロンプトをコピー</button>
-        <button onClick={(event) => { event.stopPropagation(); showTranslation(); }} disabled={!isSaved}>和訳</button>
         <button onClick={(event) => { event.stopPropagation(); showMemo(); }} disabled={!isSaved}>メモ</button>
       </div>
     </article>
@@ -1463,7 +3313,7 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
 }
 
 function PromptThumbnail({ imageUrl }: { imageUrl?: string }) {
-  if (imageUrl) return <img src={imageUrl} alt="" />;
+  if (imageUrl) return <img src={imageDisplaySrc(imageUrl)} alt="" />;
   return (
     <div className="image-placeholder" aria-label="画像未設定">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -1478,13 +3328,35 @@ function PromptThumbnail({ imageUrl }: { imageUrl?: string }) {
 function EditableThumbnail({ prompt, isEditing, onEdit, onCancel, onSave }: any) {
   const [draft, setDraft] = React.useState(prompt.imageUrl || "");
   React.useEffect(() => setDraft(prompt.imageUrl || ""), [prompt.imageUrl, isEditing]);
+  const importFiles = async (files: FileList | File[]) => {
+    const file = Array.from(files).find(isSupportedImageFile);
+    if (!file) return;
+    const image = saveImageToStorage(await optimizeImage(file, "prompt"));
+    setDraft(image.src);
+  };
   if (isEditing) {
     return (
-      <div className="thumbnail-editor" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="thumbnail-editor"
+        onClick={(event) => event.stopPropagation()}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          importFiles(event.dataTransfer.files);
+        }}
+        onPaste={(event) => {
+          const files = clipboardImageFiles(event);
+          if (!files.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          importFiles(files);
+        }}
+      >
         <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="サムネイル画像URL" autoFocus />
         <label className="mini-upload">
           画像を選ぶ
-          <input type="file" accept="image/*" onChange={(event) => readImage(event, (imageUrl) => setDraft(imageUrl))} />
+          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => readImage(event, (imageUrl) => setDraft(imageUrl), "prompt")} />
         </label>
         <div>
           <button className="primary" onClick={() => onSave(draft)}>保存</button>
@@ -1613,27 +3485,29 @@ function PromptMenuButton({ onDuplicate, onClearImage, onDelete }: any) {
   );
 }
 
-function readImage(event: any, onLoad: (value: string) => void) {
+async function readImage(event: any, onLoad: (value: string) => void, category = "prompt") {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
   const file = event.target.files?.[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => onLoad(String(reader.result || ""));
-  reader.readAsDataURL(file);
+  try {
+    const image = saveImageToStorage(category === "banner" ? await optimizeBannerImage(file) : await optimizeImage(file, category));
+    onLoad(image.src);
+  } catch (error) {
+    console.error("[Prompt Atelier] 画像の最適化に失敗しました", error);
+    window.alert("画像を追加できませんでした。jpg / png / webp を選んでください。");
+  }
 }
 
 function MockupCategoryModal({ item, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item });
+  const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, coverImage: coverImages[0] || "" });
   return (
     <Modal title={item.id ? "カテゴリを編集" : "カテゴリを追加"} onClose={onClose}>
       <FormGrid>
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
         <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明文" />
-        <input value={draft.coverImage} onChange={(e) => setDraft({ ...draft, coverImage: e.target.value })} placeholder="カバー画像URL" />
-        <label className="upload-box">
-          <span>画像をアップロード</span>
-          <input type="file" accept="image/*" onChange={(e) => readImage(e, (coverImage) => setDraft({ ...draft, coverImage }))} />
-        </label>
-        {draft.coverImage && <img className="modal-preview-image" src={draft.coverImage} alt="" />}
+        <CoverImageUploader item={draft} category="mockup" onChange={setCoverImages} />
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
     </Modal>
@@ -1642,6 +3516,7 @@ function MockupCategoryModal({ item, onClose, onSave }: any) {
 
 function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item });
+  const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, imageUrl: coverImages[0] || "" });
   return (
     <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
       <FormGrid>
@@ -1653,19 +3528,14 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
         <textarea className="tall" value={draft.japaneseTranslation || ""} onChange={(e) => setDraft({ ...draft, japaneseTranslation: e.target.value })} placeholder="和訳本文" />
         <textarea value={draft.memo || ""} onChange={(e) => setDraft({ ...draft, memo: e.target.value })} placeholder="メモ" />
-        <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サムネイル画像URL" />
-        <label className="upload-box">
-          <span>画像をアップロード</span>
-          <input type="file" accept="image/*" onChange={(e) => readImage(e, (imageUrl) => setDraft({ ...draft, imageUrl }))} />
-        </label>
-        {draft.imageUrl && <img className="modal-preview-image" src={draft.imageUrl} alt="" />}
+        <CoverImageUploader item={draft} category="mockup" onChange={setCoverImages} />
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave(draft)} />
     </Modal>
   );
 }
 
-function PromptBook({ prompts, setPrompts, copyText }: any) {
+function PromptBook({ prompts, setPrompts, copyText, setScreen }: any) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
@@ -1699,7 +3569,8 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
     const next = {
       ...item,
       id: item.id || uid(),
-      imageUrl: item.isTextStock ? "" : item.imageUrl || "",
+      coverImages: item.isTextStock ? [] : getCoverImages(item),
+      imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || item.prompt,
       memo: item.memo || item.note || "",
       note: item.note || item.memo || "",
@@ -1717,6 +3588,12 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
     if (countForKind >= (prompt.isTextStock ? 100 : 20)) return;
     setPrompts((items: MyPrompt[]) => [...items, { ...prompt, id: uid(), title: `${prompt.title} コピー` }]);
   };
+  const deletePrompt = (id: string) => {
+    setPrompts((items: MyPrompt[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return items.filter((item) => item.id !== id);
+    });
+  };
   const saveTextStockFrame = (item: MyPrompt) => {
     if (!item.title.trim() && !item.prompt.trim()) return;
     save({ ...item, isTextStock: true, imageUrl: "" });
@@ -1727,7 +3604,7 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
   };
   return (
     <section className="page prompt-book-page">
-      <PageHead title="プロンプト帳" action={<span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span>} />
+      <PageHead title="プロンプト帳" action={<div className="actions"><span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>} />
       <Filters>
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="検索" />
         <select value={tag} onChange={(e) => setTag(e.target.value)}>
@@ -1752,7 +3629,7 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
               setInlineEdit={setInlineEdit}
               updatePrompt={updatePrompt}
               duplicatePrompt={duplicatePrompt}
-              deletePrompt={() => setPrompts((items: MyPrompt[]) => items.filter((item) => item.id !== prompt.id))}
+              deletePrompt={() => deletePrompt(prompt.id)}
               copyText={copyText}
               showTranslation={() => setTranslationPrompt(prompt)}
               showMemo={() => setMemoPrompt(prompt)}
@@ -1803,11 +3680,12 @@ function PromptBook({ prompts, setPrompts, copyText }: any) {
           }}
         />
       )}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
 
-function Midjourney({ settings, setSettings, copyText }: any) {
+function Midjourney({ settings, setSettings, copyText, setScreen }: any) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
   const [promptEn, setPromptEn] = React.useState("");
@@ -1820,7 +3698,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
   const [memo, setMemo] = React.useState("");
   const [editingId, setEditingId] = React.useState("");
   const [copied, setCopied] = React.useState(false);
-  const [imageModal, setImageModal] = React.useState<{ images: string[]; index: number } | null>(null);
+  const [imageModal, setImageModal] = React.useState<{ images: any[]; index: number } | null>(null);
   const [highlightedId, setHighlightedId] = React.useState("");
   const normalizedSettings = settings.map((item: MjSetting) => normalizeMjSetting(item));
   const filtered = normalizedSettings.filter((item: MjSetting) => lowerIncludes(`${item.memo || ""} ${item.note || ""} ${mjCommand(item)} ${(item.extractedParams || []).join(" ")}`, query));
@@ -1966,7 +3844,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
   };
   return (
     <section className="page mj-board-page">
-      <PageHead title="Midjourneyパラメータ制作ボード" action={<button className="primary" onClick={save} disabled={!canSave}>完成プロンプトを保存</button>} />
+      <PageHead title="Midjourneyパラメータ制作ボード" action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button className="primary" onClick={save} disabled={!canSave}>完成プロンプトを保存</button></div>} />
       <div className="mj-workspace">
         <aside className="mj-builder-panel">
           <section className="mj-input-panel">
@@ -2008,8 +3886,8 @@ function Midjourney({ settings, setSettings, copyText }: any) {
               <strong>画像から探す</strong>
               <div className="mj-image-search-grid">
                 {imageSearchItems.length ? imageSearchItems.map((item) => (
-                  <button key={`${item.cardId}-${item.index}-${item.image}`} onClick={() => jumpToCard(item.cardId)}>
-                    <img src={item.image} alt="" />
+                  <button key={`${item.cardId}-${item.index}-${imageSrc(item.image)}`} onClick={() => jumpToCard(item.cardId)}>
+                    <img src={imageDisplaySrc(item.image)} alt="" />
                   </button>
                 )) : <small>画像を登録すると、ここから探せます。</small>}
               </div>
@@ -2032,7 +3910,10 @@ function Midjourney({ settings, setSettings, copyText }: any) {
                   item={item}
                   highlighted={highlightedId === item.id}
                   onUpdate={(patch: Partial<MjSetting>) => updateSavedSetting(item.id, patch)}
-                  onDelete={() => setSettings((items: MjSetting[]) => items.filter((setting) => setting.id !== item.id))}
+                  onDelete={() => setSettings((items: MjSetting[]) => {
+                    rememberDeletedSampleIdsFromItems(items.find((setting) => setting.id === item.id));
+                    return items.filter((setting) => setting.id !== item.id);
+                  })}
                   onCopyPrompt={() => copyText(mjCommand(item), item.id)}
                   onCopyParams={() => copyText((item.extractedParams || []).join(" "), item.id)}
                   onParamClick={applyParamFromCard}
@@ -2045,6 +3926,7 @@ function Midjourney({ settings, setSettings, copyText }: any) {
         </section>
       </div>
       {imageModal && <ImagePreviewModal modal={imageModal} setModal={setImageModal} />}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
@@ -2060,17 +3942,9 @@ function splitImageUrls(value: string) {
   return value.split(/[\n,]/).map((item) => item.trim()).filter(Boolean).slice(0, 5);
 }
 
-function isSupportedImageFile(file: File) {
-  return ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
-}
-
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
+async function fileToDataUrl(file: File) {
+  const image = saveImageToStorage(await optimizeImage(file, "midjourney"));
+  return image.src;
 }
 
 function promptCardHeading(prompt: string) {
@@ -2120,16 +3994,17 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
       setImageMessage("画像は最大5枚までです");
       return;
     }
-    const nextImages = await Promise.all(files.map(fileToDataUrl));
-    nextImages.forEach((image, index) => console.log("[MJ画像追加] base64 prefix:", image.slice(0, 30), "file:", files[index]?.name, "cardId:", item.id));
+    const nextImages = await Promise.all(files.map((file) => optimizeImage(file, "midjourney")));
+    nextImages.forEach((image, index) => console.log("[MJ画像追加] base64 prefix:", image.src.slice(0, 30), "file:", files[index]?.name, "cardId:", item.id));
     const updatedImages = [...images, ...nextImages].slice(0, 5);
     console.log("[MJ画像追加] updated images length:", updatedImages.length, "cardId:", item.id);
     setImageMessage("");
-    onUpdate({ images: updatedImages, imageUrl: updatedImages[0] || "" });
+    onUpdate({ images: updatedImages, imageUrl: updatedImages[0]?.src || "" });
+    scheduleStorageWarningCheck();
   };
   const removeImage = (index: number) => {
-    const updatedImages = images.filter((_: string, imageIndex: number) => imageIndex !== index);
-    onUpdate({ images: updatedImages, imageUrl: updatedImages[0] || "" });
+    const updatedImages = images.filter((_: any, imageIndex: number) => imageIndex !== index);
+    onUpdate({ images: updatedImages, imageUrl: updatedImages[0]?.src || "" });
   };
   const updatePrompt = (value: string) => {
     const parsed = parseMidjourneyPrompt(value);
@@ -2212,14 +4087,21 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
           setIsDragging(false);
           addImageFiles(event.dataTransfer.files);
         }}
+        onPaste={(event) => {
+          const files = clipboardImageFiles(event);
+          if (!files.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          addImageFiles(files);
+        }}
       >
         {images.length ? (
           <>
             <div className="mj-card-image image-only-button">
-              <img src={images[slideIndex] || images[0]} alt="" />
+              <img src={imageDisplaySrc(images[slideIndex] || images[0])} alt="" />
               {images.length > 1 && (
                 <span className="image-dots">
-                  {images.map((_: string, dotIndex: number) => <i key={dotIndex} className={dotIndex === slideIndex ? "active" : ""} />)}
+                  {images.map((_: any, dotIndex: number) => <i key={dotIndex} className={dotIndex === slideIndex ? "active" : ""} />)}
                 </span>
               )}
             </div>
@@ -2236,8 +4118,8 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
       </div>
       {images.length > 0 && (
         <div className="image-url-list image-delete-list">
-          {images.map((image: string, index: number) => (
-            <button type="button" key={`${image}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
+          {images.map((image: any, index: number) => (
+            <button type="button" key={`${imageSrc(image)}-${index}`} onClick={() => removeImage(index)}>画像{index + 1}を削除</button>
           ))}
         </div>
       )}
@@ -2306,7 +4188,7 @@ function ImagePreviewModal({ modal, setModal }: any) {
   return (
     <Modal title="画像プレビュー" onClose={() => setModal(null)}>
       <div className="image-preview-modal">
-        <img src={images[index]} alt="" />
+        <img src={imageSrc(images[index])} alt="" />
         <div className="modal-actions">
           {images.length > 1 && <button onClick={() => move(-1)}>前へ</button>}
           {images.length > 1 && <button onClick={() => move(1)}>次へ</button>}
@@ -2332,13 +4214,13 @@ function normalizeMjSetting(item: Partial<MjSetting>): MjSetting {
   const promptEn = item.promptEn || originalPrompt || fullPrompt || "";
   const promptJa = item.promptJa || translatedPrompt || "";
   const activeLanguage = item.activeLanguage === "ja" ? "ja" : "en";
-  const images = Array.isArray(item.images) ? item.images.slice(0, 5) : item.imageUrl ? [item.imageUrl] : [];
+  const images = (Array.isArray(item.images) ? item.images : item.imageUrl ? [item.imageUrl] : []).slice(0, 5).map(normalizeImageData);
   return {
     id: item.id || uid(),
     title: item.title || "無題のMJ設定",
     description: item.description || item.memo || item.note || "",
     images,
-    imageUrl: images[0] || item.imageUrl || "",
+    imageUrl: images[0]?.src || item.imageUrl || "",
     prompt: fullPrompt || combinePrompt(basePrompt, params),
     promptEn,
     promptJa,
@@ -2383,7 +4265,838 @@ function mjCommandLegacy(item: MjSetting) {
   ].filter(Boolean).join(" ");
 }
 
-function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
+function GalleryPage({ images, setImages, setJournal, setScreen }: any) {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
+  const [previewId, setPreviewId] = React.useState("");
+  const [visibleCount, setVisibleCount] = React.useState(20);
+  const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
+  React.useEffect(() => {
+    setVisibleCount(20);
+  }, [images.length]);
+  React.useEffect(() => {
+    if (!loadMoreRef.current || visibleCount >= images.length) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisibleCount((count) => Math.min(count + 20, images.length));
+      }
+    }, { rootMargin: "320px" });
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [images.length, visibleCount]);
+  const addFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    if (!files.length) return;
+    const remaining = 200 - images.length;
+    if (remaining <= 0) {
+      window.alert("ギャラリー画像は最大200枚までです");
+      return;
+    }
+    const optimizedImages = await Promise.all(files.slice(0, remaining).map((file) => optimizeImage(file, "gallery")));
+    if (files.length > remaining) window.alert("ギャラリー画像は最大200枚までです");
+    const nextImages = optimizedImages.map((image, index) => ({
+      ...image,
+      title: files[index].name.replace(/\.[^.]+$/, ""),
+      memo: "",
+      originalName: files[index].name,
+      source: "gallery",
+      favorite: false,
+    }));
+    setImages((items: AtelierImage[]) => [...nextImages, ...items]);
+    scheduleStorageWarningCheck();
+  };
+  const updateImage = (id: string, patch: Partial<AtelierImage>) => {
+    setImages((items: AtelierImage[]) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
+  };
+  const deleteImage = (id: string) => {
+    setImages((items: AtelierImage[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return items.filter((item) => item.id !== id);
+    });
+    setPreviewId("");
+  };
+  const pasteToJournal = (image: AtelierImage) => {
+    const item: JournalItem = {
+      id: uid(),
+      imageId: image.id,
+      src: image.src,
+      thumbnail: image.thumbnail || image.src,
+      x: 96,
+      y: 96,
+      width: 190,
+      rotate: -4,
+      stickerEffect: true,
+    };
+    setJournal((current: JournalState) => ({ ...current, items: [...(current.items || []), item] }));
+    setScreen("journal");
+  };
+  return (
+    <section
+      className="page gallery-page"
+      tabIndex={0}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        addFiles(event.dataTransfer.files);
+      }}
+      onPaste={(event) => {
+        const files = clipboardImageFiles(event);
+        if (!files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        addFiles(files);
+      }}
+    >
+      <PageHead
+        title="ギャラリー"
+        action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button onClick={() => setScreen("journal")}>ジャーナルへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        style={{ display: "none" }}
+        onChange={(event) => {
+          if (event.currentTarget.files) addFiles(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }}
+      />
+      {images.length ? (
+        <div className="gallery-grid">
+          {images.slice(0, visibleCount).map((image: AtelierImage) => (
+            <article className="gallery-card" key={image.id}>
+              <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
+                {image.favorite ? "♥" : "♡"}
+              </button>
+              <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
+                <img src={imageDisplaySrc(image)} alt="" />
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : <Empty text="画像を追加すると、ここにギャラリーが表示されます。" />}
+      {images.length > visibleCount && <div ref={loadMoreRef} className="lazy-load-sentinel">画像を読み込んでいます…</div>}
+      {preview && (
+        <Modal title={preview.title || "画像詳細"} onClose={() => setPreviewId("")}>
+          <div className="gallery-detail-modal">
+            <img src={imageSrc(preview)} alt="" />
+            <label>タイトル<input value={preview.title} onChange={(event) => updateImage(preview.id, { title: event.target.value })} placeholder="タイトル" /></label>
+            <label>メモ<textarea value={preview.memo} onChange={(event) => updateImage(preview.id, { memo: event.target.value })} placeholder="メモ" /></label>
+            <small>追加日：{formatSavedAt(preview.createdAt)}</small>
+            <label className="check"><input type="checkbox" checked={preview.favorite} onChange={(event) => updateImage(preview.id, { favorite: event.target.checked })} /> お気に入り</label>
+            <div className="modal-actions">
+              <button onClick={() => pasteToJournal(preview)}>ジャーナルに貼る</button>
+              <button className="danger" onClick={() => deleteImage(preview.id)}>削除</button>
+              <button className="primary" onClick={() => setPreviewId("")}>閉じる</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
+    </section>
+  );
+}
+
+function isPlayableVideoUrl(url: string) {
+  return /\.(mp4|webm)(\?.*)?$/i.test(url);
+}
+
+function isSupportedVideoFile(file?: File | null) {
+  if (!file) return false;
+  return /^video\//i.test(file.type) || /\.(mp4|webm|mov|m4v|quicktime)$/i.test(file.name);
+}
+
+function clipboardVideoFiles(event: React.ClipboardEvent) {
+  return Array.from(event.clipboardData?.items || [])
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file) && isSupportedVideoFile(file));
+}
+
+function VideoPlaceholder() {
+  return (
+    <div className="video-placeholder" aria-label="動画サムネイル未設定">
+      <span>▶</span>
+    </div>
+  );
+}
+
+function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen }: any) {
+  const thumbnailInputRef = React.useRef<HTMLInputElement | null>(null);
+  const videoInputRef = React.useRef<HTMLInputElement | null>(null);
+  const uploadVideoInputRef = React.useRef<HTMLInputElement | null>(null);
+  const uploadedVideoUrlRef = React.useRef("");
+  const tempVideoUrlsRef = React.useRef<Record<string, string>>({});
+  const [draft, setDraft] = React.useState<VideoItem>(blankVideoPrompt());
+  const [tagDraft, setTagDraft] = React.useState("");
+  const [isThumbnailDragging, setIsThumbnailDragging] = React.useState(false);
+  const [isVideoUploadDragging, setIsVideoUploadDragging] = React.useState(false);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = React.useState("");
+  const [tempVideoUrls, setTempVideoUrls] = React.useState<Record<string, string>>({});
+  const [selectedId, setSelectedId] = React.useState("");
+  const [query, setQuery] = React.useState("");
+  const [modelFilter, setModelFilter] = React.useState("すべて");
+  const [favoriteOnly, setFavoriteOnly] = React.useState(false);
+  const [hoverVideoId, setHoverVideoId] = React.useState("");
+  const [stockFrameCount, setStockFrameCount] = React.useState(5);
+  const [memoStock, setMemoStock] = React.useState<VideoPromptStock | null>(null);
+  const videoItems = extractVideoPromptItems(videos);
+  React.useEffect(() => {
+    uploadedVideoUrlRef.current = uploadedVideoUrl;
+  }, [uploadedVideoUrl]);
+  React.useEffect(() => {
+    tempVideoUrlsRef.current = tempVideoUrls;
+  }, [tempVideoUrls]);
+  React.useEffect(() => {
+    return () => {
+      if (uploadedVideoUrlRef.current) URL.revokeObjectURL(uploadedVideoUrlRef.current);
+      Object.values(tempVideoUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+  const updateDraft = (patch: Partial<VideoItem>) => setDraft((current) => ({ ...current, ...patch }));
+  const resetDraft = () => {
+    setDraft(blankVideoPrompt());
+    setTagDraft("");
+    setSelectedId("");
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
+  };
+  const openNewVideo = () => {
+    setDraft(blankVideoPrompt());
+    setTagDraft("");
+    setSelectedId("new");
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
+  };
+  const saveVideo = () => {
+    const now = new Date().toISOString();
+    const tags = splitTags(tagDraft || tagText(draft.tags || []));
+    const next: VideoItem = {
+      ...draft,
+      id: draft.id || uid(),
+      title: draft.title.trim() || "動画プロンプト",
+      url: draft.url.trim(),
+      model: draft.model || "その他",
+      prompt: draft.prompt || "",
+      memo: draft.memo || "",
+      tags,
+      favorite: Boolean(draft.favorite),
+      createdAt: draft.createdAt || now,
+      updatedAt: now,
+    };
+    if (!next.url && !uploadedVideoUrl) {
+      window.alert("動画URLを入力するか、動画をアップロードしてください");
+      return;
+    }
+    if (!draft.id && videoItems.length >= 20) {
+      window.alert("動画プロンプトは最大20件まで保存できます");
+      return;
+    }
+    setVideos((items: VideoItem[]) => {
+      const current = extractVideoPromptItems(items);
+      return draft.id ? current.map((item) => item.id === draft.id ? next : item) : [next, ...current].slice(0, 20);
+    });
+    if (uploadedVideoUrl) {
+      setTempVideoUrls((items) => ({ ...items, [next.id]: uploadedVideoUrl }));
+      setUploadedVideoUrl("");
+      if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
+    }
+    setDraft(next);
+    setSelectedId(next.id);
+    setTagDraft(tagText(next.tags));
+  };
+  const editVideo = (item: VideoItem) => {
+    setDraft({ ...blankVideoPrompt(), ...item });
+    setTagDraft(tagText(item.tags || []));
+    setSelectedId(item.id);
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
+  };
+  const deleteVideo = (id: string) => {
+    if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
+    setTempVideoUrls((items) => {
+      if (items[id]) URL.revokeObjectURL(items[id]);
+      const next = { ...items };
+      delete next[id];
+      return next;
+    });
+    setVideos((items: VideoItem[]) => {
+      const extracted = extractVideoPromptItems(items);
+      rememberDeletedSampleIdsFromItems(extracted.find((item) => item.id === id));
+      return extracted.filter((item) => item.id !== id);
+    });
+    resetDraft();
+  };
+  const importThumbnail = async (file?: File) => {
+    if (!file) return;
+    try {
+      const image = await optimizeImage(file, "video-thumbnail");
+      updateDraft({ thumbnail: image.src || image.thumbnail });
+      scheduleStorageWarningCheck();
+    } catch {
+      window.alert("サムネイル画像を追加できませんでした。jpg / png / webp を選んでください。");
+    }
+  };
+  const importVideoThumbnail = async (file?: File) => {
+    if (!file) return;
+    try {
+      const image = await createVideoThumbnail(file);
+      updateDraft({
+        title: draft.title || file.name.replace(/\.[^.]+$/, ""),
+        thumbnail: image.src || image.thumbnail,
+      });
+      scheduleStorageWarningCheck();
+    } catch {
+      window.alert("動画からサムネイルを作成できませんでした。別の動画形式を試してください。");
+    }
+  };
+  const importUploadedVideo = (file?: File) => {
+    if (!file) return;
+    if (!isSupportedVideoFile(file)) {
+      window.alert("mp4 / webm / mov などの動画ファイルを選んでください。");
+      return;
+    }
+    const nextUrl = URL.createObjectURL(file);
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return nextUrl;
+    });
+  };
+  const clearUploadedVideo = () => {
+    setUploadedVideoUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return "";
+    });
+    if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
+  };
+  const openVideo = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+  const copyPrompt = async () => {
+    if (!draft.prompt.trim()) return;
+    await navigator.clipboard.writeText(draft.prompt);
+    window.alert("プロンプトをコピーしました");
+  };
+  const copyVideoPrompt = async (item: VideoItem, event: any) => {
+    event.stopPropagation();
+    if (!item.prompt.trim()) return;
+    await navigator.clipboard.writeText(item.prompt);
+    window.alert("プロンプトをコピーしました");
+  };
+  const copyVideoStockText = async (text: string) => {
+    if (!text.trim()) return;
+    await navigator.clipboard.writeText(text);
+    window.alert("プロンプトをコピーしました");
+  };
+  const normalizedStocks = (Array.isArray(videoStocks) ? videoStocks : []).slice(0, 100).map((item: any) => ({
+    ...blankVideoPromptStock(),
+    ...item,
+    id: item.id || uid(),
+    title: item.title || "",
+    prompt: item.prompt || item.videoPrompt || "",
+    memo: item.memo || item.note || "",
+    createdAt: item.createdAt || new Date().toISOString(),
+  }));
+  const stockQuery = query.trim().toLowerCase();
+  const filteredStocks = normalizedStocks.filter((item) => {
+    if (!stockQuery) return true;
+    const haystack = `${item.title} ${item.prompt} ${item.memo}`.toLowerCase();
+    return haystack.includes(stockQuery);
+  });
+  const stockCount = normalizedStocks.length;
+  const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
+  const stockSlots = stockQuery
+    ? filteredStocks
+    : Array.from({ length: visibleStockFrameCount }, (_, index) => normalizedStocks[index] || null);
+  const canAddStock = stockCount < 100;
+  const updateVideoStock = (id: string, patch: Partial<VideoPromptStock>) => {
+    setVideoStocks((items: VideoPromptStock[]) => items.map((item) => item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item));
+  };
+  const saveVideoStockFrame = (item: VideoPromptStock) => {
+    if (stockCount >= 100) return;
+    const now = new Date().toISOString();
+    const next = {
+      ...blankVideoPromptStock(),
+      ...item,
+      id: item.id || uid(),
+      title: item.title || "",
+      prompt: item.prompt || "",
+      memo: item.memo || "",
+      createdAt: item.createdAt || now,
+      updatedAt: now,
+    };
+    if (!next.title.trim() && !next.prompt.trim()) return;
+    setVideoStocks((items: VideoPromptStock[]) => [...items, next].slice(0, 100));
+  };
+  const addVideoStockFrame = () => {
+    if (!canAddStock) return;
+    setStockFrameCount((count) => Math.min(100, count + 1));
+  };
+  const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
+  const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
+  const filteredVideos = normalizedVideos.filter((item) => {
+    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
+    if (query && !haystack.includes(query.toLowerCase())) return false;
+    if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
+    if (favoriteOnly && !item.favorite) return false;
+    return true;
+  });
+  const videoSlotCount = searchActive ? filteredVideos.length : (normalizedVideos.length < 20 ? Math.max(8, Math.ceil((normalizedVideos.length + 1) / 4) * 4) : 20);
+  const slots = searchActive
+    ? filteredVideos
+    : Array.from({ length: videoSlotCount }, (_, index) => normalizedVideos[index] || null);
+  if (selectedId) {
+    return (
+      <section
+        className="page video-page"
+        tabIndex={0}
+        onPaste={(event) => {
+          const files = clipboardImageFiles(event);
+          const videoFiles = clipboardVideoFiles(event);
+          if (!files.length && !videoFiles.length) return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (videoFiles.length) importUploadedVideo(videoFiles[0]);
+          else importThumbnail(files[0]);
+        }}
+      >
+        <PageHead
+          title={draft.id ? "動画プロンプトを編集" : "新しい動画プロンプト"}
+          action={<PageBackButton label="動画プロンプト帳へ戻る" onClick={resetDraft} />}
+        />
+        <div className="video-detail-editor">
+          <div className="video-detail-form">
+            <label>タイトル<input value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="タイトル" /></label>
+            <label>動画URL<input value={draft.url} onChange={(event) => updateDraft({ url: event.target.value })} placeholder="YouTube / Google Drive / Runway などのURL" /></label>
+            <label>使用モデル<select value={draft.model} onChange={(event) => updateDraft({ model: event.target.value })}>{videoModels.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+            <label>動画プロンプト<textarea className="video-prompt-input" value={draft.prompt} onChange={(event) => updateDraft({ prompt: event.target.value })} placeholder="動画生成プロンプト" /></label>
+            <label>メモ<textarea value={draft.memo} onChange={(event) => updateDraft({ memo: event.target.value })} placeholder="メモ" /></label>
+            <label>タグ<input value={tagDraft} onChange={(event) => setTagDraft(event.target.value)} placeholder="cinematic, camera move, product demo" /></label>
+            <label className="check"><input type="checkbox" checked={Boolean(draft.favorite)} onChange={(event) => updateDraft({ favorite: event.target.checked })} /> お気に入り</label>
+          </div>
+          <aside className="video-thumbnail-panel">
+            <div
+              className={`video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`}
+              onClick={() => thumbnailInputRef.current?.click()}
+              onDragEnter={(event) => { event.preventDefault(); event.stopPropagation(); setIsThumbnailDragging(true); }}
+              onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); setIsThumbnailDragging(true); }}
+              onDragLeave={(event) => { event.preventDefault(); event.stopPropagation(); setIsThumbnailDragging(false); }}
+              onDrop={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setIsThumbnailDragging(false);
+                importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
+              }}
+            >
+              {draft.thumbnail ? <img src={imageDisplaySrc(draft.thumbnail)} alt="" /> : <VideoPlaceholder />}
+              <small>クリック・ドロップ・貼り付けでサムネイル追加</small>
+            </div>
+            <div className="video-thumbnail-tools">
+              <button type="button" onClick={() => thumbnailInputRef.current?.click()}>画像を選ぶ</button>
+              <button type="button" onClick={() => videoInputRef.current?.click()}>動画からサムネイル生成</button>
+              <button type="button" onClick={() => updateDraft({ thumbnail: "" })}>削除</button>
+            </div>
+            <div
+              className={`video-upload-preview ${isVideoUploadDragging ? "dragging" : ""}`}
+              onClick={() => uploadVideoInputRef.current?.click()}
+              onDragEnter={(event) => { event.preventDefault(); event.stopPropagation(); setIsVideoUploadDragging(true); }}
+              onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); setIsVideoUploadDragging(true); }}
+              onDragLeave={(event) => { event.preventDefault(); event.stopPropagation(); setIsVideoUploadDragging(false); }}
+              onDrop={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setIsVideoUploadDragging(false);
+                importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
+              }}
+            >
+              {uploadedVideoUrl ? (
+                <video src={uploadedVideoUrl} controls playsInline />
+              ) : (
+                <div className="video-upload-placeholder">
+                  <span>▶</span>
+                  <strong>動画をアップロード</strong>
+                  <small>mp4 / webm / mov に対応。動画本体は保存されません。</small>
+                </div>
+              )}
+            </div>
+            <div className="video-thumbnail-tools">
+              <button type="button" onClick={() => uploadVideoInputRef.current?.click()}>動画を選ぶ</button>
+              <button type="button" onClick={clearUploadedVideo} disabled={!uploadedVideoUrl}>アップロード動画を削除</button>
+            </div>
+            <input ref={thumbnailInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: "none" }} onChange={(event) => { importThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+            <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style={{ display: "none" }} onChange={(event) => { importVideoThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+            <input ref={uploadVideoInputRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/*" style={{ display: "none" }} onChange={(event) => { importUploadedVideo(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
+          </aside>
+        </div>
+        <div className="video-detail-actions">
+          <button onClick={copyPrompt} disabled={!draft.prompt.trim()}>📋 プロンプトをコピー</button>
+          <button onClick={() => openVideo(draft.url)} disabled={!draft.url.trim()}>動画URLを開く</button>
+          <button className="primary" onClick={saveVideo}>保存する</button>
+          {draft.id && <button className="danger" onClick={() => deleteVideo(draft.id)}>削除</button>}
+          <PageBackButton label="動画プロンプト帳へ戻る" onClick={resetDraft} />
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="page video-page">
+      <PageHead
+        title="動画プロンプト帳"
+        action={<div className="actions"><span className="prompt-count-pill">動画 {normalizedVideos.length} / 20・ストック {stockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>}
+      />
+      <div className="video-filter-bar">
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="タイトル、プロンプト、メモ、タグで検索..." />
+        <select value={modelFilter} onChange={(event) => setModelFilter(event.target.value)}>
+          <option>すべて</option>
+          {videoModels.map((model) => <option key={model}>{model}</option>)}
+        </select>
+        <label className="check"><input type="checkbox" checked={favoriteOnly} onChange={(event) => setFavoriteOnly(event.target.checked)} /> お気に入りのみ</label>
+      </div>
+      <section className="prompt-area video-prompt-area">
+        <div className="prompt-area-head">
+          <div>
+            <h3>動画プロンプト</h3>
+            <p>Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。</p>
+          </div>
+        </div>
+        <div className="library-prompt-grid video-grid">
+          {slots.map((item: VideoItem | null, index: number) => {
+            const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
+            return item ? (
+            <article className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
+              <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
+                event.stopPropagation();
+                setVideos((items: VideoItem[]) => extractVideoPromptItems(items).map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
+              }}>
+                {item.favorite ? "♥" : "♡"}
+              </button>
+              <details className="card-menu video-card-menu" onClick={(event) => event.stopPropagation()}>
+                <summary aria-label="メニュー">…</summary>
+                <div>
+                  <button onClick={(event) => { event.preventDefault(); editVideo(item); }}>編集</button>
+                  <button onClick={(event) => { event.preventDefault(); setVideos((items: VideoItem[]) => [{ ...item, id: uid(), title: `${item.title} コピー`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...extractVideoPromptItems(items)].slice(0, 20)); }}>複製</button>
+                  <button className="danger" onClick={(event) => { event.preventDefault(); deleteVideo(item.id); }}>削除</button>
+                </div>
+              </details>
+              <button
+                className="video-thumb-button"
+                onClick={(event) => { event.stopPropagation(); editVideo(item); }}
+                onMouseEnter={() => setHoverVideoId(item.id)}
+                onMouseLeave={() => setHoverVideoId("")}
+              >
+                {hoverVideoId === item.id && (isPlayableVideoUrl(previewUrl) || previewUrl.startsWith("blob:")) ? (
+                  <video src={previewUrl} autoPlay muted loop playsInline />
+                ) : item.thumbnail ? (
+                  <img src={imageDisplaySrc(item.thumbnail)} alt="" />
+                ) : <VideoPlaceholder />}
+              </button>
+              <div className="prompt-card-content video-card-body">
+                <h3>{item.title}</h3>
+                <p>{item.prompt || item.memo || item.url}</p>
+                <div className="video-meta-row">
+                  <span className="mini-pill">{item.model || "その他"}</span>
+                  {!!(item.tags || []).length && <div className="video-tags">{item.tags.slice(0, 2).map((tag) => <span key={tag}>#{tag}</span>)}</div>}
+                </div>
+                <div className="prompt-card-actions video-card-actions">
+                  <button className="primary" onClick={(event) => copyVideoPrompt(item, event)} disabled={!item.prompt.trim()}>📋 プロンプトをコピー</button>
+                  <button onClick={(event) => { event.stopPropagation(); editVideo(item); }}>メモ</button>
+                </div>
+              </div>
+            </article>
+          ) : (
+            <button className="add-prompt-card video-add-card" key={`empty-${index}`} onClick={openNewVideo} disabled={videoItems.length >= 20}>
+              <span>＋</span>
+              <strong>新しい動画プロンプト</strong>
+            </button>
+          );
+          })}
+        </div>
+        {!searchActive && videoItems.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
+        {searchActive && !filteredVideos.length && <Empty text="条件に合う動画プロンプトがありません。" />}
+      </section>
+      <section className="prompt-area text-prompt-area video-stock-area">
+        <div className="prompt-area-head">
+          <div>
+            <h3>プロンプトストック</h3>
+            <p>動画を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+          </div>
+        </div>
+        <div className="text-prompt-list">
+          {stockSlots.map((stock: VideoPromptStock | null, index: number) => (
+            <TextStockFrame
+              key={stock?.id || `video-stock-frame-${index}`}
+              prompt={stock}
+              blankPrompt={blankVideoPromptStock()}
+              onCreate={saveVideoStockFrame}
+              onUpdate={updateVideoStock}
+              copyText={copyVideoStockText}
+              showMemo={() => stock && setMemoStock(stock)}
+            />
+          ))}
+        </div>
+        {canAddStock && !stockQuery && stockCount >= visibleStockFrameCount && (
+          <button className="add-stock-button" onClick={addVideoStockFrame}>＋ プロンプトを追加</button>
+        )}
+        {!canAddStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+        {stockQuery && !filteredStocks.length && <Empty text="条件に合うプロンプトストックがありません。" />}
+      </section>
+      {memoStock && (
+        <MemoModal
+          prompt={{ ...memoStock, id: memoStock.id, memo: memoStock.memo || "" }}
+          onClose={() => setMemoStock(null)}
+          onSave={(memo) => {
+            updateVideoStock(memoStock.id, { memo });
+            setMemoStock(null);
+          }}
+        />
+      )}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
+    </section>
+  );
+}
+
+function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen }: any) {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const backgroundInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [draggingId, setDraggingId] = React.useState("");
+  const [selectedId, setSelectedId] = React.useState("");
+  const [isBackgroundDragging, setIsBackgroundDragging] = React.useState(false);
+  const boardRef = React.useRef<HTMLDivElement | null>(null);
+  const selected = journal.items.find((item: JournalItem) => item.id === selectedId);
+  const customBackgrounds = journal.customBackgrounds || [];
+  const selectedCustomBackground = customBackgrounds.find((item: AtelierImage) => journal.background === `custom-${item.id}`);
+  const addJournalItem = (image: AtelierImage) => {
+    const normalized = {
+      ...image,
+      src: image.src || imageSrc(image),
+      thumbnail: image.thumbnail || image.src || imageThumbnail(image),
+    };
+    const item: JournalItem = {
+      id: uid(),
+      imageId: normalized.id,
+      src: normalized.src,
+      thumbnail: normalized.thumbnail,
+      x: 80 + journal.items.length * 18,
+      y: 80 + journal.items.length * 14,
+      width: 170,
+      rotate: (journal.items.length % 5) * 4 - 8,
+      stickerEffect: true,
+    };
+    setJournal((current: JournalState) => ({ ...current, items: [...current.items, item] }));
+    setSelectedId(item.id);
+  };
+  const addFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    if (!files.length) return;
+    const currentCount = journal.items.length || 0;
+    const remaining = 100 - currentCount;
+    if (remaining <= 0) {
+      window.alert("ジャーナル1ページの画像は最大100枚までです");
+      return;
+    }
+    const optimizedImages = await Promise.all(files.slice(0, remaining).map((file) => optimizeImage(file, "journal")));
+    if (files.length > remaining) window.alert("ジャーナル1ページの画像は最大100枚までです");
+    const nextImages = optimizedImages.map((image, index) => ({
+      ...image,
+      title: files[index].name.replace(/\.[^.]+$/, ""),
+      memo: "ジャーナルから追加",
+      source: "journal",
+      favorite: false,
+    }));
+    setGalleryImages((items: AtelierImage[]) => [...nextImages, ...items]);
+    nextImages.forEach(addJournalItem);
+    scheduleStorageWarningCheck();
+  };
+  const addBackgroundFiles = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList).filter(isSupportedImageFile);
+    if (!files.length) return;
+    const currentBackgrounds = customBackgrounds.length;
+    const remaining = 20 - currentBackgrounds;
+    if (remaining <= 0) {
+      window.alert("背景画像は最大20枚までです");
+      return;
+    }
+    const optimizedBackgrounds = await Promise.all(files.slice(0, remaining).map((file) => optimizeImage(file, "background")));
+    if (files.length > remaining) window.alert("背景画像は最大20枚までです");
+    const nextBackgrounds = optimizedBackgrounds.map((image, index) => ({
+      ...image,
+      title: files[index].name.replace(/\.[^.]+$/, "") || `お気に入り背景${index + 1}`,
+      memo: "",
+      source: "journal-background",
+      favorite: false,
+    }));
+    setJournal((current: JournalState) => ({
+      ...current,
+      customBackgrounds: [...nextBackgrounds, ...(current.customBackgrounds || [])],
+      background: `custom-${nextBackgrounds[0].id}`,
+    }));
+    scheduleStorageWarningCheck();
+  };
+  const updateBackground = (id: string, patch: Partial<AtelierImage>) => {
+    setJournal((current: JournalState) => ({
+      ...current,
+      customBackgrounds: (current.customBackgrounds || []).map((item) => item.id === id ? { ...item, ...patch } : item),
+    }));
+  };
+  const deleteBackground = (id: string) => {
+    setJournal((current: JournalState) => {
+      rememberDeletedSampleIdsFromItems((current.customBackgrounds || []).find((item) => item.id === id));
+      const nextBackgrounds = (current.customBackgrounds || []).filter((item) => item.id !== id);
+      return { ...current, customBackgrounds: nextBackgrounds, background: current.background === `custom-${id}` ? "paper" : current.background };
+    });
+  };
+  const updateItem = (id: string, patch: Partial<JournalItem>) => {
+    setJournal((current: JournalState) => ({ ...current, items: current.items.map((item) => item.id === id ? { ...item, ...patch } : item) }));
+  };
+  const moveItem = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!draggingId || !boardRef.current) return;
+    const rect = boardRef.current.getBoundingClientRect();
+    updateItem(draggingId, { x: event.clientX - rect.left - 60, y: event.clientY - rect.top - 60 });
+  };
+  return (
+    <section className="page journal-page">
+      <PageHead
+        title="ジャーナル"
+        action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button onClick={() => setScreen("gallery")}>ギャラリーへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        style={{ display: "none" }}
+        onChange={(event) => {
+          if (event.currentTarget.files) addFiles(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }}
+      />
+      <input
+        ref={backgroundInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        style={{ display: "none" }}
+        onChange={(event) => {
+          if (event.currentTarget.files) addBackgroundFiles(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }}
+      />
+      <div className="journal-layout">
+        <aside className="journal-tools">
+          <label>背景
+            <select value={journal.background} onChange={(event) => setJournal((current: JournalState) => ({ ...current, background: event.target.value }))}>
+              <option value="paper">無地アイボリー</option>
+              <option value="grid">方眼紙</option>
+              <option value="dot-grid">ドット方眼</option>
+              <option value="kraft">クラフト紙</option>
+              <option value="old-paper">古紙</option>
+              <option value="pink">淡いピンク</option>
+              <option value="blue">淡いブルー</option>
+              <option value="green">淡いグリーン</option>
+              <option value="linen">リネン風</option>
+              <option value="washi">マスキングテープ風</option>
+              <option value="scrapbook">スクラップブック風</option>
+              <option value="lined">罫線ノート</option>
+              <option value="check">チェック柄</option>
+              <option value="floral">薄い花柄</option>
+              <option value="watercolor">水彩にじみ</option>
+              <option value="dark">ダーク紙</option>
+              {customBackgrounds.map((background: AtelierImage) => <option key={background.id} value={`custom-${background.id}`}>{background.title || "お気に入り背景"}</option>)}
+            </select>
+          </label>
+          <div
+            className={`journal-background-drop ${isBackgroundDragging ? "dragging" : ""}`}
+            onDragOver={(event) => event.preventDefault()}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setIsBackgroundDragging(true);
+            }}
+            onDragLeave={() => setIsBackgroundDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setIsBackgroundDragging(false);
+              addBackgroundFiles(event.dataTransfer.files);
+            }}
+          >
+            <button type="button" onClick={() => backgroundInputRef.current?.click()}>＋ 背景を追加</button>
+            <small>画像をドロップして背景にできます</small>
+          </div>
+          {selectedCustomBackground && (
+            <div className="journal-background-editor">
+              <label>背景名<input value={selectedCustomBackground.title} onChange={(event) => updateBackground(selectedCustomBackground.id, { title: event.target.value })} /></label>
+              <button className="danger" onClick={() => deleteBackground(selectedCustomBackground.id)}>背景を削除</button>
+            </div>
+          )}
+          <strong>画像ストック</strong>
+          <div className="journal-stock">
+            {images.slice(0, 18).map((image: AtelierImage) => (
+              <button key={image.id} onClick={() => addJournalItem(image)}><img src={imageDisplaySrc(image)} alt="" /></button>
+            ))}
+          </div>
+          {selected && (
+            <div className="journal-edit-panel">
+              <label>サイズ<input type="range" min="80" max="360" value={selected.width} onChange={(event) => updateItem(selected.id, { width: Number(event.target.value) })} /></label>
+              <label>回転<input type="range" min="-35" max="35" value={selected.rotate} onChange={(event) => updateItem(selected.id, { rotate: Number(event.target.value) })} /></label>
+              <label className="check"><input type="checkbox" checked={isStickerEffectOn(selected)} onChange={(event) => updateItem(selected.id, { stickerEffect: event.target.checked })} /> シール風</label>
+              <button className="danger" onClick={() => setJournal((current: JournalState) => {
+                rememberDeletedSampleIdsFromItems(current.items.find((item) => item.id === selected.id));
+                return { ...current, items: current.items.filter((item) => item.id !== selected.id) };
+              })}>選択画像を削除</button>
+            </div>
+          )}
+        </aside>
+        <div
+          ref={boardRef}
+          className={`journal-board ${journal.background}`}
+          tabIndex={0}
+          style={selectedCustomBackground ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${imageSrc(selectedCustomBackground)})` } : undefined}
+          onPointerMove={moveItem}
+          onPointerUp={() => setDraggingId("")}
+          onPointerLeave={() => setDraggingId("")}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            addFiles(event.dataTransfer.files);
+          }}
+          onPaste={(event) => {
+            const files = clipboardImageFiles(event);
+            if (!files.length) return;
+            event.preventDefault();
+            event.stopPropagation();
+            addFiles(files);
+          }}
+        >
+          {journal.items.length ? journal.items.map((item: JournalItem) => (
+            <div
+              className={`journal-sticker ${selectedId === item.id ? "selected" : ""}`}
+              key={item.id}
+              style={{ left: item.x, top: item.y, width: item.width, transform: `rotate(${item.rotate}deg)` }}
+              onPointerDown={(event) => {
+                event.preventDefault();
+                setSelectedId(item.id);
+                setDraggingId(item.id);
+              }}
+            >
+              <img className={isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image"} src={imageDisplaySrc(item)} alt="" draggable={false} />
+            </div>
+          )) : <div className="journal-empty">画像を追加して、シール帳のように並べられます。</div>}
+        </div>
+      </div>
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
+    </section>
+  );
+}
+
+function Projects({ projects, setProjects, prompts, settings, copyText, setScreen }: any) {
   const [editing, setEditing] = React.useState<Project | null>(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
@@ -2397,7 +5110,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
     <section className="page">
       <PageHead
         title="プロジェクト管理"
-        action={canAddProject ? <button className="primary" onClick={() => setEditing(blankProject())}>追加する</button> : <span className="limit-message">プロジェクトは最大30件まで登録できます</span>}
+        action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} />{canAddProject ? <button className="primary" onClick={() => setEditing(blankProject())}>追加する</button> : <span className="limit-message">プロジェクトは最大30件まで登録できます</span>}</div>}
       />
       <Filters><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="プロジェクト名、タグ、メモで検索" /></Filters>
       {!canAddProject && <p className="limit-note">プロジェクトは最大30件まで登録できます</p>}
@@ -2414,7 +5127,10 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
                 </div>
                 <div className="actions">
                   <button onClick={() => setEditing(project)}>編集</button>
-                  <button className="danger" onClick={() => setProjects((items: Project[]) => items.filter((p) => p.id !== project.id))}>削除</button>
+                  <button className="danger" onClick={() => setProjects((items: Project[]) => {
+                    rememberDeletedSampleIdsFromItems(items.find((p) => p.id === project.id));
+                    return items.filter((p) => p.id !== project.id);
+                  })}>削除</button>
                 </div>
               </div>
               <TagRow tags={project.tags} />
@@ -2433,6 +5149,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
         })}
       </div>
       {editing && <ProjectModal item={editing} prompts={prompts} settings={settings} onClose={() => setEditing(null)} onSave={save} />}
+      <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
     </section>
   );
 }
@@ -2440,7 +5157,7 @@ function Projects({ projects, setProjects, prompts, settings, copyText }: any) {
 function PromptCard({ prompt, onCopy, extra }: any) {
   return (
     <article className="prompt-card">
-      <img src={prompt.imageUrl || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+      <img src={imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       <div>
         <span className="pill">{prompt.category}</span>
         <h3>{prompt.title}</h3>
@@ -2461,6 +5178,7 @@ function PromptCard({ prompt, onCopy, extra }: any) {
 
 function PromptModal({ item, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item, tagInput: tagText(item.tags) });
+  const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, imageUrl: coverImages[0] || "" });
   return (
     <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
       <FormGrid>
@@ -2470,7 +5188,7 @@ function PromptModal({ item, onClose, onSave }: any) {
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
         <textarea value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="メモ" />
         <input value={draft.tagInput} onChange={(e) => setDraft({ ...draft, tagInput: e.target.value })} placeholder="タグ（カンマ区切り）" />
-        <input value={draft.imageUrl} onChange={(e) => setDraft({ ...draft, imageUrl: e.target.value })} placeholder="サンプル画像URL" />
+        <CoverImageUploader item={draft} category="prompt" onChange={setCoverImages} />
         <label className="check"><input type="checkbox" checked={draft.favorite} onChange={(e) => setDraft({ ...draft, favorite: e.target.checked })} /> お気に入り</label>
       </FormGrid>
       <ModalActions onClose={onClose} onSave={() => onSave({ ...draft, tags: splitTags(draft.tagInput) })} />
@@ -2600,6 +5318,14 @@ function mjCommand(item: MjSetting) {
 
 function PageHead({ title, action }: any) {
   return <div className="page-head"><h2>{title}</h2>{action}</div>;
+}
+
+function PageBackButton({ label = "前のページに戻る", onClick, className = "" }: any) {
+  return (
+    <button type="button" className={`page-back-button ${className}`.trim()} onClick={onClick}>
+      ← {label}
+    </button>
+  );
 }
 
 function SectionTitle({ title }: any) {
