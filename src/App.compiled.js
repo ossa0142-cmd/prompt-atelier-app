@@ -2224,7 +2224,8 @@ function HomeCustomize({
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y)))
   });
   const startBannerDrag = event => {
-    if (!settings.bannerImageUrl) return;
+    if (!settings.bannerImageUrl || (settings.bannerFit || "contain") !== "cover") return;
+    event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     bannerDragRef.current = {
       startX: event.clientX,
@@ -2239,8 +2240,9 @@ function HomeCustomize({
   const moveBannerDrag = event => {
     const drag = bannerDragRef.current;
     if (!drag) return;
-    const nextX = drag.x - (event.clientX - drag.startX) / drag.width * 100;
-    const nextY = drag.y - (event.clientY - drag.startY) / drag.height * 100;
+    event.preventDefault();
+    const nextX = drag.x + (event.clientX - drag.startX) / drag.width * 100;
+    const nextY = drag.y + (event.clientY - drag.startY) / drag.height * 100;
     updateBannerPosition(nextX, nextY);
   };
   const endBannerDrag = () => {
@@ -2309,6 +2311,7 @@ function HomeCustomize({
     }
   };
   const activeTheme = homeThemes.find(theme => theme.id === settings.themeId) || homeThemes[0];
+  const bannerCanDrag = Boolean(settings.bannerImageUrl) && (settings.bannerFit || "contain") === "cover";
   return /*#__PURE__*/React.createElement("section", {
     className: "page customize-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -2386,23 +2389,7 @@ function HomeCustomize({
     onClick: () => updateSettings({
       bannerFit: "cover"
     })
-  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。")), /*#__PURE__*/React.createElement("div", {
-    className: "banner-position-controls"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "バナー位置調整"), /*#__PURE__*/React.createElement("p", null, "画像が切れる場合は、プレビュー上でドラッグして表示位置を調整できます。")), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("span", null, "横位置 ", settings.bannerPositionX ?? 50, "%"), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: "0",
-    max: "100",
-    value: settings.bannerPositionX ?? 50,
-    onChange: event => updateBannerPosition(Number(event.target.value), settings.bannerPositionY ?? 50)
-  })), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("span", null, "縦位置 ", settings.bannerPositionY ?? 50, "%"), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: "0",
-    max: "100",
-    value: settings.bannerPositionY ?? 50,
-    onChange: event => updateBannerPosition(settings.bannerPositionX ?? 50, Number(event.target.value))
-  })), /*#__PURE__*/React.createElement("button", {
-    onClick: () => updateBannerPosition(50, 50)
-  }, "中央に戻す"), (settings.bannerFit || "contain") === "contain" && /*#__PURE__*/React.createElement("small", null, "全体を表示では画像が切れにくいため、位置調整は枠いっぱい表示の時に効果が分かりやすくなります。"))), /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
+  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。"))), /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
     settings: settings,
     updateSettings: updateSettings,
     projects: projects
@@ -2515,11 +2502,12 @@ function HomeCustomize({
     className: "preview-shell",
     style: themeStyle(activeTheme)
   }, settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
-    className: `preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${settings.bannerImageUrl ? "is-draggable" : ""}`,
+    className: `preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
     onPointerDown: startBannerDrag,
     onPointerMove: moveBannerDrag,
     onPointerUp: endBannerDrag,
-    onPointerCancel: endBannerDrag
+    onPointerCancel: endBannerDrag,
+    onLostPointerCapture: endBannerDrag
   }, settings.bannerImageUrl && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     src: imageSrc(settings.bannerImageUrl) || imageThumbnail(settings.bannerImageUrl),
     alt: "",
@@ -2527,9 +2515,17 @@ function HomeCustomize({
     style: {
       objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%`
     }
-  }), /*#__PURE__*/React.createElement("span", {
+  }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
     className: "banner-drag-hint"
-  }, "画像をドラッグして表示位置を調整"))), /*#__PURE__*/React.createElement("div", {
+  }, "画像をドラッグして表示位置を調整"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "banner-reset-position",
+    onPointerDown: event => event.stopPropagation(),
+    onClick: event => {
+      event.stopPropagation();
+      updateBannerPosition(50, 50);
+    }
+  }, "中央に戻す"))), /*#__PURE__*/React.createElement("div", {
     className: "preview-card large"
   }), /*#__PURE__*/React.createElement("div", {
     className: "preview-grid"

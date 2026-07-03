@@ -2215,7 +2215,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
   });
   const startBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!settings.bannerImageUrl) return;
+    if (!settings.bannerImageUrl || (settings.bannerFit || "contain") !== "cover") return;
+    event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     bannerDragRef.current = {
       startX: event.clientX,
@@ -2230,8 +2231,9 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   const moveBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = bannerDragRef.current;
     if (!drag) return;
-    const nextX = drag.x - ((event.clientX - drag.startX) / drag.width) * 100;
-    const nextY = drag.y - ((event.clientY - drag.startY) / drag.height) * 100;
+    event.preventDefault();
+    const nextX = drag.x + ((event.clientX - drag.startX) / drag.width) * 100;
+    const nextY = drag.y + ((event.clientY - drag.startY) / drag.height) * 100;
     updateBannerPosition(nextX, nextY);
   };
   const endBannerDrag = () => {
@@ -2293,6 +2295,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     }
   };
   const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
+  const bannerCanDrag = Boolean(settings.bannerImageUrl) && (settings.bannerFit || "contain") === "cover";
   return (
     <section className="page customize-page">
       <PageHead
@@ -2366,36 +2369,6 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 </button>
               </div>
               <p>「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。</p>
-            </div>
-            <div className="banner-position-controls">
-              <div>
-                <strong>バナー位置調整</strong>
-                <p>画像が切れる場合は、プレビュー上でドラッグして表示位置を調整できます。</p>
-              </div>
-              <label>
-                <span>横位置 {settings.bannerPositionX ?? 50}%</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={settings.bannerPositionX ?? 50}
-                  onChange={(event) => updateBannerPosition(Number(event.target.value), settings.bannerPositionY ?? 50)}
-                />
-              </label>
-              <label>
-                <span>縦位置 {settings.bannerPositionY ?? 50}%</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={settings.bannerPositionY ?? 50}
-                  onChange={(event) => updateBannerPosition(settings.bannerPositionX ?? 50, Number(event.target.value))}
-                />
-              </label>
-              <button onClick={() => updateBannerPosition(50, 50)}>中央に戻す</button>
-              {(settings.bannerFit || "contain") === "contain" && (
-                <small>全体を表示では画像が切れにくいため、位置調整は枠いっぱい表示の時に効果が分かりやすくなります。</small>
-              )}
             </div>
           </section>
 
@@ -2513,11 +2486,12 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           <div className="preview-shell" style={themeStyle(activeTheme)}>
             {settings.bannerVisible && (
               <div
-                className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${settings.bannerImageUrl ? "is-draggable" : ""}`}
+                className={`preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`}
                 onPointerDown={startBannerDrag}
                 onPointerMove={moveBannerDrag}
                 onPointerUp={endBannerDrag}
                 onPointerCancel={endBannerDrag}
+                onLostPointerCapture={endBannerDrag}
               >
                 {settings.bannerImageUrl && (
                   <>
@@ -2527,7 +2501,15 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                       draggable={false}
                       style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
                     />
-                    <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>
+                    {bannerCanDrag && <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>}
+                    <button
+                      type="button"
+                      className="banner-reset-position"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => { event.stopPropagation(); updateBannerPosition(50, 50); }}
+                    >
+                      中央に戻す
+                    </button>
                   </>
                 )}
               </div>
