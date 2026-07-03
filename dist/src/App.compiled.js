@@ -706,6 +706,9 @@ const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
+const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
+const DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
+const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const IMAGE_DB_NAME = "PromptAtelierDB";
 const IMAGE_DB_VERSION = 1;
@@ -1371,6 +1374,183 @@ async function restorePromptAtelierBackup(file) {
     }
   }
 }
+function padSampleIndex(index) {
+  return String(index + 1).padStart(3, "0");
+}
+function samplePrefixForKey(key) {
+  if (key.includes("mockup-categories")) return "sample-mockup-category";
+  if (key.includes("library-prompts")) return "sample-mockup-card";
+  if (key.includes("prompts-ja")) return "sample-prompt-card";
+  if (key.includes("VideoPromptStocks")) return "sample-video-stock";
+  if (key.includes("VideoPrompts")) return "sample-video-prompt";
+  if (key.includes("Midjourney")) return "sample-mj-setting";
+  if (key.includes("projects")) return "sample-project";
+  if (key.includes("Gallery")) return "sample-gallery-image";
+  if (key.includes("Journal")) return "sample-journal";
+  if (key.includes("HomeSettings")) return "sample-home-setting";
+  if (key.includes("WorkTools")) return "sample-work-tool";
+  return "sample-item";
+}
+function cleanSampleValue(value) {
+  if (typeof value === "string") {
+    if (value.startsWith("blob:")) return "";
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(cleanSampleValue).filter(item => item !== undefined);
+  if (!value || typeof value !== "object") return value;
+  const next = {};
+  Object.entries(value).forEach(([key, item]) => {
+    if (/objectUrl|previewUrl|temporary|temp/i.test(key)) return;
+    if ((key === "videoUrl" || key === "url") && typeof item === "string" && item.startsWith("blob:")) {
+      next[key] = "";
+      return;
+    }
+    next[key] = cleanSampleValue(item);
+  });
+  return next;
+}
+function addSampleMeta(value, prefix) {
+  if (Array.isArray(value)) {
+    return value.map((item, index) => {
+      if (!item || typeof item !== "object") return item;
+      return {
+        ...cleanSampleValue(item),
+        isSample: true,
+        sampleId: item.sampleId || `${prefix}-${padSampleIndex(index)}`
+      };
+    });
+  }
+  if (value?.items && Array.isArray(value.items)) {
+    return {
+      ...cleanSampleValue(value),
+      items: value.items.map((item, index) => ({
+        ...cleanSampleValue(item),
+        isSample: true,
+        sampleId: item.sampleId || `${prefix}-item-${padSampleIndex(index)}`
+      }))
+    };
+  }
+  if (value?.customBackgrounds && Array.isArray(value.customBackgrounds)) {
+    return {
+      ...cleanSampleValue(value),
+      customBackgrounds: value.customBackgrounds.map((item, index) => ({
+        ...cleanSampleValue(item),
+        isSample: true,
+        sampleId: item.sampleId || `sample-background-${padSampleIndex(index)}`
+      }))
+    };
+  }
+  return cleanSampleValue(value);
+}
+function parseStorageValueForSample(key) {
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+async function exportPromptAtelierSampleSeed() {
+  if (!window.confirm("現在のデータを配布用サンプルデータとして書き出します。よろしいですか？")) return;
+  const data = {};
+  SAMPLE_EXPORT_KEYS.forEach(key => {
+    const value = parseStorageValueForSample(key);
+    if (value === null || value === undefined) return;
+    data[key] = addSampleMeta(value, samplePrefixForKey(key));
+  });
+  const images = (await getAllIndexedDbImages()).map((image, index) => ({
+    ...cleanSampleValue(image),
+    src: image.src,
+    thumbnail: image.thumbnail || image.src,
+    isSample: true,
+    sampleId: image.sampleId || `sample-image-${padSampleIndex(index)}`
+  }));
+  const payload = {
+    app: "Prompt Atelier",
+    type: "sample-seed",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data,
+    images
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "prompt-atelier-sample-seed.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+function sampleIdOf(item) {
+  return item?.sampleId || "";
+}
+function mergeSampleCollection(existing, incoming, deletedIds) {
+  if (!Array.isArray(incoming)) return existing ?? incoming;
+  const current = Array.isArray(existing) ? existing : [];
+  const currentSampleIds = new Set(current.map(sampleIdOf).filter(Boolean));
+  const next = [...current];
+  incoming.forEach(item => {
+    const sampleId = sampleIdOf(item);
+    if (!sampleId || deletedIds.has(sampleId) || currentSampleIds.has(sampleId)) return;
+    next.push(cleanSampleValue(item));
+    currentSampleIds.add(sampleId);
+  });
+  return next;
+}
+function mergeJournalSample(existing, incoming, deletedIds) {
+  const current = existing && typeof existing === "object" ? existing : {};
+  const next = {
+    ...current
+  };
+  if (!next.background && incoming?.background) next.background = incoming.background;
+  if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds);
+  if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds);
+  return next;
+}
+function mergeSampleValue(existing, incoming, key, deletedIds) {
+  if (key.includes("HomeSettings")) return existing ?? incoming;
+  if (key.includes("Journal")) return mergeJournalSample(existing, incoming, deletedIds);
+  return mergeSampleCollection(existing, incoming, deletedIds);
+}
+async function loadSampleSeedIfNeeded() {
+  try {
+    const response = await fetch(SAMPLE_SEED_PATH, {
+      cache: "no-store"
+    });
+    if (!response.ok) return false;
+    const seed = await response.json();
+    if (seed?.type !== "sample-seed" || !seed?.data) return false;
+    const deletedIds = new Set(JSON.parse(localStorage.getItem(DELETED_SAMPLE_IDS_KEY) || "[]"));
+    let changed = false;
+    Object.entries(seed.data).forEach(([key, incoming]) => {
+      if (!SAMPLE_EXPORT_KEYS.includes(key)) return;
+      const existing = parseStorageValueForSample(key);
+      const merged = mergeSampleValue(existing, incoming, key, deletedIds);
+      if (JSON.stringify(existing) !== JSON.stringify(merged)) {
+        localStorage.setItem(key, JSON.stringify(merged));
+        changed = true;
+      }
+    });
+    if (Array.isArray(seed.images)) {
+      for (const image of seed.images) {
+        const sampleId = sampleIdOf(image);
+        if (sampleId && deletedIds.has(sampleId)) continue;
+        if (image?.id && image?.src && !indexedDbImageCache.has(image.id)) {
+          await putIndexedDbImage(cleanSampleValue(image));
+          changed = true;
+        }
+      }
+    }
+    return changed;
+  } catch {
+    return false;
+  }
+}
 function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
@@ -1419,9 +1599,10 @@ function App() {
         await refreshIndexedDbImageCache();
         const migrated = await migrateLocalStorageImagesToIndexedDb();
         await refreshIndexedDbImageCache();
+        const sampleSeedImported = await loadSampleSeedIfNeeded();
         if (cancelled) return;
-        if (migrated) {
-          sessionStorage.setItem("promptAtelierRestoreMessage", "画像データを最適化しました");
+        if (migrated || sampleSeedImported) {
+          sessionStorage.setItem("promptAtelierRestoreMessage", sampleSeedImported ? "サンプルデータを読み込みました" : "画像データを最適化しました");
           window.location.reload();
           return;
         }
@@ -1973,7 +2154,11 @@ function HomeCustomize({
     onClick: exportPromptAtelierBackup
   }, "バックアップを書き出す"), /*#__PURE__*/React.createElement("button", {
     onClick: () => backupInputRef.current?.click()
-  }, "バックアップを読み込む")), /*#__PURE__*/React.createElement("input", {
+  }, "バックアップを読み込む")), /*#__PURE__*/React.createElement("details", {
+    className: "developer-tools"
+  }, /*#__PURE__*/React.createElement("summary", null, "開発者向け"), /*#__PURE__*/React.createElement("p", null, "現在の登録内容を、配布版の初期サンプルとして使えるJSONに変換します。"), /*#__PURE__*/React.createElement("button", {
+    onClick: exportPromptAtelierSampleSeed
+  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("input", {
     ref: backupInputRef,
     type: "file",
     accept: "application/json,.json",

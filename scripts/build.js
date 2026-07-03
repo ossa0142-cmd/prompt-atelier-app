@@ -39,6 +39,9 @@ compileApp();
 copyFile(path.join(root, "index.html"), path.join(dist, "index.html"));
 copyFile(path.join(root, "src", "App.compiled.js"), path.join(dist, "src", "App.compiled.js"));
 copyFile(path.join(root, "src", "styles.css"), path.join(dist, "src", "styles.css"));
+if (fs.existsSync(path.join(root, "src", "data"))) {
+  copyDir(path.join(root, "src", "data"), path.join(dist, "src", "data"));
+}
 copyDir(path.join(root, "public"), path.join(dist, "public"));
 
 console.log("Prompt Atelier exported to dist/");
