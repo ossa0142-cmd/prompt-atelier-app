@@ -2039,6 +2039,24 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           <section className="customize-card">
             <h3>バナー</h3>
             <p>ホーム上部に表示する横長画像を設定できます。</p>
+            <div className="banner-size-guide">
+              <strong>バナー画像の推奨サイズ</strong>
+              <div>
+                <span>
+                  <b>大バナー</b>
+                  <small>1920 × 640px / 3:1</small>
+                </span>
+                <span>
+                  <b>中バナー</b>
+                  <small>1200 × 600px / 2:1</small>
+                </span>
+                <span>
+                  <b>小バナー</b>
+                  <small>900 × 600px / 3:2</small>
+                </span>
+              </div>
+              <p>推奨サイズに近い画像を使用すると、トリミングや表示崩れが少なくなります。</p>
+            </div>
             <label className="switch-row">
               <span>バナー表示</span>
               <input type="checkbox" checked={settings.bannerVisible} onChange={(event) => updateSettings({ bannerVisible: event.target.checked })} />
