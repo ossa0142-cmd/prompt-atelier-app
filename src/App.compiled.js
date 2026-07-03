@@ -411,7 +411,8 @@ const defaultHomeSettings = {
     position: "right-bottom",
     speechEnabled: true,
     messageMode: "auto",
-    fixedMessage: "今日も制作がんばろう♡"
+    fixedMessage: "今日も制作がんばろう♡",
+    selectedProjectId: ""
   },
   visible: {
     library: true,
@@ -428,19 +429,26 @@ const defaultHomeSettings = {
   },
   order: ["dashboard", "quickActions", "search", "featureCards", "favorites", "atelier"]
 };
-const normalizeHomeSettings = settings => ({
-  ...defaultHomeSettings,
-  ...settings,
-  homeCharacter: {
+const normalizeHomeSettings = settings => {
+  const rawCharacter = {
     ...defaultHomeSettings.homeCharacter,
     ...(settings?.homeCharacter || {})
-  },
-  visible: {
-    ...defaultHomeSettings.visible,
-    ...(settings?.visible || {})
-  },
-  order: [...(settings?.order || defaultHomeSettings.order).filter(id => homeSections.some(section => section.id === id)), ...defaultHomeSettings.order.filter(id => !(settings?.order || []).includes(id))]
-});
+  };
+  const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
+  return {
+    ...defaultHomeSettings,
+    ...settings,
+    homeCharacter: {
+      ...rawCharacter,
+      messageMode: safeMessageMode
+    },
+    visible: {
+      ...defaultHomeSettings.visible,
+      ...(settings?.visible || {})
+    },
+    order: [...(settings?.order || defaultHomeSettings.order).filter(id => homeSections.some(section => section.id === id)), ...defaultHomeSettings.order.filter(id => !(settings?.order || []).includes(id))]
+  };
+};
 const art = (label, a, b) => `data:image/svg+xml,${encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" width="900" height="650" viewBox="0 0 900 650">
     <defs>
@@ -1716,7 +1724,8 @@ function App() {
     setSettings: setRawHomeSettings,
     setScreen: setScreen,
     workTools: workTools,
-    setWorkTools: setWorkTools
+    setWorkTools: setWorkTools,
+    projects: projects
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
     setScreen: setScreen
@@ -1967,6 +1976,14 @@ function characterProjectMessage(projects) {
   if (active.length) return `進行中のプロジェクトが${active.length}件あります`;
   return "";
 }
+function selectedProjectMessage(project) {
+  if (!project) return "";
+  if (!project.dueDate) return `『${project.name}』を進行中です`;
+  const info = projectDueInfo(project.dueDate);
+  if (info.expired) return `『${project.name}』の期限が過ぎています`;
+  if (info.diff === 0) return `『${project.name}』は今日が期限です`;
+  return `『${project.name}』はあと${info.diff}日で期限です`;
+}
 function characterMemoMessage(projects, prompts) {
   const projectMemo = [...projects].reverse().find(project => shortMemoText(project.note || ""));
   if (projectMemo) return `最近のメモ：${shortMemoText(projectMemo.note)}`;
@@ -1976,8 +1993,10 @@ function characterMemoMessage(projects, prompts) {
 }
 function characterMessage(settings, projects, prompts) {
   if (settings.messageMode === "fixed") return settings.fixedMessage || "今日も制作がんばろう";
-  if (settings.messageMode === "project") return characterProjectMessage(projects) || "プロジェクトを少しずつ進めよう";
-  if (settings.messageMode === "memo") return characterMemoMessage(projects, prompts) || "メモに新しいアイデアを残してみよう";
+  if (settings.messageMode === "project") {
+    const selectedProject = projects.find(project => project.id === settings.selectedProjectId);
+    return selectedProjectMessage(selectedProject) || characterProjectMessage(projects) || "プロジェクトを少しずつ進めよう";
+  }
   return characterProjectMessage(projects) || characterMemoMessage(projects, prompts) || "今日も制作がんばろう";
 }
 function CharacterSpeechBubble({
@@ -2006,9 +2025,11 @@ function HomeCharacter({
 }
 function HomeCharacterSettingsPanel({
   settings,
-  updateSettings
+  updateSettings,
+  projects
 }) {
   const character = settings.homeCharacter || defaultHomeSettings.homeCharacter;
+  const projectChoices = sortProjectsForDisplay(projects || []);
   const fileInputRef = React.useRef(null);
   const updateCharacter = patch => updateSettings({
     homeCharacter: {
@@ -2098,9 +2119,18 @@ function HomeCharacterSettingsPanel({
     value: "fixed"
   }, "固定メッセージ"), /*#__PURE__*/React.createElement("option", {
     value: "project"
-  }, "プロジェクト優先"), /*#__PURE__*/React.createElement("option", {
-    value: "memo"
-  }, "メモ優先"))), /*#__PURE__*/React.createElement("textarea", {
+  }, "プロジェクト優先"))), character.messageMode === "project" && /*#__PURE__*/React.createElement("label", null, "表示するプロジェクト", /*#__PURE__*/React.createElement("select", {
+    value: character.selectedProjectId || "",
+    onChange: event => updateCharacter({
+      selectedProjectId: event.target.value
+    }),
+    disabled: !projectChoices.length
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "未選択"), projectChoices.map(project => /*#__PURE__*/React.createElement("option", {
+    key: project.id,
+    value: project.id
+  }, project.name, project.dueDate ? ` / 期限：${project.dueDate}` : ""))), !projectChoices.length && /*#__PURE__*/React.createElement("small", null, "登録済みプロジェクトがありません")), character.messageMode === "fixed" && /*#__PURE__*/React.createElement("textarea", {
     value: character.fixedMessage,
     onChange: event => updateCharacter({
       fixedMessage: event.target.value
@@ -2167,7 +2197,8 @@ function HomeCustomize({
   setSettings,
   setScreen,
   workTools,
-  setWorkTools
+  setWorkTools,
+  projects
 }) {
   const [editingTool, setEditingTool] = React.useState(null);
   const backupInputRef = React.useRef(null);
@@ -2303,7 +2334,8 @@ function HomeCustomize({
     })
   }, "画像を削除"))), /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
     settings: settings,
-    updateSettings: updateSettings
+    updateSettings: updateSettings,
+    projects: projects
   }), /*#__PURE__*/React.createElement("section", {
     className: "customize-card"
   }, /*#__PURE__*/React.createElement("h3", null, "作業ツール"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {

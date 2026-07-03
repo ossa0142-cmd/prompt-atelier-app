@@ -169,7 +169,7 @@ type HomeFeatureId = "library" | "prompts" | "videos" | "mj" | "projects";
 
 type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
 type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "hidden";
-type HomeCharacterMessageMode = "auto" | "fixed" | "project" | "memo";
+type HomeCharacterMessageMode = "auto" | "fixed" | "project";
 
 type HomeCharacterSettings = {
   image: any;
@@ -177,6 +177,7 @@ type HomeCharacterSettings = {
   speechEnabled: boolean;
   messageMode: HomeCharacterMessageMode;
   fixedMessage: string;
+  selectedProjectId?: string;
 };
 
 type HomeSettings = {
@@ -397,6 +398,7 @@ const defaultHomeSettings: HomeSettings = {
     speechEnabled: true,
     messageMode: "auto",
     fixedMessage: "今日も制作がんばろう♡",
+    selectedProjectId: "",
   },
   visible: {
     library: true,
@@ -414,16 +416,22 @@ const defaultHomeSettings: HomeSettings = {
   order: ["dashboard", "quickActions", "search", "featureCards", "favorites", "atelier"],
 };
 
-const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => ({
-  ...defaultHomeSettings,
-  ...settings,
-  homeCharacter: { ...defaultHomeSettings.homeCharacter, ...(settings?.homeCharacter || {}) },
-  visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
-  order: [
-    ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
-    ...defaultHomeSettings.order.filter((id) => !(settings?.order || []).includes(id)),
-  ],
-});
+const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
+  const rawCharacter = { ...defaultHomeSettings.homeCharacter, ...(settings?.homeCharacter || {}) };
+  const safeMessageMode: HomeCharacterMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode)
+    ? rawCharacter.messageMode as HomeCharacterMessageMode
+    : "auto";
+  return {
+    ...defaultHomeSettings,
+    ...settings,
+    homeCharacter: { ...rawCharacter, messageMode: safeMessageMode },
+    visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
+    order: [
+      ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
+      ...defaultHomeSettings.order.filter((id) => !(settings?.order || []).includes(id)),
+    ],
+  };
+};
 
 const art = (label: string, a: string, b: string) =>
   `data:image/svg+xml,${encodeURIComponent(`
@@ -1805,6 +1813,7 @@ function App() {
             setScreen={setScreen}
             workTools={workTools}
             setWorkTools={setWorkTools}
+            projects={projects}
           />
         )}
         {screen === "library" && <Library copyText={copyText} setScreen={setScreen} />}
@@ -2026,6 +2035,15 @@ function characterProjectMessage(projects: Project[]) {
   return "";
 }
 
+function selectedProjectMessage(project?: Project) {
+  if (!project) return "";
+  if (!project.dueDate) return `『${project.name}』を進行中です`;
+  const info = projectDueInfo(project.dueDate);
+  if (info.expired) return `『${project.name}』の期限が過ぎています`;
+  if (info.diff === 0) return `『${project.name}』は今日が期限です`;
+  return `『${project.name}』はあと${info.diff}日で期限です`;
+}
+
 function characterMemoMessage(projects: Project[], prompts: MyPrompt[]) {
   const projectMemo = [...projects].reverse().find((project) => shortMemoText(project.note || ""));
   if (projectMemo) return `最近のメモ：${shortMemoText(projectMemo.note)}`;
@@ -2036,8 +2054,10 @@ function characterMemoMessage(projects: Project[], prompts: MyPrompt[]) {
 
 function characterMessage(settings: HomeCharacterSettings, projects: Project[], prompts: MyPrompt[]) {
   if (settings.messageMode === "fixed") return settings.fixedMessage || "今日も制作がんばろう";
-  if (settings.messageMode === "project") return characterProjectMessage(projects) || "プロジェクトを少しずつ進めよう";
-  if (settings.messageMode === "memo") return characterMemoMessage(projects, prompts) || "メモに新しいアイデアを残してみよう";
+  if (settings.messageMode === "project") {
+    const selectedProject = projects.find((project) => project.id === settings.selectedProjectId);
+    return selectedProjectMessage(selectedProject) || characterProjectMessage(projects) || "プロジェクトを少しずつ進めよう";
+  }
   return characterProjectMessage(projects) || characterMemoMessage(projects, prompts) || "今日も制作がんばろう";
 }
 
@@ -2056,8 +2076,9 @@ function HomeCharacter({ settings, projects, prompts }: { settings: HomeCharacte
   );
 }
 
-function HomeCharacterSettingsPanel({ settings, updateSettings }: any) {
+function HomeCharacterSettingsPanel({ settings, updateSettings, projects }: any) {
   const character: HomeCharacterSettings = settings.homeCharacter || defaultHomeSettings.homeCharacter;
+  const projectChoices = sortProjectsForDisplay(projects || []);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const updateCharacter = (patch: Partial<HomeCharacterSettings>) => updateSettings({ homeCharacter: { ...character, ...patch } });
   const importFiles = async (files: FileList | File[]) => {
@@ -2124,10 +2145,24 @@ function HomeCharacterSettingsPanel({ settings, updateSettings }: any) {
           <option value="auto">自動</option>
           <option value="fixed">固定メッセージ</option>
           <option value="project">プロジェクト優先</option>
-          <option value="memo">メモ優先</option>
         </select>
       </label>
-      <textarea value={character.fixedMessage} onChange={(event) => updateCharacter({ fixedMessage: event.target.value })} placeholder="固定メッセージ（例：今日も制作がんばろう♡）" />
+      {character.messageMode === "project" && (
+        <label>表示するプロジェクト
+          <select value={character.selectedProjectId || ""} onChange={(event) => updateCharacter({ selectedProjectId: event.target.value })} disabled={!projectChoices.length}>
+            <option value="">未選択</option>
+            {projectChoices.map((project: Project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}{project.dueDate ? ` / 期限：${project.dueDate}` : ""}
+              </option>
+            ))}
+          </select>
+          {!projectChoices.length && <small>登録済みプロジェクトがありません</small>}
+        </label>
+      )}
+      {character.messageMode === "fixed" && (
+        <textarea value={character.fixedMessage} onChange={(event) => updateCharacter({ fixedMessage: event.target.value })} placeholder="固定メッセージ（例：今日も制作がんばろう♡）" />
+      )}
     </section>
   );
 }
@@ -2155,7 +2190,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
   );
 }
 
-function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools }: any) {
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
   const updateSettings = (patch: Partial<HomeSettings>) => setSettings(normalizeHomeSettings({ ...settings, ...patch }));
@@ -2279,7 +2314,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             </div>
           </section>
 
-          <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} />
+          <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} projects={projects} />
 
           <section className="customize-card">
             <h3>作業ツール</h3>
