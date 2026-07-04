@@ -1000,7 +1000,25 @@ const blankProject = () => ({
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolean);
 const tagText = tags => tags.join(", ");
-const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
+const normalizeSearchText = value => String(value ?? "").normalize("NFKC").toLowerCase().replace(/[\u30a1-\u30f6]/g, char => String.fromCharCode(char.charCodeAt(0) - 0x60));
+const lowerIncludes = (source, query) => {
+  const sourceText = normalizeSearchText(source);
+  const tokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+  return tokens.length > 0 && tokens.every(token => sourceText.includes(token));
+};
+function searchableTextFromValue(value, depth = 0) {
+  if (value == null || depth > 4) return "";
+  if (typeof value === "string") {
+    if (/^data:image|^blob:/i.test(value)) return "";
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map(item => searchableTextFromValue(item, depth + 1)).join(" ");
+  if (typeof value === "object") {
+    return Object.entries(value).filter(([key]) => !/^(src|image|imageUrl|thumbnail|coverImage|coverImages|bannerImage|iconImage)$/i.test(key)).map(([, item]) => searchableTextFromValue(item, depth + 1)).join(" ");
+  }
+  return "";
+}
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
@@ -2336,6 +2354,8 @@ function App() {
     myPrompts: myPrompts,
     mjSettings: mjSettings,
     mockupPrompts: mockupPrompts,
+    videos: videos,
+    videoStocks: videoStocks,
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
@@ -2482,6 +2502,8 @@ function Home({
   myPrompts,
   mjSettings,
   mockupPrompts,
+  videos,
+  videoStocks,
   copyText,
   settings,
   workTools,
@@ -2490,10 +2512,62 @@ function Home({
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = id => settings.visible[id] !== false;
   const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
-  const searchable = [...myPrompts, ...projects].filter(item => {
-    const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
-    return homeQuery && lowerIncludes(text, homeQuery);
-  }).slice(0, 3);
+  const searchItems = React.useMemo(() => [...entries.map(([screen, title, body]) => ({
+    id: `page-${screen}`,
+    title,
+    type: "ページ",
+    screen,
+    text: `${title} ${body}`
+  })), ...(mockupPrompts || []).map(item => ({
+    id: `mockup-${item.id}`,
+    title: item.title || item.category || "モックアップ",
+    type: item.isTextStock ? "モックアップストック" : "モックアップ",
+    screen: "library",
+    text: searchableTextFromValue(item)
+  })), ...(myPrompts || []).map(item => ({
+    id: `prompt-${item.id}`,
+    title: item.title || "プロンプト",
+    type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
+    screen: "prompts",
+    text: searchableTextFromValue(item)
+  })), ...(mjSettings || []).map(item => ({
+    id: `mj-${item.id}`,
+    title: item.title || "MJ設定",
+    type: "MJ設定",
+    screen: "mj",
+    text: `${searchableTextFromValue(item)} ${mjCommand(item)}`
+  })), ...(projects || []).map(item => ({
+    id: `project-${item.id}`,
+    title: item.name || item.title || "プロジェクト",
+    type: "プロジェクト",
+    screen: "projects",
+    text: searchableTextFromValue(item)
+  })), ...(videos || []).map(item => ({
+    id: `video-${item.id}`,
+    title: item.title || "動画プロンプト",
+    type: "動画プロンプト帳",
+    screen: "videos",
+    text: searchableTextFromValue(item)
+  })), ...(videoStocks || []).map(item => ({
+    id: `video-stock-${item.id}`,
+    title: item.title || "動画プロンプトストック",
+    type: "動画ストック",
+    screen: "videos",
+    text: searchableTextFromValue(item)
+  })), ...(atelierImages || []).map(item => ({
+    id: `gallery-${item.id}`,
+    title: item.title || item.memo || "ギャラリー画像",
+    type: "ギャラリー",
+    screen: "gallery",
+    text: searchableTextFromValue(item)
+  })), ...(workTools || []).map(item => ({
+    id: `tool-${item.id}`,
+    title: item.name || "作業ツール",
+    type: "作業ツール",
+    screen: "home",
+    text: searchableTextFromValue(item)
+  }))], [mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
+  const searchable = homeQuery.trim() ? searchItems.filter(item => lowerIncludes(item.text, homeQuery)).slice(0, 10) : [];
   const nextReminder = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => {
     const aInfo = projectDueInfo(a.dueDate || "");
     const bInfo = projectDueInfo(b.dueDate || "");
@@ -2587,13 +2661,13 @@ function Home({
       }, /*#__PURE__*/React.createElement("span", null, "⌕"), /*#__PURE__*/React.createElement("input", {
         value: homeQuery,
         onChange: e => setHomeQuery(e.target.value),
-        placeholder: "プロンプトやプロジェクトを検索..."
+        placeholder: "入力した文字をまとめて検索..."
       })), homeQuery && /*#__PURE__*/React.createElement("div", {
         className: "home-search-results"
       }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
         key: item.id,
-        onClick: () => setScreen(item.name ? "projects" : "prompts")
-      }, item.title || item.name)) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
+        onClick: () => setScreen(item.screen)
+      }, /*#__PURE__*/React.createElement("span", null, item.title), /*#__PURE__*/React.createElement("small", null, item.type))) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
     }
     if (sectionId === "featureCards") {
       const visibleEntries = entries.filter(([id]) => isVisible(id));
