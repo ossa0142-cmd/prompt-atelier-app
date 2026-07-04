@@ -1033,31 +1033,7 @@ const blankProject = (): Project => ({
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = (value: string) => value.split(",").map((tag) => tag.trim()).filter(Boolean);
 const tagText = (tags: string[]) => tags.join(", ");
-const normalizeSearchText = (value: any) => String(value ?? "")
-  .normalize("NFKC")
-  .toLowerCase()
-  .replace(/[\u30a1-\u30f6]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0x60));
-const lowerIncludes = (source: string, query: string) => {
-  const sourceText = normalizeSearchText(source);
-  const tokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
-  return tokens.length > 0 && tokens.every((token) => sourceText.includes(token));
-};
-function searchableTextFromValue(value: any, depth = 0): string {
-  if (value == null || depth > 4) return "";
-  if (typeof value === "string") {
-    if (/^data:image|^blob:/i.test(value)) return "";
-    return value;
-  }
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return value.map((item) => searchableTextFromValue(item, depth + 1)).join(" ");
-  if (typeof value === "object") {
-    return Object.entries(value)
-      .filter(([key]) => !/^(src|image|imageUrl|thumbnail|coverImage|coverImages|bannerImage|iconImage)$/i.test(key))
-      .map(([, item]) => searchableTextFromValue(item, depth + 1))
-      .join(" ");
-  }
-  return "";
-}
+const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
@@ -2433,8 +2409,6 @@ function App() {
             myPrompts={myPrompts}
             mjSettings={mjSettings}
             mockupPrompts={mockupPrompts}
-            videos={videos}
-            videoStocks={videoStocks}
             copyText={copyText}
             settings={homeSettings}
             workTools={workTools}
@@ -2559,7 +2533,7 @@ function PwaCustomizeCard({ canInstallPwa, isStandaloneApp, onInstall, onShowIns
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, videos, videoStocks, copyText, settings, workTools, atelierImages }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, copyText, settings, workTools, atelierImages }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
@@ -2569,74 +2543,10 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
     ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"],
     ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"],
   ];
-  const searchItems = React.useMemo(() => [
-    ...entries.map(([screen, title, body]) => ({
-      id: `page-${screen}`,
-      title,
-      type: "ページ",
-      screen,
-      text: `${title} ${body}`,
-    })),
-    ...(mockupPrompts || []).map((item: any) => ({
-      id: `mockup-${item.id}`,
-      title: item.title || item.category || "モックアップ",
-      type: item.isTextStock ? "モックアップストック" : "モックアップ",
-      screen: "library",
-      text: searchableTextFromValue(item),
-    })),
-    ...(myPrompts || []).map((item: any) => ({
-      id: `prompt-${item.id}`,
-      title: item.title || "プロンプト",
-      type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
-      screen: "prompts",
-      text: searchableTextFromValue(item),
-    })),
-    ...(mjSettings || []).map((item: any) => ({
-      id: `mj-${item.id}`,
-      title: item.title || "MJ設定",
-      type: "MJ設定",
-      screen: "mj",
-      text: `${searchableTextFromValue(item)} ${mjCommand(item)}`,
-    })),
-    ...(projects || []).map((item: any) => ({
-      id: `project-${item.id}`,
-      title: item.name || item.title || "プロジェクト",
-      type: "プロジェクト",
-      screen: "projects",
-      text: searchableTextFromValue(item),
-    })),
-    ...(videos || []).map((item: any) => ({
-      id: `video-${item.id}`,
-      title: item.title || "動画プロンプト",
-      type: "動画プロンプト帳",
-      screen: "videos",
-      text: searchableTextFromValue(item),
-    })),
-    ...(videoStocks || []).map((item: any) => ({
-      id: `video-stock-${item.id}`,
-      title: item.title || "動画プロンプトストック",
-      type: "動画ストック",
-      screen: "videos",
-      text: searchableTextFromValue(item),
-    })),
-    ...(atelierImages || []).map((item: any) => ({
-      id: `gallery-${item.id}`,
-      title: item.title || item.memo || "ギャラリー画像",
-      type: "ギャラリー",
-      screen: "gallery",
-      text: searchableTextFromValue(item),
-    })),
-    ...(workTools || []).map((item: any) => ({
-      id: `tool-${item.id}`,
-      title: item.name || "作業ツール",
-      type: "作業ツール",
-      screen: "home",
-      text: searchableTextFromValue(item),
-    })),
-  ], [mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
-  const searchable = homeQuery.trim()
-    ? searchItems.filter((item) => lowerIncludes(item.text, homeQuery)).slice(0, 10)
-    : [];
+  const searchable = [...myPrompts, ...projects].filter((item: any) => {
+    const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
+    return homeQuery && lowerIncludes(text, homeQuery);
+  }).slice(0, 3);
   const nextReminder = (projects as Project[])
     .filter((project) => project.remindOnHome && project.dueDate)
     .sort((a, b) => {
@@ -2705,14 +2615,13 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
         <section key={sectionId}>
           <div className="home-search">
             <span>⌕</span>
-            <input value={homeQuery} onChange={(e) => setHomeQuery(e.target.value)} placeholder="入力した文字をまとめて検索..." />
+            <input value={homeQuery} onChange={(e) => setHomeQuery(e.target.value)} placeholder="プロンプトやプロジェクトを検索..." />
           </div>
           {homeQuery && (
             <div className="home-search-results">
-              {searchable.length ? searchable.map((item) => (
-                <button key={item.id} onClick={() => setScreen(item.screen as Screen)}>
-                  <span>{item.title}</span>
-                  <small>{item.type}</small>
+              {searchable.length ? searchable.map((item: any) => (
+                <button key={item.id} onClick={() => setScreen(item.name ? "projects" : "prompts")}>
+                  {item.title || item.name}
                 </button>
               )) : <small>一致する項目がありません。</small>}
             </div>
