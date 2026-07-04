@@ -1000,43 +1000,7 @@ const blankProject = () => ({
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolean);
 const tagText = tags => tags.join(", ");
-const normalizeSearchText = value => String(value ?? "").normalize("NFKC").toLowerCase().replace(/[\u30a1-\u30f6]/g, char => String.fromCharCode(char.charCodeAt(0) - 0x60));
-const lowerIncludes = (source, query) => {
-  const sourceText = normalizeSearchText(source);
-  const tokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
-  return tokens.length > 0 && tokens.every(token => sourceText.includes(token));
-};
-function searchableTextFromValue(value, depth = 0) {
-  if (value == null || depth > 4) return "";
-  if (typeof value === "string") {
-    if (/^data:image|^blob:/i.test(value)) return "";
-    return value;
-  }
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return value.map(item => searchableTextFromValue(item, depth + 1)).join(" ");
-  if (typeof value === "object") {
-    return Object.entries(value).filter(([key]) => !/^(src|image|imageUrl|thumbnail|coverImage|coverImages|bannerImage|iconImage)$/i.test(key)).map(([, item]) => searchableTextFromValue(item, depth + 1)).join(" ");
-  }
-  return "";
-}
-function storedMockupCategoriesForSearch() {
-  try {
-    const saved = localStorage.getItem("prompt-atelier-mockup-categories-v2");
-    const parsed = saved ? JSON.parse(saved) : null;
-    return Array.isArray(parsed) && parsed.length ? parsed : defaultMockupCategories;
-  } catch {
-    return defaultMockupCategories;
-  }
-}
-function scrollToSearchTarget(elementId) {
-  window.setTimeout(() => {
-    document.getElementById(elementId)?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "nearest"
-    });
-  }, 120);
-}
+const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
@@ -2207,41 +2171,6 @@ async function loadSampleSeedIfNeeded() {
     return false;
   }
 }
-async function restoreMockupSamplesIfEmpty() {
-  try {
-    const categoriesRaw = localStorage.getItem("prompt-atelier-mockup-categories-v2");
-    const promptsRaw = localStorage.getItem("prompt-atelier-library-prompts-v5");
-    const categoriesCurrent = categoriesRaw ? JSON.parse(categoriesRaw) : [];
-    const promptsCurrent = promptsRaw ? JSON.parse(promptsRaw) : [];
-    const shouldRestoreCategories = !Array.isArray(categoriesCurrent) || categoriesCurrent.length === 0;
-    const shouldRestorePrompts = !Array.isArray(promptsCurrent) || promptsCurrent.length === 0;
-    if (!shouldRestoreCategories && !shouldRestorePrompts) return false;
-    const response = await fetch(SAMPLE_SEED_PATH, {
-      cache: "no-store"
-    });
-    if (!response.ok) return false;
-    const seed = await response.json();
-    const data = seed?.data || {};
-    const categories = [...(Array.isArray(data.libraryItems) ? data.libraryItems : []), ...(Array.isArray(data.mockupCategories) ? data.mockupCategories : [])];
-    const prompts = [...(Array.isArray(data.mockupItems) ? data.mockupItems : []), ...(Array.isArray(data.mockupStocks) ? data.mockupStocks : [])];
-    let changed = false;
-    if (shouldRestoreCategories && categories.length) {
-      localStorage.setItem("prompt-atelier-mockup-categories-v2", JSON.stringify(categories));
-      changed = true;
-    }
-    if (shouldRestorePrompts && prompts.length) {
-      localStorage.setItem("prompt-atelier-library-prompts-v5", JSON.stringify(prompts));
-      changed = true;
-    }
-    if (changed) {
-      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップライブラリを復元しました（カテゴリ${categories.length}件・プロンプト${prompts.length}件）`);
-    }
-    return changed;
-  } catch (error) {
-    console.warn("[Prompt Atelier] モックアップ復元に失敗しました", error);
-    return false;
-  }
-}
 function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
@@ -2255,7 +2184,6 @@ function App() {
   const [journal, setJournal] = useStoredState("promptAtelierJournal", defaultJournal);
   const [videos, setVideos] = useStoredState("promptAtelierVideoPrompts", initialVideoPrompts());
   const [videoStocks, setVideoStocks] = useStoredState("promptAtelierVideoPromptStocks", []);
-  const [navigationTarget, setNavigationTarget] = React.useState(null);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [installPrompt, setInstallPrompt] = React.useState(null);
@@ -2299,12 +2227,9 @@ function App() {
         const migrated = await migrateLocalStorageImagesToIndexedDb();
         await refreshIndexedDbImageCache();
         const sampleSeedImported = await loadSampleSeedIfNeeded();
-        const mockupRestored = await restoreMockupSamplesIfEmpty();
         if (cancelled) return;
-        if (migrated || sampleSeedImported || mockupRestored) {
-          if (!mockupRestored) {
-            sessionStorage.setItem("promptAtelierRestoreMessage", sampleSeedImported ? "サンプルデータを読み込みました" : "画像データを最適化しました");
-          }
+        if (migrated || sampleSeedImported) {
+          sessionStorage.setItem("promptAtelierRestoreMessage", sampleSeedImported ? "サンプルデータを読み込みました" : "画像データを最適化しました");
           window.location.reload();
           return;
         }
@@ -2411,16 +2336,10 @@ function App() {
     myPrompts: myPrompts,
     mjSettings: mjSettings,
     mockupPrompts: mockupPrompts,
-    videos: videos,
-    videoStocks: videoStocks,
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
-    atelierImages: atelierImages,
-    onOpenSearchResult: target => {
-      setNavigationTarget(target);
-      setScreen(target.screen);
-    }
+    atelierImages: atelierImages
   }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
@@ -2439,24 +2358,18 @@ function App() {
     setScreen: setScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
-    setBoardPrompts: setMockupPrompts,
-    navigationTarget: navigationTarget,
-    onNavigationTargetHandled: () => setNavigationTarget(null)
+    setBoardPrompts: setMockupPrompts
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
     setScreen: setScreen,
-    homeSettings: homeSettings,
-    navigationTarget: navigationTarget,
-    onNavigationTargetHandled: () => setNavigationTarget(null)
+    homeSettings: homeSettings
   }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
     copyText: copyText,
-    setScreen: setScreen,
-    navigationTarget: navigationTarget,
-    onNavigationTargetHandled: () => setNavigationTarget(null)
+    setScreen: setScreen
   }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
     projects: projects,
     setProjects: setProjects,
@@ -2464,9 +2377,7 @@ function App() {
     settings: mjSettings,
     homeSettings: homeSettings,
     copyText: copyText,
-    setScreen: setScreen,
-    navigationTarget: navigationTarget,
-    onNavigationTargetHandled: () => setNavigationTarget(null)
+    setScreen: setScreen
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
     images: atelierImages,
     journal: journal,
@@ -2478,18 +2389,14 @@ function App() {
     setImages: setGalleryImages,
     setJournal: setJournal,
     setScreen: setScreen,
-    homeSettings: homeSettings,
-    navigationTarget: navigationTarget,
-    onNavigationTargetHandled: () => setNavigationTarget(null)
+    homeSettings: homeSettings
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
     setScreen: setScreen,
-    homeSettings: homeSettings,
-    navigationTarget: navigationTarget,
-    onNavigationTargetHandled: () => setNavigationTarget(null)
+    homeSettings: homeSettings
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
     className: "image-migration-overlay"
   }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
@@ -2575,130 +2482,18 @@ function Home({
   myPrompts,
   mjSettings,
   mockupPrompts,
-  videos,
-  videoStocks,
   copyText,
   settings,
   workTools,
-  atelierImages,
-  onOpenSearchResult
+  atelierImages
 }) {
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = id => settings.visible[id] !== false;
   const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
-  const mockupCategories = React.useMemo(() => storedMockupCategoriesForSearch(), []);
-  const searchItems = React.useMemo(() => [...entries.map(([screen, title, body]) => ({
-    id: `page-${screen}`,
-    title,
-    type: "ページ",
-    screen,
-    target: {
-      screen: screen,
-      kind: "page"
-    },
-    text: `${title} ${body}`
-  })), ...mockupCategories.map(item => ({
-    id: `mockup-category-${item.id}`,
-    title: item.title || "モックアップカテゴリ",
-    type: "モックアップカテゴリ",
-    screen: "library",
-    target: {
-      screen: "library",
-      kind: "mockup-category",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(mockupPrompts || []).map(item => ({
-    id: `mockup-${item.id}`,
-    title: item.title || item.category || "モックアップ",
-    type: item.isTextStock ? "モックアップストック" : "モックアップ",
-    screen: "library",
-    target: {
-      screen: "library",
-      kind: item.isTextStock ? "mockup-stock" : "mockup-prompt",
-      id: item.id,
-      categoryId: item.categoryId
-    },
-    text: searchableTextFromValue(item)
-  })), ...(myPrompts || []).map(item => ({
-    id: `prompt-${item.id}`,
-    title: item.title || "プロンプト",
-    type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
-    screen: "prompts",
-    target: {
-      screen: "prompts",
-      kind: item.isTextStock ? "prompt-stock" : "prompt-card",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(mjSettings || []).map(item => ({
-    id: `mj-${item.id}`,
-    title: item.title || "MJ設定",
-    type: "MJ設定",
-    screen: "mj",
-    target: {
-      screen: "mj",
-      kind: "mj-card",
-      id: item.id
-    },
-    text: `${searchableTextFromValue(item)} ${mjCommand(item)}`
-  })), ...(projects || []).map(item => ({
-    id: `project-${item.id}`,
-    title: item.name || item.title || "プロジェクト",
-    type: "プロジェクト",
-    screen: "projects",
-    target: {
-      screen: "projects",
-      kind: "project-card",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(videos || []).map(item => ({
-    id: `video-${item.id}`,
-    title: item.title || "動画プロンプト",
-    type: "動画プロンプト帳",
-    screen: "videos",
-    target: {
-      screen: "videos",
-      kind: "video-card",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(videoStocks || []).map(item => ({
-    id: `video-stock-${item.id}`,
-    title: item.title || "動画プロンプトストック",
-    type: "動画ストック",
-    screen: "videos",
-    target: {
-      screen: "videos",
-      kind: "video-stock",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(atelierImages || []).map(item => ({
-    id: `gallery-${item.id}`,
-    title: item.title || item.memo || "ギャラリー画像",
-    type: "ギャラリー",
-    screen: "gallery",
-    target: {
-      screen: "gallery",
-      kind: "gallery-card",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(workTools || []).map(item => ({
-    id: `tool-${item.id}`,
-    title: item.name || "作業ツール",
-    type: "作業ツール",
-    screen: "home",
-    target: {
-      screen: "home",
-      kind: "work-tool",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  }))], [mockupCategories, mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
-  const searchable = homeQuery.trim() ? searchItems.filter(item => lowerIncludes(item.text, homeQuery)).slice(0, 10) : [];
+  const searchable = [...myPrompts, ...projects].filter(item => {
+    const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
+    return homeQuery && lowerIncludes(text, homeQuery);
+  }).slice(0, 3);
   const nextReminder = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => {
     const aInfo = projectDueInfo(a.dueDate || "");
     const bInfo = projectDueInfo(b.dueDate || "");
@@ -2792,19 +2587,13 @@ function Home({
       }, /*#__PURE__*/React.createElement("span", null, "⌕"), /*#__PURE__*/React.createElement("input", {
         value: homeQuery,
         onChange: e => setHomeQuery(e.target.value),
-        placeholder: "入力した文字をまとめて検索..."
+        placeholder: "プロンプトやプロジェクトを検索..."
       })), homeQuery && /*#__PURE__*/React.createElement("div", {
         className: "home-search-results"
       }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
         key: item.id,
-        onClick: () => {
-          setHomeQuery("");
-          onOpenSearchResult?.(item.target || {
-            screen: item.screen,
-            kind: "page"
-          });
-        }
-      }, /*#__PURE__*/React.createElement("span", null, item.title), /*#__PURE__*/React.createElement("small", null, item.type))) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
+        onClick: () => setScreen(item.name ? "projects" : "prompts")
+      }, item.title || item.name)) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
     }
     if (sectionId === "featureCards") {
       const visibleEntries = entries.filter(([id]) => isVisible(id));
@@ -4251,9 +4040,7 @@ function Library({
   setScreen,
   homeSettings,
   boardPrompts,
-  setBoardPrompts,
-  navigationTarget,
-  onNavigationTargetHandled
+  setBoardPrompts
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -4269,9 +4056,9 @@ function Library({
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
-  const filteredCategories = orderedCategories.filter(item => lowerIncludes(searchableTextFromValue(item), query));
+  const filteredCategories = orderedCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
   const filteredPrompts = boardPrompts.filter(item => {
-    const haystack = searchableTextFromValue(item);
+    const haystack = `${item.title} ${item.description} ${item.prompt}`;
     return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
   const categoryPrompts = currentCategory ? boardPrompts.filter(item => item.categoryId === currentCategory.id) : [];
@@ -4288,24 +4075,6 @@ function Library({
   const imagePromptSlots = currentCategory ? Array.from({
     length: imageSlotCount
   }, (_, index) => imagePrompts[index] || null) : [];
-  React.useEffect(() => {
-    if (!navigationTarget || navigationTarget.screen !== "library") return;
-    if (navigationTarget.kind === "mockup-category" && navigationTarget.id) {
-      const category = orderedCategories.find(item => item.id === navigationTarget.id);
-      if (category) setSelectedCategory(category);
-      setQuery("");
-      onNavigationTargetHandled?.();
-      return;
-    }
-    if ((navigationTarget.kind === "mockup-prompt" || navigationTarget.kind === "mockup-stock") && navigationTarget.id) {
-      const prompt = boardPrompts.find(item => item.id === navigationTarget.id);
-      const category = orderedCategories.find(item => item.id === (navigationTarget.categoryId || prompt?.categoryId));
-      if (category) setSelectedCategory(category);
-      setQuery("");
-      onNavigationTargetHandled?.();
-      scrollToSearchTarget(`${navigationTarget.kind}-${navigationTarget.id}`);
-    }
-  }, [navigationTarget, orderedCategories, boardPrompts, onNavigationTargetHandled]);
   const createBlankLibraryPrompt = (textOnly = false) => ({
     id: "",
     title: "",
@@ -4493,7 +4262,6 @@ function Library({
   }, "並び替えは検索を解除すると使用できます。"), /*#__PURE__*/React.createElement("div", {
     className: "library-category-grid"
   }, filteredCategories.map(category => /*#__PURE__*/React.createElement("article", {
-    id: `mockup-category-${category.id}`,
     className: `library-category-card ${draggedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
     key: category.id,
     onDragOver: event => overCategoryDrag(event, category.id),
@@ -4565,8 +4333,7 @@ function Library({
     copyText: copyText,
     showMemo: () => setMemoPrompt(prompt),
     showTags: true,
-    showMemoButton: true,
-    domId: `mockup-prompt-${prompt.id}`
+    showMemoButton: true
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `empty-prompt-${index}`,
@@ -4584,8 +4351,7 @@ function Library({
     onCreate: saveTextStockFrame,
     onUpdate: updatePrompt,
     copyText: copyText,
-    showMemo: () => prompt && setMemoPrompt(prompt),
-    domId: prompt?.id ? `mockup-stock-${prompt.id}` : undefined
+    showMemo: () => prompt && setMemoPrompt(prompt)
   }))), canAddTextStock && textStockCount >= stockFrameCount && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
     onClick: addTextStockFrame
@@ -4768,15 +4534,13 @@ function LibraryImagePromptCard({
   copyText,
   showMemo,
   showTags = true,
-  showMemoButton = true,
-  domId
+  showMemoButton = true
 }) {
   const updateCoverImages = coverImages => updatePrompt(prompt.id, {
     coverImages,
     imageUrl: coverImages[0] || ""
   });
   return /*#__PURE__*/React.createElement("article", {
-    id: domId,
     className: "library-prompt-card"
   }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
@@ -4848,8 +4612,7 @@ function TextStockFrame({
   onCreate,
   onUpdate,
   copyText,
-  showMemo,
-  domId
+  showMemo
 }) {
   const [title, setTitle] = React.useState(prompt?.title || "");
   const [promptText, setPromptText] = React.useState(prompt?.prompt || "");
@@ -4879,7 +4642,6 @@ function TextStockFrame({
     copyText(promptText, prompt?.id);
   };
   return /*#__PURE__*/React.createElement("article", {
-    id: domId,
     className: "text-stock-frame"
   }, /*#__PURE__*/React.createElement("input", {
     value: title,
@@ -5293,9 +5055,7 @@ function PromptBook({
   setPrompts,
   copyText,
   setScreen,
-  homeSettings,
-  navigationTarget,
-  onNavigationTargetHandled
+  homeSettings
 }) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
@@ -5308,7 +5068,7 @@ function PromptBook({
   const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
   const tags = Array.from(new Set(prompts.flatMap(p => p.tags))).sort();
   const filtered = prompts.filter(item => {
-    const haystack = searchableTextFromValue(item);
+    const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
     return lowerIncludes(haystack, query) && (tag === "すべて" || item.tags.includes(tag)) && (!favoritesOnly || item.favorite);
   });
   const imagePrompts = filtered.filter(item => !item.isTextStock).slice(0, 20);
@@ -5325,15 +5085,6 @@ function PromptBook({
   const textStockSlots = Array.from({
     length: visibleStockFrameCount
   }, (_, index) => textPrompts[index] || null);
-  React.useEffect(() => {
-    if (!navigationTarget || navigationTarget.screen !== "prompts" || !navigationTarget.id) return;
-    if (navigationTarget.kind !== "prompt-card" && navigationTarget.kind !== "prompt-stock") return;
-    setQuery("");
-    setTag("すべて");
-    setFavoritesOnly(false);
-    onNavigationTargetHandled?.();
-    scrollToSearchTarget(`${navigationTarget.kind}-${navigationTarget.id}`);
-  }, [navigationTarget, onNavigationTargetHandled]);
   const save = item => {
     const countForKind = prompts.filter(prompt => Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
     const limit = item.isTextStock ? 100 : 20;
@@ -5433,8 +5184,7 @@ function PromptBook({
     showTranslation: () => setTranslationPrompt(prompt),
     showMemo: () => setMemoPrompt(prompt),
     showTags: promptDisplay.showTags !== false,
-    showMemoButton: promptDisplay.showMemo !== false,
-    domId: `prompt-card-${prompt.id}`
+    showMemoButton: promptDisplay.showMemo !== false
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `my-empty-prompt-${index}`,
@@ -5453,8 +5203,7 @@ function PromptBook({
     onUpdate: updatePrompt,
     copyText: copyText,
     showTranslation: () => prompt && setTranslationPrompt(prompt),
-    showMemo: () => prompt && setMemoPrompt(prompt),
-    domId: prompt?.id ? `prompt-stock-${prompt.id}` : undefined
+    showMemo: () => prompt && setMemoPrompt(prompt)
   }))), canAddTextStock && textStockCount >= visibleStockFrameCount && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
     onClick: addTextStockFrame
@@ -5491,9 +5240,7 @@ function Midjourney({
   settings,
   setSettings,
   copyText,
-  setScreen,
-  navigationTarget,
-  onNavigationTargetHandled
+  setScreen
 }) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
@@ -5510,7 +5257,7 @@ function Midjourney({
   const [imageModal, setImageModal] = React.useState(null);
   const [highlightedId, setHighlightedId] = React.useState("");
   const normalizedSettings = settings.map(item => normalizeMjSetting(item));
-  const filtered = normalizedSettings.filter(item => lowerIncludes(`${searchableTextFromValue(item)} ${mjCommand(item)}`, query));
+  const filtered = normalizedSettings.filter(item => lowerIncludes(`${item.memo || ""} ${item.note || ""} ${mjCommand(item)} ${(item.extractedParams || []).join(" ")}`, query));
   const saveLimitReached = settings.length >= 50 && !editingId;
   const currentParams = parseMidjourneyPrompt(fullPrompt).params;
   const displayedPrompt = activeLanguage === "en" ? promptEn : promptJa;
@@ -5526,14 +5273,6 @@ function Midjourney({
     cardId: item.id,
     index
   })));
-  React.useEffect(() => {
-    if (!navigationTarget || navigationTarget.screen !== "mj" || navigationTarget.kind !== "mj-card" || !navigationTarget.id) return;
-    setQuery("");
-    setHighlightedId(navigationTarget.id);
-    onNavigationTargetHandled?.();
-    scrollToSearchTarget(`mj-card-${navigationTarget.id}`);
-    window.setTimeout(() => setHighlightedId(""), 1800);
-  }, [navigationTarget, onNavigationTargetHandled]);
   const updatePromptField = value => {
     setBasePrompt(value);
     if (activeLanguage === "en") setPromptEn(value);
@@ -6150,9 +5889,7 @@ function GalleryPage({
   setImages,
   setJournal,
   setScreen,
-  homeSettings,
-  navigationTarget,
-  onNavigationTargetHandled
+  homeSettings
 }) {
   const fileInputRef = React.useRef(null);
   const loadMoreRef = React.useRef(null);
@@ -6175,13 +5912,6 @@ function GalleryPage({
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
   }, [images.length, visibleCount]);
-  React.useEffect(() => {
-    if (!navigationTarget || navigationTarget.screen !== "gallery" || navigationTarget.kind !== "gallery-card" || !navigationTarget.id) return;
-    const targetIndex = images.findIndex(image => image.id === navigationTarget.id);
-    if (targetIndex >= 0) setVisibleCount(count => Math.max(count, targetIndex + 1));
-    onNavigationTargetHandled?.();
-    scrollToSearchTarget(`gallery-card-${navigationTarget.id}`);
-  }, [navigationTarget, images, onNavigationTargetHandled]);
   const addFiles = async fileList => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -6278,7 +6008,6 @@ function GalleryPage({
   }), images.length ? /*#__PURE__*/React.createElement("div", {
     className: "gallery-grid"
   }, images.slice(0, visibleCount).map(image => /*#__PURE__*/React.createElement("article", {
-    id: `gallery-card-${image.id}`,
     className: "gallery-card",
     key: image.id
   }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
@@ -6364,9 +6093,7 @@ function VideoLibrary({
   videoStocks,
   setVideoStocks,
   setScreen,
-  homeSettings,
-  navigationTarget,
-  onNavigationTargetHandled
+  homeSettings
 }) {
   const thumbnailInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
@@ -6566,8 +6293,8 @@ function VideoLibrary({
   const stockQuery = query.trim().toLowerCase();
   const filteredStocks = normalizedStocks.filter(item => {
     if (!stockQuery) return true;
-    const haystack = `${item.title} ${item.prompt} ${item.memo}`;
-    return lowerIncludes(haystack, query);
+    const haystack = `${item.title} ${item.prompt} ${item.memo}`.toLowerCase();
+    return haystack.includes(stockQuery);
   });
   const stockCount = normalizedStocks.length;
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
@@ -6605,21 +6332,12 @@ function VideoLibrary({
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
   const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter(item => {
-    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`;
-    if (query && !lowerIncludes(haystack, query)) return false;
+    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
+    if (query && !haystack.includes(query.toLowerCase())) return false;
     if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
     if (favoriteOnly && !item.favorite) return false;
     return true;
   });
-  React.useEffect(() => {
-    if (!navigationTarget || navigationTarget.screen !== "videos" || !navigationTarget.id) return;
-    if (navigationTarget.kind !== "video-card" && navigationTarget.kind !== "video-stock") return;
-    setQuery("");
-    setModelFilter("すべて");
-    setFavoriteOnly(false);
-    onNavigationTargetHandled?.();
-    scrollToSearchTarget(`${navigationTarget.kind}-${navigationTarget.id}`);
-  }, [navigationTarget, onNavigationTargetHandled]);
   const videoSlotCount = searchActive ? filteredVideos.length : normalizedVideos.length < 20 ? Math.max(8, Math.ceil((normalizedVideos.length + 1) / 4) * 4) : 20;
   const slots = searchActive ? filteredVideos : Array.from({
     length: videoSlotCount
@@ -6862,7 +6580,6 @@ function VideoLibrary({
   }, slots.map((item, index) => {
     const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
     return item ? /*#__PURE__*/React.createElement("article", {
-      id: `video-card-${item.id}`,
       className: "library-prompt-card video-card video-prompt-card",
       key: item.id,
       onClick: () => editVideo(item)
@@ -6964,8 +6681,7 @@ function VideoLibrary({
     onCreate: saveVideoStockFrame,
     onUpdate: updateVideoStock,
     copyText: copyVideoStockText,
-    showMemo: () => stock && setMemoStock(stock),
-    domId: stock?.id ? `video-stock-${stock.id}` : undefined
+    showMemo: () => stock && setMemoStock(stock)
   }))), canAddStock && !stockQuery && stockCount >= visibleStockFrameCount && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
     onClick: addVideoStockFrame
@@ -7325,23 +7041,15 @@ function Projects({
   settings,
   homeSettings,
   copyText,
-  setScreen,
-  navigationTarget,
-  onNavigationTargetHandled
+  setScreen
 }) {
   const [editing, setEditing] = React.useState(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
   const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
   const projectMatchesDisplay = item => projectDisplay.showCompleted !== false || !item.completed && item.status !== "completed";
-  const filteredBase = projects.filter(item => lowerIncludes(searchableTextFromValue(item), query) && projectMatchesDisplay(item));
+  const filteredBase = projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query) && projectMatchesDisplay(item));
   const filtered = projectDisplay.sortBy === "manual" ? filteredBase : projectDisplay.sortBy === "created" ? [...filteredBase].sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || ""))) : sortProjectsForDisplay(filteredBase);
-  React.useEffect(() => {
-    if (!navigationTarget || navigationTarget.screen !== "projects" || navigationTarget.kind !== "project-card" || !navigationTarget.id) return;
-    setQuery("");
-    onNavigationTargetHandled?.();
-    scrollToSearchTarget(`project-card-${navigationTarget.id}`);
-  }, [navigationTarget, onNavigationTargetHandled]);
   const save = item => {
     const next = {
       ...item,
@@ -7378,7 +7086,6 @@ function Projects({
     const linkedPrompts = prompts.filter(p => project.promptIds.includes(p.id));
     const linkedMj = settings.filter(m => project.mjIds.includes(m.id));
     return /*#__PURE__*/React.createElement("article", {
-      id: `project-card-${project.id}`,
       className: "project-card",
       key: project.id
     }, /*#__PURE__*/React.createElement("div", {
