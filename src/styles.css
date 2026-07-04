@@ -107,6 +107,12 @@ body {
   background: var(--custom-background), var(--app-bg);
 }
 
+.preview-shell.hide-bg-decorations {
+  background: var(--custom-background), var(--app-bg);
+  background-position: var(--custom-background-position), center;
+  background-size: var(--custom-background-size), auto;
+}
+
 .app-shell.bg-type-solid,
 .app-shell.bg-type-gradient,
 .app-shell.bg-type-pattern,
@@ -3661,6 +3667,7 @@ main {
 }
 
 .preview-shell {
+  position: relative;
   display: grid;
   gap: var(--card-gap);
   overflow: hidden;
@@ -3673,6 +3680,20 @@ main {
   background-position: var(--custom-background-position), center, center;
   background-size: var(--custom-background-size), auto, auto;
   padding: var(--card-padding);
+}
+
+.preview-shell.bg-type-image::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  backdrop-filter: var(--custom-background-blur);
+  pointer-events: none;
+}
+
+.preview-shell.bg-type-image > * {
+  position: relative;
+  z-index: 1;
 }
 
 .home-mini-preview {
