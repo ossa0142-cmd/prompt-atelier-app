@@ -31,6 +31,27 @@ const homeFeatures = [{
   id: "projects",
   label: "プロジェクト"
 }];
+const homeClockStyleOptions = [{
+  id: "pill",
+  label: "ふんわり",
+  description: "丸いラベルで日付を表示"
+}, {
+  id: "simple",
+  label: "シンプル",
+  description: "細い文字で控えめに表示"
+}, {
+  id: "card",
+  label: "カード",
+  description: "小さなカード風に表示"
+}, {
+  id: "minimal",
+  label: "最小",
+  description: "月日と曜日だけ表示"
+}, {
+  id: "hidden",
+  label: "非表示",
+  description: "ホームに日付を出さない"
+}];
 const homeStatsCardOptions = [{
   id: "mockups",
   label: "モックアップカードを表示"
@@ -569,6 +590,7 @@ const defaultHomeSettings = {
   bannerPositionY: 50,
   bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
+  homeClockStyle: "pill",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
   cardStyle: defaultCardStyle,
@@ -621,6 +643,7 @@ const normalizeHomeSettings = settings => {
   };
   const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
   const safeDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity) ? settings.displayDensity : "normal";
+  const safeClockStyle = ["simple", "pill", "card", "minimal", "hidden"].includes(settings?.homeClockStyle) ? settings.homeClockStyle : "pill";
   const safeFontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset) ? settings.fontPreset : "simple";
   const safeIconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet) ? settings.iconSet : "line";
   const safeCharacterSize = ["small", "medium", "large"].includes(rawCharacter.size) ? rawCharacter.size : "medium";
@@ -650,6 +673,7 @@ const normalizeHomeSettings = settings => {
     bannerPositionX: activeBannerPosition.x,
     bannerPositionY: activeBannerPosition.y,
     bannerPositions,
+    homeClockStyle: safeClockStyle,
     displayDensity: safeDensity,
     pageDisplaySettings: {
       gallery: {
@@ -2476,6 +2500,43 @@ function PwaCustomizeCard({
     className: "pwa-install-help"
   }, "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。")));
 }
+function getHomeDateParts() {
+  const now = new Date();
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const weekday = weekdays[now.getDay()];
+  return {
+    year,
+    month,
+    day,
+    weekday
+  };
+}
+function HomeDateDisplay({
+  style = "pill",
+  mini = false
+}) {
+  if (style === "hidden") return null;
+  const {
+    year,
+    month,
+    day,
+    weekday
+  } = getHomeDateParts();
+  const className = `${mini ? "home-mini-date" : "home-date-display"} ${style}`;
+  if (style === "minimal") {
+    return /*#__PURE__*/React.createElement("time", {
+      className: className,
+      dateTime: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+    }, month, "/", day, "（", weekday, "）");
+  }
+  return /*#__PURE__*/React.createElement("time", {
+    className: className,
+    dateTime: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+  }, /*#__PURE__*/React.createElement("span", null, year), /*#__PURE__*/React.createElement("strong", null, month, "月", day, "日"), /*#__PURE__*/React.createElement("small", null, weekday, "曜日"));
+}
 function Home({
   setScreen,
   recent,
@@ -2490,7 +2551,7 @@ function Home({
   atelierImages
 }) {
   const isVisible = id => settings.visible[id] !== false;
-  const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
+  const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "企画管理をする", "folder"]];
   const nextReminder = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => {
     const aInfo = projectDueInfo(a.dueDate || "");
     const bInfo = projectDueInfo(b.dueDate || "");
@@ -2650,7 +2711,9 @@ function Home({
     className: "page home-page"
   }, /*#__PURE__*/React.createElement("div", {
     className: "home-topbar"
-  }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
+    style: settings.homeClockStyle || "pill"
+  })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`
   }, bannerSrc ? /*#__PURE__*/React.createElement("img", {
     src: bannerSrc,
@@ -3734,6 +3797,16 @@ function HomeCustomize({
     })
   }))))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card customize-nested-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "ホーム日付表示"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する年・月日・曜日の見た目を選べます。"), /*#__PURE__*/React.createElement("div", {
+    className: "preset-card-grid clock-style-grid"
+  }, homeClockStyleOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: (settings.homeClockStyle || "pill") === item.id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      homeClockStyle: item.id
+    })
+  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "order-list"
   }, settings.order.map(id => {
@@ -3796,7 +3869,10 @@ function HomeCustomize({
     style: previewStyle
   }, /*#__PURE__*/React.createElement("div", {
     className: "home-mini-topbar"
-  }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("span", null, "Home Mini Preview")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
+    style: settings.homeClockStyle || "pill",
+    mini: true
+  })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
     onPointerDown: startBannerDrag,
     onPointerMove: moveBannerDrag,

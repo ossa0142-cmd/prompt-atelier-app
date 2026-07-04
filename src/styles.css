@@ -340,6 +340,109 @@ main {
   text-transform: uppercase;
 }
 
+.home-date-display,
+.home-mini-date {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.home-date-display span,
+.home-date-display strong,
+.home-date-display small,
+.home-mini-date span,
+.home-mini-date strong,
+.home-mini-date small {
+  color: inherit;
+  font-size: inherit;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.home-date-display.pill {
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg) 84%, transparent);
+  box-shadow: 0 12px 24px rgba(73, 58, 45, 0.06);
+  padding: 9px 14px;
+}
+
+.home-date-display.card {
+  display: grid;
+  min-width: 138px;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  box-shadow: 0 16px 32px rgba(73, 58, 45, 0.08);
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.home-date-display.card span {
+  font-size: 11px;
+}
+
+.home-date-display.card strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.home-date-display.card small {
+  font-size: 12px;
+}
+
+.home-date-display.simple {
+  font-size: 14px;
+}
+
+.home-date-display.minimal {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.home-mini-date {
+  flex: 0 0 auto;
+  color: var(--text-sub);
+  font-size: 9px;
+}
+
+.home-mini-date.pill {
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--preview-line) 72%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--preview-card) 82%, transparent);
+  padding: 5px 7px;
+}
+
+.home-mini-date.card {
+  display: grid;
+  min-width: 76px;
+  gap: 2px;
+  border: 1px solid color-mix(in srgb, var(--preview-line) 72%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--preview-card) 86%, transparent);
+  padding: 6px;
+  text-align: center;
+}
+
+.home-mini-date.card strong {
+  color: var(--preview-ink);
+  font-size: 10px;
+}
+
+.home-mini-date.minimal,
+.home-mini-date.simple {
+  font-size: 9px;
+}
+
 .home-banner {
   position: relative;
   display: grid;

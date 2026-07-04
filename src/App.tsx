@@ -180,6 +180,7 @@ type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "
 type HomeCharacterMessageMode = "auto" | "fixed" | "project";
 type HomeCharacterSize = "small" | "medium" | "large";
 type DisplayDensity = "comfortable" | "normal" | "compact";
+type HomeClockStyle = "simple" | "pill" | "card" | "minimal" | "hidden";
 type CardRadiusStyle = "small" | "medium" | "large" | "pillowy";
 type CardShadowStyle = "none" | "soft" | "normal" | "dreamy";
 type CardTransparencyStyle = "solid" | "soft" | "glass";
@@ -269,6 +270,7 @@ type HomeSettings = {
   bannerPositionY: number;
   bannerPositions: BannerPositions;
   workToolIconStyle: WorkToolIconStyle;
+  homeClockStyle: HomeClockStyle;
   displayDensity: DisplayDensity;
   pageDisplaySettings: PageDisplaySettings;
   cardStyle: CardStyleSettings;
@@ -316,6 +318,14 @@ const homeFeatures: { id: HomeFeatureId; label: string }[] = [
   { id: "videos", label: "動画プロンプト帳" },
   { id: "mj", label: "MJ設定" },
   { id: "projects", label: "プロジェクト" },
+];
+
+const homeClockStyleOptions: { id: HomeClockStyle; label: string; description: string }[] = [
+  { id: "pill", label: "ふんわり", description: "丸いラベルで日付を表示" },
+  { id: "simple", label: "シンプル", description: "細い文字で控えめに表示" },
+  { id: "card", label: "カード", description: "小さなカード風に表示" },
+  { id: "minimal", label: "最小", description: "月日と曜日だけ表示" },
+  { id: "hidden", label: "非表示", description: "ホームに日付を出さない" },
 ];
 
 const homeStatsCardOptions: { id: HomeStatsCardId; label: string }[] = [
@@ -581,6 +591,7 @@ const defaultHomeSettings: HomeSettings = {
   bannerPositionY: 50,
   bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
+  homeClockStyle: "pill",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
   cardStyle: defaultCardStyle,
@@ -629,6 +640,9 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
   const safeDensity: DisplayDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity)
     ? settings.displayDensity as DisplayDensity
     : "normal";
+  const safeClockStyle: HomeClockStyle = ["simple", "pill", "card", "minimal", "hidden"].includes(settings?.homeClockStyle)
+    ? settings.homeClockStyle as HomeClockStyle
+    : "pill";
   const safeFontPreset: FontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset)
     ? settings.fontPreset as FontPreset
     : "simple";
@@ -664,6 +678,7 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
     bannerPositionX: activeBannerPosition.x,
     bannerPositionY: activeBannerPosition.y,
     bannerPositions,
+    homeClockStyle: safeClockStyle,
     displayDensity: safeDensity,
     pageDisplaySettings: {
       gallery: { ...defaultPageDisplaySettings.gallery, ...(rawPageSettings as any).gallery },
@@ -2538,6 +2553,32 @@ function PwaCustomizeCard({ canInstallPwa, isStandaloneApp, onInstall, onShowIns
   );
 }
 
+function getHomeDateParts() {
+  const now = new Date();
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const weekday = weekdays[now.getDay()];
+  return { year, month, day, weekday };
+}
+
+function HomeDateDisplay({ style = "pill", mini = false }: { style?: HomeClockStyle; mini?: boolean }) {
+  if (style === "hidden") return null;
+  const { year, month, day, weekday } = getHomeDateParts();
+  const className = `${mini ? "home-mini-date" : "home-date-display"} ${style}`;
+  if (style === "minimal") {
+    return <time className={className} dateTime={`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`}>{month}/{day}（{weekday}）</time>;
+  }
+  return (
+    <time className={className} dateTime={`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`}>
+      <span>{year}</span>
+      <strong>{month}月{day}日</strong>
+      <small>{weekday}曜日</small>
+    </time>
+  );
+}
+
 function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, copyText, settings, workTools, atelierImages }: any) {
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
@@ -2545,7 +2586,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
     ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"],
     ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"],
     ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"],
-    ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"],
+    ["projects", "プロジェクト", "企画管理をする", "folder"],
   ];
   const nextReminder = (projects as Project[])
     .filter((project) => project.remindOnHome && project.dueDate)
@@ -2675,6 +2716,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
     <section className="page home-page">
       <div className="home-topbar">
         <span>Prompt Atelier Home</span>
+        <HomeDateDisplay style={settings.homeClockStyle || "pill"} />
       </div>
       {settings.bannerVisible && (
         <div className={`home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
@@ -3526,6 +3568,23 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           </section>
 
           <section className="customize-card customize-nested-card">
+            <h3>ホーム日付表示</h3>
+            <p>ホーム上部に表示する年・月日・曜日の見た目を選べます。</p>
+            <div className="preset-card-grid clock-style-grid">
+              {homeClockStyleOptions.map((item) => (
+                <button
+                  key={item.id}
+                  className={(settings.homeClockStyle || "pill") === item.id ? "active-soft" : ""}
+                  onClick={() => updateSettings({ homeClockStyle: item.id })}
+                >
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="customize-card customize-nested-card">
             <h3>並び順</h3>
             <p>ホームの表示順を「上へ」「下へ」で調整できます。</p>
             <div className="order-list">
@@ -3601,7 +3660,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           >
             <div className="home-mini-topbar">
               <strong>Prompt Atelier</strong>
-              <span>Home Mini Preview</span>
+              <HomeDateDisplay style={settings.homeClockStyle || "pill"} mini />
             </div>
             {settings.bannerVisible && (
               <div
