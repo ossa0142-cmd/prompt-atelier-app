@@ -169,15 +169,6 @@ type PwaInstallPromptEvent = Event & {
 };
 
 type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos";
-type SearchTarget = {
-  id: string;
-  itemId?: string;
-  categoryId?: string;
-  title: string;
-  type: string;
-  screen: Screen;
-  query: string;
-};
 
 type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites" | "atelier";
 type HomeFeatureId = "library" | "prompts" | "videos" | "mj" | "projects";
@@ -2269,7 +2260,6 @@ function App() {
   const [installPrompt, setInstallPrompt] = React.useState<PwaInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = React.useState(false);
   const [isStandaloneApp, setIsStandaloneApp] = React.useState(false);
-  const [searchTarget, setSearchTarget] = React.useState<SearchTarget | null>(null);
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find((theme) => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -2391,15 +2381,6 @@ function App() {
     sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
     setShowInstallPrompt(false);
   };
-  const goToScreen = (nextScreen: Screen) => {
-    setSearchTarget(null);
-    setScreen(nextScreen);
-  };
-  const openSearchTarget = (target: SearchTarget) => {
-    setSearchTarget(target);
-    setScreen(target.screen);
-  };
-  const clearSearchTarget = () => setSearchTarget(null);
 
   return (
     <div
@@ -2415,7 +2396,7 @@ function App() {
       style={appStyle}
     >
       <header className="app-header">
-        <button className="brand" onClick={() => goToScreen("home")} aria-label="ホームへ">
+        <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>
           <span>
             <strong>Prompt Atelier</strong>
@@ -2432,7 +2413,7 @@ function App() {
             ["videos", "動画プロンプト"],
             ["customize", "カスタマイズ"],
           ].map(([id, label]) => (
-            <button key={id} className={screen === id ? "active" : ""} onClick={() => goToScreen(id as Screen)}>
+            <button key={id} className={screen === id ? "active" : ""} onClick={() => setScreen(id as Screen)}>
               {label}
             </button>
           ))}
@@ -2445,8 +2426,7 @@ function App() {
         )}
         {screen === "home" && (
           <Home
-            setScreen={goToScreen}
-            openSearchTarget={openSearchTarget}
+            setScreen={setScreen}
             recent={recentPrompts}
             favorites={favorites}
             projects={projects}
@@ -2465,7 +2445,7 @@ function App() {
           <HomeCustomize
             settings={homeSettings}
             setSettings={setRawHomeSettings}
-            setScreen={goToScreen}
+            setScreen={setScreen}
             workTools={workTools}
             setWorkTools={setWorkTools}
             projects={projects}
@@ -2477,9 +2457,9 @@ function App() {
             onInstallPwa={installPwa}
           />
         )}
-        {screen === "library" && <Library copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
-        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
-        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={goToScreen} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} />}
+        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} />}
+        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={setScreen} />}
         {screen === "projects" && (
           <Projects
             projects={projects}
@@ -2488,14 +2468,12 @@ function App() {
             settings={mjSettings}
             homeSettings={homeSettings}
             copyText={copyText}
-            setScreen={goToScreen}
-            searchTarget={searchTarget}
-            clearSearchTarget={clearSearchTarget}
+            setScreen={setScreen}
           />
         )}
-        {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={goToScreen} />}
-        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
-        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
+        {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
+        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} homeSettings={homeSettings} />}
+        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={setScreen} homeSettings={homeSettings} />}
       </main>
       {isImageMigrating && (
         <div className="image-migration-overlay">
@@ -2581,7 +2559,7 @@ function PwaCustomizeCard({ canInstallPwa, isStandaloneApp, onInstall, onShowIns
   );
 }
 
-function Home({ setScreen, openSearchTarget, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, videos, videoStocks, copyText, settings, workTools, atelierImages }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, videos, videoStocks, copyText, settings, workTools, atelierImages }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
@@ -2597,71 +2575,55 @@ function Home({ setScreen, openSearchTarget, recent, favorites, projects, myProm
       title,
       type: "ページ",
       screen,
-      query: String(title),
       text: `${title} ${body}`,
     })),
     ...(mockupPrompts || []).map((item: any) => ({
       id: `mockup-${item.id}`,
-      itemId: item.id,
-      categoryId: item.categoryId,
       title: item.title || item.category || "モックアップ",
       type: item.isTextStock ? "モックアップストック" : "モックアップ",
       screen: "library",
-      query: item.title || item.category || "",
       text: searchableTextFromValue(item),
     })),
     ...(myPrompts || []).map((item: any) => ({
       id: `prompt-${item.id}`,
-      itemId: item.id,
       title: item.title || "プロンプト",
       type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
       screen: "prompts",
-      query: item.title || item.prompt || "",
       text: searchableTextFromValue(item),
     })),
     ...(mjSettings || []).map((item: any) => ({
       id: `mj-${item.id}`,
-      itemId: item.id,
       title: item.title || "MJ設定",
       type: "MJ設定",
       screen: "mj",
-      query: item.title || item.memo || "",
       text: `${searchableTextFromValue(item)} ${mjCommand(item)}`,
     })),
     ...(projects || []).map((item: any) => ({
       id: `project-${item.id}`,
-      itemId: item.id,
       title: item.name || item.title || "プロジェクト",
       type: "プロジェクト",
       screen: "projects",
-      query: item.name || item.title || "",
       text: searchableTextFromValue(item),
     })),
     ...(videos || []).map((item: any) => ({
       id: `video-${item.id}`,
-      itemId: item.id,
       title: item.title || "動画プロンプト",
       type: "動画プロンプト帳",
       screen: "videos",
-      query: item.title || item.prompt || "",
       text: searchableTextFromValue(item),
     })),
     ...(videoStocks || []).map((item: any) => ({
       id: `video-stock-${item.id}`,
-      itemId: item.id,
       title: item.title || "動画プロンプトストック",
       type: "動画ストック",
       screen: "videos",
-      query: item.title || item.prompt || "",
       text: searchableTextFromValue(item),
     })),
     ...(atelierImages || []).map((item: any) => ({
       id: `gallery-${item.id}`,
-      itemId: item.id,
       title: item.title || item.memo || "ギャラリー画像",
       type: "ギャラリー",
       screen: "gallery",
-      query: item.title || item.memo || "",
       text: searchableTextFromValue(item),
     })),
     ...(workTools || []).map((item: any) => ({
@@ -2669,7 +2631,6 @@ function Home({ setScreen, openSearchTarget, recent, favorites, projects, myProm
       title: item.name || "作業ツール",
       type: "作業ツール",
       screen: "home",
-      query: item.name || "",
       text: searchableTextFromValue(item),
     })),
   ], [mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
@@ -2749,21 +2710,7 @@ function Home({ setScreen, openSearchTarget, recent, favorites, projects, myProm
           {homeQuery && (
             <div className="home-search-results">
               {searchable.length ? searchable.map((item) => (
-                <button key={item.id} onClick={() => {
-                  if (item.screen === "home" || !item.itemId) {
-                    setScreen(item.screen as Screen);
-                    return;
-                  }
-                  openSearchTarget({
-                    id: item.id,
-                    itemId: item.itemId,
-                    categoryId: item.categoryId,
-                    title: item.title,
-                    type: item.type,
-                    screen: item.screen as Screen,
-                    query: item.query || homeQuery,
-                  });
-                }}>
+                <button key={item.id} onClick={() => setScreen(item.screen as Screen)}>
                   <span>{item.title}</span>
                   <small>{item.type}</small>
                 </button>
@@ -3941,7 +3888,7 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
   );
 }
 
-function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts, searchTarget, clearSearchTarget }: any) {
+function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts }: any) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
@@ -3954,22 +3901,6 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "library") return;
-    const foundPrompt = boardPrompts.find((item: LibraryBoardPrompt) => item.id === searchTarget.itemId);
-    const targetCategory = orderedCategories.find((category) => category.id === (foundPrompt?.categoryId || searchTarget.categoryId));
-    if (targetCategory) setSelectedCategory(targetCategory);
-    if (foundPrompt) {
-      setQuery("");
-      window.setTimeout(() => {
-        if (!foundPrompt.isTextStock) setEditingPrompt(foundPrompt);
-        document.getElementById(`prompt-card-${foundPrompt.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 120);
-    } else if (searchTarget.query) {
-      setQuery(searchTarget.query);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   const currentCategory = selectedCategory ? orderedCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
   const filteredCategories = orderedCategories.filter((item) => lowerIncludes(`${item.title} ${item.description}`, query));
@@ -4381,7 +4312,7 @@ function CoverImageUploader({ item, onChange, category = "prompt" }: any) {
 function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showMemo, showTags = true, showMemoButton = true }: any) {
   const updateCoverImages = (coverImages: any[]) => updatePrompt(prompt.id, { coverImages, imageUrl: coverImages[0] || "" });
   return (
-    <article id={`prompt-card-${prompt.id}`} className="library-prompt-card">
+    <article className="library-prompt-card">
       <PromptMenuButton
         onDuplicate={() => duplicatePrompt(prompt)}
         onClearImage={() => updatePrompt(prompt.id, { imageUrl: "", coverImages: [] })}
@@ -4438,7 +4369,7 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
     copyText(promptText, prompt?.id);
   };
   return (
-    <article id={prompt?.id ? `text-stock-${prompt.id}` : undefined} className="text-stock-frame">
+    <article className="text-stock-frame">
       <input
         value={title}
         onChange={(event) => setTitle(event.target.value)}
@@ -4696,7 +4627,7 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   );
 }
 
-function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings, searchTarget, clearSearchTarget }: any) {
+function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: any) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
@@ -4764,28 +4695,6 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings, se
     if (!canAddTextStock) return;
     setStockFrameCount((count) => Math.min(100, count + 1));
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "prompts") return;
-    const foundPrompt = prompts.find((item: MyPrompt) => item.id === searchTarget.itemId);
-    if (foundPrompt) {
-      setQuery("");
-      setTag("すべて");
-      setFavoritesOnly(false);
-      if (foundPrompt.isTextStock) {
-        const stockIndex = prompts.filter((item: MyPrompt) => item.isTextStock).findIndex((item: MyPrompt) => item.id === foundPrompt.id);
-        setStockFrameCount((count) => Math.max(count, stockIndex + 1, 5));
-        setMemoPrompt(foundPrompt);
-        window.setTimeout(() => {
-          document.getElementById(`text-stock-${foundPrompt.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 120);
-      } else {
-        setEditing(foundPrompt);
-      }
-    } else if (searchTarget.query) {
-      setQuery(searchTarget.query);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   return (
     <section className={`page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`}>
       <PageHead title="プロンプト帳" action={<div className="actions"><span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>} />
@@ -4871,7 +4780,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings, se
   );
 }
 
-function Midjourney({ settings, setSettings, copyText, setScreen, searchTarget, clearSearchTarget }: any) {
+function Midjourney({ settings, setSettings, copyText, setScreen }: any) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
   const [promptEn, setPromptEn] = React.useState("");
@@ -5028,13 +4937,6 @@ function Midjourney({ settings, setSettings, copyText, setScreen, searchTarget, 
     }, 80);
     window.setTimeout(() => setHighlightedId(""), 1800);
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "mj") return;
-    const foundSetting = normalizedSettings.find((item: MjSetting) => item.id === searchTarget.itemId);
-    if (foundSetting) jumpToCard(foundSetting.id);
-    else if (searchTarget.query) setQuery(searchTarget.query);
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   return (
     <section className="page mj-board-page">
       <PageHead title="Midjourneyパラメータ制作ボード" action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button className="primary" onClick={save} disabled={!canSave}>完成プロンプトを保存</button></div>} />
@@ -5458,7 +5360,7 @@ function mjCommandLegacy(item: MjSetting) {
   ].filter(Boolean).join(" ");
 }
 
-function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings, searchTarget, clearSearchTarget }: any) {
+function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   const [previewId, setPreviewId] = React.useState("");
@@ -5478,18 +5380,6 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings, s
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
   }, [images.length, visibleCount]);
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "gallery") return;
-    const foundImageIndex = images.findIndex((image: AtelierImage) => image.id === searchTarget.itemId);
-    if (foundImageIndex >= 0) {
-      setVisibleCount((count) => Math.max(count, foundImageIndex + 1, 20));
-      setPreviewId(images[foundImageIndex].id);
-      window.setTimeout(() => {
-        document.getElementById(`gallery-card-${images[foundImageIndex].id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 120);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   const addFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -5572,7 +5462,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings, s
       {images.length ? (
         <div className="gallery-grid">
           {images.slice(0, visibleCount).map((image: AtelierImage) => (
-            <article id={`gallery-card-${image.id}`} className="gallery-card" key={image.id}>
+            <article className="gallery-card" key={image.id}>
               {galleryDisplay.showHeart !== false && <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
                 {image.favorite ? "♥" : "♡"}
               </button>}
@@ -5629,7 +5519,7 @@ function VideoPlaceholder() {
   );
 }
 
-function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen, homeSettings, searchTarget, clearSearchTarget }: any) {
+function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen, homeSettings }: any) {
   const thumbnailInputRef = React.useRef<HTMLInputElement | null>(null);
   const videoInputRef = React.useRef<HTMLInputElement | null>(null);
   const uploadVideoInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -5815,7 +5705,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const stockQuery = query.trim().toLowerCase();
   const filteredStocks = normalizedStocks.filter((item) => {
     if (!stockQuery) return true;
-    return lowerIncludes(`${item.title} ${item.prompt} ${item.memo}`, stockQuery);
+    const haystack = `${item.title} ${item.prompt} ${item.memo}`.toLowerCase();
+    return haystack.includes(stockQuery);
   });
   const stockCount = normalizedStocks.length;
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
@@ -5849,8 +5740,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
   const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter((item) => {
-    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`;
-    if (query && !lowerIncludes(haystack, query)) return false;
+    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
+    if (query && !haystack.includes(query.toLowerCase())) return false;
     if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
     if (favoriteOnly && !item.favorite) return false;
     return true;
@@ -5859,27 +5750,6 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const slots = searchActive
     ? filteredVideos
     : Array.from({ length: videoSlotCount }, (_, index) => normalizedVideos[index] || null);
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "videos") return;
-    const foundVideo = normalizedVideos.find((item) => item.id === searchTarget.itemId);
-    const foundStock = normalizedStocks.find((item) => item.id === searchTarget.itemId);
-    setQuery("");
-    setModelFilter("すべて");
-    setFavoriteOnly(false);
-    if (foundVideo) {
-      editVideo(foundVideo);
-    } else if (foundStock) {
-      const stockIndex = normalizedStocks.findIndex((item) => item.id === foundStock.id);
-      setStockFrameCount((count) => Math.max(count, stockIndex + 1, 5));
-      setMemoStock(foundStock);
-      window.setTimeout(() => {
-        document.getElementById(`text-stock-${foundStock.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 120);
-    } else if (searchTarget.query) {
-      setQuery(searchTarget.query);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   if (selectedId) {
     return (
       <section
@@ -5998,7 +5868,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
           {slots.map((item: VideoItem | null, index: number) => {
             const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
             return item ? (
-            <article id={`video-card-${item.id}`} className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
+            <article className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
               <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
                 event.stopPropagation();
                 setVideos((items: VideoItem[]) => extractVideoPromptItems(items).map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
@@ -6323,7 +6193,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   );
 }
 
-function Projects({ projects, setProjects, prompts, settings, homeSettings, copyText, setScreen, searchTarget, clearSearchTarget }: any) {
+function Projects({ projects, setProjects, prompts, settings, homeSettings, copyText, setScreen }: any) {
   const [editing, setEditing] = React.useState<Project | null>(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
@@ -6340,20 +6210,6 @@ function Projects({ projects, setProjects, prompts, settings, homeSettings, copy
     setProjects((items: Project[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "projects") return;
-    const foundProject = projects.find((item: Project) => item.id === searchTarget.itemId);
-    if (foundProject) {
-      setQuery("");
-      setEditing(foundProject);
-      window.setTimeout(() => {
-        document.getElementById(`project-card-${foundProject.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 120);
-    } else if (searchTarget.query) {
-      setQuery(searchTarget.query);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   return (
     <section className={`page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`}>
       <PageHead
@@ -6367,7 +6223,7 @@ function Projects({ projects, setProjects, prompts, settings, homeSettings, copy
           const linkedPrompts = prompts.filter((p: MyPrompt) => project.promptIds.includes(p.id));
           const linkedMj = settings.filter((m: MjSetting) => project.mjIds.includes(m.id));
           return (
-            <article id={`project-card-${project.id}`} className="project-card" key={project.id}>
+            <article className="project-card" key={project.id}>
               <div className="project-top">
                 <div>
                   <h3>{project.name}</h3>

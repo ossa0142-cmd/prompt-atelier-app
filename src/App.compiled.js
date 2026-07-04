@@ -2207,7 +2207,6 @@ function App() {
   const [installPrompt, setInstallPrompt] = React.useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = React.useState(false);
   const [isStandaloneApp, setIsStandaloneApp] = React.useState(false);
-  const [searchTarget, setSearchTarget] = React.useState(null);
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -2320,15 +2319,6 @@ function App() {
     sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
     setShowInstallPrompt(false);
   };
-  const goToScreen = nextScreen => {
-    setSearchTarget(null);
-    setScreen(nextScreen);
-  };
-  const openSearchTarget = target => {
-    setSearchTarget(target);
-    setScreen(target.screen);
-  };
-  const clearSearchTarget = () => setSearchTarget(null);
   return /*#__PURE__*/React.createElement("div", {
     className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`,
     "data-density": homeSettings.displayDensity || "normal",
@@ -2344,21 +2334,20 @@ function App() {
     className: "app-header"
   }, /*#__PURE__*/React.createElement("button", {
     className: "brand",
-    onClick: () => goToScreen("home"),
+    onClick: () => setScreen("home"),
     "aria-label": "ホームへ"
   }, /*#__PURE__*/React.createElement("span", {
     className: "brand-mark"
   }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "AIイラストクリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["videos", "動画プロンプト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: screen === id ? "active" : "",
-    onClick: () => goToScreen(id)
+    onClick: () => setScreen(id)
   }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && !isStandaloneApp && /*#__PURE__*/React.createElement(PwaInstallCard, {
     canInstall: Boolean(installPrompt),
     onInstall: installPwa,
     onDismiss: dismissInstallPrompt
   }), screen === "home" && /*#__PURE__*/React.createElement(Home, {
-    setScreen: goToScreen,
-    openSearchTarget: openSearchTarget,
+    setScreen: setScreen,
     recent: recentPrompts,
     favorites: favorites,
     projects: projects,
@@ -2374,7 +2363,7 @@ function App() {
   }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
-    setScreen: goToScreen,
+    setScreen: setScreen,
     workTools: workTools,
     setWorkTools: setWorkTools,
     projects: projects,
@@ -2386,27 +2375,21 @@ function App() {
     onInstallPwa: installPwa
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
-    setScreen: goToScreen,
+    setScreen: setScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
-    setBoardPrompts: setMockupPrompts,
-    searchTarget: searchTarget,
-    clearSearchTarget: clearSearchTarget
+    setBoardPrompts: setMockupPrompts
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
-    setScreen: goToScreen,
-    homeSettings: homeSettings,
-    searchTarget: searchTarget,
-    clearSearchTarget: clearSearchTarget
+    setScreen: setScreen,
+    homeSettings: homeSettings
   }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
     copyText: copyText,
-    setScreen: goToScreen,
-    searchTarget: searchTarget,
-    clearSearchTarget: clearSearchTarget
+    setScreen: setScreen
   }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
     projects: projects,
     setProjects: setProjects,
@@ -2414,32 +2397,26 @@ function App() {
     settings: mjSettings,
     homeSettings: homeSettings,
     copyText: copyText,
-    setScreen: goToScreen,
-    searchTarget: searchTarget,
-    clearSearchTarget: clearSearchTarget
+    setScreen: setScreen
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
     images: atelierImages,
     journal: journal,
     setJournal: setJournal,
     setGalleryImages: setGalleryImages,
-    setScreen: goToScreen
+    setScreen: setScreen
   }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
     images: galleryImages,
     setImages: setGalleryImages,
     setJournal: setJournal,
-    setScreen: goToScreen,
-    homeSettings: homeSettings,
-    searchTarget: searchTarget,
-    clearSearchTarget: clearSearchTarget
+    setScreen: setScreen,
+    homeSettings: homeSettings
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
-    setScreen: goToScreen,
-    homeSettings: homeSettings,
-    searchTarget: searchTarget,
-    clearSearchTarget: clearSearchTarget
+    setScreen: setScreen,
+    homeSettings: homeSettings
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
     className: "image-migration-overlay"
   }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
@@ -2519,7 +2496,6 @@ function PwaCustomizeCard({
 }
 function Home({
   setScreen,
-  openSearchTarget,
   recent,
   favorites,
   projects,
@@ -2541,71 +2517,54 @@ function Home({
     title,
     type: "ページ",
     screen,
-    query: String(title),
     text: `${title} ${body}`
   })), ...(mockupPrompts || []).map(item => ({
     id: `mockup-${item.id}`,
-    itemId: item.id,
-    categoryId: item.categoryId,
     title: item.title || item.category || "モックアップ",
     type: item.isTextStock ? "モックアップストック" : "モックアップ",
     screen: "library",
-    query: item.title || item.category || "",
     text: searchableTextFromValue(item)
   })), ...(myPrompts || []).map(item => ({
     id: `prompt-${item.id}`,
-    itemId: item.id,
     title: item.title || "プロンプト",
     type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
     screen: "prompts",
-    query: item.title || item.prompt || "",
     text: searchableTextFromValue(item)
   })), ...(mjSettings || []).map(item => ({
     id: `mj-${item.id}`,
-    itemId: item.id,
     title: item.title || "MJ設定",
     type: "MJ設定",
     screen: "mj",
-    query: item.title || item.memo || "",
     text: `${searchableTextFromValue(item)} ${mjCommand(item)}`
   })), ...(projects || []).map(item => ({
     id: `project-${item.id}`,
-    itemId: item.id,
     title: item.name || item.title || "プロジェクト",
     type: "プロジェクト",
     screen: "projects",
-    query: item.name || item.title || "",
     text: searchableTextFromValue(item)
   })), ...(videos || []).map(item => ({
     id: `video-${item.id}`,
-    itemId: item.id,
     title: item.title || "動画プロンプト",
     type: "動画プロンプト帳",
     screen: "videos",
-    query: item.title || item.prompt || "",
     text: searchableTextFromValue(item)
   })), ...(videoStocks || []).map(item => ({
     id: `video-stock-${item.id}`,
-    itemId: item.id,
     title: item.title || "動画プロンプトストック",
     type: "動画ストック",
     screen: "videos",
-    query: item.title || item.prompt || "",
     text: searchableTextFromValue(item)
   })), ...(atelierImages || []).map(item => ({
     id: `gallery-${item.id}`,
-    itemId: item.id,
     title: item.title || item.memo || "ギャラリー画像",
     type: "ギャラリー",
     screen: "gallery",
-    query: item.title || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(workTools || []).map(item => ({
     id: `tool-${item.id}`,
     title: item.name || "作業ツール",
     type: "作業ツール",
     screen: "home",
-    query: item.name || "",
     text: searchableTextFromValue(item)
   }))], [mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
   const searchable = homeQuery.trim() ? searchItems.filter(item => lowerIncludes(item.text, homeQuery)).slice(0, 10) : [];
@@ -2707,21 +2666,7 @@ function Home({
         className: "home-search-results"
       }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
         key: item.id,
-        onClick: () => {
-          if (item.screen === "home" || !item.itemId) {
-            setScreen(item.screen);
-            return;
-          }
-          openSearchTarget({
-            id: item.id,
-            itemId: item.itemId,
-            categoryId: item.categoryId,
-            title: item.title,
-            type: item.type,
-            screen: item.screen,
-            query: item.query || homeQuery
-          });
-        }
+        onClick: () => setScreen(item.screen)
       }, /*#__PURE__*/React.createElement("span", null, item.title), /*#__PURE__*/React.createElement("small", null, item.type))) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
     }
     if (sectionId === "featureCards") {
@@ -4169,9 +4114,7 @@ function Library({
   setScreen,
   homeSettings,
   boardPrompts,
-  setBoardPrompts,
-  searchTarget,
-  clearSearchTarget
+  setBoardPrompts
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -4185,25 +4128,6 @@ function Library({
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "library") return;
-    const foundPrompt = boardPrompts.find(item => item.id === searchTarget.itemId);
-    const targetCategory = orderedCategories.find(category => category.id === (foundPrompt?.categoryId || searchTarget.categoryId));
-    if (targetCategory) setSelectedCategory(targetCategory);
-    if (foundPrompt) {
-      setQuery("");
-      window.setTimeout(() => {
-        if (!foundPrompt.isTextStock) setEditingPrompt(foundPrompt);
-        document.getElementById(`prompt-card-${foundPrompt.id}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-      }, 120);
-    } else if (searchTarget.query) {
-      setQuery(searchTarget.query);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
   const filteredCategories = orderedCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
@@ -4691,7 +4615,6 @@ function LibraryImagePromptCard({
     imageUrl: coverImages[0] || ""
   });
   return /*#__PURE__*/React.createElement("article", {
-    id: `prompt-card-${prompt.id}`,
     className: "library-prompt-card"
   }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
@@ -4793,7 +4716,6 @@ function TextStockFrame({
     copyText(promptText, prompt?.id);
   };
   return /*#__PURE__*/React.createElement("article", {
-    id: prompt?.id ? `text-stock-${prompt.id}` : undefined,
     className: "text-stock-frame"
   }, /*#__PURE__*/React.createElement("input", {
     value: title,
@@ -5207,9 +5129,7 @@ function PromptBook({
   setPrompts,
   copyText,
   setScreen,
-  homeSettings,
-  searchTarget,
-  clearSearchTarget
+  homeSettings
 }) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
@@ -5293,31 +5213,6 @@ function PromptBook({
     if (!canAddTextStock) return;
     setStockFrameCount(count => Math.min(100, count + 1));
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "prompts") return;
-    const foundPrompt = prompts.find(item => item.id === searchTarget.itemId);
-    if (foundPrompt) {
-      setQuery("");
-      setTag("すべて");
-      setFavoritesOnly(false);
-      if (foundPrompt.isTextStock) {
-        const stockIndex = prompts.filter(item => item.isTextStock).findIndex(item => item.id === foundPrompt.id);
-        setStockFrameCount(count => Math.max(count, stockIndex + 1, 5));
-        setMemoPrompt(foundPrompt);
-        window.setTimeout(() => {
-          document.getElementById(`text-stock-${foundPrompt.id}`)?.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-          });
-        }, 120);
-      } else {
-        setEditing(foundPrompt);
-      }
-    } else if (searchTarget.query) {
-      setQuery(searchTarget.query);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   return /*#__PURE__*/React.createElement("section", {
     className: `page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -5419,9 +5314,7 @@ function Midjourney({
   settings,
   setSettings,
   copyText,
-  setScreen,
-  searchTarget,
-  clearSearchTarget
+  setScreen
 }) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
@@ -5590,12 +5483,6 @@ function Midjourney({
     }, 80);
     window.setTimeout(() => setHighlightedId(""), 1800);
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "mj") return;
-    const foundSetting = normalizedSettings.find(item => item.id === searchTarget.itemId);
-    if (foundSetting) jumpToCard(foundSetting.id);else if (searchTarget.query) setQuery(searchTarget.query);
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   return /*#__PURE__*/React.createElement("section", {
     className: "page mj-board-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -6076,9 +5963,7 @@ function GalleryPage({
   setImages,
   setJournal,
   setScreen,
-  homeSettings,
-  searchTarget,
-  clearSearchTarget
+  homeSettings
 }) {
   const fileInputRef = React.useRef(null);
   const loadMoreRef = React.useRef(null);
@@ -6101,21 +5986,6 @@ function GalleryPage({
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
   }, [images.length, visibleCount]);
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "gallery") return;
-    const foundImageIndex = images.findIndex(image => image.id === searchTarget.itemId);
-    if (foundImageIndex >= 0) {
-      setVisibleCount(count => Math.max(count, foundImageIndex + 1, 20));
-      setPreviewId(images[foundImageIndex].id);
-      window.setTimeout(() => {
-        document.getElementById(`gallery-card-${images[foundImageIndex].id}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-      }, 120);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   const addFiles = async fileList => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -6212,7 +6082,6 @@ function GalleryPage({
   }), images.length ? /*#__PURE__*/React.createElement("div", {
     className: "gallery-grid"
   }, images.slice(0, visibleCount).map(image => /*#__PURE__*/React.createElement("article", {
-    id: `gallery-card-${image.id}`,
     className: "gallery-card",
     key: image.id
   }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
@@ -6298,9 +6167,7 @@ function VideoLibrary({
   videoStocks,
   setVideoStocks,
   setScreen,
-  homeSettings,
-  searchTarget,
-  clearSearchTarget
+  homeSettings
 }) {
   const thumbnailInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
@@ -6500,7 +6367,8 @@ function VideoLibrary({
   const stockQuery = query.trim().toLowerCase();
   const filteredStocks = normalizedStocks.filter(item => {
     if (!stockQuery) return true;
-    return lowerIncludes(`${item.title} ${item.prompt} ${item.memo}`, stockQuery);
+    const haystack = `${item.title} ${item.prompt} ${item.memo}`.toLowerCase();
+    return haystack.includes(stockQuery);
   });
   const stockCount = normalizedStocks.length;
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
@@ -6538,8 +6406,8 @@ function VideoLibrary({
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
   const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter(item => {
-    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`;
-    if (query && !lowerIncludes(haystack, query)) return false;
+    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
+    if (query && !haystack.includes(query.toLowerCase())) return false;
     if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
     if (favoriteOnly && !item.favorite) return false;
     return true;
@@ -6548,30 +6416,6 @@ function VideoLibrary({
   const slots = searchActive ? filteredVideos : Array.from({
     length: videoSlotCount
   }, (_, index) => normalizedVideos[index] || null);
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "videos") return;
-    const foundVideo = normalizedVideos.find(item => item.id === searchTarget.itemId);
-    const foundStock = normalizedStocks.find(item => item.id === searchTarget.itemId);
-    setQuery("");
-    setModelFilter("すべて");
-    setFavoriteOnly(false);
-    if (foundVideo) {
-      editVideo(foundVideo);
-    } else if (foundStock) {
-      const stockIndex = normalizedStocks.findIndex(item => item.id === foundStock.id);
-      setStockFrameCount(count => Math.max(count, stockIndex + 1, 5));
-      setMemoStock(foundStock);
-      window.setTimeout(() => {
-        document.getElementById(`text-stock-${foundStock.id}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-      }, 120);
-    } else if (searchTarget.query) {
-      setQuery(searchTarget.query);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   if (selectedId) {
     return /*#__PURE__*/React.createElement("section", {
       className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`,
@@ -6810,7 +6654,6 @@ function VideoLibrary({
   }, slots.map((item, index) => {
     const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
     return item ? /*#__PURE__*/React.createElement("article", {
-      id: `video-card-${item.id}`,
       className: "library-prompt-card video-card video-prompt-card",
       key: item.id,
       onClick: () => editVideo(item)
@@ -7272,9 +7115,7 @@ function Projects({
   settings,
   homeSettings,
   copyText,
-  setScreen,
-  searchTarget,
-  clearSearchTarget
+  setScreen
 }) {
   const [editing, setEditing] = React.useState(null);
   const [query, setQuery] = React.useState("");
@@ -7292,23 +7133,6 @@ function Projects({
     setProjects(items => item.id ? items.map(p => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "projects") return;
-    const foundProject = projects.find(item => item.id === searchTarget.itemId);
-    if (foundProject) {
-      setQuery("");
-      setEditing(foundProject);
-      window.setTimeout(() => {
-        document.getElementById(`project-card-${foundProject.id}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-      }, 120);
-    } else if (searchTarget.query) {
-      setQuery(searchTarget.query);
-    }
-    clearSearchTarget?.();
-  }, [searchTarget?.id]);
   return /*#__PURE__*/React.createElement("section", {
     className: `page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -7336,7 +7160,6 @@ function Projects({
     const linkedPrompts = prompts.filter(p => project.promptIds.includes(p.id));
     const linkedMj = settings.filter(m => project.mjIds.includes(m.id));
     return /*#__PURE__*/React.createElement("article", {
-      id: `project-card-${project.id}`,
       className: "project-card",
       key: project.id
     }, /*#__PURE__*/React.createElement("div", {

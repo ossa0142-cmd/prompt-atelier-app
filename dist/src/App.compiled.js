@@ -1024,15 +1024,12 @@ const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
-const MOCKUP_CATEGORY_STORAGE_KEY = "prompt-atelier-mockup-categories-v2";
-const MOCKUP_PROMPT_STORAGE_KEY = "prompt-atelier-library-prompts-v5";
-const STORAGE_BACKUP_SUFFIX = "__backup";
-const SAMPLE_EXPORT_KEYS = [MOCKUP_CATEGORY_STORAGE_KEY, MOCKUP_PROMPT_STORAGE_KEY, "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
+const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
 const SAMPLE_DATA_STORAGE_MAP = {
-  libraryItems: MOCKUP_CATEGORY_STORAGE_KEY,
-  mockupCategories: MOCKUP_CATEGORY_STORAGE_KEY,
-  mockupItems: MOCKUP_PROMPT_STORAGE_KEY,
-  mockupStocks: MOCKUP_PROMPT_STORAGE_KEY,
+  libraryItems: "prompt-atelier-mockup-categories-v2",
+  mockupCategories: "prompt-atelier-mockup-categories-v2",
+  mockupItems: "prompt-atelier-library-prompts-v5",
+  mockupStocks: "prompt-atelier-library-prompts-v5",
   promptCards: "prompt-atelier-prompts-ja-v2",
   promptStocks: "prompt-atelier-prompts-ja-v2",
   videoPromptCards: "promptAtelierVideoPrompts",
@@ -1046,9 +1043,6 @@ const SAMPLE_DATA_STORAGE_MAP = {
   customizeSettings: "promptAtelierHomeSettings",
   workTools: "promptAtelierWorkTools"
 };
-const MOCKUP_CATEGORY_RECOVERY_KEYS = [`${MOCKUP_CATEGORY_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`, "promptAtelierMockupCategories", "promptAtelierLibraryCategories", "promptAtelier_mockupCategories", "mockupCategories", "libraryItems", "prompt-atelier-library-categories-v2", "prompt-atelier-mockup-categories-v1"];
-const MOCKUP_PROMPT_RECOVERY_KEYS = [`${MOCKUP_PROMPT_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`, "promptAtelierMockupPrompts", "promptAtelierLibraryPrompts", "promptAtelier_mockupPrompts", "mockupItems", "mockupStocks", "libraryPrompts", "prompt-atelier-library-prompts-v4", "prompt-atelier-library-prompts-v3"];
-const BACKED_UP_STORAGE_KEYS = new Set([MOCKUP_CATEGORY_STORAGE_KEY, MOCKUP_PROMPT_STORAGE_KEY]);
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const IMAGE_DB_NAME = "PromptAtelierDB";
 const IMAGE_DB_VERSION = 1;
@@ -1795,39 +1789,6 @@ function saveImageToStorage(image) {
 function clipboardImageFiles(event) {
   return Array.from(event.clipboardData?.items || []).filter(item => item.kind === "file").map(item => item.getAsFile()).filter(file => Boolean(file) && isSupportedImageFile(file));
 }
-function readStoredArrayValue(key) {
-  try {
-    const saved = localStorage.getItem(key);
-    if (!saved) return [];
-    const parsed = JSON.parse(saved);
-    if (Array.isArray(parsed)) return parsed;
-    if (Array.isArray(parsed?.items)) return parsed.items;
-    if (Array.isArray(parsed?.cards)) return parsed.cards;
-    if (Array.isArray(parsed?.prompts)) return parsed.prompts;
-    if (Array.isArray(parsed?.categories)) return parsed.categories;
-    return [];
-  } catch {
-    return [];
-  }
-}
-function recoverStoredArray(keys, fallback) {
-  for (const key of keys) {
-    const recovered = readStoredArrayValue(key);
-    if (recovered.length > 0) return recovered;
-  }
-  return fallback;
-}
-function initialMockupCategories() {
-  return recoverStoredArray(MOCKUP_CATEGORY_RECOVERY_KEYS, defaultMockupCategories);
-}
-function initialMockupPrompts() {
-  return recoverStoredArray(MOCKUP_PROMPT_RECOVERY_KEYS, defaultLibraryBoardPrompts);
-}
-function backupStorageValueIfNeeded(key, value) {
-  if (!BACKED_UP_STORAGE_KEYS.has(key)) return;
-  if (!Array.isArray(value) || value.length === 0) return;
-  localStorage.setItem(`${key}${STORAGE_BACKUP_SUFFIX}`, JSON.stringify(value));
-}
 function useStoredState(key, fallback) {
   const hasStoredValueRef = React.useRef(false);
   const [value, setValue] = React.useState(() => {
@@ -1846,7 +1807,6 @@ function useStoredState(key, fallback) {
     try {
       if (!hasStoredValueRef.current && JSON.stringify(value) === JSON.stringify(fallback)) return;
       localStorage.setItem(key, JSON.stringify(value));
-      backupStorageValueIfNeeded(key, value);
       hasStoredValueRef.current = true;
     } catch (error) {
       console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
@@ -2040,8 +2000,8 @@ function sampleHomeSettings(value) {
   };
 }
 function createSampleSeedData() {
-  const mockupCategories = parseStorageValueForSample(MOCKUP_CATEGORY_STORAGE_KEY) || [];
-  const libraryPromptsValue = parseStorageValueForSample(MOCKUP_PROMPT_STORAGE_KEY) || [];
+  const mockupCategories = parseStorageValueForSample("prompt-atelier-mockup-categories-v2") || [];
+  const libraryPromptsValue = parseStorageValueForSample("prompt-atelier-library-prompts-v5") || [];
   const promptBookValue = parseStorageValueForSample("prompt-atelier-prompts-ja-v2") || [];
   const videoPromptsValue = parseStorageValueForSample("promptAtelierVideoPrompts") || [];
   const videoStocksValue = parseStorageValueForSample("promptAtelierVideoPromptStocks") || [];
@@ -2167,10 +2127,10 @@ function sampleSeedDataToStorage(seedData) {
     if (!values.length) return;
     storageData[key] = [...(storageData[key] || []), ...values];
   };
-  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
-  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
-  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
-  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
+  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
+  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
@@ -2190,29 +2150,6 @@ function sampleSeedDataToStorage(seedData) {
   append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
   return storageData;
 }
-function extractMockupRestoreData(seed) {
-  const data = seed?.data || seed || {};
-  const categories = Array.isArray(data.mockupCategories) ? data.mockupCategories : Array.isArray(data.libraryItems) ? data.libraryItems : [];
-  const prompts = [...(Array.isArray(data.mockupItems) ? data.mockupItems : []), ...(Array.isArray(data.mockupStocks) ? data.mockupStocks : [])];
-  if (!categories.length || !prompts.length) {
-    throw new Error("モックアップ復元データが見つかりませんでした");
-  }
-  return {
-    categories,
-    prompts
-  };
-}
-function restoreMockupStorageOnly(categories, prompts) {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const currentCategories = localStorage.getItem(MOCKUP_CATEGORY_STORAGE_KEY);
-  const currentPrompts = localStorage.getItem(MOCKUP_PROMPT_STORAGE_KEY);
-  if (currentCategories !== null) localStorage.setItem(`${MOCKUP_CATEGORY_STORAGE_KEY}__before_restore_${stamp}`, currentCategories);
-  if (currentPrompts !== null) localStorage.setItem(`${MOCKUP_PROMPT_STORAGE_KEY}__before_restore_${stamp}`, currentPrompts);
-  localStorage.setItem(MOCKUP_CATEGORY_STORAGE_KEY, JSON.stringify(categories));
-  localStorage.setItem(MOCKUP_PROMPT_STORAGE_KEY, JSON.stringify(prompts));
-  backupStorageValueIfNeeded(MOCKUP_CATEGORY_STORAGE_KEY, categories);
-  backupStorageValueIfNeeded(MOCKUP_PROMPT_STORAGE_KEY, prompts);
-}
 async function loadSampleSeedIfNeeded() {
   try {
     const response = await fetch(SAMPLE_SEED_PATH, {
@@ -2230,7 +2167,6 @@ async function loadSampleSeedIfNeeded() {
       const merged = mergeSampleValue(existing, incoming, key, deletedIds);
       if (JSON.stringify(existing) !== JSON.stringify(merged)) {
         localStorage.setItem(key, JSON.stringify(merged));
-        backupStorageValueIfNeeded(key, merged);
         changed = true;
       }
     });
@@ -2256,7 +2192,7 @@ async function loadSampleSeedIfNeeded() {
 function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
-  const [mockupPrompts, setMockupPrompts] = useStoredState(MOCKUP_PROMPT_STORAGE_KEY, initialMockupPrompts());
+  const [mockupPrompts, setMockupPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const [mjSettings, setMjSettings] = useStoredState("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -2271,7 +2207,6 @@ function App() {
   const [installPrompt, setInstallPrompt] = React.useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = React.useState(false);
   const [isStandaloneApp, setIsStandaloneApp] = React.useState(false);
-  const [searchTarget, setSearchTarget] = React.useState(null);
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -2283,10 +2218,6 @@ function App() {
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
-  React.useEffect(() => {
-    if (Array.isArray(mockupPrompts) && mockupPrompts.length > 0) return;
-    setMockupPrompts(initialMockupPrompts());
-  }, [mockupPrompts]);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
     if (id) setRecentIds(ids => [id, ...ids.filter(item => item !== id)].slice(0, 8));
@@ -2388,14 +2319,6 @@ function App() {
     sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
     setShowInstallPrompt(false);
   };
-  const goToScreen = nextScreen => {
-    setSearchTarget(null);
-    setScreen(nextScreen);
-  };
-  const openSearchTarget = target => {
-    setSearchTarget(target);
-    setScreen(target.screen);
-  };
   return /*#__PURE__*/React.createElement("div", {
     className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`,
     "data-density": homeSettings.displayDensity || "normal",
@@ -2411,20 +2334,20 @@ function App() {
     className: "app-header"
   }, /*#__PURE__*/React.createElement("button", {
     className: "brand",
-    onClick: () => goToScreen("home"),
+    onClick: () => setScreen("home"),
     "aria-label": "ホームへ"
   }, /*#__PURE__*/React.createElement("span", {
     className: "brand-mark"
   }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "AIイラストクリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["videos", "動画プロンプト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: screen === id ? "active" : "",
-    onClick: () => goToScreen(id)
+    onClick: () => setScreen(id)
   }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && !isStandaloneApp && /*#__PURE__*/React.createElement(PwaInstallCard, {
     canInstall: Boolean(installPrompt),
     onInstall: installPwa,
     onDismiss: dismissInstallPrompt
   }), screen === "home" && /*#__PURE__*/React.createElement(Home, {
-    setScreen: goToScreen,
+    setScreen: setScreen,
     recent: recentPrompts,
     favorites: favorites,
     projects: projects,
@@ -2433,7 +2356,6 @@ function App() {
     mockupPrompts: mockupPrompts,
     videos: videos,
     videoStocks: videoStocks,
-    openSearchTarget: openSearchTarget,
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
@@ -2441,7 +2363,7 @@ function App() {
   }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
-    setScreen: goToScreen,
+    setScreen: setScreen,
     workTools: workTools,
     setWorkTools: setWorkTools,
     projects: projects,
@@ -2450,31 +2372,24 @@ function App() {
     mockupPrompts: mockupPrompts,
     canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
     isStandaloneApp: isStandaloneApp,
-    onInstallPwa: installPwa,
-    onOpenMockupRestore: () => goToScreen("restoreMockups")
-  }), screen === "restoreMockups" && /*#__PURE__*/React.createElement(MockupRestorePage, {
-    setScreen: goToScreen,
-    setMockupPrompts: setMockupPrompts
+    onInstallPwa: installPwa
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
-    setScreen: goToScreen,
+    setScreen: setScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
-    setBoardPrompts: setMockupPrompts,
-    searchTarget: searchTarget
+    setBoardPrompts: setMockupPrompts
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
-    setScreen: goToScreen,
-    homeSettings: homeSettings,
-    searchTarget: searchTarget
+    setScreen: setScreen,
+    homeSettings: homeSettings
   }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
     copyText: copyText,
-    setScreen: goToScreen,
-    searchTarget: searchTarget
+    setScreen: setScreen
   }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
     projects: projects,
     setProjects: setProjects,
@@ -2482,29 +2397,26 @@ function App() {
     settings: mjSettings,
     homeSettings: homeSettings,
     copyText: copyText,
-    setScreen: goToScreen,
-    searchTarget: searchTarget
+    setScreen: setScreen
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
     images: atelierImages,
     journal: journal,
     setJournal: setJournal,
     setGalleryImages: setGalleryImages,
-    setScreen: goToScreen
+    setScreen: setScreen
   }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
     images: galleryImages,
     setImages: setGalleryImages,
     setJournal: setJournal,
-    setScreen: goToScreen,
-    homeSettings: homeSettings,
-    searchTarget: searchTarget
+    setScreen: setScreen,
+    homeSettings: homeSettings
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
-    setScreen: goToScreen,
-    homeSettings: homeSettings,
-    searchTarget: searchTarget
+    setScreen: setScreen,
+    homeSettings: homeSettings
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
     className: "image-migration-overlay"
   }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
@@ -2582,81 +2494,6 @@ function PwaCustomizeCard({
     className: "pwa-install-help"
   }, "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。")));
 }
-function MockupRestorePage({
-  setScreen,
-  setMockupPrompts
-}) {
-  const fileInputRef = React.useRef(null);
-  const [status, setStatus] = React.useState("");
-  const [isRestoring, setIsRestoring] = React.useState(false);
-  const applyRestore = async loader => {
-    if (!window.confirm("モックアップライブラリのカテゴリと中のプロンプトだけを復元します。カスタマイズ設定は変更しません。実行しますか？")) return;
-    setIsRestoring(true);
-    setStatus("復元データを確認しています...");
-    try {
-      const {
-        categories,
-        prompts
-      } = await loader();
-      restoreMockupStorageOnly(categories, prompts);
-      setMockupPrompts(prompts);
-      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップを復元しました（カテゴリ${categories.length}件 / プロンプト${prompts.length}件）`);
-      window.location.reload();
-    } catch (error) {
-      console.error("[Prompt Atelier] モックアップ復元に失敗しました", error);
-      setStatus(error?.message || "モックアップ復元に失敗しました");
-      setIsRestoring(false);
-    }
-  };
-  const restoreFromBundledSeed = () => applyRestore(async () => {
-    const response = await fetch(SAMPLE_SEED_PATH, {
-      cache: "no-store"
-    });
-    if (!response.ok) throw new Error("同梱サンプルデータを読み込めませんでした");
-    return extractMockupRestoreData(await response.json());
-  });
-  const restoreFromSelectedFile = () => applyRestore(async () => {
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) throw new Error("復元に使うJSONファイルを選んでください");
-    const text = await file.text();
-    return extractMockupRestoreData(JSON.parse(text));
-  });
-  return /*#__PURE__*/React.createElement("section", {
-    className: "page mockup-restore-page"
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "モックアップだけ復元",
-    action: /*#__PURE__*/React.createElement(PageBackButton, {
-      label: "カスタマイズへ戻る",
-      onClick: () => setScreen("customize")
-    })
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "customize-card mockup-restore-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "モックアップライブラリだけを戻します"), /*#__PURE__*/React.createElement("p", null, "カスタマイズ設定、バナー、ホームキャラクター、作業ツール、プロンプト帳、動画プロンプト帳は触らず、 モックアップライブラリのカテゴリと中のプロンプトだけを復元します。"), /*#__PURE__*/React.createElement("p", {
-    className: "backup-storage-note"
-  }, "復元前のモックアップデータは、念のためブラウザ内に退避してから復元します。"), /*#__PURE__*/React.createElement("div", {
-    className: "backup-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: restoreFromBundledSeed,
-    disabled: isRestoring
-  }, "同梱サンプルから復元")), /*#__PURE__*/React.createElement("div", {
-    className: "developer-tools"
-  }, /*#__PURE__*/React.createElement("strong", null, "手元のJSONから復元"), /*#__PURE__*/React.createElement("p", null, "添付の prompt-atelier-sample-seed.json を選ぶと、その中からモックアップだけを取り出して復元します。"), /*#__PURE__*/React.createElement("input", {
-    ref: fileInputRef,
-    type: "file",
-    accept: "application/json,.json"
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: restoreFromSelectedFile,
-    disabled: isRestoring
-  }, "選んだJSONから復元")), status && /*#__PURE__*/React.createElement("p", {
-    className: "restore-status"
-  }, status)), /*#__PURE__*/React.createElement("div", {
-    className: "page-bottom-actions"
-  }, /*#__PURE__*/React.createElement(PageBackButton, {
-    label: "カスタマイズへ戻る",
-    onClick: () => setScreen("customize")
-  })));
-}
 function Home({
   setScreen,
   recent,
@@ -2667,7 +2504,6 @@ function Home({
   mockupPrompts,
   videos,
   videoStocks,
-  openSearchTarget,
   copyText,
   settings,
   workTools,
@@ -2680,73 +2516,55 @@ function Home({
     id: `page-${screen}`,
     title,
     type: "ページ",
-    screen: screen,
-    query: title,
+    screen,
     text: `${title} ${body}`
   })), ...(mockupPrompts || []).map(item => ({
     id: `mockup-${item.id}`,
-    itemId: item.id,
-    categoryId: item.categoryId,
     title: item.title || item.category || "モックアップ",
     type: item.isTextStock ? "モックアップストック" : "モックアップ",
     screen: "library",
-    query: item.title || item.prompt || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(myPrompts || []).map(item => ({
     id: `prompt-${item.id}`,
-    itemId: item.id,
     title: item.title || "プロンプト",
     type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
     screen: "prompts",
-    query: item.title || item.prompt || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(mjSettings || []).map(item => ({
     id: `mj-${item.id}`,
-    itemId: item.id,
     title: item.title || "MJ設定",
     type: "MJ設定",
     screen: "mj",
-    query: item.title || item.memo || item.prompt || "",
     text: `${searchableTextFromValue(item)} ${mjCommand(item)}`
   })), ...(projects || []).map(item => ({
     id: `project-${item.id}`,
-    itemId: item.id,
     title: item.name || item.title || "プロジェクト",
     type: "プロジェクト",
     screen: "projects",
-    query: item.name || item.title || item.note || "",
     text: searchableTextFromValue(item)
   })), ...(videos || []).map(item => ({
     id: `video-${item.id}`,
-    itemId: item.id,
     title: item.title || "動画プロンプト",
     type: "動画プロンプト帳",
     screen: "videos",
-    query: item.title || item.prompt || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(videoStocks || []).map(item => ({
     id: `video-stock-${item.id}`,
-    itemId: item.id,
     title: item.title || "動画プロンプトストック",
     type: "動画ストック",
     screen: "videos",
-    query: item.title || item.prompt || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(atelierImages || []).map(item => ({
     id: `gallery-${item.id}`,
-    itemId: item.id,
     title: item.title || item.memo || "ギャラリー画像",
     type: "ギャラリー",
     screen: "gallery",
-    query: item.title || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(workTools || []).map(item => ({
     id: `tool-${item.id}`,
-    itemId: item.id,
     title: item.name || "作業ツール",
     type: "作業ツール",
     screen: "home",
-    query: item.name || item.memo || item.url || "",
     text: searchableTextFromValue(item)
   }))], [mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
   const searchable = homeQuery.trim() ? searchItems.filter(item => lowerIncludes(item.text, homeQuery)).slice(0, 10) : [];
@@ -2848,7 +2666,7 @@ function Home({
         className: "home-search-results"
       }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
         key: item.id,
-        onClick: () => openSearchTarget(item)
+        onClick: () => setScreen(item.screen)
       }, /*#__PURE__*/React.createElement("span", null, item.title), /*#__PURE__*/React.createElement("small", null, item.type))) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
     }
     if (sectionId === "featureCards") {
@@ -3201,8 +3019,7 @@ function HomeCustomize({
   mockupPrompts,
   canInstallPwa,
   isStandaloneApp,
-  onInstallPwa,
-  onOpenMockupRestore
+  onInstallPwa
 }) {
   const [editingTool, setEditingTool] = React.useState(null);
   const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
@@ -3451,12 +3268,7 @@ function HomeCustomize({
     className: "customize-layout"
   }, /*#__PURE__*/React.createElement("div", {
     className: "customize-settings"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "customize-card restore-shortcut-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "モックアップ復元"), /*#__PURE__*/React.createElement("p", null, "モックアップライブラリのカテゴリと中のプロンプトだけを戻せます。 カスタマイズ設定、バナー、ホームキャラクター、プロンプト帳は変更しません。"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: onOpenMockupRestore
-  }, "モックアップだけ復元する")), /*#__PURE__*/React.createElement("details", {
+  }, /*#__PURE__*/React.createElement("details", {
     className: "customize-accordion"
   }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "データ管理・アプリ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
     className: "customize-accordion-body"
@@ -4047,11 +3859,7 @@ function HomeCustomize({
     className: "developer-tools"
   }, /*#__PURE__*/React.createElement("strong", null, "配布用サンプルデータ"), /*#__PURE__*/React.createElement("p", null, "現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。"), /*#__PURE__*/React.createElement("button", {
     onClick: exportPromptAtelierSampleSeed
-  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("div", {
-    className: "developer-tools"
-  }, /*#__PURE__*/React.createElement("strong", null, "モックアップだけ復元"), /*#__PURE__*/React.createElement("p", null, "カスタマイズ設定は触らず、モックアップライブラリのカテゴリと中のプロンプトだけを戻します。"), /*#__PURE__*/React.createElement("button", {
-    onClick: onOpenMockupRestore
-  }, "モックアップだけ復元する")), /*#__PURE__*/React.createElement("input", {
+  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("input", {
     ref: backupInputRef,
     type: "file",
     accept: "application/json,.json",
@@ -4306,8 +4114,7 @@ function Library({
   setScreen,
   homeSettings,
   boardPrompts,
-  setBoardPrompts,
-  searchTarget
+  setBoardPrompts
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -4318,36 +4125,9 @@ function Library({
   const [stockFrameCounts, setStockFrameCounts] = React.useState({});
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
-  const [boardCategories, setBoardCategories] = useStoredState(MOCKUP_CATEGORY_STORAGE_KEY, initialMockupCategories());
+  const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
-  React.useEffect(() => {
-    if (Array.isArray(boardCategories) && boardCategories.length > 0) return;
-    setBoardCategories(initialMockupCategories());
-  }, [boardCategories]);
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "library") return;
-    if (!searchTarget.itemId) {
-      setSelectedCategory(null);
-      setQuery("");
-      return;
-    }
-    const foundPrompt = boardPrompts.find(item => item.id === searchTarget.itemId);
-    const targetCategory = orderedCategories.find(category => category.id === (foundPrompt?.categoryId || searchTarget.categoryId));
-    if (targetCategory) setSelectedCategory(targetCategory);
-    if (foundPrompt) {
-      setQuery(foundPrompt.title || searchTarget.query || "");
-      if (!foundPrompt.isTextStock) setEditingPrompt(foundPrompt);
-      window.setTimeout(() => {
-        document.getElementById(`library-prompt-${foundPrompt.id}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-      }, 120);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
-  }, [searchTarget?.id]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
   const filteredCategories = orderedCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
@@ -4835,7 +4615,6 @@ function LibraryImagePromptCard({
     imageUrl: coverImages[0] || ""
   });
   return /*#__PURE__*/React.createElement("article", {
-    id: `library-prompt-${prompt.id}`,
     className: "library-prompt-card"
   }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
@@ -5350,8 +5129,7 @@ function PromptBook({
   setPrompts,
   copyText,
   setScreen,
-  homeSettings,
-  searchTarget
+  homeSettings
 }) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
@@ -5362,28 +5140,6 @@ function PromptBook({
   const [inlineEdit, setInlineEdit] = React.useState(null);
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "prompts") return;
-    if (!searchTarget.itemId) {
-      setQuery("");
-      return;
-    }
-    const found = prompts.find(item => item.id === searchTarget.itemId);
-    if (found) {
-      setQuery(found.title || found.prompt || searchTarget.query || "");
-      setTag("すべて");
-      setFavoritesOnly(false);
-      if (!found.isTextStock) setEditing(found);
-      window.setTimeout(() => {
-        document.getElementById(`library-prompt-${found.id}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center"
-        });
-      }, 120);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
-  }, [searchTarget?.id]);
   const tags = Array.from(new Set(prompts.flatMap(p => p.tags))).sort();
   const filtered = prompts.filter(item => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
@@ -5558,8 +5314,7 @@ function Midjourney({
   settings,
   setSettings,
   copyText,
-  setScreen,
-  searchTarget
+  setScreen
 }) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
@@ -5728,19 +5483,6 @@ function Midjourney({
     }, 80);
     window.setTimeout(() => setHighlightedId(""), 1800);
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "mj") return;
-    if (!searchTarget.itemId) {
-      setQuery("");
-      return;
-    }
-    const found = normalizedSettings.find(item => item.id === searchTarget.itemId);
-    if (found) {
-      jumpToCard(found.id);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
-  }, [searchTarget?.id]);
   return /*#__PURE__*/React.createElement("section", {
     className: "page mj-board-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -6221,8 +5963,7 @@ function GalleryPage({
   setImages,
   setJournal,
   setScreen,
-  homeSettings,
-  searchTarget
+  homeSettings
 }) {
   const fileInputRef = React.useRef(null);
   const loadMoreRef = React.useRef(null);
@@ -6230,12 +5971,6 @@ function GalleryPage({
   const [visibleCount, setVisibleCount] = React.useState(20);
   const preview = images.find(image => image.id === previewId) || null;
   const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "gallery") return;
-    if (!searchTarget.itemId) return;
-    const found = images.find(image => image.id === searchTarget.itemId);
-    if (found) setPreviewId(found.id);
-  }, [searchTarget?.id]);
   React.useEffect(() => {
     setVisibleCount(20);
   }, [images.length]);
@@ -6432,8 +6167,7 @@ function VideoLibrary({
   videoStocks,
   setVideoStocks,
   setScreen,
-  homeSettings,
-  searchTarget
+  homeSettings
 }) {
   const thumbnailInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
@@ -6541,28 +6275,6 @@ function VideoLibrary({
       return "";
     });
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "videos") return;
-    if (!searchTarget.itemId) {
-      setQuery("");
-      return;
-    }
-    const foundVideo = videoItems.find(item => item.id === searchTarget.itemId);
-    if (foundVideo) {
-      setQuery(foundVideo.title || foundVideo.prompt || searchTarget.query || "");
-      setModelFilter("すべて");
-      setFavoriteOnly(false);
-      editVideo(foundVideo);
-      return;
-    }
-    const foundStock = (videoStocks || []).find(item => item.id === searchTarget.itemId);
-    if (foundStock) {
-      setQuery(foundStock.title || foundStock.prompt || searchTarget.query || "");
-      setMemoStock(foundStock);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
-  }, [searchTarget?.id]);
   const deleteVideo = id => {
     if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
     setTempVideoUrls(items => {
@@ -7403,27 +7115,12 @@ function Projects({
   settings,
   homeSettings,
   copyText,
-  setScreen,
-  searchTarget
+  setScreen
 }) {
   const [editing, setEditing] = React.useState(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
   const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "projects") return;
-    if (!searchTarget.itemId) {
-      setQuery("");
-      return;
-    }
-    const found = projects.find(project => project.id === searchTarget.itemId);
-    if (found) {
-      setQuery(found.name || searchTarget.query || "");
-      setEditing(found);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
-  }, [searchTarget?.id]);
   const projectMatchesDisplay = item => projectDisplay.showCompleted !== false || !item.completed && item.status !== "completed";
   const filteredBase = projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query) && projectMatchesDisplay(item));
   const filtered = projectDisplay.sortBy === "manual" ? filteredBase : projectDisplay.sortBy === "created" ? [...filteredBase].sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || ""))) : sortProjectsForDisplay(filteredBase);
