@@ -1047,7 +1047,7 @@ const isIndexedDbImageRef = (value: string) => /^indexeddb(?:-thumb)?:/.test(val
 const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = (value: unknown) => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles: Record<string, { maxSide: number; quality: number; thumbnailSide: number; thumbnailQuality: number; keepOriginalMaxSide?: number }> = {
-  banner: { maxSide: 2560, quality: 0.98, thumbnailSide: 1600, thumbnailQuality: 0.95, keepOriginalMaxSide: 2560 },
+  banner: { maxSide: 3200, quality: 0.98, thumbnailSide: 1800, thumbnailQuality: 0.95, keepOriginalMaxSide: 3200 },
   gallery: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   journal: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   background: { maxSide: 1600, quality: 0.88, thumbnailSide: 760, thumbnailQuality: 0.86 },
@@ -3063,18 +3063,18 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <div>
                 <span>
                   <b>大バナー</b>
-                  <small>1200 × 600px / 2:1</small>
+                  <small>2400 × 1200px / 2:1</small>
                 </span>
                 <span>
                   <b>中バナー</b>
-                  <small>1200 × 400px / 3:1</small>
+                  <small>2400 × 800px / 3:1</small>
                 </span>
                 <span>
                   <b>小バナー</b>
-                  <small>1200 × 200px / 6:1</small>
+                  <small>2400 × 400px / 6:1</small>
                 </span>
               </div>
-              <p>推奨サイズに近い画像を使用すると、トリミングや表示崩れが少なくなります。</p>
+              <p>Macの高精細画面でもくっきり見せるため、横幅2400px前後の画像がおすすめです。</p>
             </div>
             <label className="switch-row">
               <span>バナー表示</span>

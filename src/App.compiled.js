@@ -1001,11 +1001,11 @@ const indexedDbIdFromRef = value => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = value => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles = {
   banner: {
-    maxSide: 2560,
+    maxSide: 3200,
     quality: 0.98,
-    thumbnailSide: 1600,
+    thumbnailSide: 1800,
     thumbnailQuality: 0.95,
-    keepOriginalMaxSide: 2560
+    keepOriginalMaxSide: 3200
   },
   gallery: {
     maxSide: 1400,
@@ -3130,7 +3130,7 @@ function HomeCustomize({
     className: "customize-accordion-body"
   }, /*#__PURE__*/React.createElement("h3", null, "バナー"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する横長画像を設定できます。"), /*#__PURE__*/React.createElement("div", {
     className: "banner-size-guide"
-  }, /*#__PURE__*/React.createElement("strong", null, "バナー画像の推奨サイズ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "大バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 600px / 2:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "中バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 400px / 3:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "小バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 200px / 6:1"))), /*#__PURE__*/React.createElement("p", null, "推奨サイズに近い画像を使用すると、トリミングや表示崩れが少なくなります。")), /*#__PURE__*/React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("strong", null, "バナー画像の推奨サイズ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "大バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 1200px / 2:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "中バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 800px / 3:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "小バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 400px / 6:1"))), /*#__PURE__*/React.createElement("p", null, "Macの高精細画面でもくっきり見せるため、横幅2400px前後の画像がおすすめです。")), /*#__PURE__*/React.createElement("label", {
     className: "switch-row"
   }, /*#__PURE__*/React.createElement("span", null, "バナー表示"), /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
