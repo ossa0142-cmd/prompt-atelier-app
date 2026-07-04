@@ -4182,13 +4182,46 @@ function Library({
     });
   };
   const categoryIdFromPoint = (x, y, sourceId) => {
-    const elements = document.elementsFromPoint(x, y);
-    for (const element of elements) {
-      const card = element.closest("[data-category-id]");
-      const categoryId = card?.dataset.categoryId || "";
-      if (categoryId && categoryId !== sourceId) return categoryId;
+    let closestId = "";
+    let closestDistance = Number.POSITIVE_INFINITY;
+    document.querySelectorAll("[data-category-id]").forEach(card => {
+      const categoryId = card.dataset.categoryId || "";
+      if (!categoryId || categoryId === sourceId) return;
+      const rect = card.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const distance = Math.hypot(centerX - x, centerY - y);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestId = categoryId;
+      }
+    });
+    return closestId;
+  };
+  const reorderCategoryByDirection = (sourceId, direction) => {
+    if (!sourceId) return;
+    setBoardCategories(items => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      const fromIndex = normalized.findIndex(category => category.id === sourceId);
+      const toIndex = fromIndex + direction;
+      if (fromIndex < 0 || toIndex < 0 || toIndex >= normalized.length) return normalized;
+      const next = [...normalized];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return normalizeMockupCategoryOrder(next);
+    });
+  };
+  const handleCategoryKeyDown = (event, categoryId) => {
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      event.stopPropagation();
+      reorderCategoryByDirection(categoryId, -1);
     }
-    return "";
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      event.stopPropagation();
+      reorderCategoryByDirection(categoryId, 1);
+    }
   };
   const startCategoryPointerDrag = (event, categoryId) => {
     if (isCategorySearching) return;
@@ -4197,14 +4230,19 @@ function Library({
     event.currentTarget.setPointerCapture?.(event.pointerId);
     let targetId = categoryId;
     let moved = false;
+    const startX = event.clientX;
+    const startY = event.clientY;
     categoryDragMovedRef.current = false;
     document.body.classList.add("is-category-reordering");
     setDraggedCategoryId(categoryId);
     setDragOverCategoryId("");
     const handleMove = moveEvent => {
       moveEvent.preventDefault();
-      moved = true;
-      categoryDragMovedRef.current = true;
+      const movedDistance = Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY);
+      if (movedDistance > 4) {
+        moved = true;
+        categoryDragMovedRef.current = true;
+      }
       const nextTargetId = categoryIdFromPoint(moveEvent.clientX, moveEvent.clientY, categoryId);
       if (nextTargetId && nextTargetId !== targetId) {
         targetId = nextTargetId;
@@ -4219,6 +4257,13 @@ function Library({
       const finalTargetId = categoryIdFromPoint(endEvent.clientX, endEvent.clientY, categoryId) || targetId;
       if (moved && finalTargetId && finalTargetId !== categoryId) {
         reorderCategories(categoryId, finalTargetId);
+      } else if (moved) {
+        const deltaX = endEvent.clientX - startX;
+        const deltaY = endEvent.clientY - startY;
+        const mainDelta = Math.abs(deltaX) >= Math.abs(deltaY) ? deltaX : deltaY;
+        if (Math.abs(mainDelta) > 24) {
+          reorderCategoryByDirection(categoryId, mainDelta > 0 ? 1 : -1);
+        }
       }
       setDraggedCategoryId("");
       setDragOverCategoryId("");
@@ -4276,6 +4321,7 @@ function Library({
     "aria-label": `${category.title}を並び替え`,
     title: "ドラッグ、または移動元と移動先を順番にクリック",
     onClick: event => handleCategoryHandleClick(event, category.id),
+    onKeyDown: event => handleCategoryKeyDown(event, category.id),
     onPointerDown: event => startCategoryPointerDrag(event, category.id),
     disabled: isCategorySearching
   }, "⋮⋮"), /*#__PURE__*/React.createElement(MenuButton, {
