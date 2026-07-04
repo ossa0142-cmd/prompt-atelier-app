@@ -2219,6 +2219,10 @@ function App() {
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
+  React.useEffect(() => {
+    if (Array.isArray(mockupPrompts) && mockupPrompts.length > 0) return;
+    setMockupPrompts(defaultLibraryBoardPrompts);
+  }, [mockupPrompts]);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
     if (id) setRecentIds(ids => [id, ...ids.filter(item => item !== id)].slice(0, 8));
@@ -4164,6 +4168,10 @@ function Library({
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
+  React.useEffect(() => {
+    if (Array.isArray(boardCategories) && boardCategories.length > 0) return;
+    setBoardCategories(defaultMockupCategories);
+  }, [boardCategories]);
   React.useEffect(() => {
     if (searchTarget?.screen !== "library") return;
     if (!searchTarget.itemId) {
