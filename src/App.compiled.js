@@ -2207,6 +2207,7 @@ function App() {
   const [installPrompt, setInstallPrompt] = React.useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = React.useState(false);
   const [isStandaloneApp, setIsStandaloneApp] = React.useState(false);
+  const [searchTarget, setSearchTarget] = React.useState(null);
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
@@ -2356,6 +2357,7 @@ function App() {
     mockupPrompts: mockupPrompts,
     videos: videos,
     videoStocks: videoStocks,
+    setSearchTarget: setSearchTarget,
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
@@ -2378,18 +2380,21 @@ function App() {
     setScreen: setScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
-    setBoardPrompts: setMockupPrompts
+    setBoardPrompts: setMockupPrompts,
+    searchTarget: searchTarget
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
     setScreen: setScreen,
-    homeSettings: homeSettings
+    homeSettings: homeSettings,
+    searchTarget: searchTarget
   }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: setScreen,
+    searchTarget: searchTarget
   }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
     projects: projects,
     setProjects: setProjects,
@@ -2397,7 +2402,8 @@ function App() {
     settings: mjSettings,
     homeSettings: homeSettings,
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: setScreen,
+    searchTarget: searchTarget
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
     images: atelierImages,
     journal: journal,
@@ -2409,14 +2415,16 @@ function App() {
     setImages: setGalleryImages,
     setJournal: setJournal,
     setScreen: setScreen,
-    homeSettings: homeSettings
+    homeSettings: homeSettings,
+    searchTarget: searchTarget
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
     setScreen: setScreen,
-    homeSettings: homeSettings
+    homeSettings: homeSettings,
+    searchTarget: searchTarget
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
     className: "image-migration-overlay"
   }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
@@ -2504,6 +2512,7 @@ function Home({
   mockupPrompts,
   videos,
   videoStocks,
+  setSearchTarget,
   copyText,
   settings,
   workTools,
@@ -2516,55 +2525,73 @@ function Home({
     id: `page-${screen}`,
     title,
     type: "ページ",
-    screen,
+    screen: screen,
+    query: title,
     text: `${title} ${body}`
   })), ...(mockupPrompts || []).map(item => ({
     id: `mockup-${item.id}`,
+    itemId: item.id,
+    categoryId: item.categoryId,
     title: item.title || item.category || "モックアップ",
     type: item.isTextStock ? "モックアップストック" : "モックアップ",
     screen: "library",
+    query: item.title || item.prompt || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(myPrompts || []).map(item => ({
     id: `prompt-${item.id}`,
+    itemId: item.id,
     title: item.title || "プロンプト",
     type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
     screen: "prompts",
+    query: item.title || item.prompt || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(mjSettings || []).map(item => ({
     id: `mj-${item.id}`,
+    itemId: item.id,
     title: item.title || "MJ設定",
     type: "MJ設定",
     screen: "mj",
+    query: item.title || item.memo || item.prompt || "",
     text: `${searchableTextFromValue(item)} ${mjCommand(item)}`
   })), ...(projects || []).map(item => ({
     id: `project-${item.id}`,
+    itemId: item.id,
     title: item.name || item.title || "プロジェクト",
     type: "プロジェクト",
     screen: "projects",
+    query: item.name || item.title || item.note || "",
     text: searchableTextFromValue(item)
   })), ...(videos || []).map(item => ({
     id: `video-${item.id}`,
+    itemId: item.id,
     title: item.title || "動画プロンプト",
     type: "動画プロンプト帳",
     screen: "videos",
+    query: item.title || item.prompt || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(videoStocks || []).map(item => ({
     id: `video-stock-${item.id}`,
+    itemId: item.id,
     title: item.title || "動画プロンプトストック",
     type: "動画ストック",
     screen: "videos",
+    query: item.title || item.prompt || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(atelierImages || []).map(item => ({
     id: `gallery-${item.id}`,
+    itemId: item.id,
     title: item.title || item.memo || "ギャラリー画像",
     type: "ギャラリー",
     screen: "gallery",
+    query: item.title || item.memo || "",
     text: searchableTextFromValue(item)
   })), ...(workTools || []).map(item => ({
     id: `tool-${item.id}`,
+    itemId: item.id,
     title: item.name || "作業ツール",
     type: "作業ツール",
     screen: "home",
+    query: item.name || item.memo || item.url || "",
     text: searchableTextFromValue(item)
   }))], [mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
   const searchable = homeQuery.trim() ? searchItems.filter(item => lowerIncludes(item.text, homeQuery)).slice(0, 10) : [];
@@ -2666,7 +2693,10 @@ function Home({
         className: "home-search-results"
       }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
         key: item.id,
-        onClick: () => setScreen(item.screen)
+        onClick: () => {
+          setSearchTarget(item);
+          setScreen(item.screen);
+        }
       }, /*#__PURE__*/React.createElement("span", null, item.title), /*#__PURE__*/React.createElement("small", null, item.type))) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
     }
     if (sectionId === "featureCards") {
@@ -4114,7 +4144,8 @@ function Library({
   setScreen,
   homeSettings,
   boardPrompts,
-  setBoardPrompts
+  setBoardPrompts,
+  searchTarget
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -4128,6 +4159,29 @@ function Library({
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "library") return;
+    if (!searchTarget.itemId) {
+      setSelectedCategory(null);
+      setQuery("");
+      return;
+    }
+    const foundPrompt = boardPrompts.find(item => item.id === searchTarget.itemId);
+    const targetCategory = orderedCategories.find(category => category.id === (foundPrompt?.categoryId || searchTarget.categoryId));
+    if (targetCategory) setSelectedCategory(targetCategory);
+    if (foundPrompt) {
+      setQuery(foundPrompt.title || searchTarget.query || "");
+      if (!foundPrompt.isTextStock) setEditingPrompt(foundPrompt);
+      window.setTimeout(() => {
+        document.getElementById(`library-prompt-${foundPrompt.id}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 120);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
   const filteredCategories = orderedCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
@@ -4615,6 +4669,7 @@ function LibraryImagePromptCard({
     imageUrl: coverImages[0] || ""
   });
   return /*#__PURE__*/React.createElement("article", {
+    id: `library-prompt-${prompt.id}`,
     className: "library-prompt-card"
   }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
@@ -5129,7 +5184,8 @@ function PromptBook({
   setPrompts,
   copyText,
   setScreen,
-  homeSettings
+  homeSettings,
+  searchTarget
 }) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
@@ -5140,6 +5196,28 @@ function PromptBook({
   const [inlineEdit, setInlineEdit] = React.useState(null);
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "prompts") return;
+    if (!searchTarget.itemId) {
+      setQuery("");
+      return;
+    }
+    const found = prompts.find(item => item.id === searchTarget.itemId);
+    if (found) {
+      setQuery(found.title || found.prompt || searchTarget.query || "");
+      setTag("すべて");
+      setFavoritesOnly(false);
+      if (!found.isTextStock) setEditing(found);
+      window.setTimeout(() => {
+        document.getElementById(`library-prompt-${found.id}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 120);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   const tags = Array.from(new Set(prompts.flatMap(p => p.tags))).sort();
   const filtered = prompts.filter(item => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
@@ -5314,7 +5392,8 @@ function Midjourney({
   settings,
   setSettings,
   copyText,
-  setScreen
+  setScreen,
+  searchTarget
 }) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
@@ -5483,6 +5562,19 @@ function Midjourney({
     }, 80);
     window.setTimeout(() => setHighlightedId(""), 1800);
   };
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "mj") return;
+    if (!searchTarget.itemId) {
+      setQuery("");
+      return;
+    }
+    const found = normalizedSettings.find(item => item.id === searchTarget.itemId);
+    if (found) {
+      jumpToCard(found.id);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   return /*#__PURE__*/React.createElement("section", {
     className: "page mj-board-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -5963,7 +6055,8 @@ function GalleryPage({
   setImages,
   setJournal,
   setScreen,
-  homeSettings
+  homeSettings,
+  searchTarget
 }) {
   const fileInputRef = React.useRef(null);
   const loadMoreRef = React.useRef(null);
@@ -5971,6 +6064,12 @@ function GalleryPage({
   const [visibleCount, setVisibleCount] = React.useState(20);
   const preview = images.find(image => image.id === previewId) || null;
   const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "gallery") return;
+    if (!searchTarget.itemId) return;
+    const found = images.find(image => image.id === searchTarget.itemId);
+    if (found) setPreviewId(found.id);
+  }, [searchTarget?.id]);
   React.useEffect(() => {
     setVisibleCount(20);
   }, [images.length]);
@@ -6167,7 +6266,8 @@ function VideoLibrary({
   videoStocks,
   setVideoStocks,
   setScreen,
-  homeSettings
+  homeSettings,
+  searchTarget
 }) {
   const thumbnailInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
@@ -6275,6 +6375,28 @@ function VideoLibrary({
       return "";
     });
   };
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "videos") return;
+    if (!searchTarget.itemId) {
+      setQuery("");
+      return;
+    }
+    const foundVideo = videoItems.find(item => item.id === searchTarget.itemId);
+    if (foundVideo) {
+      setQuery(foundVideo.title || foundVideo.prompt || searchTarget.query || "");
+      setModelFilter("すべて");
+      setFavoriteOnly(false);
+      editVideo(foundVideo);
+      return;
+    }
+    const foundStock = (videoStocks || []).find(item => item.id === searchTarget.itemId);
+    if (foundStock) {
+      setQuery(foundStock.title || foundStock.prompt || searchTarget.query || "");
+      setMemoStock(foundStock);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   const deleteVideo = id => {
     if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
     setTempVideoUrls(items => {
@@ -7115,12 +7237,27 @@ function Projects({
   settings,
   homeSettings,
   copyText,
-  setScreen
+  setScreen,
+  searchTarget
 }) {
   const [editing, setEditing] = React.useState(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
   const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "projects") return;
+    if (!searchTarget.itemId) {
+      setQuery("");
+      return;
+    }
+    const found = projects.find(project => project.id === searchTarget.itemId);
+    if (found) {
+      setQuery(found.name || searchTarget.query || "");
+      setEditing(found);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   const projectMatchesDisplay = item => projectDisplay.showCompleted !== false || !item.completed && item.status !== "completed";
   const filteredBase = projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query) && projectMatchesDisplay(item));
   const filtered = projectDisplay.sortBy === "manual" ? filteredBase : projectDisplay.sortBy === "created" ? [...filteredBase].sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || ""))) : sortProjectsForDisplay(filteredBase);
