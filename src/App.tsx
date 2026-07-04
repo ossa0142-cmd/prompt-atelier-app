@@ -2391,6 +2391,14 @@ function App() {
     sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
     setShowInstallPrompt(false);
   };
+  const goToScreen = (nextScreen: Screen) => {
+    setSearchTarget(null);
+    setScreen(nextScreen);
+  };
+  const openSearchTarget = (target: SearchTarget) => {
+    setSearchTarget(target);
+    setScreen(target.screen);
+  };
 
   return (
     <div
@@ -2406,7 +2414,7 @@ function App() {
       style={appStyle}
     >
       <header className="app-header">
-        <button className="brand" onClick={() => setScreen("home")} aria-label="ホームへ">
+        <button className="brand" onClick={() => goToScreen("home")} aria-label="ホームへ">
           <span className="brand-mark">PA</span>
           <span>
             <strong>Prompt Atelier</strong>
@@ -2423,7 +2431,7 @@ function App() {
             ["videos", "動画プロンプト"],
             ["customize", "カスタマイズ"],
           ].map(([id, label]) => (
-            <button key={id} className={screen === id ? "active" : ""} onClick={() => setScreen(id as Screen)}>
+            <button key={id} className={screen === id ? "active" : ""} onClick={() => goToScreen(id as Screen)}>
               {label}
             </button>
           ))}
@@ -2436,7 +2444,7 @@ function App() {
         )}
         {screen === "home" && (
           <Home
-            setScreen={setScreen}
+            setScreen={goToScreen}
             recent={recentPrompts}
             favorites={favorites}
             projects={projects}
@@ -2445,7 +2453,7 @@ function App() {
             mockupPrompts={mockupPrompts}
             videos={videos}
             videoStocks={videoStocks}
-            setSearchTarget={setSearchTarget}
+            openSearchTarget={openSearchTarget}
             copyText={copyText}
             settings={homeSettings}
             workTools={workTools}
@@ -2456,7 +2464,7 @@ function App() {
           <HomeCustomize
             settings={homeSettings}
             setSettings={setRawHomeSettings}
-            setScreen={setScreen}
+            setScreen={goToScreen}
             workTools={workTools}
             setWorkTools={setWorkTools}
             projects={projects}
@@ -2468,9 +2476,9 @@ function App() {
             onInstallPwa={installPwa}
           />
         )}
-        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} searchTarget={searchTarget} />}
-        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
-        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={setScreen} searchTarget={searchTarget} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} searchTarget={searchTarget} />}
+        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
+        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={goToScreen} searchTarget={searchTarget} />}
         {screen === "projects" && (
           <Projects
             projects={projects}
@@ -2479,13 +2487,13 @@ function App() {
             settings={mjSettings}
             homeSettings={homeSettings}
             copyText={copyText}
-            setScreen={setScreen}
+            setScreen={goToScreen}
             searchTarget={searchTarget}
           />
         )}
-        {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
-        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
-        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={setScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
+        {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={goToScreen} />}
+        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
+        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
       </main>
       {isImageMigrating && (
         <div className="image-migration-overlay">
@@ -2571,7 +2579,7 @@ function PwaCustomizeCard({ canInstallPwa, isStandaloneApp, onInstall, onShowIns
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, videos, videoStocks, setSearchTarget, copyText, settings, workTools, atelierImages }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, videos, videoStocks, openSearchTarget, copyText, settings, workTools, atelierImages }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
@@ -2740,7 +2748,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
           {homeQuery && (
             <div className="home-search-results">
               {searchable.length ? searchable.map((item) => (
-                <button key={item.id} onClick={() => { setSearchTarget(item); setScreen(item.screen); }}>
+                <button key={item.id} onClick={() => openSearchTarget(item)}>
                   <span>{item.title}</span>
                   <small>{item.type}</small>
                 </button>

@@ -2320,6 +2320,14 @@ function App() {
     sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
     setShowInstallPrompt(false);
   };
+  const goToScreen = nextScreen => {
+    setSearchTarget(null);
+    setScreen(nextScreen);
+  };
+  const openSearchTarget = target => {
+    setSearchTarget(target);
+    setScreen(target.screen);
+  };
   return /*#__PURE__*/React.createElement("div", {
     className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`,
     "data-density": homeSettings.displayDensity || "normal",
@@ -2335,20 +2343,20 @@ function App() {
     className: "app-header"
   }, /*#__PURE__*/React.createElement("button", {
     className: "brand",
-    onClick: () => setScreen("home"),
+    onClick: () => goToScreen("home"),
     "aria-label": "ホームへ"
   }, /*#__PURE__*/React.createElement("span", {
     className: "brand-mark"
   }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "AIイラストクリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["videos", "動画プロンプト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: screen === id ? "active" : "",
-    onClick: () => setScreen(id)
+    onClick: () => goToScreen(id)
   }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && !isStandaloneApp && /*#__PURE__*/React.createElement(PwaInstallCard, {
     canInstall: Boolean(installPrompt),
     onInstall: installPwa,
     onDismiss: dismissInstallPrompt
   }), screen === "home" && /*#__PURE__*/React.createElement(Home, {
-    setScreen: setScreen,
+    setScreen: goToScreen,
     recent: recentPrompts,
     favorites: favorites,
     projects: projects,
@@ -2357,7 +2365,7 @@ function App() {
     mockupPrompts: mockupPrompts,
     videos: videos,
     videoStocks: videoStocks,
-    setSearchTarget: setSearchTarget,
+    openSearchTarget: openSearchTarget,
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
@@ -2365,7 +2373,7 @@ function App() {
   }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
-    setScreen: setScreen,
+    setScreen: goToScreen,
     workTools: workTools,
     setWorkTools: setWorkTools,
     projects: projects,
@@ -2377,7 +2385,7 @@ function App() {
     onInstallPwa: installPwa
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
-    setScreen: setScreen,
+    setScreen: goToScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
     setBoardPrompts: setMockupPrompts,
@@ -2386,14 +2394,14 @@ function App() {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
-    setScreen: setScreen,
+    setScreen: goToScreen,
     homeSettings: homeSettings,
     searchTarget: searchTarget
   }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
     copyText: copyText,
-    setScreen: setScreen,
+    setScreen: goToScreen,
     searchTarget: searchTarget
   }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
     projects: projects,
@@ -2402,19 +2410,19 @@ function App() {
     settings: mjSettings,
     homeSettings: homeSettings,
     copyText: copyText,
-    setScreen: setScreen,
+    setScreen: goToScreen,
     searchTarget: searchTarget
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
     images: atelierImages,
     journal: journal,
     setJournal: setJournal,
     setGalleryImages: setGalleryImages,
-    setScreen: setScreen
+    setScreen: goToScreen
   }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
     images: galleryImages,
     setImages: setGalleryImages,
     setJournal: setJournal,
-    setScreen: setScreen,
+    setScreen: goToScreen,
     homeSettings: homeSettings,
     searchTarget: searchTarget
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
@@ -2422,7 +2430,7 @@ function App() {
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
-    setScreen: setScreen,
+    setScreen: goToScreen,
     homeSettings: homeSettings,
     searchTarget: searchTarget
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
@@ -2512,7 +2520,7 @@ function Home({
   mockupPrompts,
   videos,
   videoStocks,
-  setSearchTarget,
+  openSearchTarget,
   copyText,
   settings,
   workTools,
@@ -2693,10 +2701,7 @@ function Home({
         className: "home-search-results"
       }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
         key: item.id,
-        onClick: () => {
-          setSearchTarget(item);
-          setScreen(item.screen);
-        }
+        onClick: () => openSearchTarget(item)
       }, /*#__PURE__*/React.createElement("span", null, item.title), /*#__PURE__*/React.createElement("small", null, item.type))) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
     }
     if (sectionId === "featureCards") {
