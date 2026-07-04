@@ -2543,7 +2543,8 @@ function Home({
         key: `${item.title}-${item.icon}`,
         onClick: () => setScreen(item.screen)
       }, /*#__PURE__*/React.createElement("span", {
-        className: "stat-icon"
+        className: "stat-icon",
+        "data-icon": item.icon
       }, /*#__PURE__*/React.createElement(FeatureIcon, {
         name: item.icon
       })), /*#__PURE__*/React.createElement("span", {
@@ -2599,7 +2600,8 @@ function Home({
       }, "✦"), /*#__PURE__*/React.createElement("span", {
         className: "feature-washi"
       }), /*#__PURE__*/React.createElement("span", {
-        className: "feature-icon"
+        className: "feature-icon",
+        "data-icon": icon
       }, /*#__PURE__*/React.createElement(FeatureIcon, {
         name: icon
       })), /*#__PURE__*/React.createElement("span", {
@@ -3836,7 +3838,8 @@ function HomeCustomize({
     className: "home-mini-stat",
     key: item.id
   }, /*#__PURE__*/React.createElement("span", {
-    className: "stat-icon"
+    className: "stat-icon",
+    "data-icon": item.icon
   }, /*#__PURE__*/React.createElement(FeatureIcon, {
     name: item.icon
   })), /*#__PURE__*/React.createElement("small", null, item.title), /*#__PURE__*/React.createElement("strong", null, item.value)))), settings.visible.quickActions !== false && previewTools.length > 0 && /*#__PURE__*/React.createElement("section", {
@@ -3855,7 +3858,8 @@ function HomeCustomize({
     className: "home-mini-feature",
     key: id
   }, /*#__PURE__*/React.createElement("span", {
-    className: "stat-icon"
+    className: "stat-icon",
+    "data-icon": icon
   }, /*#__PURE__*/React.createElement(FeatureIcon, {
     name: icon
   })), /*#__PURE__*/React.createElement("strong", null, label)))), settings.visible.dashboard !== false && (projects || []).length > 0 && /*#__PURE__*/React.createElement("section", {

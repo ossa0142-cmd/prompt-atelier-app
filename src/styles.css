@@ -1600,9 +1600,37 @@ main {
 
 .icon-set-emoji .feature-icon::before,
 .icon-set-emoji .stat-icon::before {
-  content: "✨";
+  content: var(--emoji-icon, "✨");
   font-size: 30px;
   line-height: 1;
+}
+
+.icon-set-emoji .stat-icon::before {
+  font-size: 18px;
+}
+
+.icon-set-emoji [data-icon="mockup"] {
+  --emoji-icon: "🖼️";
+}
+
+.icon-set-emoji [data-icon="notebook"] {
+  --emoji-icon: "📒";
+}
+
+.icon-set-emoji [data-icon="video"] {
+  --emoji-icon: "🎬";
+}
+
+.icon-set-emoji [data-icon="magic"] {
+  --emoji-icon: "🪄";
+}
+
+.icon-set-emoji [data-icon="folder"] {
+  --emoji-icon: "📁";
+}
+
+.icon-set-emoji [data-icon="alarm"] {
+  --emoji-icon: "⏰";
 }
 
 .icon-set-pixel .feature-icon::before,

@@ -2578,7 +2578,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
           <div className="dashboard-grid">
             {visibleDashboardItems.map((item) => (
               <button className="stat-card" key={`${item.title}-${item.icon}`} onClick={() => setScreen(item.screen as Screen)}>
-                <span className="stat-icon"><FeatureIcon name={item.icon} /></span>
+                <span className="stat-icon" data-icon={item.icon}><FeatureIcon name={item.icon} /></span>
                 <span className="stat-title">{item.title}</span>
                 <strong>{item.value}</strong>
                 {item.note && <small>{item.note}</small>}
@@ -2631,7 +2631,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
             <button className="home-feature-card" key={id} onClick={() => setScreen(id as Screen)}>
               <span className="feature-corner-spark">✦</span>
               <span className="feature-washi"></span>
-              <span className="feature-icon"><FeatureIcon name={icon as string} /></span>
+              <span className="feature-icon" data-icon={icon as string}><FeatureIcon name={icon as string} /></span>
               <span className="feature-title">{title}</span>
               <small>{body}</small>
             </button>
@@ -3658,7 +3658,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <section className="home-mini-stats" aria-label="ミニ件数カード">
                 {previewDashboardItems.map((item) => (
                   <article className="home-mini-stat" key={item.id}>
-                    <span className="stat-icon"><FeatureIcon name={item.icon} /></span>
+                    <span className="stat-icon" data-icon={item.icon}><FeatureIcon name={item.icon} /></span>
                     <small>{item.title}</small>
                     <strong>{item.value}</strong>
                   </article>
@@ -3679,7 +3679,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <section className="home-mini-features" aria-label="ミニメイン機能カード">
                 {previewFeatureEntries.map(([id, label, icon]) => (
                   <article className="home-mini-feature" key={id}>
-                    <span className="stat-icon"><FeatureIcon name={icon} /></span>
+                    <span className="stat-icon" data-icon={icon}><FeatureIcon name={icon} /></span>
                     <strong>{label}</strong>
                   </article>
                 ))}
