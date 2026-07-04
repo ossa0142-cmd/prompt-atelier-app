@@ -6007,15 +6007,16 @@ summary {
   inset: 0;
   z-index: 20;
   display: grid;
-  place-items: center;
+  align-items: start;
+  justify-items: center;
   overflow: auto;
   background: rgba(45, 39, 34, 0.42);
-  padding: 20px;
+  padding: clamp(28px, 5vh, 56px) 20px;
 }
 
 .modal {
   width: min(760px, 100%);
-  max-height: 92vh;
+  max-height: calc(100vh - clamp(56px, 10vh, 112px));
   overflow: auto;
   border-radius: 8px;
   background: var(--card-bg);
