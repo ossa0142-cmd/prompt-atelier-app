@@ -1834,11 +1834,18 @@ main {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent), 0 22px 48px rgba(73, 58, 45, 0.1);
 }
 
-.category-drag-handle {
+.category-reorder-controls {
   position: absolute;
   top: 12px;
   left: 12px;
   z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.category-drag-handle,
+.category-reorder-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1854,6 +1861,23 @@ main {
   letter-spacing: 0;
   touch-action: none;
   user-select: none;
+}
+
+.category-reorder-button {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.library-category-card:hover .category-reorder-button,
+.category-reorder-controls:focus-within .category-reorder-button {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .category-drag-handle:active {

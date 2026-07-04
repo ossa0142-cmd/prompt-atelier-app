@@ -4315,7 +4315,20 @@ function Library({
     className: `library-category-card ${draggedCategoryId === category.id || armedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
     key: category.id,
     "data-category-id": category.id
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "category-reorder-controls",
+    onClick: event => event.stopPropagation()
   }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "category-reorder-button",
+    "aria-label": `${category.title}を左へ移動`,
+    title: "左へ移動",
+    onClick: event => {
+      event.preventDefault();
+      event.stopPropagation();
+      reorderCategoryByDirection(category.id, -1);
+    }
+  }, "←"), /*#__PURE__*/React.createElement("button", {
     type: "button",
     className: "category-drag-handle",
     "aria-label": `${category.title}を並び替え`,
@@ -4324,7 +4337,17 @@ function Library({
     onKeyDown: event => handleCategoryKeyDown(event, category.id),
     onPointerDown: event => startCategoryPointerDrag(event, category.id),
     disabled: isCategorySearching
-  }, "⋮⋮"), /*#__PURE__*/React.createElement(MenuButton, {
+  }, "⋮⋮"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "category-reorder-button",
+    "aria-label": `${category.title}を右へ移動`,
+    title: "右へ移動",
+    onClick: event => {
+      event.preventDefault();
+      event.stopPropagation();
+      reorderCategoryByDirection(category.id, 1);
+    }
+  }, "→")), /*#__PURE__*/React.createElement(MenuButton, {
     onEdit: () => setEditingCategory(category),
     onDuplicate: () => duplicateCategory(category),
     onImage: () => setEditingCategory(category),

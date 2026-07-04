@@ -4030,18 +4030,46 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
                 key={category.id}
                 data-category-id={category.id}
               >
-                <button
-                  type="button"
-                  className="category-drag-handle"
-                  aria-label={`${category.title}を並び替え`}
-                  title="ドラッグ、または移動元と移動先を順番にクリック"
-                  onClick={(event) => handleCategoryHandleClick(event, category.id)}
-                  onKeyDown={(event) => handleCategoryKeyDown(event, category.id)}
-                  onPointerDown={(event) => startCategoryPointerDrag(event, category.id)}
-                  disabled={isCategorySearching}
-                >
-                  ⋮⋮
-                </button>
+                <div className="category-reorder-controls" onClick={(event) => event.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="category-reorder-button"
+                    aria-label={`${category.title}を左へ移動`}
+                    title="左へ移動"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      reorderCategoryByDirection(category.id, -1);
+                    }}
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    className="category-drag-handle"
+                    aria-label={`${category.title}を並び替え`}
+                    title="ドラッグ、または移動元と移動先を順番にクリック"
+                    onClick={(event) => handleCategoryHandleClick(event, category.id)}
+                    onKeyDown={(event) => handleCategoryKeyDown(event, category.id)}
+                    onPointerDown={(event) => startCategoryPointerDrag(event, category.id)}
+                    disabled={isCategorySearching}
+                  >
+                    ⋮⋮
+                  </button>
+                  <button
+                    type="button"
+                    className="category-reorder-button"
+                    aria-label={`${category.title}を右へ移動`}
+                    title="右へ移動"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      reorderCategoryByDirection(category.id, 1);
+                    }}
+                  >
+                    →
+                  </button>
+                </div>
                 <MenuButton
                   onEdit={() => setEditingCategory(category)}
                   onDuplicate={() => duplicateCategory(category)}
