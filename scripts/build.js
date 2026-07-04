@@ -37,7 +37,6 @@ function compileApp() {
 fs.rmSync(dist, { recursive: true, force: true });
 compileApp();
 copyFile(path.join(root, "index.html"), path.join(dist, "index.html"));
-copyFile(path.join(root, "restore-mockups.html"), path.join(dist, "restore-mockups.html"));
 copyFile(path.join(root, "service-worker.js"), path.join(dist, "service-worker.js"));
 copyFile(path.join(root, "src", "App.compiled.js"), path.join(dist, "src", "App.compiled.js"));
 copyFile(path.join(root, "src", "styles.css"), path.join(dist, "src", "styles.css"));

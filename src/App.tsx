@@ -168,7 +168,7 @@ type PwaInstallPromptEvent = Event & {
   userChoice?: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
 
-type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos" | "restoreMockups";
+type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos";
 type SearchTarget = {
   id: string;
   itemId?: string;
@@ -1072,12 +1072,9 @@ const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
-const MOCKUP_CATEGORY_STORAGE_KEY = "prompt-atelier-mockup-categories-v2";
-const MOCKUP_PROMPT_STORAGE_KEY = "prompt-atelier-library-prompts-v5";
-const STORAGE_BACKUP_SUFFIX = "__backup";
 const SAMPLE_EXPORT_KEYS = [
-  MOCKUP_CATEGORY_STORAGE_KEY,
-  MOCKUP_PROMPT_STORAGE_KEY,
+  "prompt-atelier-mockup-categories-v2",
+  "prompt-atelier-library-prompts-v5",
   "prompt-atelier-prompts-ja-v2",
   "promptAtelierVideoPrompts",
   "promptAtelierVideoPromptStocks",
@@ -1089,10 +1086,10 @@ const SAMPLE_EXPORT_KEYS = [
   "promptAtelierWorkTools",
 ];
 const SAMPLE_DATA_STORAGE_MAP: Record<string, string> = {
-  libraryItems: MOCKUP_CATEGORY_STORAGE_KEY,
-  mockupCategories: MOCKUP_CATEGORY_STORAGE_KEY,
-  mockupItems: MOCKUP_PROMPT_STORAGE_KEY,
-  mockupStocks: MOCKUP_PROMPT_STORAGE_KEY,
+  libraryItems: "prompt-atelier-mockup-categories-v2",
+  mockupCategories: "prompt-atelier-mockup-categories-v2",
+  mockupItems: "prompt-atelier-library-prompts-v5",
+  mockupStocks: "prompt-atelier-library-prompts-v5",
   promptCards: "prompt-atelier-prompts-ja-v2",
   promptStocks: "prompt-atelier-prompts-ja-v2",
   videoPromptCards: "promptAtelierVideoPrompts",
@@ -1106,28 +1103,6 @@ const SAMPLE_DATA_STORAGE_MAP: Record<string, string> = {
   customizeSettings: "promptAtelierHomeSettings",
   workTools: "promptAtelierWorkTools",
 };
-const MOCKUP_CATEGORY_RECOVERY_KEYS = [
-  `${MOCKUP_CATEGORY_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`,
-  "promptAtelierMockupCategories",
-  "promptAtelierLibraryCategories",
-  "promptAtelier_mockupCategories",
-  "mockupCategories",
-  "libraryItems",
-  "prompt-atelier-library-categories-v2",
-  "prompt-atelier-mockup-categories-v1",
-];
-const MOCKUP_PROMPT_RECOVERY_KEYS = [
-  `${MOCKUP_PROMPT_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`,
-  "promptAtelierMockupPrompts",
-  "promptAtelierLibraryPrompts",
-  "promptAtelier_mockupPrompts",
-  "mockupItems",
-  "mockupStocks",
-  "libraryPrompts",
-  "prompt-atelier-library-prompts-v4",
-  "prompt-atelier-library-prompts-v3",
-];
-const BACKED_UP_STORAGE_KEYS = new Set([MOCKUP_CATEGORY_STORAGE_KEY, MOCKUP_PROMPT_STORAGE_KEY]);
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const IMAGE_DB_NAME = "PromptAtelierDB";
 const IMAGE_DB_VERSION = 1;
@@ -1869,44 +1844,6 @@ function clipboardImageFiles(event: React.ClipboardEvent) {
     .filter((file): file is File => Boolean(file) && isSupportedImageFile(file));
 }
 
-function readStoredArrayValue<T>(key: string): T[] {
-  try {
-    const saved = localStorage.getItem(key);
-    if (!saved) return [];
-    const parsed = JSON.parse(saved);
-    if (Array.isArray(parsed)) return parsed as T[];
-    if (Array.isArray(parsed?.items)) return parsed.items as T[];
-    if (Array.isArray(parsed?.cards)) return parsed.cards as T[];
-    if (Array.isArray(parsed?.prompts)) return parsed.prompts as T[];
-    if (Array.isArray(parsed?.categories)) return parsed.categories as T[];
-    return [];
-  } catch {
-    return [];
-  }
-}
-
-function recoverStoredArray<T>(keys: string[], fallback: T[]): T[] {
-  for (const key of keys) {
-    const recovered = readStoredArrayValue<T>(key);
-    if (recovered.length > 0) return recovered;
-  }
-  return fallback;
-}
-
-function initialMockupCategories() {
-  return recoverStoredArray<MockupCategory>(MOCKUP_CATEGORY_RECOVERY_KEYS, defaultMockupCategories);
-}
-
-function initialMockupPrompts() {
-  return recoverStoredArray<LibraryBoardPrompt>(MOCKUP_PROMPT_RECOVERY_KEYS, defaultLibraryBoardPrompts);
-}
-
-function backupStorageValueIfNeeded(key: string, value: any) {
-  if (!BACKED_UP_STORAGE_KEYS.has(key)) return;
-  if (!Array.isArray(value) || value.length === 0) return;
-  localStorage.setItem(`${key}${STORAGE_BACKUP_SUFFIX}`, JSON.stringify(value));
-}
-
 function useStoredState<T>(key: string, fallback: T) {
   const hasStoredValueRef = React.useRef(false);
   const [value, setValue] = React.useState<T>(() => {
@@ -1925,7 +1862,6 @@ function useStoredState<T>(key: string, fallback: T) {
     try {
       if (!hasStoredValueRef.current && JSON.stringify(value) === JSON.stringify(fallback)) return;
       localStorage.setItem(key, JSON.stringify(value));
-      backupStorageValueIfNeeded(key, value);
       hasStoredValueRef.current = true;
     } catch (error) {
       console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
@@ -2126,8 +2062,8 @@ function sampleHomeSettings(value: any) {
 }
 
 function createSampleSeedData() {
-  const mockupCategories = parseStorageValueForSample(MOCKUP_CATEGORY_STORAGE_KEY) || [];
-  const libraryPromptsValue = parseStorageValueForSample(MOCKUP_PROMPT_STORAGE_KEY) || [];
+  const mockupCategories = parseStorageValueForSample("prompt-atelier-mockup-categories-v2") || [];
+  const libraryPromptsValue = parseStorageValueForSample("prompt-atelier-library-prompts-v5") || [];
   const promptBookValue = parseStorageValueForSample("prompt-atelier-prompts-ja-v2") || [];
   const videoPromptsValue = parseStorageValueForSample("promptAtelierVideoPrompts") || [];
   const videoStocksValue = parseStorageValueForSample("promptAtelierVideoPromptStocks") || [];
@@ -2254,10 +2190,10 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
     if (!values.length) return;
     storageData[key] = [...(storageData[key] || []), ...values];
   };
-  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
-  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
-  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
-  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
+  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
+  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
@@ -2278,35 +2214,6 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
   return storageData;
 }
 
-function extractMockupRestoreData(seed: any) {
-  const data = seed?.data || seed || {};
-  const categories = Array.isArray(data.mockupCategories)
-    ? data.mockupCategories
-    : Array.isArray(data.libraryItems)
-      ? data.libraryItems
-      : [];
-  const prompts = [
-    ...(Array.isArray(data.mockupItems) ? data.mockupItems : []),
-    ...(Array.isArray(data.mockupStocks) ? data.mockupStocks : []),
-  ];
-  if (!categories.length || !prompts.length) {
-    throw new Error("モックアップ復元データが見つかりませんでした");
-  }
-  return { categories, prompts };
-}
-
-function restoreMockupStorageOnly(categories: MockupCategory[], prompts: LibraryBoardPrompt[]) {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const currentCategories = localStorage.getItem(MOCKUP_CATEGORY_STORAGE_KEY);
-  const currentPrompts = localStorage.getItem(MOCKUP_PROMPT_STORAGE_KEY);
-  if (currentCategories !== null) localStorage.setItem(`${MOCKUP_CATEGORY_STORAGE_KEY}__before_restore_${stamp}`, currentCategories);
-  if (currentPrompts !== null) localStorage.setItem(`${MOCKUP_PROMPT_STORAGE_KEY}__before_restore_${stamp}`, currentPrompts);
-  localStorage.setItem(MOCKUP_CATEGORY_STORAGE_KEY, JSON.stringify(categories));
-  localStorage.setItem(MOCKUP_PROMPT_STORAGE_KEY, JSON.stringify(prompts));
-  backupStorageValueIfNeeded(MOCKUP_CATEGORY_STORAGE_KEY, categories);
-  backupStorageValueIfNeeded(MOCKUP_PROMPT_STORAGE_KEY, prompts);
-}
-
 async function loadSampleSeedIfNeeded() {
   try {
     const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
@@ -2324,7 +2231,6 @@ async function loadSampleSeedIfNeeded() {
       const merged = mergeSampleValue(existing, incoming, key, deletedIds);
       if (JSON.stringify(existing) !== JSON.stringify(merged)) {
         localStorage.setItem(key, JSON.stringify(merged));
-        backupStorageValueIfNeeded(key, merged);
         changed = true;
       }
     });
@@ -2348,7 +2254,7 @@ async function loadSampleSeedIfNeeded() {
 function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
-  const [mockupPrompts, setMockupPrompts] = useStoredState<LibraryBoardPrompt[]>(MOCKUP_PROMPT_STORAGE_KEY, initialMockupPrompts());
+  const [mockupPrompts, setMockupPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState<Project[]>("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -2373,11 +2279,6 @@ function App() {
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
   const favorites = myPrompts.filter((p) => p.favorite).slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
-
-  React.useEffect(() => {
-    if (Array.isArray(mockupPrompts) && mockupPrompts.length > 0) return;
-    setMockupPrompts(initialMockupPrompts());
-  }, [mockupPrompts]);
 
   const copyText = async (text: string, id?: string) => {
     await navigator.clipboard.writeText(text);
@@ -2498,6 +2399,7 @@ function App() {
     setSearchTarget(target);
     setScreen(target.screen);
   };
+  const clearSearchTarget = () => setSearchTarget(null);
 
   return (
     <div
@@ -2544,6 +2446,7 @@ function App() {
         {screen === "home" && (
           <Home
             setScreen={goToScreen}
+            openSearchTarget={openSearchTarget}
             recent={recentPrompts}
             favorites={favorites}
             projects={projects}
@@ -2552,7 +2455,6 @@ function App() {
             mockupPrompts={mockupPrompts}
             videos={videos}
             videoStocks={videoStocks}
-            openSearchTarget={openSearchTarget}
             copyText={copyText}
             settings={homeSettings}
             workTools={workTools}
@@ -2573,18 +2475,11 @@ function App() {
             canInstallPwa={Boolean(installPrompt || (window as any).__promptAtelierInstallPrompt)}
             isStandaloneApp={isStandaloneApp}
             onInstallPwa={installPwa}
-            onOpenMockupRestore={() => goToScreen("restoreMockups")}
           />
         )}
-        {screen === "restoreMockups" && (
-          <MockupRestorePage
-            setScreen={goToScreen}
-            setMockupPrompts={setMockupPrompts}
-          />
-        )}
-        {screen === "library" && <Library copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} searchTarget={searchTarget} />}
-        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
-        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={goToScreen} searchTarget={searchTarget} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
+        {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
+        {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={goToScreen} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
         {screen === "projects" && (
           <Projects
             projects={projects}
@@ -2595,11 +2490,12 @@ function App() {
             copyText={copyText}
             setScreen={goToScreen}
             searchTarget={searchTarget}
+            clearSearchTarget={clearSearchTarget}
           />
         )}
         {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={goToScreen} />}
-        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
-        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} />}
+        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
+        {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={goToScreen} homeSettings={homeSettings} searchTarget={searchTarget} clearSearchTarget={clearSearchTarget} />}
       </main>
       {isImageMigrating && (
         <div className="image-migration-overlay">
@@ -2685,77 +2581,7 @@ function PwaCustomizeCard({ canInstallPwa, isStandaloneApp, onInstall, onShowIns
   );
 }
 
-function MockupRestorePage({ setScreen, setMockupPrompts }: any) {
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const [status, setStatus] = React.useState("");
-  const [isRestoring, setIsRestoring] = React.useState(false);
-
-  const applyRestore = async (loader: () => Promise<{ categories: MockupCategory[]; prompts: LibraryBoardPrompt[] }>) => {
-    if (!window.confirm("モックアップライブラリのカテゴリと中のプロンプトだけを復元します。カスタマイズ設定は変更しません。実行しますか？")) return;
-    setIsRestoring(true);
-    setStatus("復元データを確認しています...");
-    try {
-      const { categories, prompts } = await loader();
-      restoreMockupStorageOnly(categories, prompts);
-      setMockupPrompts(prompts);
-      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップを復元しました（カテゴリ${categories.length}件 / プロンプト${prompts.length}件）`);
-      window.location.reload();
-    } catch (error: any) {
-      console.error("[Prompt Atelier] モックアップ復元に失敗しました", error);
-      setStatus(error?.message || "モックアップ復元に失敗しました");
-      setIsRestoring(false);
-    }
-  };
-
-  const restoreFromBundledSeed = () => applyRestore(async () => {
-    const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
-    if (!response.ok) throw new Error("同梱サンプルデータを読み込めませんでした");
-    return extractMockupRestoreData(await response.json());
-  });
-
-  const restoreFromSelectedFile = () => applyRestore(async () => {
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) throw new Error("復元に使うJSONファイルを選んでください");
-    const text = await file.text();
-    return extractMockupRestoreData(JSON.parse(text));
-  });
-
-  return (
-    <section className="page mockup-restore-page">
-      <PageHead
-        title="モックアップだけ復元"
-        action={<PageBackButton label="カスタマイズへ戻る" onClick={() => setScreen("customize")} />}
-      />
-      <div className="customize-card mockup-restore-card">
-        <h3>モックアップライブラリだけを戻します</h3>
-        <p>
-          カスタマイズ設定、バナー、ホームキャラクター、作業ツール、プロンプト帳、動画プロンプト帳は触らず、
-          モックアップライブラリのカテゴリと中のプロンプトだけを復元します。
-        </p>
-        <p className="backup-storage-note">
-          復元前のモックアップデータは、念のためブラウザ内に退避してから復元します。
-        </p>
-        <div className="backup-actions">
-          <button className="primary" onClick={restoreFromBundledSeed} disabled={isRestoring}>
-            同梱サンプルから復元
-          </button>
-        </div>
-        <div className="developer-tools">
-          <strong>手元のJSONから復元</strong>
-          <p>添付の prompt-atelier-sample-seed.json を選ぶと、その中からモックアップだけを取り出して復元します。</p>
-          <input ref={fileInputRef} type="file" accept="application/json,.json" />
-          <button onClick={restoreFromSelectedFile} disabled={isRestoring}>選んだJSONから復元</button>
-        </div>
-        {status && <p className="restore-status">{status}</p>}
-      </div>
-      <div className="page-bottom-actions">
-        <PageBackButton label="カスタマイズへ戻る" onClick={() => setScreen("customize")} />
-      </div>
-    </section>
-  );
-}
-
-function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, videos, videoStocks, openSearchTarget, copyText, settings, workTools, atelierImages }: any) {
+function Home({ setScreen, openSearchTarget, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, videos, videoStocks, copyText, settings, workTools, atelierImages }: any) {
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
@@ -2770,8 +2596,8 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       id: `page-${screen}`,
       title,
       type: "ページ",
-      screen: screen as Screen,
-      query: title,
+      screen,
+      query: String(title),
       text: `${title} ${body}`,
     })),
     ...(mockupPrompts || []).map((item: any) => ({
@@ -2780,8 +2606,8 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       categoryId: item.categoryId,
       title: item.title || item.category || "モックアップ",
       type: item.isTextStock ? "モックアップストック" : "モックアップ",
-      screen: "library" as Screen,
-      query: item.title || item.prompt || item.memo || "",
+      screen: "library",
+      query: item.title || item.category || "",
       text: searchableTextFromValue(item),
     })),
     ...(myPrompts || []).map((item: any) => ({
@@ -2789,8 +2615,8 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       itemId: item.id,
       title: item.title || "プロンプト",
       type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
-      screen: "prompts" as Screen,
-      query: item.title || item.prompt || item.memo || "",
+      screen: "prompts",
+      query: item.title || item.prompt || "",
       text: searchableTextFromValue(item),
     })),
     ...(mjSettings || []).map((item: any) => ({
@@ -2798,8 +2624,8 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       itemId: item.id,
       title: item.title || "MJ設定",
       type: "MJ設定",
-      screen: "mj" as Screen,
-      query: item.title || item.memo || item.prompt || "",
+      screen: "mj",
+      query: item.title || item.memo || "",
       text: `${searchableTextFromValue(item)} ${mjCommand(item)}`,
     })),
     ...(projects || []).map((item: any) => ({
@@ -2807,8 +2633,8 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       itemId: item.id,
       title: item.name || item.title || "プロジェクト",
       type: "プロジェクト",
-      screen: "projects" as Screen,
-      query: item.name || item.title || item.note || "",
+      screen: "projects",
+      query: item.name || item.title || "",
       text: searchableTextFromValue(item),
     })),
     ...(videos || []).map((item: any) => ({
@@ -2816,8 +2642,8 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       itemId: item.id,
       title: item.title || "動画プロンプト",
       type: "動画プロンプト帳",
-      screen: "videos" as Screen,
-      query: item.title || item.prompt || item.memo || "",
+      screen: "videos",
+      query: item.title || item.prompt || "",
       text: searchableTextFromValue(item),
     })),
     ...(videoStocks || []).map((item: any) => ({
@@ -2825,8 +2651,8 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       itemId: item.id,
       title: item.title || "動画プロンプトストック",
       type: "動画ストック",
-      screen: "videos" as Screen,
-      query: item.title || item.prompt || item.memo || "",
+      screen: "videos",
+      query: item.title || item.prompt || "",
       text: searchableTextFromValue(item),
     })),
     ...(atelierImages || []).map((item: any) => ({
@@ -2834,17 +2660,16 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       itemId: item.id,
       title: item.title || item.memo || "ギャラリー画像",
       type: "ギャラリー",
-      screen: "gallery" as Screen,
+      screen: "gallery",
       query: item.title || item.memo || "",
       text: searchableTextFromValue(item),
     })),
     ...(workTools || []).map((item: any) => ({
       id: `tool-${item.id}`,
-      itemId: item.id,
       title: item.name || "作業ツール",
       type: "作業ツール",
-      screen: "home" as Screen,
-      query: item.name || item.memo || item.url || "",
+      screen: "home",
+      query: item.name || "",
       text: searchableTextFromValue(item),
     })),
   ], [mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
@@ -2924,7 +2749,21 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
           {homeQuery && (
             <div className="home-search-results">
               {searchable.length ? searchable.map((item) => (
-                <button key={item.id} onClick={() => openSearchTarget(item)}>
+                <button key={item.id} onClick={() => {
+                  if (item.screen === "home" || !item.itemId) {
+                    setScreen(item.screen as Screen);
+                    return;
+                  }
+                  openSearchTarget({
+                    id: item.id,
+                    itemId: item.itemId,
+                    categoryId: item.categoryId,
+                    title: item.title,
+                    type: item.type,
+                    screen: item.screen as Screen,
+                    query: item.query || homeQuery,
+                  });
+                }}>
                   <span>{item.title}</span>
                   <small>{item.type}</small>
                 </button>
@@ -3209,7 +3048,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
   );
 }
 
-function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, mockupPrompts, canInstallPwa, isStandaloneApp, onInstallPwa, onOpenMockupRestore }: any) {
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, mockupPrompts, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
   const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -3415,15 +3254,6 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       />
       <div className="customize-layout">
         <div className="customize-settings">
-          <section className="customize-card restore-shortcut-card">
-            <h3>モックアップ復元</h3>
-            <p>
-              モックアップライブラリのカテゴリと中のプロンプトだけを戻せます。
-              カスタマイズ設定、バナー、ホームキャラクター、プロンプト帳は変更しません。
-            </p>
-            <button className="primary" onClick={onOpenMockupRestore}>モックアップだけ復元する</button>
-          </section>
-
           <details className="customize-accordion">
             <summary><span>データ管理・アプリ</span><b>⌄</b></summary>
             <div className="customize-accordion-body">
@@ -3897,11 +3727,6 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <p>現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。</p>
               <button onClick={exportPromptAtelierSampleSeed}>現在のデータをサンプルとして書き出す</button>
             </div>
-            <div className="developer-tools">
-              <strong>モックアップだけ復元</strong>
-              <p>カスタマイズ設定は触らず、モックアップライブラリのカテゴリと中のプロンプトだけを戻します。</p>
-              <button onClick={onOpenMockupRestore}>モックアップだけ復元する</button>
-            </div>
             <input
               ref={backupInputRef}
               type="file"
@@ -4116,7 +3941,7 @@ function HomePromptCard({ prompt, onCopy, favorite }: any) {
   );
 }
 
-function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts, searchTarget }: any) {
+function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts, searchTarget, clearSearchTarget }: any) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
@@ -4126,32 +3951,24 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   const [stockFrameCounts, setStockFrameCounts] = React.useState<Record<string, number>>({});
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
-  const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>(MOCKUP_CATEGORY_STORAGE_KEY, initialMockupCategories());
+  const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   React.useEffect(() => {
-    if (Array.isArray(boardCategories) && boardCategories.length > 0) return;
-    setBoardCategories(initialMockupCategories());
-  }, [boardCategories]);
-  React.useEffect(() => {
     if (searchTarget?.screen !== "library") return;
-    if (!searchTarget.itemId) {
-      setSelectedCategory(null);
-      setQuery("");
-      return;
-    }
     const foundPrompt = boardPrompts.find((item: LibraryBoardPrompt) => item.id === searchTarget.itemId);
     const targetCategory = orderedCategories.find((category) => category.id === (foundPrompt?.categoryId || searchTarget.categoryId));
     if (targetCategory) setSelectedCategory(targetCategory);
     if (foundPrompt) {
-      setQuery(foundPrompt.title || searchTarget.query || "");
-      if (!foundPrompt.isTextStock) setEditingPrompt(foundPrompt);
+      setQuery("");
       window.setTimeout(() => {
-        document.getElementById(`library-prompt-${foundPrompt.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (!foundPrompt.isTextStock) setEditingPrompt(foundPrompt);
+        document.getElementById(`prompt-card-${foundPrompt.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 120);
-      return;
+    } else if (searchTarget.query) {
+      setQuery(searchTarget.query);
     }
-    if (searchTarget.query) setQuery(searchTarget.query);
+    clearSearchTarget?.();
   }, [searchTarget?.id]);
   const currentCategory = selectedCategory ? orderedCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
@@ -4564,7 +4381,7 @@ function CoverImageUploader({ item, onChange, category = "prompt" }: any) {
 function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showMemo, showTags = true, showMemoButton = true }: any) {
   const updateCoverImages = (coverImages: any[]) => updatePrompt(prompt.id, { coverImages, imageUrl: coverImages[0] || "" });
   return (
-    <article id={`library-prompt-${prompt.id}`} className="library-prompt-card">
+    <article id={`prompt-card-${prompt.id}`} className="library-prompt-card">
       <PromptMenuButton
         onDuplicate={() => duplicatePrompt(prompt)}
         onClearImage={() => updatePrompt(prompt.id, { imageUrl: "", coverImages: [] })}
@@ -4621,7 +4438,7 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
     copyText(promptText, prompt?.id);
   };
   return (
-    <article className="text-stock-frame">
+    <article id={prompt?.id ? `text-stock-${prompt.id}` : undefined} className="text-stock-frame">
       <input
         value={title}
         onChange={(event) => setTitle(event.target.value)}
@@ -4879,7 +4696,7 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   );
 }
 
-function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings, searchTarget }: any) {
+function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings, searchTarget, clearSearchTarget }: any) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
@@ -4889,25 +4706,6 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings, se
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "prompts") return;
-    if (!searchTarget.itemId) {
-      setQuery("");
-      return;
-    }
-    const found = prompts.find((item: MyPrompt) => item.id === searchTarget.itemId);
-    if (found) {
-      setQuery(found.title || found.prompt || searchTarget.query || "");
-      setTag("すべて");
-      setFavoritesOnly(false);
-      if (!found.isTextStock) setEditing(found);
-      window.setTimeout(() => {
-        document.getElementById(`library-prompt-${found.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 120);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
-  }, [searchTarget?.id]);
   const tags = Array.from(new Set(prompts.flatMap((p: MyPrompt) => p.tags))).sort();
   const filtered = prompts.filter((item: MyPrompt) => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
@@ -4966,6 +4764,28 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings, se
     if (!canAddTextStock) return;
     setStockFrameCount((count) => Math.min(100, count + 1));
   };
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "prompts") return;
+    const foundPrompt = prompts.find((item: MyPrompt) => item.id === searchTarget.itemId);
+    if (foundPrompt) {
+      setQuery("");
+      setTag("すべて");
+      setFavoritesOnly(false);
+      if (foundPrompt.isTextStock) {
+        const stockIndex = prompts.filter((item: MyPrompt) => item.isTextStock).findIndex((item: MyPrompt) => item.id === foundPrompt.id);
+        setStockFrameCount((count) => Math.max(count, stockIndex + 1, 5));
+        setMemoPrompt(foundPrompt);
+        window.setTimeout(() => {
+          document.getElementById(`text-stock-${foundPrompt.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 120);
+      } else {
+        setEditing(foundPrompt);
+      }
+    } else if (searchTarget.query) {
+      setQuery(searchTarget.query);
+    }
+    clearSearchTarget?.();
+  }, [searchTarget?.id]);
   return (
     <section className={`page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`}>
       <PageHead title="プロンプト帳" action={<div className="actions"><span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>} />
@@ -5051,7 +4871,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings, se
   );
 }
 
-function Midjourney({ settings, setSettings, copyText, setScreen, searchTarget }: any) {
+function Midjourney({ settings, setSettings, copyText, setScreen, searchTarget, clearSearchTarget }: any) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
   const [promptEn, setPromptEn] = React.useState("");
@@ -5210,16 +5030,10 @@ function Midjourney({ settings, setSettings, copyText, setScreen, searchTarget }
   };
   React.useEffect(() => {
     if (searchTarget?.screen !== "mj") return;
-    if (!searchTarget.itemId) {
-      setQuery("");
-      return;
-    }
-    const found = normalizedSettings.find((item: MjSetting) => item.id === searchTarget.itemId);
-    if (found) {
-      jumpToCard(found.id);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
+    const foundSetting = normalizedSettings.find((item: MjSetting) => item.id === searchTarget.itemId);
+    if (foundSetting) jumpToCard(foundSetting.id);
+    else if (searchTarget.query) setQuery(searchTarget.query);
+    clearSearchTarget?.();
   }, [searchTarget?.id]);
   return (
     <section className="page mj-board-page">
@@ -5644,19 +5458,13 @@ function mjCommandLegacy(item: MjSetting) {
   ].filter(Boolean).join(" ");
 }
 
-function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings, searchTarget }: any) {
+function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings, searchTarget, clearSearchTarget }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   const [previewId, setPreviewId] = React.useState("");
   const [visibleCount, setVisibleCount] = React.useState(20);
   const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
   const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "gallery") return;
-    if (!searchTarget.itemId) return;
-    const found = images.find((image: AtelierImage) => image.id === searchTarget.itemId);
-    if (found) setPreviewId(found.id);
-  }, [searchTarget?.id]);
   React.useEffect(() => {
     setVisibleCount(20);
   }, [images.length]);
@@ -5670,6 +5478,18 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings, s
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
   }, [images.length, visibleCount]);
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "gallery") return;
+    const foundImageIndex = images.findIndex((image: AtelierImage) => image.id === searchTarget.itemId);
+    if (foundImageIndex >= 0) {
+      setVisibleCount((count) => Math.max(count, foundImageIndex + 1, 20));
+      setPreviewId(images[foundImageIndex].id);
+      window.setTimeout(() => {
+        document.getElementById(`gallery-card-${images[foundImageIndex].id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 120);
+    }
+    clearSearchTarget?.();
+  }, [searchTarget?.id]);
   const addFiles = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -5752,7 +5572,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings, s
       {images.length ? (
         <div className="gallery-grid">
           {images.slice(0, visibleCount).map((image: AtelierImage) => (
-            <article className="gallery-card" key={image.id}>
+            <article id={`gallery-card-${image.id}`} className="gallery-card" key={image.id}>
               {galleryDisplay.showHeart !== false && <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
                 {image.favorite ? "♥" : "♡"}
               </button>}
@@ -5809,7 +5629,7 @@ function VideoPlaceholder() {
   );
 }
 
-function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen, homeSettings, searchTarget }: any) {
+function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScreen, homeSettings, searchTarget, clearSearchTarget }: any) {
   const thumbnailInputRef = React.useRef<HTMLInputElement | null>(null);
   const videoInputRef = React.useRef<HTMLInputElement | null>(null);
   const uploadVideoInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -5907,28 +5727,6 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       return "";
     });
   };
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "videos") return;
-    if (!searchTarget.itemId) {
-      setQuery("");
-      return;
-    }
-    const foundVideo = videoItems.find((item: VideoItem) => item.id === searchTarget.itemId);
-    if (foundVideo) {
-      setQuery(foundVideo.title || foundVideo.prompt || searchTarget.query || "");
-      setModelFilter("すべて");
-      setFavoriteOnly(false);
-      editVideo(foundVideo);
-      return;
-    }
-    const foundStock = (videoStocks || []).find((item: VideoPromptStock) => item.id === searchTarget.itemId);
-    if (foundStock) {
-      setQuery(foundStock.title || foundStock.prompt || searchTarget.query || "");
-      setMemoStock(foundStock);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
-  }, [searchTarget?.id]);
   const deleteVideo = (id: string) => {
     if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
     setTempVideoUrls((items) => {
@@ -6017,8 +5815,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const stockQuery = query.trim().toLowerCase();
   const filteredStocks = normalizedStocks.filter((item) => {
     if (!stockQuery) return true;
-    const haystack = `${item.title} ${item.prompt} ${item.memo}`.toLowerCase();
-    return haystack.includes(stockQuery);
+    return lowerIncludes(`${item.title} ${item.prompt} ${item.memo}`, stockQuery);
   });
   const stockCount = normalizedStocks.length;
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
@@ -6052,8 +5849,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
   const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter((item) => {
-    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
-    if (query && !haystack.includes(query.toLowerCase())) return false;
+    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`;
+    if (query && !lowerIncludes(haystack, query)) return false;
     if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
     if (favoriteOnly && !item.favorite) return false;
     return true;
@@ -6062,6 +5859,27 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const slots = searchActive
     ? filteredVideos
     : Array.from({ length: videoSlotCount }, (_, index) => normalizedVideos[index] || null);
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "videos") return;
+    const foundVideo = normalizedVideos.find((item) => item.id === searchTarget.itemId);
+    const foundStock = normalizedStocks.find((item) => item.id === searchTarget.itemId);
+    setQuery("");
+    setModelFilter("すべて");
+    setFavoriteOnly(false);
+    if (foundVideo) {
+      editVideo(foundVideo);
+    } else if (foundStock) {
+      const stockIndex = normalizedStocks.findIndex((item) => item.id === foundStock.id);
+      setStockFrameCount((count) => Math.max(count, stockIndex + 1, 5));
+      setMemoStock(foundStock);
+      window.setTimeout(() => {
+        document.getElementById(`text-stock-${foundStock.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 120);
+    } else if (searchTarget.query) {
+      setQuery(searchTarget.query);
+    }
+    clearSearchTarget?.();
+  }, [searchTarget?.id]);
   if (selectedId) {
     return (
       <section
@@ -6180,7 +5998,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
           {slots.map((item: VideoItem | null, index: number) => {
             const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
             return item ? (
-            <article className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
+            <article id={`video-card-${item.id}`} className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
               <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
                 event.stopPropagation();
                 setVideos((items: VideoItem[]) => extractVideoPromptItems(items).map((video) => video.id === item.id ? { ...video, favorite: !video.favorite } : video));
@@ -6505,25 +6323,11 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   );
 }
 
-function Projects({ projects, setProjects, prompts, settings, homeSettings, copyText, setScreen, searchTarget }: any) {
+function Projects({ projects, setProjects, prompts, settings, homeSettings, copyText, setScreen, searchTarget, clearSearchTarget }: any) {
   const [editing, setEditing] = React.useState<Project | null>(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
   const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
-  React.useEffect(() => {
-    if (searchTarget?.screen !== "projects") return;
-    if (!searchTarget.itemId) {
-      setQuery("");
-      return;
-    }
-    const found = projects.find((project: Project) => project.id === searchTarget.itemId);
-    if (found) {
-      setQuery(found.name || searchTarget.query || "");
-      setEditing(found);
-      return;
-    }
-    if (searchTarget.query) setQuery(searchTarget.query);
-  }, [searchTarget?.id]);
   const projectMatchesDisplay = (item: Project) => projectDisplay.showCompleted !== false || !(item as any).completed && (item as any).status !== "completed";
   const filteredBase = projects.filter((item: Project) => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query) && projectMatchesDisplay(item));
   const filtered = projectDisplay.sortBy === "manual"
@@ -6536,6 +6340,20 @@ function Projects({ projects, setProjects, prompts, settings, homeSettings, copy
     setProjects((items: Project[]) => item.id ? items.map((p) => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
   };
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "projects") return;
+    const foundProject = projects.find((item: Project) => item.id === searchTarget.itemId);
+    if (foundProject) {
+      setQuery("");
+      setEditing(foundProject);
+      window.setTimeout(() => {
+        document.getElementById(`project-card-${foundProject.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 120);
+    } else if (searchTarget.query) {
+      setQuery(searchTarget.query);
+    }
+    clearSearchTarget?.();
+  }, [searchTarget?.id]);
   return (
     <section className={`page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`}>
       <PageHead
@@ -6549,7 +6367,7 @@ function Projects({ projects, setProjects, prompts, settings, homeSettings, copy
           const linkedPrompts = prompts.filter((p: MyPrompt) => project.promptIds.includes(p.id));
           const linkedMj = settings.filter((m: MjSetting) => project.mjIds.includes(m.id));
           return (
-            <article className="project-card" key={project.id}>
+            <article id={`project-card-${project.id}`} className="project-card" key={project.id}>
               <div className="project-top">
                 <div>
                   <h3>{project.name}</h3>
