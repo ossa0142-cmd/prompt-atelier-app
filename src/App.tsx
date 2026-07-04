@@ -180,7 +180,7 @@ type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "
 type HomeCharacterMessageMode = "auto" | "fixed" | "project";
 type HomeCharacterSize = "small" | "medium" | "large";
 type DisplayDensity = "comfortable" | "normal" | "compact";
-type HomeClockStyle = "simple" | "pill" | "card" | "minimal" | "hidden";
+type HomeClockStyle = "pill" | "digital" | "retro" | "neon" | "doodle" | "stamp" | "minimal" | "hidden";
 type CardRadiusStyle = "small" | "medium" | "large" | "pillowy";
 type CardShadowStyle = "none" | "soft" | "normal" | "dreamy";
 type CardTransparencyStyle = "solid" | "soft" | "glass";
@@ -321,9 +321,12 @@ const homeFeatures: { id: HomeFeatureId; label: string }[] = [
 ];
 
 const homeClockStyleOptions: { id: HomeClockStyle; label: string; description: string }[] = [
-  { id: "pill", label: "ふんわり", description: "丸いラベルで日付を表示" },
-  { id: "simple", label: "シンプル", description: "細い文字で控えめに表示" },
-  { id: "card", label: "カード", description: "小さなカード風に表示" },
+  { id: "pill", label: "ふんわり", description: "淡い丸ラベルで表示" },
+  { id: "digital", label: "デジタル", description: "黒い液晶風の表示" },
+  { id: "retro", label: "レトロ", description: "古い印字風の文字" },
+  { id: "neon", label: "ネオン", description: "カラフルな立体文字" },
+  { id: "doodle", label: "手描き", description: "らくがき風のゆるい日付" },
+  { id: "stamp", label: "スタンプ", description: "ハートスタンプ風の表示" },
   { id: "minimal", label: "最小", description: "月日と曜日だけ表示" },
   { id: "hidden", label: "非表示", description: "ホームに日付を出さない" },
 ];
@@ -640,7 +643,7 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
   const safeDensity: DisplayDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity)
     ? settings.displayDensity as DisplayDensity
     : "normal";
-  const safeClockStyle: HomeClockStyle = ["simple", "pill", "card", "minimal", "hidden"].includes(settings?.homeClockStyle)
+  const safeClockStyle: HomeClockStyle = ["pill", "digital", "retro", "neon", "doodle", "stamp", "minimal", "hidden"].includes(settings?.homeClockStyle)
     ? settings.homeClockStyle as HomeClockStyle
     : "pill";
   const safeFontPreset: FontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset)
@@ -2556,22 +2559,35 @@ function PwaCustomizeCard({ canInstallPwa, isStandaloneApp, onInstall, onShowIns
 function getHomeDateParts() {
   const now = new Date();
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const day = now.getDate();
   const weekday = weekdays[now.getDay()];
-  return { year, month, day, weekday };
+  const monthName = monthNames[now.getMonth()];
+  const paddedDay = String(day).padStart(2, "0");
+  const paddedMonth = String(month).padStart(2, "0");
+  return { year, month, day, weekday, monthName, paddedDay, paddedMonth };
 }
 
 function HomeDateDisplay({ style = "pill", mini = false }: { style?: HomeClockStyle; mini?: boolean }) {
   if (style === "hidden") return null;
-  const { year, month, day, weekday } = getHomeDateParts();
+  const { year, month, day, weekday, monthName, paddedDay, paddedMonth } = getHomeDateParts();
   const className = `${mini ? "home-mini-date" : "home-date-display"} ${style}`;
+  const dateTime = `${year}-${paddedMonth}-${paddedDay}`;
   if (style === "minimal") {
-    return <time className={className} dateTime={`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`}>{month}/{day}（{weekday}）</time>;
+    return <time className={className} dateTime={dateTime}>{month}/{day}（{weekday}）</time>;
+  }
+  if (["digital", "retro", "neon", "doodle", "stamp"].includes(style)) {
+    return (
+      <time className={className} dateTime={dateTime} aria-label={`${year}年${month}月${day}日 ${weekday}曜日`}>
+        <strong>{monthName}.{paddedDay}</strong>
+        <small>{year} / {weekday}</small>
+      </time>
+    );
   }
   return (
-    <time className={className} dateTime={`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`}>
+    <time className={className} dateTime={dateTime}>
       <span>{year}</span>
       <strong>{month}月{day}日</strong>
       <small>{weekday}曜日</small>

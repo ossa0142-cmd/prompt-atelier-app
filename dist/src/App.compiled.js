@@ -34,15 +34,27 @@ const homeFeatures = [{
 const homeClockStyleOptions = [{
   id: "pill",
   label: "ふんわり",
-  description: "丸いラベルで日付を表示"
+  description: "淡い丸ラベルで表示"
 }, {
-  id: "simple",
-  label: "シンプル",
-  description: "細い文字で控えめに表示"
+  id: "digital",
+  label: "デジタル",
+  description: "黒い液晶風の表示"
 }, {
-  id: "card",
-  label: "カード",
-  description: "小さなカード風に表示"
+  id: "retro",
+  label: "レトロ",
+  description: "古い印字風の文字"
+}, {
+  id: "neon",
+  label: "ネオン",
+  description: "カラフルな立体文字"
+}, {
+  id: "doodle",
+  label: "手描き",
+  description: "らくがき風のゆるい日付"
+}, {
+  id: "stamp",
+  label: "スタンプ",
+  description: "ハートスタンプ風の表示"
 }, {
   id: "minimal",
   label: "最小",
@@ -643,7 +655,7 @@ const normalizeHomeSettings = settings => {
   };
   const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
   const safeDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity) ? settings.displayDensity : "normal";
-  const safeClockStyle = ["simple", "pill", "card", "minimal", "hidden"].includes(settings?.homeClockStyle) ? settings.homeClockStyle : "pill";
+  const safeClockStyle = ["pill", "digital", "retro", "neon", "doodle", "stamp", "minimal", "hidden"].includes(settings?.homeClockStyle) ? settings.homeClockStyle : "pill";
   const safeFontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset) ? settings.fontPreset : "simple";
   const safeIconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet) ? settings.iconSet : "line";
   const safeCharacterSize = ["small", "medium", "large"].includes(rawCharacter.size) ? rawCharacter.size : "medium";
@@ -2503,15 +2515,22 @@ function PwaCustomizeCard({
 function getHomeDateParts() {
   const now = new Date();
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const day = now.getDate();
   const weekday = weekdays[now.getDay()];
+  const monthName = monthNames[now.getMonth()];
+  const paddedDay = String(day).padStart(2, "0");
+  const paddedMonth = String(month).padStart(2, "0");
   return {
     year,
     month,
     day,
-    weekday
+    weekday,
+    monthName,
+    paddedDay,
+    paddedMonth
   };
 }
 function HomeDateDisplay({
@@ -2523,18 +2542,29 @@ function HomeDateDisplay({
     year,
     month,
     day,
-    weekday
+    weekday,
+    monthName,
+    paddedDay,
+    paddedMonth
   } = getHomeDateParts();
   const className = `${mini ? "home-mini-date" : "home-date-display"} ${style}`;
+  const dateTime = `${year}-${paddedMonth}-${paddedDay}`;
   if (style === "minimal") {
     return /*#__PURE__*/React.createElement("time", {
       className: className,
-      dateTime: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+      dateTime: dateTime
     }, month, "/", day, "（", weekday, "）");
+  }
+  if (["digital", "retro", "neon", "doodle", "stamp"].includes(style)) {
+    return /*#__PURE__*/React.createElement("time", {
+      className: className,
+      dateTime: dateTime,
+      "aria-label": `${year}年${month}月${day}日 ${weekday}曜日`
+    }, /*#__PURE__*/React.createElement("strong", null, monthName, ".", paddedDay), /*#__PURE__*/React.createElement("small", null, year, " / ", weekday));
   }
   return /*#__PURE__*/React.createElement("time", {
     className: className,
-    dateTime: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+    dateTime: dateTime
   }, /*#__PURE__*/React.createElement("span", null, year), /*#__PURE__*/React.createElement("strong", null, month, "月", day, "日"), /*#__PURE__*/React.createElement("small", null, weekday, "曜日"));
 }
 function Home({
