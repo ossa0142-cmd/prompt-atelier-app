@@ -3661,22 +3661,21 @@ main {
 }
 
 .home-mini-banner {
-  min-height: 54px;
-  max-height: 86px;
-  aspect-ratio: auto;
+  min-height: 0;
+  max-height: none;
   border-radius: calc(var(--custom-card-radius) - 8px);
 }
 
 .home-mini-banner.small {
-  min-height: 42px;
+  aspect-ratio: 6 / 1;
 }
 
 .home-mini-banner.medium {
-  min-height: 58px;
+  aspect-ratio: 3 / 1;
 }
 
 .home-mini-banner.large {
-  min-height: 78px;
+  aspect-ratio: 2 / 1;
 }
 
 .home-mini-banner-placeholder {
