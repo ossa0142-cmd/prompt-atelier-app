@@ -2245,7 +2245,10 @@ function App() {
 
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
-  const favorites = myPrompts.filter((p) => p.favorite).slice(0, 4);
+  const favorites = [
+    ...myPrompts,
+    ...mockupPrompts.filter((prompt) => !prompt.isTextStock),
+  ].filter((prompt) => prompt.favorite).slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
 
   const copyText = async (text: string, id?: string) => {
@@ -3821,6 +3824,7 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
     imageUrl: "",
     coverImages: [],
     japaneseTranslation: "",
+    favorite: false,
     isTextStock: textOnly,
   });
   const saveCategory = (item: MockupCategory) => {
@@ -4287,6 +4291,16 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
   const updateCoverImages = (coverImages: any[]) => updatePrompt(prompt.id, { coverImages, imageUrl: coverImages[0] || "" });
   return (
     <article className="library-prompt-card">
+      <button
+        className="prompt-favorite-button"
+        aria-label={prompt.favorite ? "お気に入りを解除" : "お気に入りに追加"}
+        onClick={(event) => {
+          event.stopPropagation();
+          updatePrompt(prompt.id, { favorite: !prompt.favorite });
+        }}
+      >
+        {prompt.favorite ? "♥" : "♡"}
+      </button>
       <PromptMenuButton
         onDuplicate={() => duplicatePrompt(prompt)}
         onClearImage={() => updatePrompt(prompt.id, { imageUrl: "", coverImages: [] })}
@@ -4342,8 +4356,25 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
     event.stopPropagation();
     copyText(promptText, prompt?.id);
   };
+  const toggleFavorite = (event: any) => {
+    event.stopPropagation();
+    const nextFavorite = !prompt?.favorite;
+    if (isSaved) {
+      onUpdate(prompt.id, { favorite: nextFavorite });
+      return;
+    }
+    save({ favorite: nextFavorite });
+  };
   return (
     <article className="text-stock-frame">
+      <button
+        className="prompt-favorite-button text-stock-heart"
+        aria-label={prompt?.favorite ? "お気に入りを解除" : "お気に入りに追加"}
+        onClick={toggleFavorite}
+        disabled={!isSaved && !title.trim() && !promptText.trim()}
+      >
+        {prompt?.favorite ? "♥" : "♡"}
+      </button>
       <input
         value={title}
         onChange={(event) => setTitle(event.target.value)}

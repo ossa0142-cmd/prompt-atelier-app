@@ -2200,7 +2200,7 @@ function App() {
   };
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
-  const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
+  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite).slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
@@ -4070,6 +4070,7 @@ function Library({
     imageUrl: "",
     coverImages: [],
     japaneseTranslation: "",
+    favorite: false,
     isTextStock: textOnly
   });
   const saveCategory = item => {
@@ -4608,7 +4609,16 @@ function LibraryImagePromptCard({
   });
   return /*#__PURE__*/React.createElement("article", {
     className: "library-prompt-card"
-  }, /*#__PURE__*/React.createElement(PromptMenuButton, {
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "prompt-favorite-button",
+    "aria-label": prompt.favorite ? "お気に入りを解除" : "お気に入りに追加",
+    onClick: event => {
+      event.stopPropagation();
+      updatePrompt(prompt.id, {
+        favorite: !prompt.favorite
+      });
+    }
+  }, prompt.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
     onClearImage: () => updatePrompt(prompt.id, {
       imageUrl: "",
@@ -4707,9 +4717,27 @@ function TextStockFrame({
     event.stopPropagation();
     copyText(promptText, prompt?.id);
   };
+  const toggleFavorite = event => {
+    event.stopPropagation();
+    const nextFavorite = !prompt?.favorite;
+    if (isSaved) {
+      onUpdate(prompt.id, {
+        favorite: nextFavorite
+      });
+      return;
+    }
+    save({
+      favorite: nextFavorite
+    });
+  };
   return /*#__PURE__*/React.createElement("article", {
     className: "text-stock-frame"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "prompt-favorite-button text-stock-heart",
+    "aria-label": prompt?.favorite ? "お気に入りを解除" : "お気に入りに追加",
+    onClick: toggleFavorite,
+    disabled: !isSaved && !title.trim() && !promptText.trim()
+  }, prompt?.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("input", {
     value: title,
     onChange: event => setTitle(event.target.value),
     onBlur: () => save({
