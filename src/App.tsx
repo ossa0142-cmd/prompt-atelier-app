@@ -2262,6 +2262,47 @@ async function loadSampleSeedIfNeeded() {
   }
 }
 
+async function restoreMockupSamplesIfEmpty() {
+  try {
+    const categoriesRaw = localStorage.getItem("prompt-atelier-mockup-categories-v2");
+    const promptsRaw = localStorage.getItem("prompt-atelier-library-prompts-v5");
+    const categoriesCurrent = categoriesRaw ? JSON.parse(categoriesRaw) : [];
+    const promptsCurrent = promptsRaw ? JSON.parse(promptsRaw) : [];
+    const shouldRestoreCategories = !Array.isArray(categoriesCurrent) || categoriesCurrent.length === 0;
+    const shouldRestorePrompts = !Array.isArray(promptsCurrent) || promptsCurrent.length === 0;
+    if (!shouldRestoreCategories && !shouldRestorePrompts) return false;
+
+    const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
+    if (!response.ok) return false;
+    const seed = await response.json();
+    const data = seed?.data || {};
+    const categories = [
+      ...(Array.isArray(data.libraryItems) ? data.libraryItems : []),
+      ...(Array.isArray(data.mockupCategories) ? data.mockupCategories : []),
+    ];
+    const prompts = [
+      ...(Array.isArray(data.mockupItems) ? data.mockupItems : []),
+      ...(Array.isArray(data.mockupStocks) ? data.mockupStocks : []),
+    ];
+    let changed = false;
+    if (shouldRestoreCategories && categories.length) {
+      localStorage.setItem("prompt-atelier-mockup-categories-v2", JSON.stringify(categories));
+      changed = true;
+    }
+    if (shouldRestorePrompts && prompts.length) {
+      localStorage.setItem("prompt-atelier-library-prompts-v5", JSON.stringify(prompts));
+      changed = true;
+    }
+    if (changed) {
+      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップライブラリを復元しました（カテゴリ${categories.length}件・プロンプト${prompts.length}件）`);
+    }
+    return changed;
+  } catch (error) {
+    console.warn("[Prompt Atelier] モックアップ復元に失敗しました", error);
+    return false;
+  }
+}
+
 function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
@@ -2321,9 +2362,12 @@ function App() {
         const migrated = await migrateLocalStorageImagesToIndexedDb();
         await refreshIndexedDbImageCache();
         const sampleSeedImported = await loadSampleSeedIfNeeded();
+        const mockupRestored = await restoreMockupSamplesIfEmpty();
         if (cancelled) return;
-        if (migrated || sampleSeedImported) {
-          sessionStorage.setItem("promptAtelierRestoreMessage", sampleSeedImported ? "サンプルデータを読み込みました" : "画像データを最適化しました");
+        if (migrated || sampleSeedImported || mockupRestored) {
+          if (!mockupRestored) {
+            sessionStorage.setItem("promptAtelierRestoreMessage", sampleSeedImported ? "サンプルデータを読み込みました" : "画像データを最適化しました");
+          }
           window.location.reload();
           return;
         }
