@@ -2174,6 +2174,7 @@ async function loadSampleSeedIfNeeded() {
 function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
+  const [mockupPrompts, setMockupPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const [mjSettings, setMjSettings] = useStoredState("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -2195,7 +2196,7 @@ function App() {
     ...themeStyle(activeTheme),
     ...customStyle(homeSettings)
   };
-  const allPrompts = [...myPrompts, ...libraryPrompts];
+  const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
@@ -2334,6 +2335,7 @@ function App() {
     projects: projects,
     myPrompts: myPrompts,
     mjSettings: mjSettings,
+    mockupPrompts: mockupPrompts,
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
@@ -2347,13 +2349,16 @@ function App() {
     projects: projects,
     myPrompts: myPrompts,
     mjSettings: mjSettings,
+    mockupPrompts: mockupPrompts,
     canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
     isStandaloneApp: isStandaloneApp,
     onInstallPwa: installPwa
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
     setScreen: setScreen,
-    homeSettings: homeSettings
+    homeSettings: homeSettings,
+    boardPrompts: mockupPrompts,
+    setBoardPrompts: setMockupPrompts
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
@@ -2476,6 +2481,7 @@ function Home({
   projects,
   myPrompts,
   mjSettings,
+  mockupPrompts,
   copyText,
   settings,
   workTools,
@@ -2495,29 +2501,33 @@ function Home({
     return Math.abs(aInfo.diff) - Math.abs(bInfo.diff);
   })[0];
   const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
+  const mockupCount = (mockupPrompts || []).length;
+  const promptCount = (myPrompts || []).length;
+  const mjCount = (mjSettings || []).length;
+  const projectCount = (projects || []).length;
   const dashboardItems = [{
     id: "mockups",
     screen: "library",
     title: "モックアップ",
-    value: `${Math.max(libraryPrompts.length, 128)}件`,
+    value: `${mockupCount}件`,
     icon: "mockup"
   }, {
     id: "prompts",
     screen: "prompts",
     title: "プロンプト帳",
-    value: `${Math.max(myPrompts.length, 42)}件`,
+    value: `${promptCount}件`,
     icon: "notebook"
   }, {
     id: "mjSettings",
     screen: "mj",
     title: "MJ設定",
-    value: `${Math.max(mjSettings.length, 18)}件`,
+    value: `${mjCount}件`,
     icon: "magic"
   }, {
     id: "projects",
     screen: "projects",
     title: "プロジェクト",
-    value: `${Math.min(projects.length, 30)}件`,
+    value: `${projectCount}件`,
     icon: "folder"
   }, {
     id: "achievement",
@@ -2932,6 +2942,7 @@ function HomeCustomize({
   projects,
   myPrompts,
   mjSettings,
+  mockupPrompts,
   canInstallPwa,
   isStandaloneApp,
   onInstallPwa
@@ -3096,22 +3107,22 @@ function HomeCustomize({
   const previewDashboardItems = [{
     id: "mockups",
     title: "Mockup",
-    value: String(Math.max(libraryPrompts.length, 128)),
+    value: String((mockupPrompts || []).length),
     icon: "mockup"
   }, {
     id: "prompts",
     title: "Prompt",
-    value: String(Math.max((myPrompts || []).length, 42)),
+    value: String((myPrompts || []).length),
     icon: "notebook"
   }, {
     id: "mjSettings",
     title: "MJ",
-    value: String(Math.max((mjSettings || []).length, 18)),
+    value: String((mjSettings || []).length),
     icon: "magic"
   }, {
     id: "projects",
     title: "Project",
-    value: String(Math.min((projects || []).length, 30)),
+    value: String((projects || []).length),
     icon: "folder"
   }].filter(item => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false).slice(0, 4);
   const previewTools = normalizedTools.filter(tool => tool.visible !== false).slice(0, 4);
@@ -4027,7 +4038,9 @@ function HomePromptCard({
 function Library({
   copyText,
   setScreen,
-  homeSettings
+  homeSettings,
+  boardPrompts,
+  setBoardPrompts
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -4039,7 +4052,6 @@ function Library({
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
-  const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
