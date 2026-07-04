@@ -609,11 +609,11 @@ const defaultHomeSettings: HomeSettings = {
     videos: true,
     mj: true,
     projects: true,
-    favorites: true,
     atelier: true,
     dashboard: true,
     quickActions: true,
     featureCards: true,
+    favorites: true,
   },
   order: ["dashboard", "quickActions", "featureCards", "favorites", "atelier"],
 };
@@ -935,7 +935,7 @@ const samplePrompts: MyPrompt[] = [
     title: "かわいい動物ステッカー",
     note: "動物クリップアートのステッカー販売ページ用。",
     tags: ["かわいい", "動物", "ステッカー"],
-    favorite: true,
+    favorite: false,
   },
   {
     ...libraryPrompts[5],
@@ -2248,7 +2248,7 @@ function App() {
   const favorites = [
     ...myPrompts,
     ...mockupPrompts.filter((prompt) => !prompt.isTextStock),
-  ].filter((prompt) => prompt.favorite).slice(0, 4);
+  ].filter((prompt) => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
 
   const copyText = async (text: string, id?: string) => {
@@ -2633,7 +2633,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
           <SectionTitle title="お気に入り" />
           <div className="home-prompt-row">
             {favorites.length ? favorites.map((prompt: MyPrompt) => (
-              <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} favorite />
+              <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} />
             )) : <Empty text="お気に入りにしたプロンプトがここに表示されます。" />}
           </div>
         </section>
@@ -3759,10 +3759,9 @@ function FeatureIcon({ name }: { name: string }) {
   );
 }
 
-function HomePromptCard({ prompt, onCopy, favorite }: any) {
+function HomePromptCard({ prompt, onCopy }: any) {
   return (
     <article className="home-prompt-card">
-      <button className="heart-button" aria-label="お気に入り">{favorite ? "♥" : "♡"}</button>
       <img src={imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       <div className="home-prompt-body">
         <span className="mini-pill">{prompt.category}</span>
@@ -4292,7 +4291,7 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
   return (
     <article className="library-prompt-card">
       <button
-        className="prompt-favorite-button"
+        className="prompt-favorite-button image-prompt-heart"
         aria-label={prompt.favorite ? "お気に入りを解除" : "お気に入りに追加"}
         onClick={(event) => {
           event.stopPropagation();

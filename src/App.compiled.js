@@ -597,11 +597,11 @@ const defaultHomeSettings = {
     videos: true,
     mj: true,
     projects: true,
-    favorites: true,
     atelier: true,
     dashboard: true,
     quickActions: true,
-    featureCards: true
+    featureCards: true,
+    favorites: true
   },
   order: ["dashboard", "quickActions", "featureCards", "favorites", "atelier"]
 };
@@ -915,7 +915,7 @@ const samplePrompts = [{
   title: "かわいい動物ステッカー",
   note: "動物クリップアートのステッカー販売ページ用。",
   tags: ["かわいい", "動物", "ステッカー"],
-  favorite: true
+  favorite: false
 }, {
   ...libraryPrompts[5],
   id: "my-2",
@@ -2200,7 +2200,7 @@ function App() {
   };
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
-  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite).slice(0, 4);
+  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
@@ -2610,8 +2610,7 @@ function Home({
       }, favorites.length ? favorites.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
         key: prompt.id,
         prompt: prompt,
-        onCopy: copyText,
-        favorite: true
+        onCopy: copyText
       })) : /*#__PURE__*/React.createElement(Empty, {
         text: "お気に入りにしたプロンプトがここに表示されます。"
       })));
@@ -3990,15 +3989,11 @@ function FeatureIcon({
 }
 function HomePromptCard({
   prompt,
-  onCopy,
-  favorite
+  onCopy
 }) {
   return /*#__PURE__*/React.createElement("article", {
     className: "home-prompt-card"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "heart-button",
-    "aria-label": "お気に入り"
-  }, favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("img", {
+  }, /*#__PURE__*/React.createElement("img", {
     src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", {
@@ -4610,7 +4605,7 @@ function LibraryImagePromptCard({
   return /*#__PURE__*/React.createElement("article", {
     className: "library-prompt-card"
   }, /*#__PURE__*/React.createElement("button", {
-    className: "prompt-favorite-button",
+    className: "prompt-favorite-button image-prompt-heart",
     "aria-label": prompt.favorite ? "お気に入りを解除" : "お気に入りに追加",
     onClick: event => {
       event.stopPropagation();
