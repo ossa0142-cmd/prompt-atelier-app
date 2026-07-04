@@ -1869,15 +1869,9 @@ main {
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
-  opacity: 0;
-  transform: scale(0.92);
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.library-category-card:hover .category-reorder-button,
-.category-reorder-controls:focus-within .category-reorder-button {
   opacity: 1;
   transform: scale(1);
+  transition: opacity 160ms ease, transform 160ms ease;
 }
 
 .category-drag-handle:active {

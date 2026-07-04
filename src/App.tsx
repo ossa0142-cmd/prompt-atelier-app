@@ -3783,6 +3783,7 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
   const [armedCategoryId, setArmedCategoryId] = React.useState("");
   const categoryDragMovedRef = React.useRef(false);
+  const categoryMoveGuardRef = React.useRef("");
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
@@ -3891,18 +3892,25 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
       return items.filter((item) => item.id !== id);
     });
   };
+  const persistCategoryOrder = (items: MockupCategory[]) => {
+    const next = normalizeMockupCategoryOrder(items);
+    setBoardCategories(next);
+    try {
+      localStorage.setItem("prompt-atelier-mockup-categories-v2", JSON.stringify(next));
+    } catch (error) {
+      console.warn("[Prompt Atelier] カテゴリ順の保存に失敗しました", error);
+    }
+  };
   const reorderCategories = (sourceId: string, targetId: string) => {
     if (isCategorySearching || !sourceId || !targetId || sourceId === targetId) return;
-    setBoardCategories((items: MockupCategory[]) => {
-      const normalized = normalizeMockupCategoryOrder(items);
-      const fromIndex = normalized.findIndex((category) => category.id === sourceId);
-      const toIndex = normalized.findIndex((category) => category.id === targetId);
-      if (fromIndex < 0 || toIndex < 0) return normalized;
-      const next = [...normalized];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return normalizeMockupCategoryOrder(next);
-    });
+    const normalized = normalizeMockupCategoryOrder(orderedCategories);
+    const fromIndex = normalized.findIndex((category) => category.id === sourceId);
+    const toIndex = normalized.findIndex((category) => category.id === targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const next = [...normalized];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    persistCategoryOrder(next);
   };
   const categoryIdFromPoint = (x: number, y: number, sourceId: string) => {
     let closestId = "";
@@ -3923,16 +3931,22 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   };
   const reorderCategoryByDirection = (sourceId: string, direction: -1 | 1) => {
     if (!sourceId) return;
-    setBoardCategories((items: MockupCategory[]) => {
-      const normalized = normalizeMockupCategoryOrder(items);
-      const fromIndex = normalized.findIndex((category) => category.id === sourceId);
-      const toIndex = fromIndex + direction;
-      if (fromIndex < 0 || toIndex < 0 || toIndex >= normalized.length) return normalized;
-      const next = [...normalized];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return normalizeMockupCategoryOrder(next);
-    });
+    const normalized = normalizeMockupCategoryOrder(orderedCategories);
+    const fromIndex = normalized.findIndex((category) => category.id === sourceId);
+    const toIndex = fromIndex + direction;
+    if (fromIndex < 0 || toIndex < 0 || toIndex >= normalized.length) return;
+    const next = [...normalized];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    persistCategoryOrder(next);
+  };
+  const triggerCategoryMove = (event: React.MouseEvent | React.PointerEvent, categoryId: string, direction: -1 | 1) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const guardKey = `${categoryId}:${direction}:${Math.floor(Date.now() / 160)}`;
+    if (categoryMoveGuardRef.current === guardKey) return;
+    categoryMoveGuardRef.current = guardKey;
+    reorderCategoryByDirection(categoryId, direction);
   };
   const handleCategoryKeyDown = (event: React.KeyboardEvent, categoryId: string) => {
     if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
@@ -4036,10 +4050,11 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
                     className="category-reorder-button"
                     aria-label={`${category.title}を左へ移動`}
                     title="左へ移動"
+                    onMouseDown={(event) => triggerCategoryMove(event, category.id, -1)}
+                    onPointerDown={(event) => triggerCategoryMove(event, category.id, -1)}
                     onClick={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
-                      reorderCategoryByDirection(category.id, -1);
                     }}
                   >
                     ←
@@ -4061,10 +4076,11 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
                     className="category-reorder-button"
                     aria-label={`${category.title}を右へ移動`}
                     title="右へ移動"
+                    onMouseDown={(event) => triggerCategoryMove(event, category.id, 1)}
+                    onPointerDown={(event) => triggerCategoryMove(event, category.id, 1)}
                     onClick={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
-                      reorderCategoryByDirection(category.id, 1);
                     }}
                   >
                     →

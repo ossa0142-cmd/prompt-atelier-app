@@ -4028,6 +4028,7 @@ function Library({
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
   const [armedCategoryId, setArmedCategoryId] = React.useState("");
   const categoryDragMovedRef = React.useRef(false);
+  const categoryMoveGuardRef = React.useRef("");
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
@@ -4168,18 +4169,25 @@ function Library({
       return items.filter(item => item.id !== id);
     });
   };
+  const persistCategoryOrder = items => {
+    const next = normalizeMockupCategoryOrder(items);
+    setBoardCategories(next);
+    try {
+      localStorage.setItem("prompt-atelier-mockup-categories-v2", JSON.stringify(next));
+    } catch (error) {
+      console.warn("[Prompt Atelier] カテゴリ順の保存に失敗しました", error);
+    }
+  };
   const reorderCategories = (sourceId, targetId) => {
     if (isCategorySearching || !sourceId || !targetId || sourceId === targetId) return;
-    setBoardCategories(items => {
-      const normalized = normalizeMockupCategoryOrder(items);
-      const fromIndex = normalized.findIndex(category => category.id === sourceId);
-      const toIndex = normalized.findIndex(category => category.id === targetId);
-      if (fromIndex < 0 || toIndex < 0) return normalized;
-      const next = [...normalized];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return normalizeMockupCategoryOrder(next);
-    });
+    const normalized = normalizeMockupCategoryOrder(orderedCategories);
+    const fromIndex = normalized.findIndex(category => category.id === sourceId);
+    const toIndex = normalized.findIndex(category => category.id === targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const next = [...normalized];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    persistCategoryOrder(next);
   };
   const categoryIdFromPoint = (x, y, sourceId) => {
     let closestId = "";
@@ -4200,16 +4208,22 @@ function Library({
   };
   const reorderCategoryByDirection = (sourceId, direction) => {
     if (!sourceId) return;
-    setBoardCategories(items => {
-      const normalized = normalizeMockupCategoryOrder(items);
-      const fromIndex = normalized.findIndex(category => category.id === sourceId);
-      const toIndex = fromIndex + direction;
-      if (fromIndex < 0 || toIndex < 0 || toIndex >= normalized.length) return normalized;
-      const next = [...normalized];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return normalizeMockupCategoryOrder(next);
-    });
+    const normalized = normalizeMockupCategoryOrder(orderedCategories);
+    const fromIndex = normalized.findIndex(category => category.id === sourceId);
+    const toIndex = fromIndex + direction;
+    if (fromIndex < 0 || toIndex < 0 || toIndex >= normalized.length) return;
+    const next = [...normalized];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    persistCategoryOrder(next);
+  };
+  const triggerCategoryMove = (event, categoryId, direction) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const guardKey = `${categoryId}:${direction}:${Math.floor(Date.now() / 160)}`;
+    if (categoryMoveGuardRef.current === guardKey) return;
+    categoryMoveGuardRef.current = guardKey;
+    reorderCategoryByDirection(categoryId, direction);
   };
   const handleCategoryKeyDown = (event, categoryId) => {
     if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
@@ -4323,10 +4337,11 @@ function Library({
     className: "category-reorder-button",
     "aria-label": `${category.title}を左へ移動`,
     title: "左へ移動",
+    onMouseDown: event => triggerCategoryMove(event, category.id, -1),
+    onPointerDown: event => triggerCategoryMove(event, category.id, -1),
     onClick: event => {
       event.preventDefault();
       event.stopPropagation();
-      reorderCategoryByDirection(category.id, -1);
     }
   }, "←"), /*#__PURE__*/React.createElement("button", {
     type: "button",
@@ -4342,10 +4357,11 @@ function Library({
     className: "category-reorder-button",
     "aria-label": `${category.title}を右へ移動`,
     title: "右へ移動",
+    onMouseDown: event => triggerCategoryMove(event, category.id, 1),
+    onPointerDown: event => triggerCategoryMove(event, category.id, 1),
     onClick: event => {
       event.preventDefault();
       event.stopPropagation();
-      reorderCategoryByDirection(category.id, 1);
     }
   }, "→")), /*#__PURE__*/React.createElement(MenuButton, {
     onEdit: () => setEditingCategory(category),
