@@ -50,6 +50,133 @@ const homeStatsCardOptions = [{
   id: "achievement",
   label: "達成予定カードを表示"
 }];
+const defaultPageDisplaySettings = {
+  gallery: {
+    gap: "normal",
+    ratio: "square",
+    showHeart: true,
+    columns: "auto"
+  },
+  prompts: {
+    viewMode: "card",
+    showTags: true,
+    showMemo: true,
+    imageSize: "normal"
+  },
+  videoPrompts: {
+    viewMode: "card",
+    showTags: true,
+    showMemo: true,
+    thumbnailSize: "normal"
+  },
+  projects: {
+    sortBy: "deadline",
+    showCompleted: true,
+    showAlarms: true
+  },
+  mockups: {
+    categoryCardSize: "normal",
+    showDescription: true,
+    showCount: true
+  }
+};
+const densityOptions = [{
+  id: "comfortable",
+  label: "ゆったり",
+  description: "余白を広めにして、見た目の余裕を優先します。"
+}, {
+  id: "normal",
+  label: "標準",
+  description: "現在の見た目に近いバランスです。"
+}, {
+  id: "compact",
+  label: "コンパクト",
+  description: "カード間隔を少し詰めて一覧性を高めます。"
+}];
+const defaultCardStyle = {
+  radius: "medium",
+  shadow: "normal",
+  transparency: "solid",
+  border: "soft"
+};
+const defaultBackgroundStyle = {
+  type: "theme",
+  color: "#fffafc",
+  gradient: "milkPink",
+  pattern: "none",
+  image: "",
+  imageFit: "cover",
+  imagePosition: "center",
+  imageBlur: "none",
+  imageOpacity: "normal",
+  showDecorations: true
+};
+const backgroundColorOptions = [["#fffafc", "ミルクホワイト"], ["#f7efe4", "ベージュ"], ["#fff0f5", "淡いピンク"], ["#eef6ff", "淡いブルー"], ["#f4efff", "淡いラベンダー"], ["#effbf4", "淡いミント"]];
+const cardStyleOptions = {
+  radius: [["small", "控えめ"], ["medium", "標準"], ["large", "大きめ"], ["pillowy", "ぷっくり"]],
+  shadow: [["none", "なし"], ["soft", "弱め"], ["normal", "標準"], ["dreamy", "ふんわり"]],
+  transparency: [["solid", "なし"], ["soft", "薄め"], ["glass", "ガラス風"]],
+  border: [["none", "なし"], ["thin", "細線"], ["soft", "淡い線"], ["bold", "太い"], ["dashed", "点線"]]
+};
+const backgroundStyleOptions = {
+  type: [["theme", "テーマ標準"], ["solid", "単色"], ["gradient", "グラデーション"], ["pattern", "パターン"], ["image", "画像"]],
+  gradient: [["milkPink", "ミルクピンク"], ["peachBeige", "ピーチベージュ"], ["blueMist", "ブルーミスト"], ["lavenderMilk", "ラベンダーミルク"], ["mintCream", "ミントクリーム"], ["cafeLatte", "カフェラテ"]],
+  pattern: [["none", "なし"], ["dot", "ドット"], ["stripe", "細ストライプ"], ["grid", "グリッド"], ["paper", "紙テクスチャ風"]],
+  imageFit: [["contain", "全体を表示"], ["cover", "枠いっぱいに表示"]],
+  imagePosition: [["center", "中央"], ["top", "上"], ["bottom", "下"], ["left", "左"], ["right", "右"]],
+  imageBlur: [["none", "なし"], ["soft", "弱"], ["medium", "中"]],
+  imageOpacity: [["light", "薄い"], ["normal", "標準"], ["deep", "濃い"]]
+};
+const fontPresetOptions = [{
+  id: "simple",
+  label: "シンプル",
+  description: "読みやすさ優先の標準バランス。"
+}, {
+  id: "elegant",
+  label: "上品",
+  description: "細めで余白のある高級感。"
+}, {
+  id: "cute",
+  label: "かわいい",
+  description: "少し丸くやわらかい印象。"
+}, {
+  id: "korean",
+  label: "韓国風",
+  description: "カフェ風の細め文字と広い行間。"
+}, {
+  id: "handwritten",
+  label: "手書き風",
+  description: "見出しだけ少しラフに。"
+}, {
+  id: "cool",
+  label: "クール",
+  description: "すっきりシャープな印象。"
+}];
+const iconSetOptions = [{
+  id: "line",
+  label: "線画",
+  description: "細い線で軽い印象。"
+}, {
+  id: "soft",
+  label: "ぷっくり",
+  description: "丸くやわらかいアイコン。"
+}, {
+  id: "minimal",
+  label: "ミニマル",
+  description: "控えめで静かな表示。"
+}, {
+  id: "label",
+  label: "ラベル風",
+  description: "タグのような小さな見た目。"
+}, {
+  id: "pixel",
+  label: "ピクセル風",
+  description: "少し遊びのある表示。"
+}, {
+  id: "emoji",
+  label: "絵文字風",
+  description: "親しみやすい雰囲気。"
+}];
 const homeThemes = [{
   id: "cute",
   name: "キュート",
@@ -304,21 +431,24 @@ const defaultWorkTools = [{
   url: "https://www.midjourney.com/",
   iconText: "MJ",
   iconImage: "",
-  memo: "画像生成"
+  memo: "画像生成",
+  visible: true
 }, {
   id: "tool-pinterest",
   name: "Pinterest",
   url: "https://www.pinterest.com/",
   iconText: "P",
   iconImage: "",
-  memo: "参考画像"
+  memo: "参考画像",
+  visible: true
 }, {
   id: "tool-chatgpt",
   name: "ChatGPT",
   url: "https://chatgpt.com/",
   iconText: "GPT",
   iconImage: "",
-  memo: "文章づくり"
+  memo: "文章づくり",
+  visible: true
 }];
 const sampleAtelierImages = [];
 const defaultJournal = {
@@ -416,6 +546,21 @@ function normalizeVideoPrompt(item) {
     updatedAt: item?.updatedAt || item?.createdAt || ""
   };
 }
+const bannerSizes = ["small", "medium", "large"];
+const defaultBannerPositions = {
+  small: {
+    x: 50,
+    y: 50
+  },
+  medium: {
+    x: 50,
+    y: 50
+  },
+  large: {
+    x: 50,
+    y: 50
+  }
+};
 const defaultHomeSettings = {
   themeId: "cute",
   bannerImage: "",
@@ -425,7 +570,14 @@ const defaultHomeSettings = {
   bannerFit: "contain",
   bannerPositionX: 50,
   bannerPositionY: 50,
+  bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
+  displayDensity: "normal",
+  pageDisplaySettings: defaultPageDisplaySettings,
+  cardStyle: defaultCardStyle,
+  backgroundStyle: defaultBackgroundStyle,
+  fontPreset: "simple",
+  iconSet: "line",
   homeStatsCards: {
     mockups: true,
     prompts: true,
@@ -436,6 +588,7 @@ const defaultHomeSettings = {
   homeCharacter: {
     image: "",
     position: "right-bottom",
+    size: "medium",
     speechEnabled: true,
     messageMode: "auto",
     fixedMessage: "今日も制作がんばろう♡",
@@ -461,18 +614,93 @@ const normalizeHomeSettings = settings => {
     ...defaultHomeSettings.homeCharacter,
     ...(settings?.homeCharacter || {})
   };
+  const rawPageSettings = settings?.pageDisplaySettings || defaultHomeSettings.pageDisplaySettings;
+  const rawCardStyle = {
+    ...defaultCardStyle,
+    ...(settings?.cardStyle || {})
+  };
+  const rawBackgroundStyle = {
+    ...defaultBackgroundStyle,
+    ...(settings?.backgroundStyle || {})
+  };
   const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
+  const safeDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity) ? settings.displayDensity : "normal";
+  const safeFontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset) ? settings.fontPreset : "simple";
+  const safeIconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet) ? settings.iconSet : "line";
+  const safeCharacterSize = ["small", "medium", "large"].includes(rawCharacter.size) ? rawCharacter.size : "medium";
   const safePosition = value => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
+  const safeBannerSize = bannerSizes.includes(settings?.bannerSize) ? settings.bannerSize : "medium";
+  const legacyPosition = {
+    x: safePosition(settings?.bannerPositionX),
+    y: safePosition(settings?.bannerPositionY)
+  };
+  const rawBannerPositions = settings?.bannerPositions || {};
+  const bannerPositions = bannerSizes.reduce((positions, size) => {
+    const stored = rawBannerPositions?.[size] || {};
+    positions[size] = {
+      x: safePosition(stored.x ?? legacyPosition.x),
+      y: safePosition(stored.y ?? legacyPosition.y)
+    };
+    return positions;
+  }, {});
+  const activeBannerPosition = bannerPositions[safeBannerSize] || legacyPosition;
   const bannerImage = settings?.bannerImage || settings?.bannerImageUrl || "";
   return {
     ...defaultHomeSettings,
     ...settings,
     bannerImage,
     bannerImageUrl: settings?.bannerImageUrl || bannerImage,
-    bannerPositionX: safePosition(settings?.bannerPositionX),
-    bannerPositionY: safePosition(settings?.bannerPositionY),
+    bannerSize: safeBannerSize,
+    bannerPositionX: activeBannerPosition.x,
+    bannerPositionY: activeBannerPosition.y,
+    bannerPositions,
+    displayDensity: safeDensity,
+    pageDisplaySettings: {
+      gallery: {
+        ...defaultPageDisplaySettings.gallery,
+        ...rawPageSettings.gallery
+      },
+      prompts: {
+        ...defaultPageDisplaySettings.prompts,
+        ...rawPageSettings.prompts
+      },
+      videoPrompts: {
+        ...defaultPageDisplaySettings.videoPrompts,
+        ...rawPageSettings.videoPrompts
+      },
+      projects: {
+        ...defaultPageDisplaySettings.projects,
+        ...rawPageSettings.projects
+      },
+      mockups: {
+        ...defaultPageDisplaySettings.mockups,
+        ...rawPageSettings.mockups
+      }
+    },
+    cardStyle: {
+      radius: ["small", "medium", "large", "pillowy"].includes(rawCardStyle.radius) ? rawCardStyle.radius : "medium",
+      shadow: ["none", "soft", "normal", "dreamy"].includes(rawCardStyle.shadow) ? rawCardStyle.shadow : "normal",
+      transparency: ["solid", "soft", "glass"].includes(rawCardStyle.transparency) ? rawCardStyle.transparency : "solid",
+      border: ["none", "thin", "soft", "bold", "dashed"].includes(rawCardStyle.border) ? rawCardStyle.border : "soft"
+    },
+    backgroundStyle: {
+      ...rawBackgroundStyle,
+      type: ["theme", "solid", "gradient", "pattern", "image"].includes(rawBackgroundStyle.type) ? rawBackgroundStyle.type : "theme",
+      gradient: ["milkPink", "peachBeige", "blueMist", "lavenderMilk", "mintCream", "cafeLatte"].includes(rawBackgroundStyle.gradient) ? rawBackgroundStyle.gradient : "milkPink",
+      pattern: rawBackgroundStyle.pattern === "floral" ? "paper" : ["none", "dot", "stripe", "grid", "paper"].includes(rawBackgroundStyle.pattern) ? rawBackgroundStyle.pattern : "none",
+      imageFit: ["contain", "cover"].includes(rawBackgroundStyle.imageFit) ? rawBackgroundStyle.imageFit : "cover",
+      imagePosition: ["center", "top", "bottom", "left", "right"].includes(rawBackgroundStyle.imagePosition) ? rawBackgroundStyle.imagePosition : "center",
+      imageBlur: ["none", "soft", "medium"].includes(rawBackgroundStyle.imageBlur) ? rawBackgroundStyle.imageBlur : "none",
+      imageOpacity: ["light", "normal", "deep"].includes(rawBackgroundStyle.imageOpacity) ? rawBackgroundStyle.imageOpacity : "normal",
+      color: /^#[0-9a-f]{6}$/i.test(rawBackgroundStyle.color || "") ? rawBackgroundStyle.color : "#fffafc",
+      image: rawBackgroundStyle.image || "",
+      showDecorations: rawBackgroundStyle.showDecorations !== false
+    },
+    fontPreset: safeFontPreset,
+    iconSet: safeIconSet,
     homeCharacter: {
       ...rawCharacter,
+      size: safeCharacterSize,
       messageMode: safeMessageMode
     },
     homeStatsCards: {
@@ -772,18 +1000,39 @@ const blankProject = () => ({
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolean);
 const tagText = tags => tags.join(", ");
-const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
+const normalizeSearchText = value => String(value ?? "").normalize("NFKC").toLowerCase().replace(/[\u30a1-\u30f6]/g, char => String.fromCharCode(char.charCodeAt(0) - 0x60));
+const lowerIncludes = (source, query) => {
+  const sourceText = normalizeSearchText(source);
+  const tokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+  return tokens.length > 0 && tokens.every(token => sourceText.includes(token));
+};
+function searchableTextFromValue(value, depth = 0) {
+  if (value == null || depth > 4) return "";
+  if (typeof value === "string") {
+    if (/^data:image|^blob:/i.test(value)) return "";
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map(item => searchableTextFromValue(item, depth + 1)).join(" ");
+  if (typeof value === "object") {
+    return Object.entries(value).filter(([key]) => !/^(src|image|imageUrl|thumbnail|coverImage|coverImages|bannerImage|iconImage)$/i.test(key)).map(([, item]) => searchableTextFromValue(item, depth + 1)).join(" ");
+  }
+  return "";
+}
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
-const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
+const MOCKUP_CATEGORY_STORAGE_KEY = "prompt-atelier-mockup-categories-v2";
+const MOCKUP_PROMPT_STORAGE_KEY = "prompt-atelier-library-prompts-v5";
+const STORAGE_BACKUP_SUFFIX = "__backup";
+const SAMPLE_EXPORT_KEYS = [MOCKUP_CATEGORY_STORAGE_KEY, MOCKUP_PROMPT_STORAGE_KEY, "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
 const SAMPLE_DATA_STORAGE_MAP = {
-  libraryItems: "prompt-atelier-mockup-categories-v2",
-  mockupCategories: "prompt-atelier-mockup-categories-v2",
-  mockupItems: "prompt-atelier-library-prompts-v5",
-  mockupStocks: "prompt-atelier-library-prompts-v5",
+  libraryItems: MOCKUP_CATEGORY_STORAGE_KEY,
+  mockupCategories: MOCKUP_CATEGORY_STORAGE_KEY,
+  mockupItems: MOCKUP_PROMPT_STORAGE_KEY,
+  mockupStocks: MOCKUP_PROMPT_STORAGE_KEY,
   promptCards: "prompt-atelier-prompts-ja-v2",
   promptStocks: "prompt-atelier-prompts-ja-v2",
   videoPromptCards: "promptAtelierVideoPrompts",
@@ -797,6 +1046,9 @@ const SAMPLE_DATA_STORAGE_MAP = {
   customizeSettings: "promptAtelierHomeSettings",
   workTools: "promptAtelierWorkTools"
 };
+const MOCKUP_CATEGORY_RECOVERY_KEYS = [`${MOCKUP_CATEGORY_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`, "promptAtelierMockupCategories", "promptAtelierLibraryCategories", "promptAtelier_mockupCategories", "mockupCategories", "libraryItems", "prompt-atelier-library-categories-v2", "prompt-atelier-mockup-categories-v1"];
+const MOCKUP_PROMPT_RECOVERY_KEYS = [`${MOCKUP_PROMPT_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`, "promptAtelierMockupPrompts", "promptAtelierLibraryPrompts", "promptAtelier_mockupPrompts", "mockupItems", "mockupStocks", "libraryPrompts", "prompt-atelier-library-prompts-v4", "prompt-atelier-library-prompts-v3"];
+const BACKED_UP_STORAGE_KEYS = new Set([MOCKUP_CATEGORY_STORAGE_KEY, MOCKUP_PROMPT_STORAGE_KEY]);
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const IMAGE_DB_NAME = "PromptAtelierDB";
 const IMAGE_DB_VERSION = 1;
@@ -809,11 +1061,11 @@ const indexedDbIdFromRef = value => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = value => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles = {
   banner: {
-    maxSide: 1600,
-    quality: 0.95,
-    thumbnailSide: 960,
-    thumbnailQuality: 0.9,
-    keepOriginalMaxSide: 1600
+    maxSide: 3200,
+    quality: 0.98,
+    thumbnailSide: 1800,
+    thumbnailQuality: 0.95,
+    keepOriginalMaxSide: 3200
   },
   gallery: {
     maxSide: 1400,
@@ -828,10 +1080,10 @@ const imageQualityProfiles = {
     thumbnailQuality: 0.9
   },
   background: {
-    maxSide: 1400,
-    quality: 0.92,
-    thumbnailSide: 720,
-    thumbnailQuality: 0.9
+    maxSide: 1600,
+    quality: 0.88,
+    thumbnailSide: 760,
+    thumbnailQuality: 0.86
   },
   "video-thumbnail": {
     maxSide: 1200,
@@ -928,6 +1180,78 @@ function themeStyle(theme) {
     "--decorative-shape": decorativeMap[theme.id] || "color-mix(in srgb, var(--accent) 24%, transparent)",
     "--nav-bg": dark ? theme.vars.paper : "color-mix(in srgb, var(--paper) 88%, transparent)",
     "--nav-ink": theme.vars.ink
+  };
+}
+function customizeClassName(settings) {
+  const card = settings.cardStyle || defaultCardStyle;
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  return [`card-radius-${card.radius}`, `card-shadow-${card.shadow}`, `card-transparency-${card.transparency}`, `card-border-${card.border}`, `bg-type-${bg.type}`, `bg-pattern-${bg.pattern}`, bg.showDecorations === false ? "hide-bg-decorations" : "", `font-${settings.fontPreset || "simple"}`, `icon-set-${settings.iconSet || "line"}`].filter(Boolean).join(" ");
+}
+function customBackgroundLayers(settings) {
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  const gradients = {
+    milkPink: "linear-gradient(135deg, #fffafc 0%, #f8dce6 48%, #fff7ed 100%)",
+    peachBeige: "linear-gradient(135deg, #fff8ed 0%, #f4d3c1 48%, #efe4d4 100%)",
+    blueMist: "linear-gradient(135deg, #f8fbff 0%, #dcecff 54%, #eef5f7 100%)",
+    lavenderMilk: "linear-gradient(135deg, #fffafd 0%, #e8ddf4 48%, #f8f3ff 100%)",
+    mintCream: "linear-gradient(135deg, #fffdf7 0%, #d8efe5 48%, #f2fbf4 100%)",
+    cafeLatte: "linear-gradient(135deg, #fff8ef 0%, #ead8c3 48%, #c9ad93 100%)"
+  };
+  const patternLayers = {
+    none: "",
+    dot: "radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0 1.3px, transparent 1.8px)",
+    stripe: "repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent) 0 1px, transparent 1px 18px)",
+    grid: "linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)",
+    paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)"
+  };
+  if (bg.type === "solid") return `linear-gradient(${bg.color}, ${bg.color})`;
+  if (bg.type === "gradient") return gradients[bg.gradient] || gradients.milkPink;
+  if (bg.type === "pattern") {
+    const pattern = patternLayers[bg.pattern] || "";
+    return pattern ? `${pattern}, linear-gradient(var(--app-bg), var(--app-bg))` : "linear-gradient(var(--app-bg), var(--app-bg))";
+  }
+  if (bg.type === "image" && bg.image) {
+    const src = imageDisplaySrc(bg.image);
+    if (src) return `linear-gradient(color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent), color-mix(in srgb, var(--app-bg) ${bg.imageOpacity === "light" ? 76 : bg.imageOpacity === "deep" ? 36 : 58}%, transparent)), url("${src}")`;
+  }
+  return "none";
+}
+function customStyle(settings) {
+  const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  const bodyFonts = {
+    simple: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    elegant: '"Hiragino Mincho ProN", "Yu Mincho", "Times New Roman", "Hiragino Sans", serif',
+    cute: '"Hiragino Maru Gothic ProN", "Yu Gothic", "Avenir Next Rounded", system-ui, sans-serif',
+    korean: '"Apple SD Gothic Neo", "Hiragino Sans", "Yu Gothic", "Avenir Next", system-ui, sans-serif',
+    handwritten: '"Comic Sans MS", "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif',
+    cool: '"Avenir Next Condensed", "Avenir Next", "Helvetica Neue", Arial, sans-serif'
+  };
+  const headingFonts = {
+    ...bodyFonts,
+    handwritten: '"Comic Sans MS", "Hiragino Maru Gothic ProN", cursive'
+  };
+  const backgroundLayers = customBackgroundLayers(settings);
+  const backgroundPositionMap = {
+    center: "center",
+    top: "center top",
+    bottom: "center bottom",
+    left: "left center",
+    right: "right center"
+  };
+  return {
+    "--font-body": bodyFonts[settings.fontPreset || "simple"],
+    "--font-heading": headingFonts[settings.fontPreset || "simple"],
+    "--font-number": settings.fontPreset === "cool" ? '"Avenir Next", "Helvetica Neue", Arial, sans-serif' : settings.fontPreset === "elegant" ? '"Times New Roman", "Hiragino Mincho ProN", serif' : bodyFonts[settings.fontPreset || "simple"],
+    "--font-weight-heading": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "680" : settings.fontPreset === "cute" ? "900" : settings.fontPreset === "cool" ? "900" : "850",
+    "--font-weight-body": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "560" : settings.fontPreset === "cool" ? "720" : "650",
+    "--letter-spacing-heading": settings.fontPreset === "elegant" ? "0.07em" : settings.fontPreset === "korean" ? "0.055em" : settings.fontPreset === "cool" ? "-0.005em" : settings.fontPreset === "handwritten" ? "0.025em" : "0",
+    "--body-letter-spacing": settings.fontPreset === "elegant" || settings.fontPreset === "korean" ? "0.025em" : settings.fontPreset === "cool" ? "-0.004em" : "0",
+    "--body-line-height": settings.fontPreset === "korean" ? "1.88" : settings.fontPreset === "cute" ? "1.78" : settings.fontPreset === "cool" ? "1.52" : "1.68",
+    "--heading-size-scale": settings.fontPreset === "elegant" ? "1.08" : settings.fontPreset === "cute" ? "1.04" : settings.fontPreset === "cool" ? "1.02" : "1",
+    "--custom-background": backgroundLayers || "none",
+    "--custom-background-size": bg.type === "pattern" && bg.pattern === "grid" ? "34px 34px, auto" : bg.type === "pattern" && bg.pattern === "paper" ? "8px 8px, auto" : bg.type === "pattern" ? "54px 54px, auto" : bg.type === "image" ? `${bg.imageFit}, ${bg.imageFit}` : "auto",
+    "--custom-background-position": bg.type === "image" ? backgroundPositionMap[bg.imagePosition] : "center",
+    "--custom-background-blur": bg.imageBlur === "medium" ? "blur(5px)" : bg.imageBlur === "soft" ? "blur(2px)" : "none"
   };
 }
 function projectDueInfo(value) {
@@ -1033,6 +1357,22 @@ function homeBannerImageValue(settings) {
 function homeBannerSrc(settings) {
   const value = homeBannerImageValue(settings);
   return imageSrc(value) || imageThumbnail(value);
+}
+function homeBannerPosition(settings) {
+  const size = bannerSizes.includes(settings?.bannerSize) ? settings.bannerSize : "medium";
+  const position = settings?.bannerPositions?.[size];
+  return {
+    x: Number.isFinite(Number(position?.x)) ? Number(position?.x) : settings?.bannerPositionX ?? 50,
+    y: Number.isFinite(Number(position?.y)) ? Number(position?.y) : settings?.bannerPositionY ?? 50
+  };
+}
+function bannerImageStyle(position) {
+  const hasCustomPosition = Math.abs(position.x - 50) > 0 || Math.abs(position.y - 50) > 0;
+  return {
+    objectPosition: `${position.x}% ${position.y}%`,
+    transformOrigin: `${position.x}% ${position.y}%`,
+    transform: hasCustomPosition ? "scale(1.08)" : "scale(1)"
+  };
 }
 function getCoverImages(item) {
   const existing = Array.isArray(item?.coverImages) ? item.coverImages.filter(Boolean) : [];
@@ -1174,6 +1514,27 @@ function canvasDataUrl(image, maxSide, quality = 0.92, preserveTransparency = tr
   context.drawImage(image, 0, 0, width, height);
   const webp = canvas.toDataURL("image/webp", quality);
   const dataUrl = webp.startsWith("data:image/webp") ? webp : canvas.toDataURL(preserveTransparency ? "image/png" : "image/jpeg", quality);
+  return {
+    dataUrl,
+    width,
+    height,
+    mimeType: dataUrl.slice(5, dataUrl.indexOf(";"))
+  };
+}
+function canvasDataUrlWithMime(image, maxSide, mimeType, quality = 0.96) {
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const ratio = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+  const width = Math.max(1, Math.round(sourceWidth * ratio));
+  const height = Math.max(1, Math.round(sourceHeight * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("画像処理を開始できませんでした");
+  context.drawImage(image, 0, 0, width, height);
+  const safeMimeType = /image\/png/i.test(mimeType) ? "image/png" : /image\/jpe?g/i.test(mimeType) ? "image/jpeg" : "image/webp";
+  const dataUrl = safeMimeType === "image/png" ? canvas.toDataURL("image/png") : canvas.toDataURL(safeMimeType, quality);
   return {
     dataUrl,
     width,
@@ -1363,7 +1724,7 @@ async function optimizeBannerImage(file) {
     width: sourceWidth,
     height: sourceHeight,
     mimeType: file.type || "image/*"
-  } : canvasDataUrl(image, profile.maxSide, profile.quality, true);
+  } : canvasDataUrlWithMime(image, profile.maxSide, file.type || "image/webp", profile.quality);
   const thumbnail = canvasDataUrl(image, profile.thumbnailSide, profile.thumbnailQuality, true);
   const optimized = {
     id: uid(),
@@ -1434,6 +1795,39 @@ function saveImageToStorage(image) {
 function clipboardImageFiles(event) {
   return Array.from(event.clipboardData?.items || []).filter(item => item.kind === "file").map(item => item.getAsFile()).filter(file => Boolean(file) && isSupportedImageFile(file));
 }
+function readStoredArrayValue(key) {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) return parsed;
+    if (Array.isArray(parsed?.items)) return parsed.items;
+    if (Array.isArray(parsed?.cards)) return parsed.cards;
+    if (Array.isArray(parsed?.prompts)) return parsed.prompts;
+    if (Array.isArray(parsed?.categories)) return parsed.categories;
+    return [];
+  } catch {
+    return [];
+  }
+}
+function recoverStoredArray(keys, fallback) {
+  for (const key of keys) {
+    const recovered = readStoredArrayValue(key);
+    if (recovered.length > 0) return recovered;
+  }
+  return fallback;
+}
+function initialMockupCategories() {
+  return recoverStoredArray(MOCKUP_CATEGORY_RECOVERY_KEYS, defaultMockupCategories);
+}
+function initialMockupPrompts() {
+  return recoverStoredArray(MOCKUP_PROMPT_RECOVERY_KEYS, defaultLibraryBoardPrompts);
+}
+function backupStorageValueIfNeeded(key, value) {
+  if (!BACKED_UP_STORAGE_KEYS.has(key)) return;
+  if (!Array.isArray(value) || value.length === 0) return;
+  localStorage.setItem(`${key}${STORAGE_BACKUP_SUFFIX}`, JSON.stringify(value));
+}
 function useStoredState(key, fallback) {
   const hasStoredValueRef = React.useRef(false);
   const [value, setValue] = React.useState(() => {
@@ -1452,6 +1846,7 @@ function useStoredState(key, fallback) {
     try {
       if (!hasStoredValueRef.current && JSON.stringify(value) === JSON.stringify(fallback)) return;
       localStorage.setItem(key, JSON.stringify(value));
+      backupStorageValueIfNeeded(key, value);
       hasStoredValueRef.current = true;
     } catch (error) {
       console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
@@ -1630,7 +2025,14 @@ function sampleHomeSettings(value) {
     bannerFit: cleaned.bannerFit,
     bannerPositionX: cleaned.bannerPositionX,
     bannerPositionY: cleaned.bannerPositionY,
+    bannerPositions: cleaned.bannerPositions,
     workToolIconStyle: cleaned.workToolIconStyle,
+    displayDensity: cleaned.displayDensity,
+    pageDisplaySettings: cleaned.pageDisplaySettings,
+    cardStyle: cleaned.cardStyle,
+    backgroundStyle: cleaned.backgroundStyle,
+    fontPreset: cleaned.fontPreset,
+    iconSet: cleaned.iconSet,
     homeCharacter: cleaned.homeCharacter,
     homeStatsCards: cleaned.homeStatsCards,
     visible: cleaned.visible,
@@ -1638,8 +2040,8 @@ function sampleHomeSettings(value) {
   };
 }
 function createSampleSeedData() {
-  const mockupCategories = parseStorageValueForSample("prompt-atelier-mockup-categories-v2") || [];
-  const libraryPromptsValue = parseStorageValueForSample("prompt-atelier-library-prompts-v5") || [];
+  const mockupCategories = parseStorageValueForSample(MOCKUP_CATEGORY_STORAGE_KEY) || [];
+  const libraryPromptsValue = parseStorageValueForSample(MOCKUP_PROMPT_STORAGE_KEY) || [];
   const promptBookValue = parseStorageValueForSample("prompt-atelier-prompts-ja-v2") || [];
   const videoPromptsValue = parseStorageValueForSample("promptAtelierVideoPrompts") || [];
   const videoStocksValue = parseStorageValueForSample("promptAtelierVideoPromptStocks") || [];
@@ -1765,10 +2167,10 @@ function sampleSeedDataToStorage(seedData) {
     if (!values.length) return;
     storageData[key] = [...(storageData[key] || []), ...values];
   };
-  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
-  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
-  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
-  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
+  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
+  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
+  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
@@ -1788,6 +2190,29 @@ function sampleSeedDataToStorage(seedData) {
   append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
   return storageData;
 }
+function extractMockupRestoreData(seed) {
+  const data = seed?.data || seed || {};
+  const categories = Array.isArray(data.mockupCategories) ? data.mockupCategories : Array.isArray(data.libraryItems) ? data.libraryItems : [];
+  const prompts = [...(Array.isArray(data.mockupItems) ? data.mockupItems : []), ...(Array.isArray(data.mockupStocks) ? data.mockupStocks : [])];
+  if (!categories.length || !prompts.length) {
+    throw new Error("モックアップ復元データが見つかりませんでした");
+  }
+  return {
+    categories,
+    prompts
+  };
+}
+function restoreMockupStorageOnly(categories, prompts) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const currentCategories = localStorage.getItem(MOCKUP_CATEGORY_STORAGE_KEY);
+  const currentPrompts = localStorage.getItem(MOCKUP_PROMPT_STORAGE_KEY);
+  if (currentCategories !== null) localStorage.setItem(`${MOCKUP_CATEGORY_STORAGE_KEY}__before_restore_${stamp}`, currentCategories);
+  if (currentPrompts !== null) localStorage.setItem(`${MOCKUP_PROMPT_STORAGE_KEY}__before_restore_${stamp}`, currentPrompts);
+  localStorage.setItem(MOCKUP_CATEGORY_STORAGE_KEY, JSON.stringify(categories));
+  localStorage.setItem(MOCKUP_PROMPT_STORAGE_KEY, JSON.stringify(prompts));
+  backupStorageValueIfNeeded(MOCKUP_CATEGORY_STORAGE_KEY, categories);
+  backupStorageValueIfNeeded(MOCKUP_PROMPT_STORAGE_KEY, prompts);
+}
 async function loadSampleSeedIfNeeded() {
   try {
     const response = await fetch(SAMPLE_SEED_PATH, {
@@ -1805,6 +2230,7 @@ async function loadSampleSeedIfNeeded() {
       const merged = mergeSampleValue(existing, incoming, key, deletedIds);
       if (JSON.stringify(existing) !== JSON.stringify(merged)) {
         localStorage.setItem(key, JSON.stringify(merged));
+        backupStorageValueIfNeeded(key, merged);
         changed = true;
       }
     });
@@ -1830,6 +2256,7 @@ async function loadSampleSeedIfNeeded() {
 function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
+  const [mockupPrompts, setMockupPrompts] = useStoredState(MOCKUP_PROMPT_STORAGE_KEY, initialMockupPrompts());
   const [mjSettings, setMjSettings] = useStoredState("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -1841,14 +2268,25 @@ function App() {
   const [videoStocks, setVideoStocks] = useStoredState("promptAtelierVideoPromptStocks", []);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
+  const [installPrompt, setInstallPrompt] = React.useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = React.useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = React.useState(false);
+  const [searchTarget, setSearchTarget] = React.useState(null);
   const [, setImageCacheVersion] = React.useState(0);
   const homeSettings = normalizeHomeSettings(rawHomeSettings);
   const activeTheme = homeThemes.find(theme => theme.id === homeSettings.themeId) || homeThemes[0];
-  const appStyle = themeStyle(activeTheme);
-  const allPrompts = [...myPrompts, ...libraryPrompts];
+  const appStyle = {
+    ...themeStyle(activeTheme),
+    ...customStyle(homeSettings)
+  };
+  const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
+  React.useEffect(() => {
+    if (Array.isArray(mockupPrompts) && mockupPrompts.length > 0) return;
+    setMockupPrompts(initialMockupPrompts());
+  }, [mockupPrompts]);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
     if (id) setRecentIds(ids => [id, ...ids.filter(item => item !== id)].slice(0, 8));
@@ -1894,28 +2332,108 @@ function App() {
       cancelled = true;
     };
   }, []);
+  React.useEffect(() => {
+    const isStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
+    setIsStandaloneApp(isStandalone);
+    if (isStandalone) return;
+    const dismissedInSession = sessionStorage.getItem("promptAtelierPwaInstallDismissed") === "true";
+    if (!dismissedInSession) setShowInstallPrompt(true);
+    const existingPrompt = window.__promptAtelierInstallPrompt;
+    if (existingPrompt) setInstallPrompt(existingPrompt);
+    const handleBeforeInstallPrompt = event => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+    const handleInstallReady = () => {
+      const promptEvent = window.__promptAtelierInstallPrompt;
+      if (promptEvent) {
+        setInstallPrompt(promptEvent);
+        if (!sessionStorage.getItem("promptAtelierPwaInstallDismissed")) setShowInstallPrompt(true);
+      }
+    };
+    const handleInstalled = () => {
+      setInstallPrompt(null);
+      window.__promptAtelierInstallPrompt = null;
+      setShowInstallPrompt(false);
+      setIsStandaloneApp(true);
+      setToast("Prompt Atelierをアプリとして追加しました");
+      window.setTimeout(() => setToast(""), 1800);
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("promptatelierinstallready", handleInstallReady);
+    window.addEventListener("appinstalled", handleInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("promptatelierinstallready", handleInstallReady);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
+  const installPwa = async () => {
+    const promptEvent = installPrompt || window.__promptAtelierInstallPrompt;
+    if (!promptEvent) {
+      window.alert("Chromeでインストール条件を確認中、または条件を満たしていない可能性があります。\n\n本番公開URL（https）をChromeで開いているか確認してください。\nそれでも出ない場合は、Chrome右上の「︙」メニューを開き、「キャスト、保存、共有」から「ページをアプリとしてインストール」または「ショートカットを作成」を選んでください。");
+      return;
+    }
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice?.catch(() => null);
+    if (choice?.outcome === "accepted") {
+      setInstallPrompt(null);
+      window.__promptAtelierInstallPrompt = null;
+      setShowInstallPrompt(false);
+      return;
+    }
+    setShowInstallPrompt(true);
+  };
+  const dismissInstallPrompt = () => {
+    sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
+    setShowInstallPrompt(false);
+  };
+  const goToScreen = nextScreen => {
+    setSearchTarget(null);
+    setScreen(nextScreen);
+  };
+  const openSearchTarget = target => {
+    setSearchTarget(target);
+    setScreen(target.screen);
+  };
   return /*#__PURE__*/React.createElement("div", {
-    className: `app-shell ${themeClassName(activeTheme.id)}`,
+    className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`,
+    "data-density": homeSettings.displayDensity || "normal",
+    "data-card-radius": homeSettings.cardStyle.radius,
+    "data-card-shadow": homeSettings.cardStyle.shadow,
+    "data-card-transparency": homeSettings.cardStyle.transparency,
+    "data-card-border": homeSettings.cardStyle.border,
+    "data-background-type": homeSettings.backgroundStyle.type,
+    "data-font-preset": homeSettings.fontPreset || "simple",
+    "data-icon-set": homeSettings.iconSet || "line",
     style: appStyle
   }, /*#__PURE__*/React.createElement("header", {
     className: "app-header"
   }, /*#__PURE__*/React.createElement("button", {
     className: "brand",
-    onClick: () => setScreen("home"),
+    onClick: () => goToScreen("home"),
     "aria-label": "ホームへ"
   }, /*#__PURE__*/React.createElement("span", {
     className: "brand-mark"
   }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "AIイラストクリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["videos", "動画プロンプト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
     className: screen === id ? "active" : "",
-    onClick: () => setScreen(id)
-  }, label)))), /*#__PURE__*/React.createElement("main", null, screen === "home" && /*#__PURE__*/React.createElement(Home, {
-    setScreen: setScreen,
+    onClick: () => goToScreen(id)
+  }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && !isStandaloneApp && /*#__PURE__*/React.createElement(PwaInstallCard, {
+    canInstall: Boolean(installPrompt),
+    onInstall: installPwa,
+    onDismiss: dismissInstallPrompt
+  }), screen === "home" && /*#__PURE__*/React.createElement(Home, {
+    setScreen: goToScreen,
     recent: recentPrompts,
     favorites: favorites,
     projects: projects,
     myPrompts: myPrompts,
     mjSettings: mjSettings,
+    mockupPrompts: mockupPrompts,
+    videos: videos,
+    videoStocks: videoStocks,
+    openSearchTarget: openSearchTarget,
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
@@ -1923,52 +2441,221 @@ function App() {
   }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
-    setScreen: setScreen,
+    setScreen: goToScreen,
     workTools: workTools,
     setWorkTools: setWorkTools,
-    projects: projects
+    projects: projects,
+    myPrompts: myPrompts,
+    mjSettings: mjSettings,
+    mockupPrompts: mockupPrompts,
+    canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
+    isStandaloneApp: isStandaloneApp,
+    onInstallPwa: installPwa,
+    onOpenMockupRestore: () => goToScreen("restoreMockups")
+  }), screen === "restoreMockups" && /*#__PURE__*/React.createElement(MockupRestorePage, {
+    setScreen: goToScreen,
+    setMockupPrompts: setMockupPrompts
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: goToScreen,
+    homeSettings: homeSettings,
+    boardPrompts: mockupPrompts,
+    setBoardPrompts: setMockupPrompts,
+    searchTarget: searchTarget
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: goToScreen,
+    homeSettings: homeSettings,
+    searchTarget: searchTarget
   }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: goToScreen,
+    searchTarget: searchTarget
   }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
     projects: projects,
     setProjects: setProjects,
     prompts: myPrompts,
     settings: mjSettings,
+    homeSettings: homeSettings,
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: goToScreen,
+    searchTarget: searchTarget
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
     images: atelierImages,
     journal: journal,
     setJournal: setJournal,
     setGalleryImages: setGalleryImages,
-    setScreen: setScreen
+    setScreen: goToScreen
   }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
     images: galleryImages,
     setImages: setGalleryImages,
     setJournal: setJournal,
-    setScreen: setScreen
+    setScreen: goToScreen,
+    homeSettings: homeSettings,
+    searchTarget: searchTarget
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
-    setScreen: setScreen
+    setScreen: goToScreen,
+    homeSettings: homeSettings,
+    searchTarget: searchTarget
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
     className: "image-migration-overlay"
   }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
     className: "toast"
   }, toast));
+}
+function PwaInstallCard({
+  canInstall,
+  onInstall,
+  onDismiss
+}) {
+  return /*#__PURE__*/React.createElement("section", {
+    className: "pwa-install-card",
+    role: "dialog",
+    "aria-label": "Prompt Atelierをアプリとして追加"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "pwa-install-icon"
+  }, "PA"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelierをアプリとして追加"), /*#__PURE__*/React.createElement("p", null, "ChromeでDockに追加すると、アプリのように起動できます。保存済みデータはこのブラウザ内に残ります。"), !canInstall && /*#__PURE__*/React.createElement("small", {
+    className: "pwa-install-help"
+  }, "Chrome推奨です。ポップアップが出ない場合は、Chrome右上の「︙」メニューを開き、「キャスト、保存、共有」から「ページをアプリとしてインストール」または「ショートカットを作成」を選んでください。")), /*#__PURE__*/React.createElement("div", {
+    className: "pwa-install-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onInstall
+  }, canInstall ? "アプリとして追加" : "追加方法を見る"), /*#__PURE__*/React.createElement("button", {
+    onClick: onDismiss
+  }, "あとで")));
+}
+function PwaInstallInstructionsModal({
+  onClose
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "modal-backdrop",
+    role: "dialog",
+    "aria-modal": "true"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "modal pwa-instructions-modal"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "modal-head"
+  }, /*#__PURE__*/React.createElement("h3", null, "ChromeでDockに追加する方法"), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose
+  }, "閉じる")), /*#__PURE__*/React.createElement("p", {
+    className: "pwa-instruction-alert"
+  }, "この環境では自動追加画面を表示できません。Chromeのメニューから追加してください。"), /*#__PURE__*/React.createElement("ol", {
+    className: "pwa-instruction-steps"
+  }, /*#__PURE__*/React.createElement("li", null, "ChromeでPrompt Atelierを開きます"), /*#__PURE__*/React.createElement("li", null, "右上の「︙」メニューを開きます"), /*#__PURE__*/React.createElement("li", null, "「キャスト、保存、共有」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ページをアプリとしてインストール」または「ショートカットを作成」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ショートカットを作成」の場合は、「ウィンドウとして開く」にチェックを入れます"), /*#__PURE__*/React.createElement("li", null, "作成後、Dockに追加して使えます")), /*#__PURE__*/React.createElement("p", {
+    className: "pwa-instruction-note"
+  }, "Chromeのバージョンによっては、「キャスト、保存、共有」が「保存して共有」や「その他のツール」と表示される場合があります。"), /*#__PURE__*/React.createElement("div", {
+    className: "modal-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onClose
+  }, "わかりました"))));
+}
+function PwaCustomizeCard({
+  canInstallPwa,
+  isStandaloneApp,
+  onInstall,
+  onShowInstructions
+}) {
+  return /*#__PURE__*/React.createElement("section", {
+    className: "customize-card pwa-customize-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "アプリとして使う"), /*#__PURE__*/React.createElement("p", null, "ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。"), isStandaloneApp ? /*#__PURE__*/React.createElement("div", {
+    className: "pwa-status-pill"
+  }, "アプリモードで起動中です") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "pwa-customize-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onInstall
+  }, "アプリとして追加"), /*#__PURE__*/React.createElement("button", {
+    onClick: onShowInstructions
+  }, "追加方法を見る")), /*#__PURE__*/React.createElement("small", {
+    className: "pwa-install-help"
+  }, "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"), !canInstallPwa && /*#__PURE__*/React.createElement("small", {
+    className: "pwa-install-help"
+  }, "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。")));
+}
+function MockupRestorePage({
+  setScreen,
+  setMockupPrompts
+}) {
+  const fileInputRef = React.useRef(null);
+  const [status, setStatus] = React.useState("");
+  const [isRestoring, setIsRestoring] = React.useState(false);
+  const applyRestore = async loader => {
+    if (!window.confirm("モックアップライブラリのカテゴリと中のプロンプトだけを復元します。カスタマイズ設定は変更しません。実行しますか？")) return;
+    setIsRestoring(true);
+    setStatus("復元データを確認しています...");
+    try {
+      const {
+        categories,
+        prompts
+      } = await loader();
+      restoreMockupStorageOnly(categories, prompts);
+      setMockupPrompts(prompts);
+      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップを復元しました（カテゴリ${categories.length}件 / プロンプト${prompts.length}件）`);
+      window.location.reload();
+    } catch (error) {
+      console.error("[Prompt Atelier] モックアップ復元に失敗しました", error);
+      setStatus(error?.message || "モックアップ復元に失敗しました");
+      setIsRestoring(false);
+    }
+  };
+  const restoreFromBundledSeed = () => applyRestore(async () => {
+    const response = await fetch(SAMPLE_SEED_PATH, {
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error("同梱サンプルデータを読み込めませんでした");
+    return extractMockupRestoreData(await response.json());
+  });
+  const restoreFromSelectedFile = () => applyRestore(async () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) throw new Error("復元に使うJSONファイルを選んでください");
+    const text = await file.text();
+    return extractMockupRestoreData(JSON.parse(text));
+  });
+  return /*#__PURE__*/React.createElement("section", {
+    className: "page mockup-restore-page"
+  }, /*#__PURE__*/React.createElement(PageHead, {
+    title: "モックアップだけ復元",
+    action: /*#__PURE__*/React.createElement(PageBackButton, {
+      label: "カスタマイズへ戻る",
+      onClick: () => setScreen("customize")
+    })
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "customize-card mockup-restore-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "モックアップライブラリだけを戻します"), /*#__PURE__*/React.createElement("p", null, "カスタマイズ設定、バナー、ホームキャラクター、作業ツール、プロンプト帳、動画プロンプト帳は触らず、 モックアップライブラリのカテゴリと中のプロンプトだけを復元します。"), /*#__PURE__*/React.createElement("p", {
+    className: "backup-storage-note"
+  }, "復元前のモックアップデータは、念のためブラウザ内に退避してから復元します。"), /*#__PURE__*/React.createElement("div", {
+    className: "backup-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: restoreFromBundledSeed,
+    disabled: isRestoring
+  }, "同梱サンプルから復元")), /*#__PURE__*/React.createElement("div", {
+    className: "developer-tools"
+  }, /*#__PURE__*/React.createElement("strong", null, "手元のJSONから復元"), /*#__PURE__*/React.createElement("p", null, "添付の prompt-atelier-sample-seed.json を選ぶと、その中からモックアップだけを取り出して復元します。"), /*#__PURE__*/React.createElement("input", {
+    ref: fileInputRef,
+    type: "file",
+    accept: "application/json,.json"
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: restoreFromSelectedFile,
+    disabled: isRestoring
+  }, "選んだJSONから復元")), status && /*#__PURE__*/React.createElement("p", {
+    className: "restore-status"
+  }, status)), /*#__PURE__*/React.createElement("div", {
+    className: "page-bottom-actions"
+  }, /*#__PURE__*/React.createElement(PageBackButton, {
+    label: "カスタマイズへ戻る",
+    onClick: () => setScreen("customize")
+  })));
 }
 function Home({
   setScreen,
@@ -1977,6 +2664,10 @@ function Home({
   projects,
   myPrompts,
   mjSettings,
+  mockupPrompts,
+  videos,
+  videoStocks,
+  openSearchTarget,
   copyText,
   settings,
   workTools,
@@ -1985,10 +2676,80 @@ function Home({
   const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = id => settings.visible[id] !== false;
   const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
-  const searchable = [...myPrompts, ...projects].filter(item => {
-    const text = `${item.title || item.name} ${item.description || ""} ${item.note || ""} ${(item.tags || []).join(" ")}`;
-    return homeQuery && lowerIncludes(text, homeQuery);
-  }).slice(0, 3);
+  const searchItems = React.useMemo(() => [...entries.map(([screen, title, body]) => ({
+    id: `page-${screen}`,
+    title,
+    type: "ページ",
+    screen: screen,
+    query: title,
+    text: `${title} ${body}`
+  })), ...(mockupPrompts || []).map(item => ({
+    id: `mockup-${item.id}`,
+    itemId: item.id,
+    categoryId: item.categoryId,
+    title: item.title || item.category || "モックアップ",
+    type: item.isTextStock ? "モックアップストック" : "モックアップ",
+    screen: "library",
+    query: item.title || item.prompt || item.memo || "",
+    text: searchableTextFromValue(item)
+  })), ...(myPrompts || []).map(item => ({
+    id: `prompt-${item.id}`,
+    itemId: item.id,
+    title: item.title || "プロンプト",
+    type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
+    screen: "prompts",
+    query: item.title || item.prompt || item.memo || "",
+    text: searchableTextFromValue(item)
+  })), ...(mjSettings || []).map(item => ({
+    id: `mj-${item.id}`,
+    itemId: item.id,
+    title: item.title || "MJ設定",
+    type: "MJ設定",
+    screen: "mj",
+    query: item.title || item.memo || item.prompt || "",
+    text: `${searchableTextFromValue(item)} ${mjCommand(item)}`
+  })), ...(projects || []).map(item => ({
+    id: `project-${item.id}`,
+    itemId: item.id,
+    title: item.name || item.title || "プロジェクト",
+    type: "プロジェクト",
+    screen: "projects",
+    query: item.name || item.title || item.note || "",
+    text: searchableTextFromValue(item)
+  })), ...(videos || []).map(item => ({
+    id: `video-${item.id}`,
+    itemId: item.id,
+    title: item.title || "動画プロンプト",
+    type: "動画プロンプト帳",
+    screen: "videos",
+    query: item.title || item.prompt || item.memo || "",
+    text: searchableTextFromValue(item)
+  })), ...(videoStocks || []).map(item => ({
+    id: `video-stock-${item.id}`,
+    itemId: item.id,
+    title: item.title || "動画プロンプトストック",
+    type: "動画ストック",
+    screen: "videos",
+    query: item.title || item.prompt || item.memo || "",
+    text: searchableTextFromValue(item)
+  })), ...(atelierImages || []).map(item => ({
+    id: `gallery-${item.id}`,
+    itemId: item.id,
+    title: item.title || item.memo || "ギャラリー画像",
+    type: "ギャラリー",
+    screen: "gallery",
+    query: item.title || item.memo || "",
+    text: searchableTextFromValue(item)
+  })), ...(workTools || []).map(item => ({
+    id: `tool-${item.id}`,
+    itemId: item.id,
+    title: item.name || "作業ツール",
+    type: "作業ツール",
+    screen: "home",
+    query: item.name || item.memo || item.url || "",
+    text: searchableTextFromValue(item)
+  }))], [mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
+  const searchable = homeQuery.trim() ? searchItems.filter(item => lowerIncludes(item.text, homeQuery)).slice(0, 10) : [];
   const nextReminder = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => {
     const aInfo = projectDueInfo(a.dueDate || "");
     const bInfo = projectDueInfo(b.dueDate || "");
@@ -1996,29 +2757,33 @@ function Home({
     return Math.abs(aInfo.diff) - Math.abs(bInfo.diff);
   })[0];
   const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
+  const mockupCount = (mockupPrompts || []).length;
+  const promptCount = (myPrompts || []).length;
+  const mjCount = (mjSettings || []).length;
+  const projectCount = (projects || []).length;
   const dashboardItems = [{
     id: "mockups",
     screen: "library",
     title: "モックアップ",
-    value: `${Math.max(libraryPrompts.length, 128)}件`,
+    value: `${mockupCount}件`,
     icon: "mockup"
   }, {
     id: "prompts",
     screen: "prompts",
     title: "プロンプト帳",
-    value: `${Math.max(myPrompts.length, 42)}件`,
+    value: `${promptCount}件`,
     icon: "notebook"
   }, {
     id: "mjSettings",
     screen: "mj",
     title: "MJ設定",
-    value: `${Math.max(mjSettings.length, 18)}件`,
+    value: `${mjCount}件`,
     icon: "magic"
   }, {
     id: "projects",
     screen: "projects",
     title: "プロジェクト",
-    value: `${Math.min(projects.length, 30)}件`,
+    value: `${projectCount}件`,
     icon: "folder"
   }, {
     id: "achievement",
@@ -2029,7 +2794,7 @@ function Home({
     note: nextReminder?.name || ""
   }];
   const visibleDashboardItems = dashboardItems.filter(item => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false);
-  const normalizedTools = workTools.slice(0, 10);
+  const normalizedTools = workTools.filter(tool => tool.visible !== false).slice(0, 10);
   const renderSection = sectionId => {
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
@@ -2044,7 +2809,8 @@ function Home({
         key: `${item.title}-${item.icon}`,
         onClick: () => setScreen(item.screen)
       }, /*#__PURE__*/React.createElement("span", {
-        className: "stat-icon"
+        className: "stat-icon",
+        "data-icon": item.icon
       }, /*#__PURE__*/React.createElement(FeatureIcon, {
         name: item.icon
       })), /*#__PURE__*/React.createElement("span", {
@@ -2077,13 +2843,13 @@ function Home({
       }, /*#__PURE__*/React.createElement("span", null, "⌕"), /*#__PURE__*/React.createElement("input", {
         value: homeQuery,
         onChange: e => setHomeQuery(e.target.value),
-        placeholder: "プロンプトやプロジェクトを検索..."
+        placeholder: "入力した文字をまとめて検索..."
       })), homeQuery && /*#__PURE__*/React.createElement("div", {
         className: "home-search-results"
       }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
         key: item.id,
-        onClick: () => setScreen(item.name ? "projects" : "prompts")
-      }, item.title || item.name)) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
+        onClick: () => openSearchTarget(item)
+      }, /*#__PURE__*/React.createElement("span", null, item.title), /*#__PURE__*/React.createElement("small", null, item.type))) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
     }
     if (sectionId === "featureCards") {
       const visibleEntries = entries.filter(([id]) => isVisible(id));
@@ -2100,7 +2866,8 @@ function Home({
       }, "✦"), /*#__PURE__*/React.createElement("span", {
         className: "feature-washi"
       }), /*#__PURE__*/React.createElement("span", {
-        className: "feature-icon"
+        className: "feature-icon",
+        "data-icon": icon
       }, /*#__PURE__*/React.createElement(FeatureIcon, {
         name: icon
       })), /*#__PURE__*/React.createElement("span", {
@@ -2154,6 +2921,7 @@ function Home({
     return null;
   };
   const bannerSrc = homeBannerSrc(settings);
+  const bannerPosition = homeBannerPosition(settings);
   return /*#__PURE__*/React.createElement("section", {
     className: "page home-page"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2163,9 +2931,7 @@ function Home({
   }, bannerSrc ? /*#__PURE__*/React.createElement("img", {
     src: bannerSrc,
     alt: "",
-    style: {
-      objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%`
-    }
+    style: bannerImageStyle(bannerPosition)
   }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)), /*#__PURE__*/React.createElement(HomeCharacter, {
     settings: settings.homeCharacter,
     projects: projects,
@@ -2225,8 +2991,9 @@ function HomeCharacter({
 }) {
   if (!settings?.image || settings.position === "hidden") return null;
   const message = characterMessage(settings, projects, prompts);
+  const size = ["small", "medium", "large"].includes(settings.size) ? settings.size : "medium";
   return /*#__PURE__*/React.createElement("aside", {
-    className: `home-character ${settings.position}`,
+    className: `home-character ${settings.position} character-size-${size}`,
     "aria-label": "アトリエキャラクター"
   }, settings.speechEnabled && /*#__PURE__*/React.createElement(CharacterSpeechBubble, {
     message: message
@@ -2312,7 +3079,18 @@ function HomeCharacterSettingsPanel({
     value: "left-bottom"
   }, "左下"), /*#__PURE__*/React.createElement("option", {
     value: "hidden"
-  }, "非表示"))), /*#__PURE__*/React.createElement("label", {
+  }, "非表示"))), /*#__PURE__*/React.createElement("label", null, "表示サイズ", /*#__PURE__*/React.createElement("select", {
+    value: character.size || "medium",
+    onChange: event => updateCharacter({
+      size: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "small"
+  }, "小"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "中"), /*#__PURE__*/React.createElement("option", {
+    value: "large"
+  }, "大"))), /*#__PURE__*/React.createElement("label", {
     className: "switch-row"
   }, /*#__PURE__*/React.createElement("span", null, "吹き出し表示"), /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
@@ -2356,6 +3134,7 @@ function WorkToolEditor({
   onSave
 }) {
   const [draft, setDraft] = React.useState({
+    visible: true,
     ...tool
   });
   const update = (key, value) => setDraft({
@@ -2395,7 +3174,13 @@ function WorkToolEditor({
     value: draft.memo || "",
     onChange: event => update("memo", event.target.value),
     placeholder: "メモ（任意）"
-  }), /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "ホームに表示する"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: draft.visible !== false,
+    onChange: event => update("visible", event.target.checked)
+  })), /*#__PURE__*/React.createElement("div", {
     className: "quick-link-editor-actions"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onClose
@@ -2410,9 +3195,17 @@ function HomeCustomize({
   setScreen,
   workTools,
   setWorkTools,
-  projects
+  projects,
+  myPrompts,
+  mjSettings,
+  mockupPrompts,
+  canInstallPwa,
+  isStandaloneApp,
+  onInstallPwa,
+  onOpenMockupRestore
 }) {
   const [editingTool, setEditingTool] = React.useState(null);
+  const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
   const backupInputRef = React.useRef(null);
   const bannerDragRef = React.useRef(null);
   const settingsRef = React.useRef(settings);
@@ -2440,17 +3233,63 @@ function HomeCustomize({
   };
   const updateBannerPosition = (x, y, persist = false) => updateSettings({
     bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
-    bannerPositionY: Math.min(100, Math.max(0, Math.round(y)))
+    bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
+    bannerPositions: {
+      ...defaultBannerPositions,
+      ...(settingsRef.current.bannerPositions || {}),
+      [settingsRef.current.bannerSize || "medium"]: {
+        x: Math.min(100, Math.max(0, Math.round(x))),
+        y: Math.min(100, Math.max(0, Math.round(y)))
+      }
+    }
   }, persist);
+  const selectBannerSize = size => {
+    const current = settingsRef.current;
+    const position = current.bannerPositions?.[size] || defaultBannerPositions[size];
+    updateSettings({
+      bannerSize: size,
+      bannerPositionX: position.x,
+      bannerPositionY: position.y
+    }, true);
+  };
+  const updateCardStyle = patch => updateSettings({
+    cardStyle: {
+      ...defaultCardStyle,
+      ...(settingsRef.current.cardStyle || {}),
+      ...patch
+    }
+  });
+  const updateBackgroundStyle = patch => updateSettings({
+    backgroundStyle: {
+      ...defaultBackgroundStyle,
+      ...(settingsRef.current.backgroundStyle || {}),
+      ...patch
+    }
+  });
+  const importCustomBackground = async file => {
+    if (!file) return;
+    try {
+      const image = saveImageToStorage(await optimizeImage(file, "background"));
+      updateBackgroundStyle({
+        image: image.src,
+        type: "image"
+      });
+      scheduleStorageWarningCheck();
+    } catch (error) {
+      console.error("[Prompt Atelier] 背景画像の追加に失敗しました", error);
+      window.alert("背景画像を追加できませんでした。jpg / png / webp を選んでください。");
+    }
+  };
   const startBannerDrag = event => {
-    if (!homeBannerImageValue(settings) || (settings.bannerFit || "contain") !== "cover") return;
+    const currentSettings = settingsRef.current;
+    if (!homeBannerImageValue(currentSettings)) return;
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     bannerDragRef.current = {
       startX: event.clientX,
       startY: event.clientY,
-      x: settings.bannerPositionX ?? 50,
-      y: settings.bannerPositionY ?? 50,
+      x: homeBannerPosition(currentSettings).x,
+      y: homeBannerPosition(currentSettings).y,
       width: bounds.width || 1,
       height: bounds.height || 1
     };
@@ -2458,12 +3297,14 @@ function HomeCustomize({
   };
   const bannerImageValue = homeBannerImageValue(settings);
   const bannerSrc = homeBannerSrc(settings);
+  const bannerPosition = homeBannerPosition(settings);
   const moveBannerDrag = event => {
     const drag = bannerDragRef.current;
     if (!drag) return;
     event.preventDefault();
-    const nextX = drag.x + (event.clientX - drag.startX) / drag.width * 100;
-    const nextY = drag.y + (event.clientY - drag.startY) / drag.height * 100;
+    const nextX = drag.x - (event.clientX - drag.startX) / drag.width * 100;
+    const deltaY = (event.clientY - drag.startY) / drag.height * 100;
+    const nextY = (settingsRef.current.bannerSize || "medium") === "large" ? drag.y + deltaY : drag.y - deltaY;
     updateBannerPosition(nextX, nextY);
   };
   const endBannerDrag = () => {
@@ -2501,7 +3342,48 @@ function HomeCustomize({
       window.alert("バックアップファイルを読み込めませんでした。");
     }
   };
-  const normalizedTools = workTools.slice(0, 10);
+  const pageSettings = settings.pageDisplaySettings || defaultPageDisplaySettings;
+  const updatePageDisplay = (page, patch) => {
+    const current = settingsRef.current.pageDisplaySettings || defaultPageDisplaySettings;
+    updateSettings({
+      pageDisplaySettings: {
+        ...defaultPageDisplaySettings,
+        ...current,
+        [page]: {
+          ...defaultPageDisplaySettings[page],
+          ...current[page],
+          ...patch
+        }
+      }
+    });
+  };
+  const normalizedTools = workTools.map(tool => ({
+    visible: true,
+    ...tool
+  })).slice(0, 10);
+  const previewDashboardItems = [{
+    id: "mockups",
+    title: "Mockup",
+    value: String((mockupPrompts || []).length),
+    icon: "mockup"
+  }, {
+    id: "prompts",
+    title: "Prompt",
+    value: String((myPrompts || []).length),
+    icon: "notebook"
+  }, {
+    id: "mjSettings",
+    title: "MJ",
+    value: String((mjSettings || []).length),
+    icon: "magic"
+  }, {
+    id: "projects",
+    title: "Project",
+    value: String((projects || []).length),
+    icon: "folder"
+  }].filter(item => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false).slice(0, 4);
+  const previewTools = normalizedTools.filter(tool => tool.visible !== false).slice(0, 4);
+  const previewFeatureEntries = [["library", "Mockup", "mockup"], ["prompts", "Prompt", "notebook"], ["videos", "Video", "video"], ["mj", "MJ", "magic"]].filter(([id]) => settings.visible[id] !== false).slice(0, 4);
   const saveWorkTool = tool => {
     const rawUrl = tool.url.trim();
     const safeUrl = rawUrl ? /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}` : "https://";
@@ -2512,10 +3394,18 @@ function HomeCustomize({
       url: safeUrl,
       iconText: tool.iconText || (tool.name || "TL").slice(0, 3).toUpperCase(),
       iconImage: tool.iconImage || "",
-      memo: tool.memo || ""
+      memo: tool.memo || "",
+      visible: tool.visible !== false,
+      color: tool.color || ""
     };
     setWorkTools(items => tool.id ? items.map(item => item.id === tool.id ? next : item).slice(0, 10) : [...items, next].slice(0, 10));
     setEditingTool(null);
+  };
+  const toggleWorkToolVisible = (id, visible) => {
+    setWorkTools(items => items.map(item => item.id === id ? {
+      ...item,
+      visible
+    } : item));
   };
   const moveWorkTool = (id, direction) => {
     setWorkTools(items => {
@@ -2536,7 +3426,19 @@ function HomeCustomize({
     }
   };
   const activeTheme = homeThemes.find(theme => theme.id === settings.themeId) || homeThemes[0];
-  const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
+  const previewStyle = {
+    ...themeStyle(activeTheme),
+    ...customStyle(settings)
+  };
+  const previewClassName = customizeClassName(settings);
+  const bannerCanDrag = Boolean(bannerImageValue);
+  const handleCustomizeInstallPwa = () => {
+    if (canInstallPwa) {
+      onInstallPwa();
+      return;
+    }
+    setShowPwaInstructions(true);
+  };
   return /*#__PURE__*/React.createElement("section", {
     className: "page customize-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -2550,7 +3452,24 @@ function HomeCustomize({
   }, /*#__PURE__*/React.createElement("div", {
     className: "customize-settings"
   }, /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+    className: "customize-card restore-shortcut-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "モックアップ復元"), /*#__PURE__*/React.createElement("p", null, "モックアップライブラリのカテゴリと中のプロンプトだけを戻せます。 カスタマイズ設定、バナー、ホームキャラクター、プロンプト帳は変更しません。"), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onOpenMockupRestore
+  }, "モックアップだけ復元する")), /*#__PURE__*/React.createElement("details", {
+    className: "customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "データ管理・アプリ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement(PwaCustomizeCard, {
+    canInstallPwa: canInstallPwa,
+    isStandaloneApp: isStandaloneApp,
+    onInstall: handleCustomizeInstallPwa,
+    onShowInstructions: () => setShowPwaInstructions(true)
+  }))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion",
+    open: true
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "テーマ・基本デザイン"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
   }, /*#__PURE__*/React.createElement("h3", null, "テーマ"), /*#__PURE__*/React.createElement("p", null, "ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。"), /*#__PURE__*/React.createElement("div", {
     className: "theme-grid"
   }, homeThemes.map(theme => /*#__PURE__*/React.createElement("button", {
@@ -2564,11 +3483,13 @@ function HomeCustomize({
     style: {
       background: color
     }
-  }))))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  })))))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "バナー設定"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
   }, /*#__PURE__*/React.createElement("h3", null, "バナー"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する横長画像を設定できます。"), /*#__PURE__*/React.createElement("div", {
     className: "banner-size-guide"
-  }, /*#__PURE__*/React.createElement("strong", null, "バナー画像の推奨サイズ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "大バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 600px / 2:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "中バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 400px / 3:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "小バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 200px / 6:1"))), /*#__PURE__*/React.createElement("p", null, "推奨サイズに近い画像を使用すると、トリミングや表示崩れが少なくなります。")), /*#__PURE__*/React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("strong", null, "バナー画像の推奨サイズ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "大バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 1200px / 2:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "中バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 800px / 3:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "小バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 400px / 6:1"))), /*#__PURE__*/React.createElement("p", null, "Macの高精細画面でもくっきり見せるため、横幅2400px前後の画像がおすすめです。")), /*#__PURE__*/React.createElement("label", {
     className: "switch-row"
   }, /*#__PURE__*/React.createElement("span", null, "バナー表示"), /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
@@ -2586,18 +3507,17 @@ function HomeCustomize({
   }), /*#__PURE__*/React.createElement("input", {
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
-    onChange: event => readImage(event, bannerImage => updateSettings({
-      bannerImage,
-      bannerImageUrl: bannerImage
-    }), "banner")
-  }), /*#__PURE__*/React.createElement("div", {
+    onChange: event => readBannerImage(event, bannerImage => updateSettings({
+      bannerImage
+    }))
+  }), /*#__PURE__*/React.createElement("small", {
+    className: "banner-quality-note"
+  }, "高画質設定を反映するには、バナー画像を再アップロードしてください。"), /*#__PURE__*/React.createElement("div", {
     className: "inline-buttons"
   }, ["small", "medium", "large"].map(size => /*#__PURE__*/React.createElement("button", {
     key: size,
     className: settings.bannerSize === size ? "active-soft" : "",
-    onClick: () => updateSettings({
-      bannerSize: size
-    })
+    onClick: () => selectBannerSize(size)
   }, size === "small" ? "小" : size === "medium" ? "中" : "大")), /*#__PURE__*/React.createElement("button", {
     onClick: () => updateSettings({
       bannerImage: "",
@@ -2617,13 +3537,21 @@ function HomeCustomize({
     onClick: () => updateSettings({
       bannerFit: "cover"
     })
-  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。"))), /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
+  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。")))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ホーム表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
     settings: settings,
     updateSettings: updateSettings,
     projects: projects
-  }), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "作業ツール"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール設定"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
     className: "icon-style-choices"
   }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"], ["vivid", "ビビッド"], ["cute", "キュート"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
     key: id,
@@ -2641,7 +3569,13 @@ function HomeCustomize({
   }, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
     src: imageThumbnail(tool.iconImage),
     alt: ""
-  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, tool.name), /*#__PURE__*/React.createElement("small", null, tool.url)), /*#__PURE__*/React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, tool.name), /*#__PURE__*/React.createElement("small", null, tool.url)), /*#__PURE__*/React.createElement("label", {
+    className: "work-tool-visible-toggle"
+  }, /*#__PURE__*/React.createElement("span", null, "表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: tool.visible !== false,
+    onChange: event => toggleWorkToolVisible(tool.id, event.target.checked)
+  })), /*#__PURE__*/React.createElement("div", {
     className: "work-tool-edit-actions"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setEditingTool(tool)
@@ -2662,7 +3596,8 @@ function HomeCustomize({
       url: "",
       iconText: "",
       iconImage: "",
-      memo: ""
+      memo: "",
+      visible: true
     })
   }, "＋ 作業ツールを追加") : /*#__PURE__*/React.createElement("p", {
     className: "limit-message"
@@ -2670,8 +3605,390 @@ function HomeCustomize({
     tool: editingTool,
     onClose: () => setEditingTool(null),
     onSave: saveWorkTool
-  })), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  })))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "カード表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "カード密度"), /*#__PURE__*/React.createElement("p", null, "ホームや各一覧ページのカード間隔を調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "density-choice-grid"
+  }, densityOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: settings.displayDensity === item.id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      displayDensity: item.id
+    })
+  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "カード質感設定"), /*#__PURE__*/React.createElement("p", null, "カードの角丸・影・透明感・枠線を調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "style-control-grid"
+  }, /*#__PURE__*/React.createElement("label", null, "角丸", /*#__PURE__*/React.createElement("select", {
+    value: settings.cardStyle.radius,
+    onChange: event => updateCardStyle({
+      radius: event.target.value
+    })
+  }, cardStyleOptions.radius.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "影", /*#__PURE__*/React.createElement("select", {
+    value: settings.cardStyle.shadow,
+    onChange: event => updateCardStyle({
+      shadow: event.target.value
+    })
+  }, cardStyleOptions.shadow.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "透明感", /*#__PURE__*/React.createElement("select", {
+    value: settings.cardStyle.transparency,
+    onChange: event => updateCardStyle({
+      transparency: event.target.value
+    })
+  }, cardStyleOptions.transparency.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "枠線", /*#__PURE__*/React.createElement("select", {
+    value: settings.cardStyle.border,
+    onChange: event => updateCardStyle({
+      border: event.target.value
+    })
+  }, cardStyleOptions.border.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "背景"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("h3", null, "背景カスタム"), /*#__PURE__*/React.createElement("p", null, "ツール全体の背景の雰囲気を調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "style-control-grid"
+  }, /*#__PURE__*/React.createElement("label", null, "背景タイプ", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.type,
+    onChange: event => updateBackgroundStyle({
+      type: event.target.value
+    })
+  }, backgroundStyleOptions.type.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景カラー", /*#__PURE__*/React.createElement("input", {
+    type: "color",
+    value: settings.backgroundStyle.color,
+    onChange: event => updateBackgroundStyle({
+      color: event.target.value,
+      type: "solid"
+    })
+  })), /*#__PURE__*/React.createElement("label", null, "グラデーション", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.gradient,
+    onChange: event => updateBackgroundStyle({
+      gradient: event.target.value,
+      type: "gradient"
+    })
+  }, backgroundStyleOptions.gradient.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景パターン", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.pattern,
+    onChange: event => updateBackgroundStyle({
+      pattern: event.target.value,
+      type: "pattern"
+    })
+  }, backgroundStyleOptions.pattern.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label))))), /*#__PURE__*/React.createElement("div", {
+    className: "preset-color-row"
+  }, backgroundColorOptions.map(([color, label]) => /*#__PURE__*/React.createElement("button", {
+    key: color,
+    type: "button",
+    onClick: () => updateBackgroundStyle({
+      color,
+      type: "solid"
+    })
+  }, /*#__PURE__*/React.createElement("i", {
+    style: {
+      background: color
+    }
+  }), /*#__PURE__*/React.createElement("span", null, label)))), /*#__PURE__*/React.createElement("div", {
+    className: "background-image-controls"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/png,image/jpeg,image/webp",
+    onChange: event => {
+      importCustomBackground(event.currentTarget.files?.[0]);
+      event.currentTarget.value = "";
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "style-control-grid"
+  }, /*#__PURE__*/React.createElement("label", null, "画像表示", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.imageFit,
+    onChange: event => updateBackgroundStyle({
+      imageFit: event.target.value
+    })
+  }, backgroundStyleOptions.imageFit.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "画像位置", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.imagePosition,
+    onChange: event => updateBackgroundStyle({
+      imagePosition: event.target.value
+    })
+  }, backgroundStyleOptions.imagePosition.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "ぼかし", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.imageBlur,
+    onChange: event => updateBackgroundStyle({
+      imageBlur: event.target.value
+    })
+  }, backgroundStyleOptions.imageBlur.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景の濃さ", /*#__PURE__*/React.createElement("select", {
+    value: settings.backgroundStyle.imageOpacity,
+    onChange: event => updateBackgroundStyle({
+      imageOpacity: event.target.value
+    })
+  }, backgroundStyleOptions.imageOpacity.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+    key: id,
+    value: id
+  }, label))))), /*#__PURE__*/React.createElement("div", {
+    className: "inline-buttons"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => updateBackgroundStyle({
+      image: "",
+      type: "theme"
+    })
+  }, "背景画像を削除"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "背景装飾を表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: settings.backgroundStyle.showDecorations !== false,
+    onChange: event => updateBackgroundStyle({
+      showDecorations: event.target.checked
+    })
+  })))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "フォント・アイコン"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "フォント雰囲気"), /*#__PURE__*/React.createElement("p", null, "見出しや本文の雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "preset-card-grid"
+  }, fontPresetOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: settings.fontPreset === item.id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      fontPreset: item.id
+    })
+  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "アイコンセット"), /*#__PURE__*/React.createElement("p", null, "メニューやカードに使うアイコンの雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "preset-card-grid"
+  }, iconSetOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: settings.iconSet === item.id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      iconSet: item.id
+    })
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `icon-set-sample icon-set-sample-${item.id}`
+  }, "✦"), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ページ別表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card page-display-settings customize-nested-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "ページごとの表示設定"), /*#__PURE__*/React.createElement("p", null, "ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。"), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-grid"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "ギャラリー"), /*#__PURE__*/React.createElement("label", null, "余白", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.gallery.gap,
+    onChange: event => updatePageDisplay("gallery", {
+      gap: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "narrow"
+  }, "狭め"), /*#__PURE__*/React.createElement("option", {
+    value: "normal"
+  }, "標準"), /*#__PURE__*/React.createElement("option", {
+    value: "wide"
+  }, "広め"))), /*#__PURE__*/React.createElement("label", null, "画像比率", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.gallery.ratio,
+    onChange: event => updatePageDisplay("gallery", {
+      ratio: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "square"
+  }, "正方形"), /*#__PURE__*/React.createElement("option", {
+    value: "portrait"
+  }, "縦長"), /*#__PURE__*/React.createElement("option", {
+    value: "landscape"
+  }, "横長"), /*#__PURE__*/React.createElement("option", {
+    value: "original"
+  }, "元画像に近く"))), /*#__PURE__*/React.createElement("label", null, "列数", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.gallery.columns,
+    onChange: event => updatePageDisplay("gallery", {
+      columns: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "auto"
+  }, "自動"), /*#__PURE__*/React.createElement("option", {
+    value: "2"
+  }, "2列"), /*#__PURE__*/React.createElement("option", {
+    value: "3"
+  }, "3列"), /*#__PURE__*/React.createElement("option", {
+    value: "4"
+  }, "4列"), /*#__PURE__*/React.createElement("option", {
+    value: "5"
+  }, "5列"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "お気に入りハート"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.gallery.showHeart,
+    onChange: event => updatePageDisplay("gallery", {
+      showHeart: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "プロンプト帳"), /*#__PURE__*/React.createElement("label", null, "表示形式", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.prompts.viewMode,
+    onChange: event => updatePageDisplay("prompts", {
+      viewMode: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "card"
+  }, "カード"), /*#__PURE__*/React.createElement("option", {
+    value: "list"
+  }, "リスト寄り"))), /*#__PURE__*/React.createElement("label", null, "画像サイズ", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.prompts.imageSize,
+    onChange: event => updatePageDisplay("prompts", {
+      imageSize: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "small"
+  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+    value: "normal"
+  }, "標準"), /*#__PURE__*/React.createElement("option", {
+    value: "large"
+  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "タグを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.prompts.showTags,
+    onChange: event => updatePageDisplay("prompts", {
+      showTags: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "メモを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.prompts.showMemo,
+    onChange: event => updatePageDisplay("prompts", {
+      showMemo: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "動画プロンプト帳"), /*#__PURE__*/React.createElement("label", null, "表示形式", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.videoPrompts.viewMode,
+    onChange: event => updatePageDisplay("videoPrompts", {
+      viewMode: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "card"
+  }, "カード"), /*#__PURE__*/React.createElement("option", {
+    value: "list"
+  }, "リスト寄り"))), /*#__PURE__*/React.createElement("label", null, "サムネイルサイズ", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.videoPrompts.thumbnailSize,
+    onChange: event => updatePageDisplay("videoPrompts", {
+      thumbnailSize: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "small"
+  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+    value: "normal"
+  }, "標準"), /*#__PURE__*/React.createElement("option", {
+    value: "large"
+  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "タグを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.videoPrompts.showTags,
+    onChange: event => updatePageDisplay("videoPrompts", {
+      showTags: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "メモを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.videoPrompts.showMemo,
+    onChange: event => updatePageDisplay("videoPrompts", {
+      showMemo: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "プロジェクト"), /*#__PURE__*/React.createElement("label", null, "並び順", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.projects.sortBy,
+    onChange: event => updatePageDisplay("projects", {
+      sortBy: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "deadline"
+  }, "期限順"), /*#__PURE__*/React.createElement("option", {
+    value: "created"
+  }, "作成順"), /*#__PURE__*/React.createElement("option", {
+    value: "manual"
+  }, "保存順"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "完了済みを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.projects.showCompleted,
+    onChange: event => updatePageDisplay("projects", {
+      showCompleted: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "期限アラームを表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.projects.showAlarms,
+    onChange: event => updatePageDisplay("projects", {
+      showAlarms: event.target.checked
+    })
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "page-display-panel"
+  }, /*#__PURE__*/React.createElement("strong", null, "モックアップ"), /*#__PURE__*/React.createElement("label", null, "カテゴリカードサイズ", /*#__PURE__*/React.createElement("select", {
+    value: pageSettings.mockups.categoryCardSize,
+    onChange: event => updatePageDisplay("mockups", {
+      categoryCardSize: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "small"
+  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+    value: "normal"
+  }, "標準"), /*#__PURE__*/React.createElement("option", {
+    value: "large"
+  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "説明文を表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.mockups.showDescription,
+    onChange: event => updatePageDisplay("mockups", {
+      showDescription: event.target.checked
+    })
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "switch-row"
+  }, /*#__PURE__*/React.createElement("span", null, "件数を表示"), /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: pageSettings.mockups.showCount,
+    onChange: event => updatePageDisplay("mockups", {
+      showCount: event.target.checked
+    })
+  }))))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ホーム表示パーツ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "表示項目"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"), /*#__PURE__*/React.createElement("div", {
     className: "toggle-list"
   }, [...homeFeatures, ...homeSections].map(item => /*#__PURE__*/React.createElement("label", {
@@ -2682,7 +3999,7 @@ function HomeCustomize({
     checked: settings.visible[item.id] !== false,
     onChange: event => updateVisible(item.id, event.target.checked)
   }))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "ホーム件数カード設定"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する件数カードを選択できます。"), /*#__PURE__*/React.createElement("div", {
     className: "toggle-list"
   }, homeStatsCardOptions.map(item => /*#__PURE__*/React.createElement("label", {
@@ -2698,7 +4015,7 @@ function HomeCustomize({
       }
     })
   }))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "order-list"
   }, settings.order.map(id => {
@@ -2711,9 +4028,15 @@ function HomeCustomize({
     }, "上へ"), /*#__PURE__*/React.createElement("button", {
       onClick: () => moveSection(id, 1)
     }, "下へ")));
-  }))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card backup-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "バックアップ"), /*#__PURE__*/React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), /*#__PURE__*/React.createElement("div", {
+  }))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "バックアップ・サンプル"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card backup-card customize-nested-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "バックアップ"), /*#__PURE__*/React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), /*#__PURE__*/React.createElement("p", {
+    className: "backup-storage-note"
+  }, "Prompt Atelierのデータは、このブラウザ内に保存されます。Dockのショートカットを削除しても通常は残りますが、ブラウザのサイトデータ削除や別ブラウザ利用では引き継がれない場合があります。大切なデータは定期的にバックアップを書き出してください。"), /*#__PURE__*/React.createElement("div", {
     className: "backup-actions"
   }, /*#__PURE__*/React.createElement("button", {
     className: "primary",
@@ -2724,7 +4047,11 @@ function HomeCustomize({
     className: "developer-tools"
   }, /*#__PURE__*/React.createElement("strong", null, "配布用サンプルデータ"), /*#__PURE__*/React.createElement("p", null, "現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。"), /*#__PURE__*/React.createElement("button", {
     onClick: exportPromptAtelierSampleSeed
-  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("input", {
+  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("div", {
+    className: "developer-tools"
+  }, /*#__PURE__*/React.createElement("strong", null, "モックアップだけ復元"), /*#__PURE__*/React.createElement("p", null, "カスタマイズ設定は触らず、モックアップライブラリのカテゴリと中のプロンプトだけを戻します。"), /*#__PURE__*/React.createElement("button", {
+    onClick: onOpenMockupRestore
+  }, "モックアップだけ復元する")), /*#__PURE__*/React.createElement("input", {
     ref: backupInputRef,
     type: "file",
     accept: "application/json,.json",
@@ -2735,33 +4062,43 @@ function HomeCustomize({
       importBackup(event.currentTarget.files?.[0]);
       event.currentTarget.value = "";
     }
-  })), /*#__PURE__*/React.createElement("section", {
+  })))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card danger-zone"
   }, /*#__PURE__*/React.createElement("h3", null, "初期化"), /*#__PURE__*/React.createElement("p", null, "テーマ、バナー、表示項目、並び順を初期設定に戻します。"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
     onClick: reset
   }, "初期設定に戻す"))), /*#__PURE__*/React.createElement("aside", {
     className: "customize-preview"
-  }, /*#__PURE__*/React.createElement("span", null, "プレビュー"), /*#__PURE__*/React.createElement("div", {
-    className: "preview-shell",
-    style: themeStyle(activeTheme)
-  }, settings.bannerVisible && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: `preview-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
+  }, /*#__PURE__*/React.createElement("span", null, "ホームプレビュー"), /*#__PURE__*/React.createElement("div", {
+    className: `preview-shell home-mini-preview density-${settings.displayDensity || "normal"} ${previewClassName}`,
+    "data-density": settings.displayDensity || "normal",
+    "data-card-radius": settings.cardStyle.radius,
+    "data-card-shadow": settings.cardStyle.shadow,
+    "data-card-transparency": settings.cardStyle.transparency,
+    "data-card-border": settings.cardStyle.border,
+    "data-background-type": settings.backgroundStyle.type,
+    "data-font-preset": settings.fontPreset || "simple",
+    "data-icon-set": settings.iconSet || "line",
+    style: previewStyle
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "home-mini-topbar"
+  }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("span", null, "Home Mini Preview")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+    className: `preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
     onPointerDown: startBannerDrag,
     onPointerMove: moveBannerDrag,
     onPointerUp: endBannerDrag,
     onPointerCancel: endBannerDrag,
     onLostPointerCapture: endBannerDrag
-  }, bannerSrc && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
+  }, bannerSrc ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     src: bannerSrc,
     alt: "",
     draggable: false,
-    style: {
-      objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%`
-    }
+    style: bannerImageStyle(bannerPosition)
   }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
     className: "banner-drag-hint"
-  }, "画像をドラッグして表示位置を調整"))), bannerImageValue && /*#__PURE__*/React.createElement("div", {
+  }, "画像をドラッグして表示位置を調整")) : /*#__PURE__*/React.createElement("div", {
+    className: "home-mini-banner-placeholder"
+  }, /*#__PURE__*/React.createElement("span", null, "今日の制作ボード"), /*#__PURE__*/React.createElement("strong", null, "Creative Board"))), bannerImageValue && /*#__PURE__*/React.createElement("div", {
     className: "preview-banner-actions"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
@@ -2771,17 +4108,52 @@ function HomeCustomize({
       event.stopPropagation();
       updateBannerPosition(50, 50, true);
     }
-  }, "中央に戻す"))), /*#__PURE__*/React.createElement("div", {
-    className: "preview-card large"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "preview-grid"
-  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("button", {
+  }, "中央に戻す")), settings.visible.dashboard !== false && previewDashboardItems.length > 0 && /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-stats",
+    "aria-label": "ミニ件数カード"
+  }, previewDashboardItems.map(item => /*#__PURE__*/React.createElement("article", {
+    className: "home-mini-stat",
+    key: item.id
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "stat-icon",
+    "data-icon": item.icon
+  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: item.icon
+  })), /*#__PURE__*/React.createElement("small", null, item.title), /*#__PURE__*/React.createElement("strong", null, item.value)))), settings.visible.quickActions !== false && previewTools.length > 0 && /*#__PURE__*/React.createElement("section", {
+    className: `home-mini-tools ${settings.workToolIconStyle || "pastel"}`,
+    "aria-label": "ミニ作業ツール"
+  }, previewTools.map(tool => /*#__PURE__*/React.createElement("article", {
+    className: "home-mini-tool",
+    key: tool.id
+  }, /*#__PURE__*/React.createElement("span", null, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
+    src: imageThumbnail(tool.iconImage),
+    alt: ""
+  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("small", null, tool.name)))), settings.visible.featureCards !== false && previewFeatureEntries.length > 0 && /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-features",
+    "aria-label": "ミニメイン機能カード"
+  }, previewFeatureEntries.map(([id, label, icon]) => /*#__PURE__*/React.createElement("article", {
+    className: "home-mini-feature",
+    key: id
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "stat-icon",
+    "data-icon": icon
+  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: icon
+  })), /*#__PURE__*/React.createElement("strong", null, label)))), settings.visible.dashboard !== false && (projects || []).length > 0 && /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-main-card"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "mini-pill"
+  }, "Project"), /*#__PURE__*/React.createElement("h4", null, (projects[0]?.name || "Project").slice(0, 18)), /*#__PURE__*/React.createElement("strong", {
+    className: "preview-number-text"
+  }, projects.length, " Projects")), /*#__PURE__*/React.createElement("p", null, "Today"))), /*#__PURE__*/React.createElement("button", {
     className: "primary preview-save-home",
     onClick: () => {
       setSettings(persistHomeSettings());
       setScreen("home");
     }
-  }, "保存してホームへ")))), /*#__PURE__*/React.createElement(PageBackButton, {
+  }, "保存してホームへ"))), showPwaInstructions && /*#__PURE__*/React.createElement(PwaInstallInstructionsModal, {
+    onClose: () => setShowPwaInstructions(false)
+  }), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -2931,7 +4303,11 @@ function HomePromptCard({
 }
 function Library({
   copyText,
-  setScreen
+  setScreen,
+  homeSettings,
+  boardPrompts,
+  setBoardPrompts,
+  searchTarget
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -2942,9 +4318,36 @@ function Library({
   const [stockFrameCounts, setStockFrameCounts] = React.useState({});
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
-  const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
-  const [boardPrompts, setBoardPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
+  const [boardCategories, setBoardCategories] = useStoredState(MOCKUP_CATEGORY_STORAGE_KEY, initialMockupCategories());
+  const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
+  React.useEffect(() => {
+    if (Array.isArray(boardCategories) && boardCategories.length > 0) return;
+    setBoardCategories(initialMockupCategories());
+  }, [boardCategories]);
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "library") return;
+    if (!searchTarget.itemId) {
+      setSelectedCategory(null);
+      setQuery("");
+      return;
+    }
+    const foundPrompt = boardPrompts.find(item => item.id === searchTarget.itemId);
+    const targetCategory = orderedCategories.find(category => category.id === (foundPrompt?.categoryId || searchTarget.categoryId));
+    if (targetCategory) setSelectedCategory(targetCategory);
+    if (foundPrompt) {
+      setQuery(foundPrompt.title || searchTarget.query || "");
+      if (!foundPrompt.isTextStock) setEditingPrompt(foundPrompt);
+      window.setTimeout(() => {
+        document.getElementById(`library-prompt-${foundPrompt.id}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 120);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
   const isCategorySearching = !currentCategory && query.trim().length > 0;
   const filteredCategories = orderedCategories.filter(item => lowerIncludes(`${item.title} ${item.description}`, query));
@@ -3125,7 +4528,7 @@ function Library({
     setDragOverCategoryId("");
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page library-page"
+    className: `page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`
   }, !currentCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
     title: "モックアップライブラリ",
     action: /*#__PURE__*/React.createElement("div", {
@@ -3183,7 +4586,9 @@ function Library({
     item: category,
     className: "category-cover-carousel",
     placeholderLabel: "カテゴリ"
-  }), /*#__PURE__*/React.createElement("span", null, category.title), /*#__PURE__*/React.createElement("small", null, category.description))))), /*#__PURE__*/React.createElement(PageBackButton, {
+  }), /*#__PURE__*/React.createElement("span", null, category.title), mockupDisplay.showDescription !== false && /*#__PURE__*/React.createElement("small", null, category.description), mockupDisplay.showCount !== false && /*#__PURE__*/React.createElement("em", {
+    className: "category-count-label"
+  }, boardPrompts.filter(prompt => prompt.categoryId === category.id).length, "件"))))), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -3220,7 +4625,9 @@ function Library({
     duplicatePrompt: duplicatePrompt,
     deletePrompt: () => deleteBoardPrompt(prompt.id),
     copyText: copyText,
-    showMemo: () => setMemoPrompt(prompt)
+    showMemo: () => setMemoPrompt(prompt),
+    showTags: true,
+    showMemoButton: true
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `empty-prompt-${index}`,
@@ -3419,13 +4826,16 @@ function LibraryImagePromptCard({
   duplicatePrompt,
   deletePrompt,
   copyText,
-  showMemo
+  showMemo,
+  showTags = true,
+  showMemoButton = true
 }) {
   const updateCoverImages = coverImages => updatePrompt(prompt.id, {
     coverImages,
     imageUrl: coverImages[0] || ""
   });
   return /*#__PURE__*/React.createElement("article", {
+    id: `library-prompt-${prompt.id}`,
     className: "library-prompt-card"
   }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
@@ -3474,6 +4884,8 @@ function LibraryImagePromptCard({
       });
       setInlineEdit(null);
     }
+  }), showTags && Array.isArray(prompt.tags) && prompt.tags.length > 0 && /*#__PURE__*/React.createElement(TagRow, {
+    tags: prompt.tags.slice(0, 4)
   }), /*#__PURE__*/React.createElement("div", {
     className: "prompt-card-actions"
   }, /*#__PURE__*/React.createElement("button", {
@@ -3482,7 +4894,7 @@ function LibraryImagePromptCard({
       event.stopPropagation();
       copyText(prompt.prompt, prompt.id);
     }
-  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+  }, "📋 プロンプトをコピー"), showMemoButton && /*#__PURE__*/React.createElement("button", {
     onClick: event => {
       event.stopPropagation();
       showMemo();
@@ -3809,6 +5221,19 @@ async function readImage(event, onLoad, category = "prompt") {
     window.alert("画像を追加できませんでした。jpg / png / webp を選んでください。");
   }
 }
+async function readBannerImage(event, onLoad) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const image = await optimizeBannerImage(file);
+    onLoad(image.src);
+  } catch (error) {
+    console.error("[Prompt Atelier] バナー画像の最適化に失敗しました", error);
+    window.alert("バナー画像を追加できませんでした。jpg / png / webp を選んでください。");
+  }
+}
 function MockupCategoryModal({
   item,
   onClose,
@@ -3924,7 +5349,9 @@ function PromptBook({
   prompts,
   setPrompts,
   copyText,
-  setScreen
+  setScreen,
+  homeSettings,
+  searchTarget
 }) {
   const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
@@ -3934,6 +5361,29 @@ function PromptBook({
   const [memoPrompt, setMemoPrompt] = React.useState(null);
   const [inlineEdit, setInlineEdit] = React.useState(null);
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
+  const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "prompts") return;
+    if (!searchTarget.itemId) {
+      setQuery("");
+      return;
+    }
+    const found = prompts.find(item => item.id === searchTarget.itemId);
+    if (found) {
+      setQuery(found.title || found.prompt || searchTarget.query || "");
+      setTag("すべて");
+      setFavoritesOnly(false);
+      if (!found.isTextStock) setEditing(found);
+      window.setTimeout(() => {
+        document.getElementById(`library-prompt-${found.id}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 120);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   const tags = Array.from(new Set(prompts.flatMap(p => p.tags))).sort();
   const filtered = prompts.filter(item => {
     const haystack = `${item.title} ${item.category} ${item.description} ${item.prompt} ${item.note} ${item.tags.join(" ")}`;
@@ -4008,7 +5458,7 @@ function PromptBook({
     setStockFrameCount(count => Math.min(100, count + 1));
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page prompt-book-page"
+    className: `page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`
   }, /*#__PURE__*/React.createElement(PageHead, {
     title: "プロンプト帳",
     action: /*#__PURE__*/React.createElement("div", {
@@ -4050,7 +5500,9 @@ function PromptBook({
     deletePrompt: () => deletePrompt(prompt.id),
     copyText: copyText,
     showTranslation: () => setTranslationPrompt(prompt),
-    showMemo: () => setMemoPrompt(prompt)
+    showMemo: () => setMemoPrompt(prompt),
+    showTags: promptDisplay.showTags !== false,
+    showMemoButton: promptDisplay.showMemo !== false
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `my-empty-prompt-${index}`,
@@ -4106,7 +5558,8 @@ function Midjourney({
   settings,
   setSettings,
   copyText,
-  setScreen
+  setScreen,
+  searchTarget
 }) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
@@ -4275,6 +5728,19 @@ function Midjourney({
     }, 80);
     window.setTimeout(() => setHighlightedId(""), 1800);
   };
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "mj") return;
+    if (!searchTarget.itemId) {
+      setQuery("");
+      return;
+    }
+    const found = normalizedSettings.find(item => item.id === searchTarget.itemId);
+    if (found) {
+      jumpToCard(found.id);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   return /*#__PURE__*/React.createElement("section", {
     className: "page mj-board-page"
   }, /*#__PURE__*/React.createElement(PageHead, {
@@ -4754,13 +6220,22 @@ function GalleryPage({
   images,
   setImages,
   setJournal,
-  setScreen
+  setScreen,
+  homeSettings,
+  searchTarget
 }) {
   const fileInputRef = React.useRef(null);
   const loadMoreRef = React.useRef(null);
   const [previewId, setPreviewId] = React.useState("");
   const [visibleCount, setVisibleCount] = React.useState(20);
   const preview = images.find(image => image.id === previewId) || null;
+  const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "gallery") return;
+    if (!searchTarget.itemId) return;
+    const found = images.find(image => image.id === searchTarget.itemId);
+    if (found) setPreviewId(found.id);
+  }, [searchTarget?.id]);
   React.useEffect(() => {
     setVisibleCount(20);
   }, [images.length]);
@@ -4829,7 +6304,7 @@ function GalleryPage({
     setScreen("journal");
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page gallery-page",
+    className: `page gallery-page gallery-gap-${galleryDisplay.gap || "normal"} gallery-ratio-${galleryDisplay.ratio || "square"} gallery-columns-${galleryDisplay.columns || "auto"}`,
     tabIndex: 0,
     onDragOver: event => event.preventDefault(),
     onDrop: event => {
@@ -4874,7 +6349,7 @@ function GalleryPage({
   }, images.slice(0, visibleCount).map(image => /*#__PURE__*/React.createElement("article", {
     className: "gallery-card",
     key: image.id
-  }, /*#__PURE__*/React.createElement("button", {
+  }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
     className: "gallery-favorite-button",
     "aria-label": "お気に入り",
     onClick: () => updateImage(image.id, {
@@ -4956,7 +6431,9 @@ function VideoLibrary({
   setVideos,
   videoStocks,
   setVideoStocks,
-  setScreen
+  setScreen,
+  homeSettings,
+  searchTarget
 }) {
   const thumbnailInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
@@ -4977,6 +6454,7 @@ function VideoLibrary({
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const [memoStock, setMemoStock] = React.useState(null);
   const videoItems = extractVideoPromptItems(videos);
+  const videoDisplay = homeSettings?.pageDisplaySettings?.videoPrompts || defaultPageDisplaySettings.videoPrompts;
   React.useEffect(() => {
     uploadedVideoUrlRef.current = uploadedVideoUrl;
   }, [uploadedVideoUrl]);
@@ -5063,6 +6541,28 @@ function VideoLibrary({
       return "";
     });
   };
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "videos") return;
+    if (!searchTarget.itemId) {
+      setQuery("");
+      return;
+    }
+    const foundVideo = videoItems.find(item => item.id === searchTarget.itemId);
+    if (foundVideo) {
+      setQuery(foundVideo.title || foundVideo.prompt || searchTarget.query || "");
+      setModelFilter("すべて");
+      setFavoriteOnly(false);
+      editVideo(foundVideo);
+      return;
+    }
+    const foundStock = (videoStocks || []).find(item => item.id === searchTarget.itemId);
+    if (foundStock) {
+      setQuery(foundStock.title || foundStock.prompt || searchTarget.query || "");
+      setMemoStock(foundStock);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
   const deleteVideo = id => {
     if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
     setTempVideoUrls(items => {
@@ -5206,7 +6706,7 @@ function VideoLibrary({
   }, (_, index) => normalizedVideos[index] || null);
   if (selectedId) {
     return /*#__PURE__*/React.createElement("section", {
-      className: "page video-page",
+      className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`,
       tabIndex: 0,
       onPaste: event => {
         const files = clipboardImageFiles(event);
@@ -5405,7 +6905,7 @@ function VideoLibrary({
     })));
   }
   return /*#__PURE__*/React.createElement("section", {
-    className: "page video-page"
+    className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`
   }, /*#__PURE__*/React.createElement(PageHead, {
     title: "動画プロンプト帳",
     action: /*#__PURE__*/React.createElement("div", {
@@ -5505,7 +7005,7 @@ function VideoLibrary({
       className: "video-meta-row"
     }, /*#__PURE__*/React.createElement("span", {
       className: "mini-pill"
-    }, item.model || "その他"), !!(item.tags || []).length && /*#__PURE__*/React.createElement("div", {
+    }, item.model || "その他"), videoDisplay.showTags !== false && !!(item.tags || []).length && /*#__PURE__*/React.createElement("div", {
       className: "video-tags"
     }, item.tags.slice(0, 2).map(tag => /*#__PURE__*/React.createElement("span", {
       key: tag
@@ -5515,7 +7015,7 @@ function VideoLibrary({
       className: "primary",
       onClick: event => copyVideoPrompt(item, event),
       disabled: !item.prompt.trim()
-    }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+    }, "📋 プロンプトをコピー"), videoDisplay.showMemo !== false && /*#__PURE__*/React.createElement("button", {
       onClick: event => {
         event.stopPropagation();
         editVideo(item);
@@ -5901,13 +7401,32 @@ function Projects({
   setProjects,
   prompts,
   settings,
+  homeSettings,
   copyText,
-  setScreen
+  setScreen,
+  searchTarget
 }) {
   const [editing, setEditing] = React.useState(null);
   const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
-  const filtered = sortProjectsForDisplay(projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query)));
+  const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
+  React.useEffect(() => {
+    if (searchTarget?.screen !== "projects") return;
+    if (!searchTarget.itemId) {
+      setQuery("");
+      return;
+    }
+    const found = projects.find(project => project.id === searchTarget.itemId);
+    if (found) {
+      setQuery(found.name || searchTarget.query || "");
+      setEditing(found);
+      return;
+    }
+    if (searchTarget.query) setQuery(searchTarget.query);
+  }, [searchTarget?.id]);
+  const projectMatchesDisplay = item => projectDisplay.showCompleted !== false || !item.completed && item.status !== "completed";
+  const filteredBase = projects.filter(item => lowerIncludes(`${item.name} ${item.description} ${item.note} ${item.tags.join(" ")}`, query) && projectMatchesDisplay(item));
+  const filtered = projectDisplay.sortBy === "manual" ? filteredBase : projectDisplay.sortBy === "created" ? [...filteredBase].sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || ""))) : sortProjectsForDisplay(filteredBase);
   const save = item => {
     const next = {
       ...item,
@@ -5918,7 +7437,7 @@ function Projects({
     setEditing(null);
   };
   return /*#__PURE__*/React.createElement("section", {
-    className: "page"
+    className: `page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`
   }, /*#__PURE__*/React.createElement(PageHead, {
     title: "プロジェクト管理",
     action: /*#__PURE__*/React.createElement("div", {
@@ -5960,7 +7479,7 @@ function Projects({
       })
     }, "削除"))), /*#__PURE__*/React.createElement(TagRow, {
       tags: project.tags
-    }), project.dueDate && /*#__PURE__*/React.createElement("p", {
+    }), projectDisplay.showAlarms !== false && project.dueDate && /*#__PURE__*/React.createElement("p", {
       className: "project-due-line"
     }, projectDueText(project.dueDate)), project.note && /*#__PURE__*/React.createElement("p", {
       className: "note"
