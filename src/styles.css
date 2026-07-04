@@ -369,6 +369,8 @@ main {
   border-radius: inherit;
   image-rendering: auto;
   object-position: center;
+  transform-origin: center;
+  transition: transform 0.18s ease, object-position 0.18s ease;
 }
 
 .home-banner.fit-contain img {
@@ -4017,6 +4019,8 @@ main {
   border-radius: inherit;
   image-rendering: auto;
   object-position: center;
+  transform-origin: center;
+  transition: transform 0.16s ease, object-position 0.16s ease;
   user-select: none;
   pointer-events: none;
 }

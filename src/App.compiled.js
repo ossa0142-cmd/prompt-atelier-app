@@ -1339,6 +1339,14 @@ function homeBannerPosition(settings) {
     y: Number.isFinite(Number(position?.y)) ? Number(position?.y) : settings?.bannerPositionY ?? 50
   };
 }
+function bannerImageStyle(position) {
+  const hasCustomPosition = Math.abs(position.x - 50) > 0 || Math.abs(position.y - 50) > 0;
+  return {
+    objectPosition: `${position.x}% ${position.y}%`,
+    transformOrigin: `${position.x}% ${position.y}%`,
+    transform: hasCustomPosition ? "scale(1.08)" : "scale(1)"
+  };
+}
 function getCoverImages(item) {
   const existing = Array.isArray(item?.coverImages) ? item.coverImages.filter(Boolean) : [];
   if (existing.length) return existing.slice(0, 3);
@@ -2652,9 +2660,7 @@ function Home({
   }, bannerSrc ? /*#__PURE__*/React.createElement("img", {
     src: bannerSrc,
     alt: "",
-    style: {
-      objectPosition: `${bannerPosition.x}% ${bannerPosition.y}%`
-    }
+    style: bannerImageStyle(bannerPosition)
   }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)), /*#__PURE__*/React.createElement(HomeCharacter, {
     settings: settings.homeCharacter,
     projects: projects,
@@ -3792,9 +3798,7 @@ function HomeCustomize({
     src: bannerSrc,
     alt: "",
     draggable: false,
-    style: {
-      objectPosition: `${bannerPosition.x}% ${bannerPosition.y}%`
-    }
+    style: bannerImageStyle(bannerPosition)
   }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
     className: "banner-drag-hint"
   }, "画像をドラッグして表示位置を調整")) : /*#__PURE__*/React.createElement("div", {

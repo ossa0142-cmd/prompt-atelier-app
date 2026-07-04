@@ -1366,6 +1366,15 @@ function homeBannerPosition(settings: HomeSettings) {
   };
 }
 
+function bannerImageStyle(position: { x: number; y: number }) {
+  const hasCustomPosition = Math.abs(position.x - 50) > 0 || Math.abs(position.y - 50) > 0;
+  return {
+    objectPosition: `${position.x}% ${position.y}%`,
+    transformOrigin: `${position.x}% ${position.y}%`,
+    transform: hasCustomPosition ? "scale(1.08)" : "scale(1)",
+  };
+}
+
 function getCoverImages(item: any) {
   const existing = Array.isArray(item?.coverImages)
     ? item.coverImages.filter(Boolean)
@@ -2679,7 +2688,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
             <img
               src={bannerSrc}
               alt=""
-              style={{ objectPosition: `${bannerPosition.x}% ${bannerPosition.y}%` }}
+              style={bannerImageStyle(bannerPosition)}
             />
           ) : (
             <>
@@ -3604,7 +3613,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                       src={bannerSrc}
                       alt=""
                       draggable={false}
-                      style={{ objectPosition: `${bannerPosition.x}% ${bannerPosition.y}%` }}
+                      style={bannerImageStyle(bannerPosition)}
                     />
                     {bannerCanDrag && <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>}
                   </>
