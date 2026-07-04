@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>モックアップだけ復元 | Prompt Atelier</title>
+    <style>
+      :root {
+        color: #382f35;
+        background: #fff8f2;
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        background:
+          radial-gradient(circle at 16% 12%, rgba(211, 177, 226, 0.28), transparent 34%),
+          radial-gradient(circle at 84% 18%, rgba(255, 222, 201, 0.34), transparent 32%),
+          linear-gradient(135deg, #fffaf6 0%, #fff5fb 100%);
+      }
+      main {
+        width: min(720px, 100%);
+        padding: clamp(28px, 5vw, 48px);
+        border: 1px solid rgba(190, 150, 213, 0.26);
+        border-radius: 32px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 24px 80px rgba(120, 86, 68, 0.14);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #f1dff8, #fff1df);
+        color: #8b62a6;
+        font-size: 28px;
+        font-weight: 900;
+        margin-bottom: 18px;
+      }
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1.2;
+      }
+      p {
+        margin: 0 0 16px;
+        color: rgba(56, 47, 53, 0.76);
+        font-size: 16px;
+        line-height: 1.9;
+      }
+      .note {
+        padding: 16px 18px;
+        border: 1px solid rgba(190, 150, 213, 0.22);
+        border-radius: 20px;
+        background: rgba(255, 248, 252, 0.86);
+        font-size: 14px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 26px;
+      }
+      button,
+      a {
+        border: 0;
+        border-radius: 999px;
+        padding: 14px 22px;
+        font: inherit;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      button {
+        color: #fff;
+        background: linear-gradient(135deg, #b98bd4, #a978c6);
+        box-shadow: 0 14px 34px rgba(146, 89, 169, 0.22);
+      }
+      a {
+        color: #5d4a60;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(190, 150, 213, 0.24);
+      }
+      #status {
+        margin-top: 20px;
+        min-height: 1.8em;
+        font-weight: 800;
+        color: #8b62a6;
+      }
+      .error {
+        color: #b05260;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="badge">PA</div>
+      <h1>モックアップライブラリだけ復元</h1>
+      <p>
+        カスタマイズ設定、バナー、ホームキャラクター、作業ツール、プロンプト帳などは触らず、
+        モックアップライブラリのカテゴリと中のプロンプトだけを復元します。
+      </p>
+      <p class="note">
+        復元前のモックアップデータは念のためブラウザ内に退避してから復元します。
+        このページは、Prompt Atelierと同じURL上で開いた時に効きます。
+      </p>
+      <div class="actions">
+        <button id="restoreButton" type="button">モックアップだけ復元する</button>
+        <a href="./index.html">アプリへ戻る</a>
+      </div>
+      <div id="status" aria-live="polite"></div>
+    </main>
+    <script>
+      const CATEGORY_KEY = "prompt-atelier-mockup-categories-v2";
+      const PROMPT_KEY = "prompt-atelier-library-prompts-v5";
+      const BACKUP_SUFFIX = "__backup";
+      const status = document.getElementById("status");
+
+      function setStatus(message, isError) {
+        status.textContent = message;
+        status.className = isError ? "error" : "";
+      }
+
+      function readStorage(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch {
+          return null;
+        }
+      }
+
+      function writeStorage(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+
+      async function loadSeed() {
+        const response = await fetch("./src/data/sampleSeed.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("sampleSeed.jsonを読み込めませんでした");
+        const seed = await response.json();
+        const data = seed.data || seed;
+        const categories = Array.isArray(data.mockupCategories)
+          ? data.mockupCategories
+          : Array.isArray(data.libraryItems)
+            ? data.libraryItems
+            : [];
+        const prompts = [
+          ...(Array.isArray(data.mockupItems) ? data.mockupItems : []),
+          ...(Array.isArray(data.mockupStocks) ? data.mockupStocks : []),
+        ];
+        if (!categories.length || !prompts.length) throw new Error("復元できるモックアップデータが見つかりませんでした");
+        return { categories, prompts };
+      }
+
+      async function restoreMockupsOnly() {
+        const button = document.getElementById("restoreButton");
+        button.disabled = true;
+        setStatus("復元データを確認しています...", false);
+        try {
+          const { categories, prompts } = await loadSeed();
+          const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+          const currentCategories = readStorage(CATEGORY_KEY);
+          const currentPrompts = readStorage(PROMPT_KEY);
+          if (currentCategories !== null) localStorage.setItem(`${CATEGORY_KEY}__before_restore_${stamp}`, currentCategories);
+          if (currentPrompts !== null) localStorage.setItem(`${PROMPT_KEY}__before_restore_${stamp}`, currentPrompts);
+          writeStorage(CATEGORY_KEY, categories);
+          writeStorage(PROMPT_KEY, prompts);
+          writeStorage(`${CATEGORY_KEY}${BACKUP_SUFFIX}`, categories);
+          writeStorage(`${PROMPT_KEY}${BACKUP_SUFFIX}`, prompts);
+          setStatus(`復元しました。カテゴリ ${categories.length}件、プロンプト ${prompts.length}件を戻しました。`, false);
+          window.setTimeout(() => {
+            window.location.href = "./index.html";
+          }, 1200);
+        } catch (error) {
+          setStatus(error && error.message ? error.message : "復元に失敗しました", true);
+          button.disabled = false;
+        }
+      }
+
+      document.getElementById("restoreButton").addEventListener("click", restoreMockupsOnly);
+    </script>
+  </body>
+</html>

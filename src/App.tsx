@@ -1072,9 +1072,12 @@ const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
+const MOCKUP_CATEGORY_STORAGE_KEY = "prompt-atelier-mockup-categories-v2";
+const MOCKUP_PROMPT_STORAGE_KEY = "prompt-atelier-library-prompts-v5";
+const STORAGE_BACKUP_SUFFIX = "__backup";
 const SAMPLE_EXPORT_KEYS = [
-  "prompt-atelier-mockup-categories-v2",
-  "prompt-atelier-library-prompts-v5",
+  MOCKUP_CATEGORY_STORAGE_KEY,
+  MOCKUP_PROMPT_STORAGE_KEY,
   "prompt-atelier-prompts-ja-v2",
   "promptAtelierVideoPrompts",
   "promptAtelierVideoPromptStocks",
@@ -1086,10 +1089,10 @@ const SAMPLE_EXPORT_KEYS = [
   "promptAtelierWorkTools",
 ];
 const SAMPLE_DATA_STORAGE_MAP: Record<string, string> = {
-  libraryItems: "prompt-atelier-mockup-categories-v2",
-  mockupCategories: "prompt-atelier-mockup-categories-v2",
-  mockupItems: "prompt-atelier-library-prompts-v5",
-  mockupStocks: "prompt-atelier-library-prompts-v5",
+  libraryItems: MOCKUP_CATEGORY_STORAGE_KEY,
+  mockupCategories: MOCKUP_CATEGORY_STORAGE_KEY,
+  mockupItems: MOCKUP_PROMPT_STORAGE_KEY,
+  mockupStocks: MOCKUP_PROMPT_STORAGE_KEY,
   promptCards: "prompt-atelier-prompts-ja-v2",
   promptStocks: "prompt-atelier-prompts-ja-v2",
   videoPromptCards: "promptAtelierVideoPrompts",
@@ -1103,6 +1106,28 @@ const SAMPLE_DATA_STORAGE_MAP: Record<string, string> = {
   customizeSettings: "promptAtelierHomeSettings",
   workTools: "promptAtelierWorkTools",
 };
+const MOCKUP_CATEGORY_RECOVERY_KEYS = [
+  `${MOCKUP_CATEGORY_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`,
+  "promptAtelierMockupCategories",
+  "promptAtelierLibraryCategories",
+  "promptAtelier_mockupCategories",
+  "mockupCategories",
+  "libraryItems",
+  "prompt-atelier-library-categories-v2",
+  "prompt-atelier-mockup-categories-v1",
+];
+const MOCKUP_PROMPT_RECOVERY_KEYS = [
+  `${MOCKUP_PROMPT_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`,
+  "promptAtelierMockupPrompts",
+  "promptAtelierLibraryPrompts",
+  "promptAtelier_mockupPrompts",
+  "mockupItems",
+  "mockupStocks",
+  "libraryPrompts",
+  "prompt-atelier-library-prompts-v4",
+  "prompt-atelier-library-prompts-v3",
+];
+const BACKED_UP_STORAGE_KEYS = new Set([MOCKUP_CATEGORY_STORAGE_KEY, MOCKUP_PROMPT_STORAGE_KEY]);
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const IMAGE_DB_NAME = "PromptAtelierDB";
 const IMAGE_DB_VERSION = 1;
@@ -1844,6 +1869,44 @@ function clipboardImageFiles(event: React.ClipboardEvent) {
     .filter((file): file is File => Boolean(file) && isSupportedImageFile(file));
 }
 
+function readStoredArrayValue<T>(key: string): T[] {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) return parsed as T[];
+    if (Array.isArray(parsed?.items)) return parsed.items as T[];
+    if (Array.isArray(parsed?.cards)) return parsed.cards as T[];
+    if (Array.isArray(parsed?.prompts)) return parsed.prompts as T[];
+    if (Array.isArray(parsed?.categories)) return parsed.categories as T[];
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function recoverStoredArray<T>(keys: string[], fallback: T[]): T[] {
+  for (const key of keys) {
+    const recovered = readStoredArrayValue<T>(key);
+    if (recovered.length > 0) return recovered;
+  }
+  return fallback;
+}
+
+function initialMockupCategories() {
+  return recoverStoredArray<MockupCategory>(MOCKUP_CATEGORY_RECOVERY_KEYS, defaultMockupCategories);
+}
+
+function initialMockupPrompts() {
+  return recoverStoredArray<LibraryBoardPrompt>(MOCKUP_PROMPT_RECOVERY_KEYS, defaultLibraryBoardPrompts);
+}
+
+function backupStorageValueIfNeeded(key: string, value: any) {
+  if (!BACKED_UP_STORAGE_KEYS.has(key)) return;
+  if (!Array.isArray(value) || value.length === 0) return;
+  localStorage.setItem(`${key}${STORAGE_BACKUP_SUFFIX}`, JSON.stringify(value));
+}
+
 function useStoredState<T>(key: string, fallback: T) {
   const hasStoredValueRef = React.useRef(false);
   const [value, setValue] = React.useState<T>(() => {
@@ -1862,6 +1925,7 @@ function useStoredState<T>(key: string, fallback: T) {
     try {
       if (!hasStoredValueRef.current && JSON.stringify(value) === JSON.stringify(fallback)) return;
       localStorage.setItem(key, JSON.stringify(value));
+      backupStorageValueIfNeeded(key, value);
       hasStoredValueRef.current = true;
     } catch (error) {
       console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
@@ -2062,8 +2126,8 @@ function sampleHomeSettings(value: any) {
 }
 
 function createSampleSeedData() {
-  const mockupCategories = parseStorageValueForSample("prompt-atelier-mockup-categories-v2") || [];
-  const libraryPromptsValue = parseStorageValueForSample("prompt-atelier-library-prompts-v5") || [];
+  const mockupCategories = parseStorageValueForSample(MOCKUP_CATEGORY_STORAGE_KEY) || [];
+  const libraryPromptsValue = parseStorageValueForSample(MOCKUP_PROMPT_STORAGE_KEY) || [];
   const promptBookValue = parseStorageValueForSample("prompt-atelier-prompts-ja-v2") || [];
   const videoPromptsValue = parseStorageValueForSample("promptAtelierVideoPrompts") || [];
   const videoStocksValue = parseStorageValueForSample("promptAtelierVideoPromptStocks") || [];
@@ -2190,10 +2254,10 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
     if (!values.length) return;
     storageData[key] = [...(storageData[key] || []), ...values];
   };
-  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
-  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
-  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
-  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
+  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
+  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
+  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
@@ -2231,6 +2295,7 @@ async function loadSampleSeedIfNeeded() {
       const merged = mergeSampleValue(existing, incoming, key, deletedIds);
       if (JSON.stringify(existing) !== JSON.stringify(merged)) {
         localStorage.setItem(key, JSON.stringify(merged));
+        backupStorageValueIfNeeded(key, merged);
         changed = true;
       }
     });
@@ -2254,7 +2319,7 @@ async function loadSampleSeedIfNeeded() {
 function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
-  const [mockupPrompts, setMockupPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
+  const [mockupPrompts, setMockupPrompts] = useStoredState<LibraryBoardPrompt[]>(MOCKUP_PROMPT_STORAGE_KEY, initialMockupPrompts());
   const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState<Project[]>("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -2282,7 +2347,7 @@ function App() {
 
   React.useEffect(() => {
     if (Array.isArray(mockupPrompts) && mockupPrompts.length > 0) return;
-    setMockupPrompts(defaultLibraryBoardPrompts);
+    setMockupPrompts(initialMockupPrompts());
   }, [mockupPrompts]);
 
   const copyText = async (text: string, id?: string) => {
@@ -3941,12 +4006,12 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   const [stockFrameCounts, setStockFrameCounts] = React.useState<Record<string, number>>({});
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
-  const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
+  const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>(MOCKUP_CATEGORY_STORAGE_KEY, initialMockupCategories());
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   React.useEffect(() => {
     if (Array.isArray(boardCategories) && boardCategories.length > 0) return;
-    setBoardCategories(defaultMockupCategories);
+    setBoardCategories(initialMockupCategories());
   }, [boardCategories]);
   React.useEffect(() => {
     if (searchTarget?.screen !== "library") return;

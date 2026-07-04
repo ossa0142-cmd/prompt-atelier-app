@@ -1024,12 +1024,15 @@ const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
-const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
+const MOCKUP_CATEGORY_STORAGE_KEY = "prompt-atelier-mockup-categories-v2";
+const MOCKUP_PROMPT_STORAGE_KEY = "prompt-atelier-library-prompts-v5";
+const STORAGE_BACKUP_SUFFIX = "__backup";
+const SAMPLE_EXPORT_KEYS = [MOCKUP_CATEGORY_STORAGE_KEY, MOCKUP_PROMPT_STORAGE_KEY, "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
 const SAMPLE_DATA_STORAGE_MAP = {
-  libraryItems: "prompt-atelier-mockup-categories-v2",
-  mockupCategories: "prompt-atelier-mockup-categories-v2",
-  mockupItems: "prompt-atelier-library-prompts-v5",
-  mockupStocks: "prompt-atelier-library-prompts-v5",
+  libraryItems: MOCKUP_CATEGORY_STORAGE_KEY,
+  mockupCategories: MOCKUP_CATEGORY_STORAGE_KEY,
+  mockupItems: MOCKUP_PROMPT_STORAGE_KEY,
+  mockupStocks: MOCKUP_PROMPT_STORAGE_KEY,
   promptCards: "prompt-atelier-prompts-ja-v2",
   promptStocks: "prompt-atelier-prompts-ja-v2",
   videoPromptCards: "promptAtelierVideoPrompts",
@@ -1043,6 +1046,9 @@ const SAMPLE_DATA_STORAGE_MAP = {
   customizeSettings: "promptAtelierHomeSettings",
   workTools: "promptAtelierWorkTools"
 };
+const MOCKUP_CATEGORY_RECOVERY_KEYS = [`${MOCKUP_CATEGORY_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`, "promptAtelierMockupCategories", "promptAtelierLibraryCategories", "promptAtelier_mockupCategories", "mockupCategories", "libraryItems", "prompt-atelier-library-categories-v2", "prompt-atelier-mockup-categories-v1"];
+const MOCKUP_PROMPT_RECOVERY_KEYS = [`${MOCKUP_PROMPT_STORAGE_KEY}${STORAGE_BACKUP_SUFFIX}`, "promptAtelierMockupPrompts", "promptAtelierLibraryPrompts", "promptAtelier_mockupPrompts", "mockupItems", "mockupStocks", "libraryPrompts", "prompt-atelier-library-prompts-v4", "prompt-atelier-library-prompts-v3"];
+const BACKED_UP_STORAGE_KEYS = new Set([MOCKUP_CATEGORY_STORAGE_KEY, MOCKUP_PROMPT_STORAGE_KEY]);
 const STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const IMAGE_DB_NAME = "PromptAtelierDB";
 const IMAGE_DB_VERSION = 1;
@@ -1789,6 +1795,39 @@ function saveImageToStorage(image) {
 function clipboardImageFiles(event) {
   return Array.from(event.clipboardData?.items || []).filter(item => item.kind === "file").map(item => item.getAsFile()).filter(file => Boolean(file) && isSupportedImageFile(file));
 }
+function readStoredArrayValue(key) {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) return parsed;
+    if (Array.isArray(parsed?.items)) return parsed.items;
+    if (Array.isArray(parsed?.cards)) return parsed.cards;
+    if (Array.isArray(parsed?.prompts)) return parsed.prompts;
+    if (Array.isArray(parsed?.categories)) return parsed.categories;
+    return [];
+  } catch {
+    return [];
+  }
+}
+function recoverStoredArray(keys, fallback) {
+  for (const key of keys) {
+    const recovered = readStoredArrayValue(key);
+    if (recovered.length > 0) return recovered;
+  }
+  return fallback;
+}
+function initialMockupCategories() {
+  return recoverStoredArray(MOCKUP_CATEGORY_RECOVERY_KEYS, defaultMockupCategories);
+}
+function initialMockupPrompts() {
+  return recoverStoredArray(MOCKUP_PROMPT_RECOVERY_KEYS, defaultLibraryBoardPrompts);
+}
+function backupStorageValueIfNeeded(key, value) {
+  if (!BACKED_UP_STORAGE_KEYS.has(key)) return;
+  if (!Array.isArray(value) || value.length === 0) return;
+  localStorage.setItem(`${key}${STORAGE_BACKUP_SUFFIX}`, JSON.stringify(value));
+}
 function useStoredState(key, fallback) {
   const hasStoredValueRef = React.useRef(false);
   const [value, setValue] = React.useState(() => {
@@ -1807,6 +1846,7 @@ function useStoredState(key, fallback) {
     try {
       if (!hasStoredValueRef.current && JSON.stringify(value) === JSON.stringify(fallback)) return;
       localStorage.setItem(key, JSON.stringify(value));
+      backupStorageValueIfNeeded(key, value);
       hasStoredValueRef.current = true;
     } catch (error) {
       console.warn("[Prompt Atelier] localStorage保存に失敗しました", key, error);
@@ -2000,8 +2040,8 @@ function sampleHomeSettings(value) {
   };
 }
 function createSampleSeedData() {
-  const mockupCategories = parseStorageValueForSample("prompt-atelier-mockup-categories-v2") || [];
-  const libraryPromptsValue = parseStorageValueForSample("prompt-atelier-library-prompts-v5") || [];
+  const mockupCategories = parseStorageValueForSample(MOCKUP_CATEGORY_STORAGE_KEY) || [];
+  const libraryPromptsValue = parseStorageValueForSample(MOCKUP_PROMPT_STORAGE_KEY) || [];
   const promptBookValue = parseStorageValueForSample("prompt-atelier-prompts-ja-v2") || [];
   const videoPromptsValue = parseStorageValueForSample("promptAtelierVideoPrompts") || [];
   const videoStocksValue = parseStorageValueForSample("promptAtelierVideoPromptStocks") || [];
@@ -2127,10 +2167,10 @@ function sampleSeedDataToStorage(seedData) {
     if (!values.length) return;
     storageData[key] = [...(storageData[key] || []), ...values];
   };
-  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
-  append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
-  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
-  append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
+  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.libraryItems) ? seedData.libraryItems : []);
+  append(MOCKUP_CATEGORY_STORAGE_KEY, Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
+  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
+  append(MOCKUP_PROMPT_STORAGE_KEY, Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
@@ -2167,6 +2207,7 @@ async function loadSampleSeedIfNeeded() {
       const merged = mergeSampleValue(existing, incoming, key, deletedIds);
       if (JSON.stringify(existing) !== JSON.stringify(merged)) {
         localStorage.setItem(key, JSON.stringify(merged));
+        backupStorageValueIfNeeded(key, merged);
         changed = true;
       }
     });
@@ -2192,7 +2233,7 @@ async function loadSampleSeedIfNeeded() {
 function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
-  const [mockupPrompts, setMockupPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
+  const [mockupPrompts, setMockupPrompts] = useStoredState(MOCKUP_PROMPT_STORAGE_KEY, initialMockupPrompts());
   const [mjSettings, setMjSettings] = useStoredState("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -2221,7 +2262,7 @@ function App() {
   const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
   React.useEffect(() => {
     if (Array.isArray(mockupPrompts) && mockupPrompts.length > 0) return;
-    setMockupPrompts(defaultLibraryBoardPrompts);
+    setMockupPrompts(initialMockupPrompts());
   }, [mockupPrompts]);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
@@ -4165,12 +4206,12 @@ function Library({
   const [stockFrameCounts, setStockFrameCounts] = React.useState({});
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
-  const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
+  const [boardCategories, setBoardCategories] = useStoredState(MOCKUP_CATEGORY_STORAGE_KEY, initialMockupCategories());
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   React.useEffect(() => {
     if (Array.isArray(boardCategories) && boardCategories.length > 0) return;
-    setBoardCategories(defaultMockupCategories);
+    setBoardCategories(initialMockupCategories());
   }, [boardCategories]);
   React.useEffect(() => {
     if (searchTarget?.screen !== "library") return;
