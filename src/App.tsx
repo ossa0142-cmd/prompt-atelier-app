@@ -183,7 +183,7 @@ type CardTransparencyStyle = "solid" | "soft" | "glass";
 type CardBorderStyle = "none" | "thin" | "soft" | "bold" | "dashed";
 type BackgroundType = "theme" | "solid" | "gradient" | "pattern" | "image";
 type BackgroundGradient = "milkPink" | "peachBeige" | "blueMist" | "lavenderMilk" | "mintCream" | "cafeLatte";
-type BackgroundPattern = "none" | "dot" | "stripe" | "grid" | "floral" | "paper";
+type BackgroundPattern = "none" | "dot" | "stripe" | "grid" | "paper";
 type BackgroundImageFit = "contain" | "cover";
 type BackgroundImagePosition = "center" | "top" | "bottom" | "left" | "right";
 type BackgroundImageBlur = "none" | "soft" | "medium";
@@ -375,7 +375,7 @@ const cardStyleOptions = {
 const backgroundStyleOptions = {
   type: [["theme", "テーマ標準"], ["solid", "単色"], ["gradient", "グラデーション"], ["pattern", "パターン"], ["image", "画像"]],
   gradient: [["milkPink", "ミルクピンク"], ["peachBeige", "ピーチベージュ"], ["blueMist", "ブルーミスト"], ["lavenderMilk", "ラベンダーミルク"], ["mintCream", "ミントクリーム"], ["cafeLatte", "カフェラテ"]],
-  pattern: [["none", "なし"], ["dot", "ドット"], ["stripe", "細ストライプ"], ["grid", "グリッド"], ["floral", "小花風"], ["paper", "紙テクスチャ風"]],
+  pattern: [["none", "なし"], ["dot", "ドット"], ["stripe", "細ストライプ"], ["grid", "グリッド"], ["paper", "紙テクスチャ風"]],
   imageFit: [["contain", "全体を表示"], ["cover", "枠いっぱいに表示"]],
   imagePosition: [["center", "中央"], ["top", "上"], ["bottom", "下"], ["left", "左"], ["right", "右"]],
   imageBlur: [["none", "なし"], ["soft", "弱"], ["medium", "中"]],
@@ -650,7 +650,7 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
       ...rawBackgroundStyle,
       type: ["theme", "solid", "gradient", "pattern", "image"].includes(rawBackgroundStyle.type) ? rawBackgroundStyle.type : "theme",
       gradient: ["milkPink", "peachBeige", "blueMist", "lavenderMilk", "mintCream", "cafeLatte"].includes(rawBackgroundStyle.gradient) ? rawBackgroundStyle.gradient : "milkPink",
-      pattern: ["none", "dot", "stripe", "grid", "floral", "paper"].includes(rawBackgroundStyle.pattern) ? rawBackgroundStyle.pattern : "none",
+      pattern: rawBackgroundStyle.pattern === "floral" ? "paper" : ["none", "dot", "stripe", "grid", "paper"].includes(rawBackgroundStyle.pattern) ? rawBackgroundStyle.pattern : "none",
       imageFit: ["contain", "cover"].includes(rawBackgroundStyle.imageFit) ? rawBackgroundStyle.imageFit : "cover",
       imagePosition: ["center", "top", "bottom", "left", "right"].includes(rawBackgroundStyle.imagePosition) ? rawBackgroundStyle.imagePosition : "center",
       imageBlur: ["none", "soft", "medium"].includes(rawBackgroundStyle.imageBlur) ? rawBackgroundStyle.imageBlur : "none",
@@ -1165,7 +1165,6 @@ function customBackgroundLayers(settings: HomeSettings) {
     dot: "radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0 1.3px, transparent 1.8px)",
     stripe: "repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent) 0 1px, transparent 1px 18px)",
     grid: "linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)",
-    floral: "radial-gradient(circle at 18px 18px, color-mix(in srgb, var(--accent) 24%, transparent) 0 1.5px, transparent 2px), radial-gradient(ellipse at 18px 11px, color-mix(in srgb, var(--accent) 14%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 18px 25px, color-mix(in srgb, var(--accent) 14%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 11px 18px, color-mix(in srgb, var(--sage) 18%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 25px 18px, color-mix(in srgb, var(--sage) 18%, transparent) 0 3px, transparent 4px)",
     paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)",
   };
   if (bg.type === "solid") return `linear-gradient(${bg.color}, ${bg.color})`;
@@ -3005,14 +3004,21 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       />
       <div className="customize-layout">
         <div className="customize-settings">
-          <PwaCustomizeCard
-            canInstallPwa={canInstallPwa}
-            isStandaloneApp={isStandaloneApp}
-            onInstall={handleCustomizeInstallPwa}
-            onShowInstructions={() => setShowPwaInstructions(true)}
-          />
+          <details className="customize-accordion">
+            <summary><span>データ管理・アプリ</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
+              <PwaCustomizeCard
+                canInstallPwa={canInstallPwa}
+                isStandaloneApp={isStandaloneApp}
+                onInstall={handleCustomizeInstallPwa}
+                onShowInstructions={() => setShowPwaInstructions(true)}
+              />
+            </div>
+          </details>
 
-          <section className="customize-card">
+          <details className="customize-card customize-accordion" open>
+            <summary><span>テーマ・基本デザイン</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
             <h3>テーマ</h3>
             <p>ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。</p>
             <div className="theme-grid">
@@ -3029,9 +3035,12 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 </button>
               ))}
             </div>
-          </section>
+            </div>
+          </details>
 
-          <section className="customize-card">
+          <details className="customize-card customize-accordion">
+            <summary><span>バナー設定</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
             <h3>バナー</h3>
             <p>ホーム上部に表示する横長画像を設定できます。</p>
             <div className="banner-size-guide">
@@ -3079,11 +3088,20 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               </div>
               <p>「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。</p>
             </div>
-          </section>
+            </div>
+          </details>
 
-          <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} projects={projects} />
+          <details className="customize-accordion">
+            <summary><span>ホーム表示</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
+              <HomeCharacterSettingsPanel settings={settings} updateSettings={updateSettings} projects={projects} />
+            </div>
+          </details>
 
-          <section className="customize-card">
+          <details className="customize-card customize-accordion">
+            <summary><span>作業ツール</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
+            <section className="customize-card customize-nested-card">
             <h3>作業ツール設定</h3>
             <p>ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。</p>
             <div className="icon-style-choices">
@@ -3129,9 +3147,14 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               </button>
             ) : <p className="limit-message">作業ツールは最大10件まで登録できます</p>}
             {editingTool && <WorkToolEditor tool={editingTool} onClose={() => setEditingTool(null)} onSave={saveWorkTool} />}
-          </section>
+            </section>
+            </div>
+          </details>
 
-          <section className="customize-card">
+          <details className="customize-card customize-accordion">
+            <summary><span>カード表示</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
+          <section className="customize-card customize-nested-card">
             <h3>カード密度</h3>
             <p>ホームや各一覧ページのカード間隔を調整できます。</p>
             <div className="density-choice-grid">
@@ -3148,7 +3171,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             </div>
           </section>
 
-          <section className="customize-card">
+          <section className="customize-card customize-nested-card">
             <h3>カード質感設定</h3>
             <p>カードの角丸・影・透明感・枠線を調整できます。</p>
             <div className="style-control-grid">
@@ -3174,8 +3197,12 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               </label>
             </div>
           </section>
+            </div>
+          </details>
 
-          <section className="customize-card">
+          <details className="customize-card customize-accordion">
+            <summary><span>背景</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
             <h3>背景カスタム</h3>
             <p>ツール全体の背景の雰囲気を調整できます。</p>
             <div className="style-control-grid">
@@ -3238,9 +3265,13 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <span>背景装飾を表示</span>
               <input type="checkbox" checked={settings.backgroundStyle.showDecorations !== false} onChange={(event) => updateBackgroundStyle({ showDecorations: event.target.checked })} />
             </label>
-          </section>
+            </div>
+          </details>
 
-          <section className="customize-card">
+          <details className="customize-card customize-accordion">
+            <summary><span>フォント・アイコン</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
+          <section className="customize-card customize-nested-card">
             <h3>フォント雰囲気</h3>
             <p>見出しや本文の雰囲気を変更できます。</p>
             <div className="preset-card-grid">
@@ -3253,7 +3284,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             </div>
           </section>
 
-          <section className="customize-card">
+          <section className="customize-card customize-nested-card">
             <h3>アイコンセット</h3>
             <p>メニューやカードに使うアイコンの雰囲気を変更できます。</p>
             <div className="preset-card-grid">
@@ -3266,8 +3297,13 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               ))}
             </div>
           </section>
+            </div>
+          </details>
 
-          <section className="customize-card page-display-settings">
+          <details className="customize-card customize-accordion">
+            <summary><span>ページ別表示</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
+          <section className="customize-card page-display-settings customize-nested-card">
             <h3>ページごとの表示設定</h3>
             <p>ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。</p>
             <div className="page-display-grid">
@@ -3361,8 +3397,13 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               </div>
             </div>
           </section>
+            </div>
+          </details>
 
-          <section className="customize-card">
+          <details className="customize-card customize-accordion">
+            <summary><span>ホーム表示パーツ</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
+          <section className="customize-card customize-nested-card">
             <h3>表示項目</h3>
             <p>ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。</p>
             <div className="toggle-list">
@@ -3375,7 +3416,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             </div>
           </section>
 
-          <section className="customize-card">
+          <section className="customize-card customize-nested-card">
             <h3>ホーム件数カード設定</h3>
             <p>ホーム上部に表示する件数カードを選択できます。</p>
             <div className="toggle-list">
@@ -3397,7 +3438,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             </div>
           </section>
 
-          <section className="customize-card">
+          <section className="customize-card customize-nested-card">
             <h3>並び順</h3>
             <p>ホームの表示順を「上へ」「下へ」で調整できます。</p>
             <div className="order-list">
@@ -3415,8 +3456,13 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               })}
             </div>
           </section>
+            </div>
+          </details>
 
-          <section className="customize-card backup-card">
+          <details className="customize-card customize-accordion">
+            <summary><span>バックアップ・サンプル</span><b>⌄</b></summary>
+            <div className="customize-accordion-body">
+          <section className="customize-card backup-card customize-nested-card">
             <h3>バックアップ</h3>
             <p>大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。</p>
             <p className="backup-storage-note">
@@ -3442,6 +3488,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               }}
             />
           </section>
+            </div>
+          </details>
 
           <section className="customize-card danger-zone">
             <h3>初期化</h3>
@@ -3546,6 +3594,11 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 <span className="mini-pill">Prompt</span>
                 <strong>Pastel Clipart</strong>
               </article>
+            </section>
+            <section className="home-mini-gallery" aria-label="ミニギャラリー">
+              <i />
+              <i />
+              <i />
             </section>
             <nav className="home-mini-nav" aria-label="ミニナビ">
               <span><FeatureIcon name="mockup" /> Mockup</span>

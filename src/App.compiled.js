@@ -121,7 +121,7 @@ const cardStyleOptions = {
 const backgroundStyleOptions = {
   type: [["theme", "テーマ標準"], ["solid", "単色"], ["gradient", "グラデーション"], ["pattern", "パターン"], ["image", "画像"]],
   gradient: [["milkPink", "ミルクピンク"], ["peachBeige", "ピーチベージュ"], ["blueMist", "ブルーミスト"], ["lavenderMilk", "ラベンダーミルク"], ["mintCream", "ミントクリーム"], ["cafeLatte", "カフェラテ"]],
-  pattern: [["none", "なし"], ["dot", "ドット"], ["stripe", "細ストライプ"], ["grid", "グリッド"], ["floral", "小花風"], ["paper", "紙テクスチャ風"]],
+  pattern: [["none", "なし"], ["dot", "ドット"], ["stripe", "細ストライプ"], ["grid", "グリッド"], ["paper", "紙テクスチャ風"]],
   imageFit: [["contain", "全体を表示"], ["cover", "枠いっぱいに表示"]],
   imagePosition: [["center", "中央"], ["top", "上"], ["bottom", "下"], ["left", "左"], ["right", "右"]],
   imageBlur: [["none", "なし"], ["soft", "弱"], ["medium", "中"]],
@@ -652,7 +652,7 @@ const normalizeHomeSettings = settings => {
       ...rawBackgroundStyle,
       type: ["theme", "solid", "gradient", "pattern", "image"].includes(rawBackgroundStyle.type) ? rawBackgroundStyle.type : "theme",
       gradient: ["milkPink", "peachBeige", "blueMist", "lavenderMilk", "mintCream", "cafeLatte"].includes(rawBackgroundStyle.gradient) ? rawBackgroundStyle.gradient : "milkPink",
-      pattern: ["none", "dot", "stripe", "grid", "floral", "paper"].includes(rawBackgroundStyle.pattern) ? rawBackgroundStyle.pattern : "none",
+      pattern: rawBackgroundStyle.pattern === "floral" ? "paper" : ["none", "dot", "stripe", "grid", "paper"].includes(rawBackgroundStyle.pattern) ? rawBackgroundStyle.pattern : "none",
       imageFit: ["contain", "cover"].includes(rawBackgroundStyle.imageFit) ? rawBackgroundStyle.imageFit : "cover",
       imagePosition: ["center", "top", "bottom", "left", "right"].includes(rawBackgroundStyle.imagePosition) ? rawBackgroundStyle.imagePosition : "center",
       imageBlur: ["none", "soft", "medium"].includes(rawBackgroundStyle.imageBlur) ? rawBackgroundStyle.imageBlur : "none",
@@ -1142,7 +1142,6 @@ function customBackgroundLayers(settings) {
     dot: "radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0 1.3px, transparent 1.8px)",
     stripe: "repeating-linear-gradient(90deg, color-mix(in srgb, var(--accent) 9%, transparent) 0 1px, transparent 1px 18px)",
     grid: "linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)",
-    floral: "radial-gradient(circle at 18px 18px, color-mix(in srgb, var(--accent) 24%, transparent) 0 1.5px, transparent 2px), radial-gradient(ellipse at 18px 11px, color-mix(in srgb, var(--accent) 14%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 18px 25px, color-mix(in srgb, var(--accent) 14%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 11px 18px, color-mix(in srgb, var(--sage) 18%, transparent) 0 3px, transparent 4px), radial-gradient(ellipse at 25px 18px, color-mix(in srgb, var(--sage) 18%, transparent) 0 3px, transparent 4px)",
     paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)"
   };
   if (bg.type === "solid") return `linear-gradient(${bg.color}, ${bg.color})`;
@@ -3071,13 +3070,20 @@ function HomeCustomize({
     className: "customize-layout"
   }, /*#__PURE__*/React.createElement("div", {
     className: "customize-settings"
+  }, /*#__PURE__*/React.createElement("details", {
+    className: "customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "データ管理・アプリ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
   }, /*#__PURE__*/React.createElement(PwaCustomizeCard, {
     canInstallPwa: canInstallPwa,
     isStandaloneApp: isStandaloneApp,
     onInstall: handleCustomizeInstallPwa,
     onShowInstructions: () => setShowPwaInstructions(true)
-  }), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  }))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion",
+    open: true
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "テーマ・基本デザイン"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
   }, /*#__PURE__*/React.createElement("h3", null, "テーマ"), /*#__PURE__*/React.createElement("p", null, "ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。"), /*#__PURE__*/React.createElement("div", {
     className: "theme-grid"
   }, homeThemes.map(theme => /*#__PURE__*/React.createElement("button", {
@@ -3091,8 +3097,10 @@ function HomeCustomize({
     style: {
       background: color
     }
-  }))))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  })))))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "バナー設定"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
   }, /*#__PURE__*/React.createElement("h3", null, "バナー"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する横長画像を設定できます。"), /*#__PURE__*/React.createElement("div", {
     className: "banner-size-guide"
   }, /*#__PURE__*/React.createElement("strong", null, "バナー画像の推奨サイズ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "大バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 600px / 2:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "中バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 400px / 3:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "小バナー"), /*#__PURE__*/React.createElement("small", null, "1200 × 200px / 6:1"))), /*#__PURE__*/React.createElement("p", null, "推奨サイズに近い画像を使用すると、トリミングや表示崩れが少なくなります。")), /*#__PURE__*/React.createElement("label", {
@@ -3145,12 +3153,20 @@ function HomeCustomize({
     onClick: () => updateSettings({
       bannerFit: "cover"
     })
-  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。"))), /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
+  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。")))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ホーム表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
     settings: settings,
     updateSettings: updateSettings,
     projects: projects
-  }), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  }))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "作業ツール"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "作業ツール設定"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
     className: "icon-style-choices"
   }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"], ["vivid", "ビビッド"], ["cute", "キュート"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
@@ -3205,8 +3221,12 @@ function HomeCustomize({
     tool: editingTool,
     onClose: () => setEditingTool(null),
     onSave: saveWorkTool
-  })), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  })))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "カード表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "カード密度"), /*#__PURE__*/React.createElement("p", null, "ホームや各一覧ページのカード間隔を調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "density-choice-grid"
   }, densityOptions.map(item => /*#__PURE__*/React.createElement("button", {
@@ -3216,7 +3236,7 @@ function HomeCustomize({
       displayDensity: item.id
     })
   }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "カード質感設定"), /*#__PURE__*/React.createElement("p", null, "カードの角丸・影・透明感・枠線を調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "style-control-grid"
   }, /*#__PURE__*/React.createElement("label", null, "角丸", /*#__PURE__*/React.createElement("select", {
@@ -3251,8 +3271,10 @@ function HomeCustomize({
   }, cardStyleOptions.border.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
     key: id,
     value: id
-  }, label)))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  }, label)))))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "背景"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
   }, /*#__PURE__*/React.createElement("h3", null, "背景カスタム"), /*#__PURE__*/React.createElement("p", null, "ツール全体の背景の雰囲気を調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "style-control-grid"
   }, /*#__PURE__*/React.createElement("label", null, "背景タイプ", /*#__PURE__*/React.createElement("select", {
@@ -3360,8 +3382,12 @@ function HomeCustomize({
     onChange: event => updateBackgroundStyle({
       showDecorations: event.target.checked
     })
-  }))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  })))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "フォント・アイコン"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "フォント雰囲気"), /*#__PURE__*/React.createElement("p", null, "見出しや本文の雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
     className: "preset-card-grid"
   }, fontPresetOptions.map(item => /*#__PURE__*/React.createElement("button", {
@@ -3371,7 +3397,7 @@ function HomeCustomize({
       fontPreset: item.id
     })
   }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "アイコンセット"), /*#__PURE__*/React.createElement("p", null, "メニューやカードに使うアイコンの雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
     className: "preset-card-grid"
   }, iconSetOptions.map(item => /*#__PURE__*/React.createElement("button", {
@@ -3382,8 +3408,12 @@ function HomeCustomize({
     })
   }, /*#__PURE__*/React.createElement("span", {
     className: `icon-set-sample icon-set-sample-${item.id}`
-  }, "✦"), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card page-display-settings"
+  }, "✦"), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ページ別表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card page-display-settings customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "ページごとの表示設定"), /*#__PURE__*/React.createElement("p", null, "ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "page-display-grid"
   }, /*#__PURE__*/React.createElement("div", {
@@ -3569,8 +3599,12 @@ function HomeCustomize({
     onChange: event => updatePageDisplay("mockups", {
       showCount: event.target.checked
     })
-  }))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+  }))))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ホーム表示パーツ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "表示項目"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"), /*#__PURE__*/React.createElement("div", {
     className: "toggle-list"
   }, [...homeFeatures, ...homeSections].map(item => /*#__PURE__*/React.createElement("label", {
@@ -3581,7 +3615,7 @@ function HomeCustomize({
     checked: settings.visible[item.id] !== false,
     onChange: event => updateVisible(item.id, event.target.checked)
   }))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "ホーム件数カード設定"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する件数カードを選択できます。"), /*#__PURE__*/React.createElement("div", {
     className: "toggle-list"
   }, homeStatsCardOptions.map(item => /*#__PURE__*/React.createElement("label", {
@@ -3597,7 +3631,7 @@ function HomeCustomize({
       }
     })
   }))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card"
+    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "order-list"
   }, settings.order.map(id => {
@@ -3610,8 +3644,12 @@ function HomeCustomize({
     }, "上へ"), /*#__PURE__*/React.createElement("button", {
       onClick: () => moveSection(id, 1)
     }, "下へ")));
-  }))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card backup-card"
+  }))))), /*#__PURE__*/React.createElement("details", {
+    className: "customize-card customize-accordion"
+  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "バックアップ・サンプル"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+    className: "customize-accordion-body"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card backup-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "バックアップ"), /*#__PURE__*/React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), /*#__PURE__*/React.createElement("p", {
     className: "backup-storage-note"
   }, "Prompt Atelierのデータは、このブラウザ内に保存されます。Dockのショートカットを削除しても通常は残りますが、ブラウザのサイトデータ削除や別ブラウザ利用では引き継がれない場合があります。大切なデータは定期的にバックアップを書き出してください。"), /*#__PURE__*/React.createElement("div", {
@@ -3636,7 +3674,7 @@ function HomeCustomize({
       importBackup(event.currentTarget.files?.[0]);
       event.currentTarget.value = "";
     }
-  })), /*#__PURE__*/React.createElement("section", {
+  })))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card danger-zone"
   }, /*#__PURE__*/React.createElement("h3", null, "初期化"), /*#__PURE__*/React.createElement("p", null, "テーマ、バナー、表示項目、並び順を初期設定に戻します。"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
@@ -3713,7 +3751,10 @@ function HomeCustomize({
     className: "mini-pill"
   }, "Mockup"), /*#__PURE__*/React.createElement("strong", null, "Soft Sticker")), /*#__PURE__*/React.createElement("article", null, /*#__PURE__*/React.createElement("span", {
     className: "mini-pill"
-  }, "Prompt"), /*#__PURE__*/React.createElement("strong", null, "Pastel Clipart"))), /*#__PURE__*/React.createElement("nav", {
+  }, "Prompt"), /*#__PURE__*/React.createElement("strong", null, "Pastel Clipart"))), /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-gallery",
+    "aria-label": "ミニギャラリー"
+  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("nav", {
     className: "home-mini-nav",
     "aria-label": "ミニナビ"
   }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
