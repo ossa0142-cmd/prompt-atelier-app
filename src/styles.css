@@ -3624,7 +3624,7 @@ main {
 .home-mini-preview {
   width: 100%;
   max-width: 400px;
-  aspect-ratio: 4 / 5;
+  min-height: 500px;
   justify-self: center;
   align-content: start;
   --density-gap: 8px;
@@ -3663,7 +3663,7 @@ main {
 .home-mini-banner {
   min-height: 0;
   max-height: none;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   border-radius: calc(var(--custom-card-radius) - 8px);
 }
 
@@ -3677,6 +3677,7 @@ main {
 
 .home-mini-banner.large {
   aspect-ratio: 2 / 1;
+  margin-bottom: 24px;
 }
 
 .home-mini-banner-placeholder {
@@ -3707,6 +3708,9 @@ main {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
 }
 
 .home-mini-stat,
