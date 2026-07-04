@@ -3018,7 +3018,7 @@ function HomeCustomize({
     if (!drag) return;
     event.preventDefault();
     const nextX = drag.x - (event.clientX - drag.startX) / drag.width * 100;
-    const nextY = drag.y + (event.clientY - drag.startY) / drag.height * 100;
+    const nextY = drag.y - (event.clientY - drag.startY) / drag.height * 100;
     updateBannerPosition(nextX, nextY);
   };
   const endBannerDrag = () => {
