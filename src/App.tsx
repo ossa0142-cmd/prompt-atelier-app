@@ -1047,7 +1047,7 @@ const isIndexedDbImageRef = (value: string) => /^indexeddb(?:-thumb)?:/.test(val
 const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = (value: unknown) => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles: Record<string, { maxSide: number; quality: number; thumbnailSide: number; thumbnailQuality: number; keepOriginalMaxSide?: number }> = {
-  banner: { maxSide: 1800, quality: 0.96, thumbnailSide: 1200, thumbnailQuality: 0.92, keepOriginalMaxSide: 1800 },
+  banner: { maxSide: 2560, quality: 0.98, thumbnailSide: 1600, thumbnailQuality: 0.95, keepOriginalMaxSide: 2560 },
   gallery: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   journal: { maxSide: 1400, quality: 0.92, thumbnailSide: 720, thumbnailQuality: 0.9 },
   background: { maxSide: 1600, quality: 0.88, thumbnailSide: 760, thumbnailQuality: 0.86 },

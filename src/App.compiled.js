@@ -1001,11 +1001,11 @@ const indexedDbIdFromRef = value => value.replace(/^indexeddb(?:-thumb)?:/, "");
 const isDataImageUrl = value => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles = {
   banner: {
-    maxSide: 1800,
-    quality: 0.96,
-    thumbnailSide: 1200,
-    thumbnailQuality: 0.92,
-    keepOriginalMaxSide: 1800
+    maxSide: 2560,
+    quality: 0.98,
+    thumbnailSide: 1600,
+    thumbnailQuality: 0.95,
+    keepOriginalMaxSide: 2560
   },
   gallery: {
     maxSide: 1400,

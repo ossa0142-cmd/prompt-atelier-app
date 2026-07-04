@@ -338,7 +338,9 @@ main {
   position: relative;
   display: grid;
   width: 100%;
+  max-width: 1200px;
   min-height: 0;
+  margin-inline: auto;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 30px;
