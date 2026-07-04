@@ -2952,6 +2952,15 @@ function HomeCustomize({
       }
     }
   }, persist);
+  const selectBannerSize = size => {
+    const current = settingsRef.current;
+    const position = current.bannerPositions?.[size] || defaultBannerPositions[size];
+    updateSettings({
+      bannerSize: size,
+      bannerPositionX: position.x,
+      bannerPositionY: position.y
+    }, true);
+  };
   const updateCardStyle = patch => updateSettings({
     cardStyle: {
       ...defaultCardStyle,
@@ -3211,9 +3220,7 @@ function HomeCustomize({
   }, ["small", "medium", "large"].map(size => /*#__PURE__*/React.createElement("button", {
     key: size,
     className: settings.bannerSize === size ? "active-soft" : "",
-    onClick: () => updateSettings({
-      bannerSize: size
-    })
+    onClick: () => selectBannerSize(size)
   }, size === "small" ? "小" : size === "medium" ? "中" : "大")), /*#__PURE__*/React.createElement("button", {
     onClick: () => updateSettings({
       bannerImage: "",
@@ -3780,7 +3787,6 @@ function HomeCustomize({
     onPointerMove: moveBannerDrag,
     onPointerUp: endBannerDrag,
     onPointerCancel: endBannerDrag,
-    onPointerLeave: endBannerDrag,
     onLostPointerCapture: endBannerDrag
   }, bannerSrc ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     src: bannerSrc,

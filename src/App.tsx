@@ -2911,6 +2911,15 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       },
     },
   }, persist);
+  const selectBannerSize = (size: BannerSize) => {
+    const current = settingsRef.current;
+    const position = current.bannerPositions?.[size] || defaultBannerPositions[size];
+    updateSettings({
+      bannerSize: size,
+      bannerPositionX: position.x,
+      bannerPositionY: position.y,
+    }, true);
+  };
   const updateCardStyle = (patch: Partial<CardStyleSettings>) => updateSettings({
     cardStyle: { ...defaultCardStyle, ...(settingsRef.current.cardStyle || {}), ...patch },
   });
@@ -3134,7 +3143,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
             <small className="banner-quality-note">高画質設定を反映するには、バナー画像を再アップロードしてください。</small>
             <div className="inline-buttons">
               {(["small", "medium", "large"] as const).map((size) => (
-                <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => updateSettings({ bannerSize: size })}>
+                <button key={size} className={settings.bannerSize === size ? "active-soft" : ""} onClick={() => selectBannerSize(size)}>
                   {size === "small" ? "小" : size === "medium" ? "中" : "大"}
                 </button>
               ))}
@@ -3587,7 +3596,6 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 onPointerMove={moveBannerDrag}
                 onPointerUp={endBannerDrag}
                 onPointerCancel={endBannerDrag}
-                onPointerLeave={endBannerDrag}
                 onLostPointerCapture={endBannerDrag}
               >
                 {bannerSrc ? (
