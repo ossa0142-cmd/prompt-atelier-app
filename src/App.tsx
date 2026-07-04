@@ -172,6 +172,8 @@ type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" |
 
 type HomeSectionId = "dashboard" | "quickActions" | "search" | "featureCards" | "favorites" | "atelier";
 type HomeFeatureId = "library" | "prompts" | "videos" | "mj" | "projects";
+type BannerSize = "small" | "medium" | "large";
+type BannerPositions = Record<BannerSize, { x: number; y: number }>;
 
 type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
 type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "hidden";
@@ -259,10 +261,11 @@ type HomeSettings = {
   bannerImage: string;
   bannerImageUrl: string;
   bannerVisible: boolean;
-  bannerSize: "small" | "medium" | "large";
+  bannerSize: BannerSize;
   bannerFit: "contain" | "cover";
   bannerPositionX: number;
   bannerPositionY: number;
+  bannerPositions: BannerPositions;
   workToolIconStyle: WorkToolIconStyle;
   displayDensity: DisplayDensity;
   pageDisplaySettings: PageDisplaySettings;
@@ -559,6 +562,13 @@ function normalizeVideoPrompt(item: any): VideoItem {
   };
 }
 
+const bannerSizes: BannerSize[] = ["small", "medium", "large"];
+const defaultBannerPositions: BannerPositions = {
+  small: { x: 50, y: 50 },
+  medium: { x: 50, y: 50 },
+  large: { x: 50, y: 50 },
+};
+
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
   bannerImage: "",
@@ -568,6 +578,7 @@ const defaultHomeSettings: HomeSettings = {
   bannerFit: "contain",
   bannerPositionX: 50,
   bannerPositionY: 50,
+  bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
@@ -624,14 +635,31 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
     ? settings.iconSet as IconSet
     : "line";
   const safePosition = (value: any) => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
+  const safeBannerSize: BannerSize = bannerSizes.includes(settings?.bannerSize as BannerSize) ? settings.bannerSize as BannerSize : "medium";
+  const legacyPosition = {
+    x: safePosition(settings?.bannerPositionX),
+    y: safePosition(settings?.bannerPositionY),
+  };
+  const rawBannerPositions = (settings as any)?.bannerPositions || {};
+  const bannerPositions = bannerSizes.reduce((positions, size) => {
+    const stored = rawBannerPositions?.[size] || {};
+    positions[size] = {
+      x: safePosition(stored.x ?? legacyPosition.x),
+      y: safePosition(stored.y ?? legacyPosition.y),
+    };
+    return positions;
+  }, {} as BannerPositions);
+  const activeBannerPosition = bannerPositions[safeBannerSize] || legacyPosition;
   const bannerImage = (settings as any)?.bannerImage || settings?.bannerImageUrl || "";
   return {
     ...defaultHomeSettings,
     ...settings,
     bannerImage,
     bannerImageUrl: settings?.bannerImageUrl || bannerImage,
-    bannerPositionX: safePosition(settings?.bannerPositionX),
-    bannerPositionY: safePosition(settings?.bannerPositionY),
+    bannerSize: safeBannerSize,
+    bannerPositionX: activeBannerPosition.x,
+    bannerPositionY: activeBannerPosition.y,
+    bannerPositions,
     displayDensity: safeDensity,
     pageDisplaySettings: {
       gallery: { ...defaultPageDisplaySettings.gallery, ...(rawPageSettings as any).gallery },
@@ -1329,6 +1357,15 @@ function homeBannerSrc(settings: HomeSettings) {
   return imageSrc(value) || imageThumbnail(value);
 }
 
+function homeBannerPosition(settings: HomeSettings) {
+  const size: BannerSize = bannerSizes.includes(settings?.bannerSize as BannerSize) ? settings.bannerSize as BannerSize : "medium";
+  const position = settings?.bannerPositions?.[size];
+  return {
+    x: Number.isFinite(Number(position?.x)) ? Number(position?.x) : settings?.bannerPositionX ?? 50,
+    y: Number.isFinite(Number(position?.y)) ? Number(position?.y) : settings?.bannerPositionY ?? 50,
+  };
+}
+
 function getCoverImages(item: any) {
   const existing = Array.isArray(item?.coverImages)
     ? item.coverImages.filter(Boolean)
@@ -1961,6 +1998,7 @@ function sampleHomeSettings(value: any) {
     bannerFit: cleaned.bannerFit,
     bannerPositionX: cleaned.bannerPositionX,
     bannerPositionY: cleaned.bannerPositionY,
+    bannerPositions: cleaned.bannerPositions,
     workToolIconStyle: cleaned.workToolIconStyle,
     displayDensity: cleaned.displayDensity,
     pageDisplaySettings: cleaned.pageDisplaySettings,
@@ -2629,6 +2667,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
     return null;
   };
   const bannerSrc = homeBannerSrc(settings);
+  const bannerPosition = homeBannerPosition(settings);
   return (
     <section className="page home-page">
       <div className="home-topbar">
@@ -2640,7 +2679,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, c
             <img
               src={bannerSrc}
               alt=""
-              style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
+              style={{ objectPosition: `${bannerPosition.x}% ${bannerPosition.y}%` }}
             />
           ) : (
             <>
@@ -2863,6 +2902,14 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   const updateBannerPosition = (x: number, y: number, persist = false) => updateSettings({
     bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
     bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
+    bannerPositions: {
+      ...defaultBannerPositions,
+      ...(settingsRef.current.bannerPositions || {}),
+      [settingsRef.current.bannerSize || "medium"]: {
+        x: Math.min(100, Math.max(0, Math.round(x))),
+        y: Math.min(100, Math.max(0, Math.round(y))),
+      },
+    },
   }, persist);
   const updateCardStyle = (patch: Partial<CardStyleSettings>) => updateSettings({
     cardStyle: { ...defaultCardStyle, ...(settingsRef.current.cardStyle || {}), ...patch },
@@ -2889,8 +2936,8 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     bannerDragRef.current = {
       startX: event.clientX,
       startY: event.clientY,
-      x: currentSettings.bannerPositionX ?? 50,
-      y: currentSettings.bannerPositionY ?? 50,
+      x: homeBannerPosition(currentSettings).x,
+      y: homeBannerPosition(currentSettings).y,
       width: bounds.width || 1,
       height: bounds.height || 1,
     };
@@ -2898,6 +2945,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   };
   const bannerImageValue = homeBannerImageValue(settings);
   const bannerSrc = homeBannerSrc(settings);
+  const bannerPosition = homeBannerPosition(settings);
   const moveBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = bannerDragRef.current;
     if (!drag) return;
@@ -3548,7 +3596,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                       src={bannerSrc}
                       alt=""
                       draggable={false}
-                      style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
+                      style={{ objectPosition: `${bannerPosition.x}% ${bannerPosition.y}%` }}
                     />
                     {bannerCanDrag && <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>}
                   </>

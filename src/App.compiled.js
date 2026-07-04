@@ -546,6 +546,21 @@ function normalizeVideoPrompt(item) {
     updatedAt: item?.updatedAt || item?.createdAt || ""
   };
 }
+const bannerSizes = ["small", "medium", "large"];
+const defaultBannerPositions = {
+  small: {
+    x: 50,
+    y: 50
+  },
+  medium: {
+    x: 50,
+    y: 50
+  },
+  large: {
+    x: 50,
+    y: 50
+  }
+};
 const defaultHomeSettings = {
   themeId: "cute",
   bannerImage: "",
@@ -555,6 +570,7 @@ const defaultHomeSettings = {
   bannerFit: "contain",
   bannerPositionX: 50,
   bannerPositionY: 50,
+  bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
@@ -611,14 +627,31 @@ const normalizeHomeSettings = settings => {
   const safeFontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset) ? settings.fontPreset : "simple";
   const safeIconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet) ? settings.iconSet : "line";
   const safePosition = value => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
+  const safeBannerSize = bannerSizes.includes(settings?.bannerSize) ? settings.bannerSize : "medium";
+  const legacyPosition = {
+    x: safePosition(settings?.bannerPositionX),
+    y: safePosition(settings?.bannerPositionY)
+  };
+  const rawBannerPositions = settings?.bannerPositions || {};
+  const bannerPositions = bannerSizes.reduce((positions, size) => {
+    const stored = rawBannerPositions?.[size] || {};
+    positions[size] = {
+      x: safePosition(stored.x ?? legacyPosition.x),
+      y: safePosition(stored.y ?? legacyPosition.y)
+    };
+    return positions;
+  }, {});
+  const activeBannerPosition = bannerPositions[safeBannerSize] || legacyPosition;
   const bannerImage = settings?.bannerImage || settings?.bannerImageUrl || "";
   return {
     ...defaultHomeSettings,
     ...settings,
     bannerImage,
     bannerImageUrl: settings?.bannerImageUrl || bannerImage,
-    bannerPositionX: safePosition(settings?.bannerPositionX),
-    bannerPositionY: safePosition(settings?.bannerPositionY),
+    bannerSize: safeBannerSize,
+    bannerPositionX: activeBannerPosition.x,
+    bannerPositionY: activeBannerPosition.y,
+    bannerPositions,
     displayDensity: safeDensity,
     pageDisplaySettings: {
       gallery: {
@@ -1298,6 +1331,14 @@ function homeBannerSrc(settings) {
   const value = homeBannerImageValue(settings);
   return imageSrc(value) || imageThumbnail(value);
 }
+function homeBannerPosition(settings) {
+  const size = bannerSizes.includes(settings?.bannerSize) ? settings.bannerSize : "medium";
+  const position = settings?.bannerPositions?.[size];
+  return {
+    x: Number.isFinite(Number(position?.x)) ? Number(position?.x) : settings?.bannerPositionX ?? 50,
+    y: Number.isFinite(Number(position?.y)) ? Number(position?.y) : settings?.bannerPositionY ?? 50
+  };
+}
 function getCoverImages(item) {
   const existing = Array.isArray(item?.coverImages) ? item.coverImages.filter(Boolean) : [];
   if (existing.length) return existing.slice(0, 3);
@@ -1915,6 +1956,7 @@ function sampleHomeSettings(value) {
     bannerFit: cleaned.bannerFit,
     bannerPositionX: cleaned.bannerPositionX,
     bannerPositionY: cleaned.bannerPositionY,
+    bannerPositions: cleaned.bannerPositions,
     workToolIconStyle: cleaned.workToolIconStyle,
     displayDensity: cleaned.displayDensity,
     pageDisplaySettings: cleaned.pageDisplaySettings,
@@ -2600,6 +2642,7 @@ function Home({
     return null;
   };
   const bannerSrc = homeBannerSrc(settings);
+  const bannerPosition = homeBannerPosition(settings);
   return /*#__PURE__*/React.createElement("section", {
     className: "page home-page"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2610,7 +2653,7 @@ function Home({
     src: bannerSrc,
     alt: "",
     style: {
-      objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%`
+      objectPosition: `${bannerPosition.x}% ${bannerPosition.y}%`
     }
   }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)), /*#__PURE__*/React.createElement(HomeCharacter, {
     settings: settings.homeCharacter,
@@ -2899,7 +2942,15 @@ function HomeCustomize({
   };
   const updateBannerPosition = (x, y, persist = false) => updateSettings({
     bannerPositionX: Math.min(100, Math.max(0, Math.round(x))),
-    bannerPositionY: Math.min(100, Math.max(0, Math.round(y)))
+    bannerPositionY: Math.min(100, Math.max(0, Math.round(y))),
+    bannerPositions: {
+      ...defaultBannerPositions,
+      ...(settingsRef.current.bannerPositions || {}),
+      [settingsRef.current.bannerSize || "medium"]: {
+        x: Math.min(100, Math.max(0, Math.round(x))),
+        y: Math.min(100, Math.max(0, Math.round(y)))
+      }
+    }
   }, persist);
   const updateCardStyle = patch => updateSettings({
     cardStyle: {
@@ -2937,8 +2988,8 @@ function HomeCustomize({
     bannerDragRef.current = {
       startX: event.clientX,
       startY: event.clientY,
-      x: currentSettings.bannerPositionX ?? 50,
-      y: currentSettings.bannerPositionY ?? 50,
+      x: homeBannerPosition(currentSettings).x,
+      y: homeBannerPosition(currentSettings).y,
       width: bounds.width || 1,
       height: bounds.height || 1
     };
@@ -2946,6 +2997,7 @@ function HomeCustomize({
   };
   const bannerImageValue = homeBannerImageValue(settings);
   const bannerSrc = homeBannerSrc(settings);
+  const bannerPosition = homeBannerPosition(settings);
   const moveBannerDrag = event => {
     const drag = bannerDragRef.current;
     if (!drag) return;
@@ -3735,7 +3787,7 @@ function HomeCustomize({
     alt: "",
     draggable: false,
     style: {
-      objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%`
+      objectPosition: `${bannerPosition.x}% ${bannerPosition.y}%`
     }
   }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
     className: "banner-drag-hint"
