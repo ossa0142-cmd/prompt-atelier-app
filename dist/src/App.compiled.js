@@ -6,9 +6,6 @@ const homeSections = [{
   id: "quickActions",
   label: "作業ツール"
 }, {
-  id: "search",
-  label: "検索バー"
-}, {
   id: "featureCards",
   label: "メイン機能カード"
 }, {
@@ -604,10 +601,10 @@ const defaultHomeSettings = {
     atelier: true,
     dashboard: true,
     quickActions: true,
-    search: true,
+    search: false,
     featureCards: true
   },
-  order: ["dashboard", "quickActions", "search", "featureCards", "favorites", "atelier"]
+  order: ["dashboard", "quickActions", "featureCards", "favorites", "atelier"]
 };
 const normalizeHomeSettings = settings => {
   const rawCharacter = {
@@ -2416,11 +2413,7 @@ function App() {
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
-    atelierImages: atelierImages,
-    onOpenSearchResult: target => {
-      setNavigationTarget(target);
-      setScreen(target.screen);
-    }
+    atelierImages: atelierImages
   }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
@@ -2580,125 +2573,10 @@ function Home({
   copyText,
   settings,
   workTools,
-  atelierImages,
-  onOpenSearchResult
+  atelierImages
 }) {
-  const [homeQuery, setHomeQuery] = React.useState("");
   const isVisible = id => settings.visible[id] !== false;
   const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
-  const mockupCategories = React.useMemo(() => storedMockupCategoriesForSearch(), []);
-  const searchItems = React.useMemo(() => [...entries.map(([screen, title, body]) => ({
-    id: `page-${screen}`,
-    title,
-    type: "ページ",
-    screen,
-    target: {
-      screen: screen,
-      kind: "page"
-    },
-    text: `${title} ${body}`
-  })), ...mockupCategories.map(item => ({
-    id: `mockup-category-${item.id}`,
-    title: item.title || "モックアップカテゴリ",
-    type: "モックアップカテゴリ",
-    screen: "library",
-    target: {
-      screen: "library",
-      kind: "mockup-category",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(mockupPrompts || []).map(item => ({
-    id: `mockup-${item.id}`,
-    title: item.title || item.category || "モックアップ",
-    type: item.isTextStock ? "モックアップストック" : "モックアップ",
-    screen: "library",
-    target: {
-      screen: "library",
-      kind: item.isTextStock ? "mockup-stock" : "mockup-prompt",
-      id: item.id,
-      categoryId: item.categoryId
-    },
-    text: searchableTextFromValue(item)
-  })), ...(myPrompts || []).map(item => ({
-    id: `prompt-${item.id}`,
-    title: item.title || "プロンプト",
-    type: item.isTextStock ? "プロンプトストック" : "プロンプト帳",
-    screen: "prompts",
-    target: {
-      screen: "prompts",
-      kind: item.isTextStock ? "prompt-stock" : "prompt-card",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(mjSettings || []).map(item => ({
-    id: `mj-${item.id}`,
-    title: item.title || "MJ設定",
-    type: "MJ設定",
-    screen: "mj",
-    target: {
-      screen: "mj",
-      kind: "mj-card",
-      id: item.id
-    },
-    text: `${searchableTextFromValue(item)} ${mjCommand(item)}`
-  })), ...(projects || []).map(item => ({
-    id: `project-${item.id}`,
-    title: item.name || item.title || "プロジェクト",
-    type: "プロジェクト",
-    screen: "projects",
-    target: {
-      screen: "projects",
-      kind: "project-card",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(videos || []).map(item => ({
-    id: `video-${item.id}`,
-    title: item.title || "動画プロンプト",
-    type: "動画プロンプト帳",
-    screen: "videos",
-    target: {
-      screen: "videos",
-      kind: "video-card",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(videoStocks || []).map(item => ({
-    id: `video-stock-${item.id}`,
-    title: item.title || "動画プロンプトストック",
-    type: "動画ストック",
-    screen: "videos",
-    target: {
-      screen: "videos",
-      kind: "video-stock",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(atelierImages || []).map(item => ({
-    id: `gallery-${item.id}`,
-    title: item.title || item.memo || "ギャラリー画像",
-    type: "ギャラリー",
-    screen: "gallery",
-    target: {
-      screen: "gallery",
-      kind: "gallery-card",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  })), ...(workTools || []).map(item => ({
-    id: `tool-${item.id}`,
-    title: item.name || "作業ツール",
-    type: "作業ツール",
-    screen: "home",
-    target: {
-      screen: "home",
-      kind: "work-tool",
-      id: item.id
-    },
-    text: searchableTextFromValue(item)
-  }))], [mockupCategories, mockupPrompts, myPrompts, mjSettings, projects, videos, videoStocks, atelierImages, workTools]);
-  const searchable = homeQuery.trim() ? searchItems.filter(item => lowerIncludes(item.text, homeQuery)).slice(0, 10) : [];
   const nextReminder = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => {
     const aInfo = projectDueInfo(a.dueDate || "");
     const bInfo = projectDueInfo(b.dueDate || "");
@@ -2785,26 +2663,7 @@ function Home({
       }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("strong", null, tool.name)))));
     }
     if (sectionId === "search") {
-      return /*#__PURE__*/React.createElement("section", {
-        key: sectionId
-      }, /*#__PURE__*/React.createElement("div", {
-        className: "home-search"
-      }, /*#__PURE__*/React.createElement("span", null, "⌕"), /*#__PURE__*/React.createElement("input", {
-        value: homeQuery,
-        onChange: e => setHomeQuery(e.target.value),
-        placeholder: "入力した文字をまとめて検索..."
-      })), homeQuery && /*#__PURE__*/React.createElement("div", {
-        className: "home-search-results"
-      }, searchable.length ? searchable.map(item => /*#__PURE__*/React.createElement("button", {
-        key: item.id,
-        onClick: () => {
-          setHomeQuery("");
-          onOpenSearchResult?.(item.target || {
-            screen: item.screen,
-            kind: "page"
-          });
-        }
-      }, /*#__PURE__*/React.createElement("span", null, item.title), /*#__PURE__*/React.createElement("small", null, item.type))) : /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。")));
+      return null;
     }
     if (sectionId === "featureCards") {
       const visibleEntries = entries.filter(([id]) => isVisible(id));
