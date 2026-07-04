@@ -66,6 +66,29 @@
         gap: 12px;
         margin-top: 26px;
       }
+      .file-restore {
+        margin-top: 18px;
+        padding: 18px;
+        border: 1px dashed rgba(151, 110, 170, 0.34);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.58);
+      }
+      .file-restore strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 15px;
+      }
+      input[type="file"] {
+        width: 100%;
+        box-sizing: border-box;
+        margin: 10px 0 12px;
+        padding: 12px;
+        border: 1px solid rgba(190, 150, 213, 0.24);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.86);
+        color: inherit;
+        font: inherit;
+      }
       button,
       a {
         border: 0;
@@ -80,6 +103,12 @@
         color: #fff;
         background: linear-gradient(135deg, #b98bd4, #a978c6);
         box-shadow: 0 14px 34px rgba(146, 89, 169, 0.22);
+      }
+      button.secondary {
+        color: #5d4a60;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(190, 150, 213, 0.24);
+        box-shadow: none;
       }
       a {
         color: #5d4a60;
@@ -113,6 +142,14 @@
         <button id="restoreButton" type="button">モックアップだけ復元する</button>
         <a href="./index.html">アプリへ戻る</a>
       </div>
+      <div class="file-restore">
+        <strong>手元のJSONから復元する場合</strong>
+        <p>
+          `prompt-atelier-sample-seed.json` を選ぶと、その中からモックアップカテゴリと中のプロンプトだけを取り出して復元します。
+        </p>
+        <input id="seedFile" type="file" accept="application/json,.json" />
+        <button id="restoreFromFileButton" class="secondary" type="button">選んだJSONからモックアップだけ復元する</button>
+      </div>
       <div id="status" aria-live="polite"></div>
     </main>
     <script>
@@ -138,10 +175,7 @@
         localStorage.setItem(key, JSON.stringify(value));
       }
 
-      async function loadSeed() {
-        const response = await fetch("./src/data/sampleSeed.json", { cache: "no-store" });
-        if (!response.ok) throw new Error("sampleSeed.jsonを読み込めませんでした");
-        const seed = await response.json();
+      function extractMockups(seed) {
         const data = seed.data || seed;
         const categories = Array.isArray(data.mockupCategories)
           ? data.mockupCategories
@@ -156,12 +190,26 @@
         return { categories, prompts };
       }
 
-      async function restoreMockupsOnly() {
-        const button = document.getElementById("restoreButton");
+      async function loadSeed() {
+        const response = await fetch("./src/data/sampleSeed.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("sampleSeed.jsonを読み込めませんでした");
+        const seed = await response.json();
+        return extractMockups(seed);
+      }
+
+      async function loadSeedFromFile() {
+        const input = document.getElementById("seedFile");
+        const file = input.files && input.files[0];
+        if (!file) throw new Error("復元に使うJSONファイルを選んでください");
+        const text = await file.text();
+        return extractMockups(JSON.parse(text));
+      }
+
+      async function applyMockupRestore(loadData, button) {
         button.disabled = true;
         setStatus("復元データを確認しています...", false);
         try {
-          const { categories, prompts } = await loadSeed();
+          const { categories, prompts } = await loadData();
           const stamp = new Date().toISOString().replace(/[:.]/g, "-");
           const currentCategories = readStorage(CATEGORY_KEY);
           const currentPrompts = readStorage(PROMPT_KEY);
@@ -181,7 +229,12 @@
         }
       }
 
-      document.getElementById("restoreButton").addEventListener("click", restoreMockupsOnly);
+      document.getElementById("restoreButton").addEventListener("click", () => {
+        applyMockupRestore(loadSeed, document.getElementById("restoreButton"));
+      });
+      document.getElementById("restoreFromFileButton").addEventListener("click", () => {
+        applyMockupRestore(loadSeedFromFile, document.getElementById("restoreFromFileButton"));
+      });
     </script>
   </body>
 </html>

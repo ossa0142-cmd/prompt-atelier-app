@@ -168,7 +168,7 @@ type PwaInstallPromptEvent = Event & {
   userChoice?: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
 
-type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos";
+type Screen = "home" | "library" | "prompts" | "mj" | "projects" | "customize" | "journal" | "gallery" | "videos" | "restoreMockups";
 type SearchTarget = {
   id: string;
   itemId?: string;
@@ -2278,6 +2278,35 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
   return storageData;
 }
 
+function extractMockupRestoreData(seed: any) {
+  const data = seed?.data || seed || {};
+  const categories = Array.isArray(data.mockupCategories)
+    ? data.mockupCategories
+    : Array.isArray(data.libraryItems)
+      ? data.libraryItems
+      : [];
+  const prompts = [
+    ...(Array.isArray(data.mockupItems) ? data.mockupItems : []),
+    ...(Array.isArray(data.mockupStocks) ? data.mockupStocks : []),
+  ];
+  if (!categories.length || !prompts.length) {
+    throw new Error("モックアップ復元データが見つかりませんでした");
+  }
+  return { categories, prompts };
+}
+
+function restoreMockupStorageOnly(categories: MockupCategory[], prompts: LibraryBoardPrompt[]) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const currentCategories = localStorage.getItem(MOCKUP_CATEGORY_STORAGE_KEY);
+  const currentPrompts = localStorage.getItem(MOCKUP_PROMPT_STORAGE_KEY);
+  if (currentCategories !== null) localStorage.setItem(`${MOCKUP_CATEGORY_STORAGE_KEY}__before_restore_${stamp}`, currentCategories);
+  if (currentPrompts !== null) localStorage.setItem(`${MOCKUP_PROMPT_STORAGE_KEY}__before_restore_${stamp}`, currentPrompts);
+  localStorage.setItem(MOCKUP_CATEGORY_STORAGE_KEY, JSON.stringify(categories));
+  localStorage.setItem(MOCKUP_PROMPT_STORAGE_KEY, JSON.stringify(prompts));
+  backupStorageValueIfNeeded(MOCKUP_CATEGORY_STORAGE_KEY, categories);
+  backupStorageValueIfNeeded(MOCKUP_PROMPT_STORAGE_KEY, prompts);
+}
+
 async function loadSampleSeedIfNeeded() {
   try {
     const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
@@ -2544,6 +2573,13 @@ function App() {
             canInstallPwa={Boolean(installPrompt || (window as any).__promptAtelierInstallPrompt)}
             isStandaloneApp={isStandaloneApp}
             onInstallPwa={installPwa}
+            onOpenMockupRestore={() => goToScreen("restoreMockups")}
+          />
+        )}
+        {screen === "restoreMockups" && (
+          <MockupRestorePage
+            setScreen={goToScreen}
+            setMockupPrompts={setMockupPrompts}
           />
         )}
         {screen === "library" && <Library copyText={copyText} setScreen={goToScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} searchTarget={searchTarget} />}
@@ -2645,6 +2681,76 @@ function PwaCustomizeCard({ canInstallPwa, isStandaloneApp, onInstall, onShowIns
           )}
         </>
       )}
+    </section>
+  );
+}
+
+function MockupRestorePage({ setScreen, setMockupPrompts }: any) {
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [status, setStatus] = React.useState("");
+  const [isRestoring, setIsRestoring] = React.useState(false);
+
+  const applyRestore = async (loader: () => Promise<{ categories: MockupCategory[]; prompts: LibraryBoardPrompt[] }>) => {
+    if (!window.confirm("モックアップライブラリのカテゴリと中のプロンプトだけを復元します。カスタマイズ設定は変更しません。実行しますか？")) return;
+    setIsRestoring(true);
+    setStatus("復元データを確認しています...");
+    try {
+      const { categories, prompts } = await loader();
+      restoreMockupStorageOnly(categories, prompts);
+      setMockupPrompts(prompts);
+      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップを復元しました（カテゴリ${categories.length}件 / プロンプト${prompts.length}件）`);
+      window.location.reload();
+    } catch (error: any) {
+      console.error("[Prompt Atelier] モックアップ復元に失敗しました", error);
+      setStatus(error?.message || "モックアップ復元に失敗しました");
+      setIsRestoring(false);
+    }
+  };
+
+  const restoreFromBundledSeed = () => applyRestore(async () => {
+    const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
+    if (!response.ok) throw new Error("同梱サンプルデータを読み込めませんでした");
+    return extractMockupRestoreData(await response.json());
+  });
+
+  const restoreFromSelectedFile = () => applyRestore(async () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) throw new Error("復元に使うJSONファイルを選んでください");
+    const text = await file.text();
+    return extractMockupRestoreData(JSON.parse(text));
+  });
+
+  return (
+    <section className="page mockup-restore-page">
+      <PageHead
+        title="モックアップだけ復元"
+        action={<PageBackButton label="カスタマイズへ戻る" onClick={() => setScreen("customize")} />}
+      />
+      <div className="customize-card mockup-restore-card">
+        <h3>モックアップライブラリだけを戻します</h3>
+        <p>
+          カスタマイズ設定、バナー、ホームキャラクター、作業ツール、プロンプト帳、動画プロンプト帳は触らず、
+          モックアップライブラリのカテゴリと中のプロンプトだけを復元します。
+        </p>
+        <p className="backup-storage-note">
+          復元前のモックアップデータは、念のためブラウザ内に退避してから復元します。
+        </p>
+        <div className="backup-actions">
+          <button className="primary" onClick={restoreFromBundledSeed} disabled={isRestoring}>
+            同梱サンプルから復元
+          </button>
+        </div>
+        <div className="developer-tools">
+          <strong>手元のJSONから復元</strong>
+          <p>添付の prompt-atelier-sample-seed.json を選ぶと、その中からモックアップだけを取り出して復元します。</p>
+          <input ref={fileInputRef} type="file" accept="application/json,.json" />
+          <button onClick={restoreFromSelectedFile} disabled={isRestoring}>選んだJSONから復元</button>
+        </div>
+        {status && <p className="restore-status">{status}</p>}
+      </div>
+      <div className="page-bottom-actions">
+        <PageBackButton label="カスタマイズへ戻る" onClick={() => setScreen("customize")} />
+      </div>
     </section>
   );
 }
@@ -3103,7 +3209,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
   );
 }
 
-function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, mockupPrompts, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, mockupPrompts, canInstallPwa, isStandaloneApp, onInstallPwa, onOpenMockupRestore }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
   const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -3781,6 +3887,11 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <strong>配布用サンプルデータ</strong>
               <p>現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。</p>
               <button onClick={exportPromptAtelierSampleSeed}>現在のデータをサンプルとして書き出す</button>
+            </div>
+            <div className="developer-tools">
+              <strong>モックアップだけ復元</strong>
+              <p>カスタマイズ設定は触らず、モックアップライブラリのカテゴリと中のプロンプトだけを戻します。</p>
+              <button onClick={onOpenMockupRestore}>モックアップだけ復元する</button>
             </div>
             <input
               ref={backupInputRef}

@@ -2190,6 +2190,29 @@ function sampleSeedDataToStorage(seedData) {
   append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
   return storageData;
 }
+function extractMockupRestoreData(seed) {
+  const data = seed?.data || seed || {};
+  const categories = Array.isArray(data.mockupCategories) ? data.mockupCategories : Array.isArray(data.libraryItems) ? data.libraryItems : [];
+  const prompts = [...(Array.isArray(data.mockupItems) ? data.mockupItems : []), ...(Array.isArray(data.mockupStocks) ? data.mockupStocks : [])];
+  if (!categories.length || !prompts.length) {
+    throw new Error("モックアップ復元データが見つかりませんでした");
+  }
+  return {
+    categories,
+    prompts
+  };
+}
+function restoreMockupStorageOnly(categories, prompts) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const currentCategories = localStorage.getItem(MOCKUP_CATEGORY_STORAGE_KEY);
+  const currentPrompts = localStorage.getItem(MOCKUP_PROMPT_STORAGE_KEY);
+  if (currentCategories !== null) localStorage.setItem(`${MOCKUP_CATEGORY_STORAGE_KEY}__before_restore_${stamp}`, currentCategories);
+  if (currentPrompts !== null) localStorage.setItem(`${MOCKUP_PROMPT_STORAGE_KEY}__before_restore_${stamp}`, currentPrompts);
+  localStorage.setItem(MOCKUP_CATEGORY_STORAGE_KEY, JSON.stringify(categories));
+  localStorage.setItem(MOCKUP_PROMPT_STORAGE_KEY, JSON.stringify(prompts));
+  backupStorageValueIfNeeded(MOCKUP_CATEGORY_STORAGE_KEY, categories);
+  backupStorageValueIfNeeded(MOCKUP_PROMPT_STORAGE_KEY, prompts);
+}
 async function loadSampleSeedIfNeeded() {
   try {
     const response = await fetch(SAMPLE_SEED_PATH, {
@@ -2427,7 +2450,11 @@ function App() {
     mockupPrompts: mockupPrompts,
     canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
     isStandaloneApp: isStandaloneApp,
-    onInstallPwa: installPwa
+    onInstallPwa: installPwa,
+    onOpenMockupRestore: () => goToScreen("restoreMockups")
+  }), screen === "restoreMockups" && /*#__PURE__*/React.createElement(MockupRestorePage, {
+    setScreen: goToScreen,
+    setMockupPrompts: setMockupPrompts
   }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
     copyText: copyText,
     setScreen: goToScreen,
@@ -2554,6 +2581,81 @@ function PwaCustomizeCard({
   }, "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"), !canInstallPwa && /*#__PURE__*/React.createElement("small", {
     className: "pwa-install-help"
   }, "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。")));
+}
+function MockupRestorePage({
+  setScreen,
+  setMockupPrompts
+}) {
+  const fileInputRef = React.useRef(null);
+  const [status, setStatus] = React.useState("");
+  const [isRestoring, setIsRestoring] = React.useState(false);
+  const applyRestore = async loader => {
+    if (!window.confirm("モックアップライブラリのカテゴリと中のプロンプトだけを復元します。カスタマイズ設定は変更しません。実行しますか？")) return;
+    setIsRestoring(true);
+    setStatus("復元データを確認しています...");
+    try {
+      const {
+        categories,
+        prompts
+      } = await loader();
+      restoreMockupStorageOnly(categories, prompts);
+      setMockupPrompts(prompts);
+      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップを復元しました（カテゴリ${categories.length}件 / プロンプト${prompts.length}件）`);
+      window.location.reload();
+    } catch (error) {
+      console.error("[Prompt Atelier] モックアップ復元に失敗しました", error);
+      setStatus(error?.message || "モックアップ復元に失敗しました");
+      setIsRestoring(false);
+    }
+  };
+  const restoreFromBundledSeed = () => applyRestore(async () => {
+    const response = await fetch(SAMPLE_SEED_PATH, {
+      cache: "no-store"
+    });
+    if (!response.ok) throw new Error("同梱サンプルデータを読み込めませんでした");
+    return extractMockupRestoreData(await response.json());
+  });
+  const restoreFromSelectedFile = () => applyRestore(async () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) throw new Error("復元に使うJSONファイルを選んでください");
+    const text = await file.text();
+    return extractMockupRestoreData(JSON.parse(text));
+  });
+  return /*#__PURE__*/React.createElement("section", {
+    className: "page mockup-restore-page"
+  }, /*#__PURE__*/React.createElement(PageHead, {
+    title: "モックアップだけ復元",
+    action: /*#__PURE__*/React.createElement(PageBackButton, {
+      label: "カスタマイズへ戻る",
+      onClick: () => setScreen("customize")
+    })
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "customize-card mockup-restore-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "モックアップライブラリだけを戻します"), /*#__PURE__*/React.createElement("p", null, "カスタマイズ設定、バナー、ホームキャラクター、作業ツール、プロンプト帳、動画プロンプト帳は触らず、 モックアップライブラリのカテゴリと中のプロンプトだけを復元します。"), /*#__PURE__*/React.createElement("p", {
+    className: "backup-storage-note"
+  }, "復元前のモックアップデータは、念のためブラウザ内に退避してから復元します。"), /*#__PURE__*/React.createElement("div", {
+    className: "backup-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: restoreFromBundledSeed,
+    disabled: isRestoring
+  }, "同梱サンプルから復元")), /*#__PURE__*/React.createElement("div", {
+    className: "developer-tools"
+  }, /*#__PURE__*/React.createElement("strong", null, "手元のJSONから復元"), /*#__PURE__*/React.createElement("p", null, "添付の prompt-atelier-sample-seed.json を選ぶと、その中からモックアップだけを取り出して復元します。"), /*#__PURE__*/React.createElement("input", {
+    ref: fileInputRef,
+    type: "file",
+    accept: "application/json,.json"
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: restoreFromSelectedFile,
+    disabled: isRestoring
+  }, "選んだJSONから復元")), status && /*#__PURE__*/React.createElement("p", {
+    className: "restore-status"
+  }, status)), /*#__PURE__*/React.createElement("div", {
+    className: "page-bottom-actions"
+  }, /*#__PURE__*/React.createElement(PageBackButton, {
+    label: "カスタマイズへ戻る",
+    onClick: () => setScreen("customize")
+  })));
 }
 function Home({
   setScreen,
@@ -3099,7 +3201,8 @@ function HomeCustomize({
   mockupPrompts,
   canInstallPwa,
   isStandaloneApp,
-  onInstallPwa
+  onInstallPwa,
+  onOpenMockupRestore
 }) {
   const [editingTool, setEditingTool] = React.useState(null);
   const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
@@ -3939,7 +4042,11 @@ function HomeCustomize({
     className: "developer-tools"
   }, /*#__PURE__*/React.createElement("strong", null, "配布用サンプルデータ"), /*#__PURE__*/React.createElement("p", null, "現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。"), /*#__PURE__*/React.createElement("button", {
     onClick: exportPromptAtelierSampleSeed
-  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("input", {
+  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("div", {
+    className: "developer-tools"
+  }, /*#__PURE__*/React.createElement("strong", null, "モックアップだけ復元"), /*#__PURE__*/React.createElement("p", null, "カスタマイズ設定は触らず、モックアップライブラリのカテゴリと中のプロンプトだけを戻します。"), /*#__PURE__*/React.createElement("button", {
+    onClick: onOpenMockupRestore
+  }, "モックアップだけ復元する")), /*#__PURE__*/React.createElement("input", {
     ref: backupInputRef,
     type: "file",
     accept: "application/json,.json",
