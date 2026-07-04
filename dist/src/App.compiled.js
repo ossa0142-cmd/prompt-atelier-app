@@ -3121,6 +3121,9 @@ async function loadSampleSeedIfNeeded() {
 }
 async function restoreMockupSamplesIfEmpty() {
   try {
+    const RESTORE_VERSION_KEY = "promptAtelierMockupForceRestore20260705v2";
+    const CATEGORY_KEY = "prompt-atelier-mockup-categories-v2";
+    const PROMPT_KEY = "prompt-atelier-library-prompts-v5";
     const readArray = key => {
       try {
         const parsed = JSON.parse(localStorage.getItem(key) || "[]");
@@ -3129,34 +3132,19 @@ async function restoreMockupSamplesIfEmpty() {
         return [];
       }
     };
-    const itemKey = item => item?.id || item?.sampleId || "";
-    const mergeMissing = (current, incoming) => {
-      const existingKeys = new Set(current.map(itemKey).filter(Boolean));
-      const missing = incoming.filter(item => {
-        const key = itemKey(item);
-        if (!key || existingKeys.has(key)) return false;
-        existingKeys.add(key);
-        return true;
-      });
-      return missing.length ? [...current, ...missing] : current;
-    };
-    const categoriesCurrent = readArray("prompt-atelier-mockup-categories-v2");
-    const promptsCurrent = readArray("prompt-atelier-library-prompts-v5");
-    const nextCategories = categoriesCurrent.length ? mergeMissing(categoriesCurrent, BUILT_IN_MOCKUP_RESTORE_DATA.categories) : BUILT_IN_MOCKUP_RESTORE_DATA.categories;
-    const nextPrompts = promptsCurrent.length ? mergeMissing(promptsCurrent, BUILT_IN_MOCKUP_RESTORE_DATA.prompts) : BUILT_IN_MOCKUP_RESTORE_DATA.prompts;
-    let changed = false;
-    if (nextCategories.length !== categoriesCurrent.length) {
-      localStorage.setItem("prompt-atelier-mockup-categories-v2", JSON.stringify(nextCategories));
-      changed = true;
-    }
-    if (nextPrompts.length !== promptsCurrent.length) {
-      localStorage.setItem("prompt-atelier-library-prompts-v5", JSON.stringify(nextPrompts));
-      changed = true;
-    }
-    if (changed) {
-      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップライブラリを復元しました（カテゴリ${nextCategories.length}件・プロンプト${nextPrompts.length}件）`);
-    }
-    return changed;
+    const categoriesCurrent = readArray(CATEGORY_KEY);
+    const promptsCurrent = readArray(PROMPT_KEY);
+    const alreadyForced = localStorage.getItem(RESTORE_VERSION_KEY) === "done";
+    const shouldForceRestore = !alreadyForced || categoriesCurrent.length < BUILT_IN_MOCKUP_RESTORE_DATA.categories.length || promptsCurrent.length < BUILT_IN_MOCKUP_RESTORE_DATA.prompts.length;
+    if (!shouldForceRestore) return false;
+    const stamp = new Date().toISOString().replace(/[.:]/g, "-");
+    if (categoriesCurrent.length) localStorage.setItem(`${CATEGORY_KEY}__before_force_restore_${stamp}`, JSON.stringify(categoriesCurrent));
+    if (promptsCurrent.length) localStorage.setItem(`${PROMPT_KEY}__before_force_restore_${stamp}`, JSON.stringify(promptsCurrent));
+    localStorage.setItem(CATEGORY_KEY, JSON.stringify(BUILT_IN_MOCKUP_RESTORE_DATA.categories));
+    localStorage.setItem(PROMPT_KEY, JSON.stringify(BUILT_IN_MOCKUP_RESTORE_DATA.prompts));
+    localStorage.setItem(RESTORE_VERSION_KEY, "done");
+    sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップライブラリを復元しました（カテゴリ${BUILT_IN_MOCKUP_RESTORE_DATA.categories.length}件・プロンプト${BUILT_IN_MOCKUP_RESTORE_DATA.prompts.length}件）`);
+    return true;
   } catch (error) {
     console.warn("[Prompt Atelier] モックアップ復元に失敗しました", error);
     return false;
