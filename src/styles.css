@@ -1865,6 +1865,10 @@ main {
   opacity: 0.45;
 }
 
+.is-category-reordering .category-open {
+  pointer-events: none;
+}
+
 .category-sort-note {
   margin: -4px 0 0;
   color: var(--muted);

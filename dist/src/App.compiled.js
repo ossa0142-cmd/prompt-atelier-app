@@ -4026,6 +4026,8 @@ function Library({
   const [stockFrameCounts, setStockFrameCounts] = React.useState({});
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
+  const [armedCategoryId, setArmedCategoryId] = React.useState("");
+  const categoryDragMovedRef = React.useRef(false);
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
@@ -4179,57 +4181,44 @@ function Library({
       return normalizeMockupCategoryOrder(next);
     });
   };
-  const startCategoryDrag = (event, categoryId) => {
-    if (isCategorySearching) {
-      event.preventDefault();
-      return;
+  const categoryIdFromPoint = (x, y, sourceId) => {
+    const elements = document.elementsFromPoint(x, y);
+    for (const element of elements) {
+      const card = element.closest("[data-category-id]");
+      const categoryId = card?.dataset.categoryId || "";
+      if (categoryId && categoryId !== sourceId) return categoryId;
     }
-    event.stopPropagation();
-    setDraggedCategoryId(categoryId);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", categoryId);
-  };
-  const overCategoryDrag = (event, categoryId) => {
-    if (isCategorySearching || !draggedCategoryId) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    setDragOverCategoryId(categoryId);
-  };
-  const dropCategoryDrag = (event, categoryId) => {
-    if (isCategorySearching) return;
-    event.preventDefault();
-    const sourceId = draggedCategoryId || event.dataTransfer.getData("text/plain");
-    reorderCategories(sourceId, categoryId);
-    setDraggedCategoryId("");
-    setDragOverCategoryId("");
-  };
-  const endCategoryDrag = () => {
-    setDraggedCategoryId("");
-    setDragOverCategoryId("");
+    return "";
   };
   const startCategoryPointerDrag = (event, categoryId) => {
     if (isCategorySearching) return;
     event.preventDefault();
     event.stopPropagation();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     let targetId = categoryId;
     let moved = false;
+    categoryDragMovedRef.current = false;
+    document.body.classList.add("is-category-reordering");
     setDraggedCategoryId(categoryId);
     setDragOverCategoryId("");
     const handleMove = moveEvent => {
+      moveEvent.preventDefault();
       moved = true;
-      const targetCard = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest("[data-category-id]");
-      const nextTargetId = targetCard?.dataset.categoryId || "";
+      categoryDragMovedRef.current = true;
+      const nextTargetId = categoryIdFromPoint(moveEvent.clientX, moveEvent.clientY, categoryId);
       if (nextTargetId && nextTargetId !== targetId) {
         targetId = nextTargetId;
         setDragOverCategoryId(nextTargetId);
       }
     };
-    const handleEnd = () => {
+    const handleEnd = endEvent => {
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleEnd);
       window.removeEventListener("pointercancel", handleEnd);
-      if (moved && targetId && targetId !== categoryId) {
-        reorderCategories(categoryId, targetId);
+      document.body.classList.remove("is-category-reordering");
+      const finalTargetId = categoryIdFromPoint(endEvent.clientX, endEvent.clientY, categoryId) || targetId;
+      if (moved && finalTargetId && finalTargetId !== categoryId) {
+        reorderCategories(categoryId, finalTargetId);
       }
       setDraggedCategoryId("");
       setDragOverCategoryId("");
@@ -4237,6 +4226,23 @@ function Library({
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleEnd);
     window.addEventListener("pointercancel", handleEnd);
+  };
+  const handleCategoryHandleClick = (event, categoryId) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (categoryDragMovedRef.current) {
+      categoryDragMovedRef.current = false;
+      setArmedCategoryId("");
+      return;
+    }
+    if (!armedCategoryId) {
+      setArmedCategoryId(categoryId);
+      return;
+    }
+    if (armedCategoryId !== categoryId) {
+      reorderCategories(armedCategoryId, categoryId);
+    }
+    setArmedCategoryId("");
   };
   return /*#__PURE__*/React.createElement("section", {
     className: `page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`
@@ -4261,22 +4267,16 @@ function Library({
   }, /*#__PURE__*/React.createElement("p", null, "販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。")), /*#__PURE__*/React.createElement("div", {
     className: "library-category-grid"
   }, filteredCategories.map(category => /*#__PURE__*/React.createElement("article", {
-    className: `library-category-card ${draggedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
+    className: `library-category-card ${draggedCategoryId === category.id || armedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
     key: category.id,
-    "data-category-id": category.id,
-    onDragOver: event => overCategoryDrag(event, category.id),
-    onDrop: event => dropCategoryDrag(event, category.id),
-    onDragLeave: () => dragOverCategoryId === category.id && setDragOverCategoryId("")
+    "data-category-id": category.id
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     className: "category-drag-handle",
-    draggable: !isCategorySearching,
     "aria-label": `${category.title}を並び替え`,
-    title: "ドラッグして並び替え",
-    onClick: event => event.stopPropagation(),
+    title: "ドラッグ、または移動元と移動先を順番にクリック",
+    onClick: event => handleCategoryHandleClick(event, category.id),
     onPointerDown: event => startCategoryPointerDrag(event, category.id),
-    onDragStart: event => startCategoryDrag(event, category.id),
-    onDragEnd: endCategoryDrag,
     disabled: isCategorySearching
   }, "⋮⋮"), /*#__PURE__*/React.createElement(MenuButton, {
     onEdit: () => setEditingCategory(category),

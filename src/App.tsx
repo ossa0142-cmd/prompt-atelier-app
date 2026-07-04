@@ -3781,6 +3781,8 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   const [stockFrameCounts, setStockFrameCounts] = React.useState<Record<string, number>>({});
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
+  const [armedCategoryId, setArmedCategoryId] = React.useState("");
+  const categoryDragMovedRef = React.useRef(false);
   const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
@@ -3902,59 +3904,44 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
       return normalizeMockupCategoryOrder(next);
     });
   };
-  const startCategoryDrag = (event: React.DragEvent, categoryId: string) => {
-    if (isCategorySearching) {
-      event.preventDefault();
-      return;
+  const categoryIdFromPoint = (x: number, y: number, sourceId: string) => {
+    const elements = document.elementsFromPoint(x, y);
+    for (const element of elements) {
+      const card = element.closest("[data-category-id]") as HTMLElement | null;
+      const categoryId = card?.dataset.categoryId || "";
+      if (categoryId && categoryId !== sourceId) return categoryId;
     }
-    event.stopPropagation();
-    setDraggedCategoryId(categoryId);
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", categoryId);
-  };
-  const overCategoryDrag = (event: React.DragEvent, categoryId: string) => {
-    if (isCategorySearching || !draggedCategoryId) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    setDragOverCategoryId(categoryId);
-  };
-  const dropCategoryDrag = (event: React.DragEvent, categoryId: string) => {
-    if (isCategorySearching) return;
-    event.preventDefault();
-    const sourceId = draggedCategoryId || event.dataTransfer.getData("text/plain");
-    reorderCategories(sourceId, categoryId);
-    setDraggedCategoryId("");
-    setDragOverCategoryId("");
-  };
-  const endCategoryDrag = () => {
-    setDraggedCategoryId("");
-    setDragOverCategoryId("");
+    return "";
   };
   const startCategoryPointerDrag = (event: React.PointerEvent, categoryId: string) => {
     if (isCategorySearching) return;
     event.preventDefault();
     event.stopPropagation();
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
     let targetId = categoryId;
     let moved = false;
+    categoryDragMovedRef.current = false;
+    document.body.classList.add("is-category-reordering");
     setDraggedCategoryId(categoryId);
     setDragOverCategoryId("");
     const handleMove = (moveEvent: PointerEvent) => {
+      moveEvent.preventDefault();
       moved = true;
-      const targetCard = document
-        .elementFromPoint(moveEvent.clientX, moveEvent.clientY)
-        ?.closest("[data-category-id]") as HTMLElement | null;
-      const nextTargetId = targetCard?.dataset.categoryId || "";
+      categoryDragMovedRef.current = true;
+      const nextTargetId = categoryIdFromPoint(moveEvent.clientX, moveEvent.clientY, categoryId);
       if (nextTargetId && nextTargetId !== targetId) {
         targetId = nextTargetId;
         setDragOverCategoryId(nextTargetId);
       }
     };
-    const handleEnd = () => {
+    const handleEnd = (endEvent: PointerEvent) => {
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleEnd);
       window.removeEventListener("pointercancel", handleEnd);
-      if (moved && targetId && targetId !== categoryId) {
-        reorderCategories(categoryId, targetId);
+      document.body.classList.remove("is-category-reordering");
+      const finalTargetId = categoryIdFromPoint(endEvent.clientX, endEvent.clientY, categoryId) || targetId;
+      if (moved && finalTargetId && finalTargetId !== categoryId) {
+        reorderCategories(categoryId, finalTargetId);
       }
       setDraggedCategoryId("");
       setDragOverCategoryId("");
@@ -3962,6 +3949,23 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleEnd);
     window.addEventListener("pointercancel", handleEnd);
+  };
+  const handleCategoryHandleClick = (event: React.MouseEvent, categoryId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (categoryDragMovedRef.current) {
+      categoryDragMovedRef.current = false;
+      setArmedCategoryId("");
+      return;
+    }
+    if (!armedCategoryId) {
+      setArmedCategoryId(categoryId);
+      return;
+    }
+    if (armedCategoryId !== categoryId) {
+      reorderCategories(armedCategoryId, categoryId);
+    }
+    setArmedCategoryId("");
   };
   return (
     <section className={`page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`}>
@@ -3977,23 +3981,17 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
           <div className="library-category-grid">
             {filteredCategories.map((category) => (
               <article
-                className={`library-category-card ${draggedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`}
+                className={`library-category-card ${draggedCategoryId === category.id || armedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`}
                 key={category.id}
                 data-category-id={category.id}
-                onDragOver={(event) => overCategoryDrag(event, category.id)}
-                onDrop={(event) => dropCategoryDrag(event, category.id)}
-                onDragLeave={() => dragOverCategoryId === category.id && setDragOverCategoryId("")}
               >
                 <button
                   type="button"
                   className="category-drag-handle"
-                  draggable={!isCategorySearching}
                   aria-label={`${category.title}を並び替え`}
-                  title="ドラッグして並び替え"
-                  onClick={(event) => event.stopPropagation()}
+                  title="ドラッグ、または移動元と移動先を順番にクリック"
+                  onClick={(event) => handleCategoryHandleClick(event, category.id)}
                   onPointerDown={(event) => startCategoryPointerDrag(event, category.id)}
-                  onDragStart={(event) => startCategoryDrag(event, category.id)}
-                  onDragEnd={endCategoryDrag}
                   disabled={isCategorySearching}
                 >
                   ⋮⋮
