@@ -4051,43 +4051,15 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
                 <div className="category-reorder-controls" onClick={(event) => event.stopPropagation()}>
                   <button
                     type="button"
-                    className="category-reorder-button"
-                    aria-label={`${category.title}を左へ移動`}
-                    title="左へ移動"
-                    onMouseDown={(event) => triggerCategoryMove(event, category.id, -1)}
-                    onPointerDown={(event) => triggerCategoryMove(event, category.id, -1)}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                    }}
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
                     className="category-drag-handle"
                     aria-label={`${category.title}を並び替え`}
-                    title="ドラッグ、または移動元と移動先を順番にクリック"
+                    title="ドラッグして並び替え"
                     onClick={(event) => handleCategoryHandleClick(event, category.id)}
                     onKeyDown={(event) => handleCategoryKeyDown(event, category.id)}
                     onPointerDown={(event) => startCategoryPointerDrag(event, category.id)}
                     disabled={isCategorySearching}
                   >
                     ⋮⋮
-                  </button>
-                  <button
-                    type="button"
-                    className="category-reorder-button"
-                    aria-label={`${category.title}を右へ移動`}
-                    title="右へ移動"
-                    onMouseDown={(event) => triggerCategoryMove(event, category.id, 1)}
-                    onPointerDown={(event) => triggerCategoryMove(event, category.id, 1)}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                    }}
-                  >
-                    →
                   </button>
                 </div>
                 <MenuButton
