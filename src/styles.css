@@ -3827,6 +3827,58 @@ main {
   object-fit: cover;
 }
 
+.home-mini-tools.simple .home-mini-tool span {
+  background: var(--paper);
+}
+
+.home-mini-tools.simple .home-mini-tool b {
+  color: var(--ink);
+}
+
+.home-mini-tools.pastel .home-mini-tool span {
+  background: linear-gradient(145deg, var(--shell), var(--sage), var(--sand));
+}
+
+.home-mini-tools.frame .home-mini-tool span {
+  background:
+    linear-gradient(var(--paper), var(--paper)) padding-box,
+    linear-gradient(145deg, var(--shell), var(--sage)) border-box;
+}
+
+.home-mini-tools.cool .home-mini-tool span {
+  background: linear-gradient(145deg, #ffffff, #e7edf3);
+}
+
+.home-mini-tools.cool .home-mini-tool b {
+  color: #2f3c4d;
+}
+
+.home-mini-tools.dark .home-mini-tool span {
+  background: linear-gradient(145deg, #2a2725, #3d3936);
+}
+
+.home-mini-tools.dark .home-mini-tool b {
+  color: #f3eadf;
+}
+
+.home-mini-tools.vivid .home-mini-tool span {
+  background: linear-gradient(145deg, #ff4fa3, #2477ff 54%, #ffe45c);
+}
+
+.home-mini-tools.vivid .home-mini-tool b {
+  color: #ffffff;
+  text-shadow: 0 1px 6px rgba(31, 29, 28, 0.22);
+}
+
+.home-mini-tools.cute .home-mini-tool span {
+  border-radius: 10px;
+  background: linear-gradient(145deg, #ffdce8, #fff4dc 55%, #d8efe5);
+}
+
+.home-mini-tools.cute .home-mini-tool b {
+  color: #8a5968;
+}
+
 .home-mini-tool small {
   color: var(--text-sub);
   font-size: 9px;
