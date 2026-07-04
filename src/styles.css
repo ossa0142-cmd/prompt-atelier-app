@@ -3663,6 +3663,7 @@ main {
 .home-mini-banner {
   min-height: 0;
   max-height: none;
+  margin-bottom: 16px;
   border-radius: calc(var(--custom-card-radius) - 8px);
 }
 
@@ -4054,7 +4055,8 @@ main {
 .preview-banner-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: -4px;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .preview-style-showcase {
