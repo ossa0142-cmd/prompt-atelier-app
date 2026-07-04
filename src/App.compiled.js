@@ -838,6 +838,12 @@ function normalizeMockupCategoryOrder(items) {
     order: index + 1
   }));
 }
+function assignMockupCategoryOrder(items) {
+  return [...(items || [])].map((category, index) => ({
+    ...category,
+    order: index + 1
+  }));
+}
 const defaultLibraryBoardPrompts = [...libraryPrompts.map(prompt => ({
   ...prompt,
   categoryId: mockupCategoryIdByTitle[prompt.category],
@@ -4170,7 +4176,7 @@ function Library({
     });
   };
   const persistCategoryOrder = items => {
-    const next = normalizeMockupCategoryOrder(items);
+    const next = assignMockupCategoryOrder(items);
     setBoardCategories(next);
     try {
       localStorage.setItem("prompt-atelier-mockup-categories-v2", JSON.stringify(next));
