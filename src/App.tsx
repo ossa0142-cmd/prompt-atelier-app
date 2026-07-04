@@ -3415,6 +3415,15 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       />
       <div className="customize-layout">
         <div className="customize-settings">
+          <section className="customize-card restore-shortcut-card">
+            <h3>モックアップ復元</h3>
+            <p>
+              モックアップライブラリのカテゴリと中のプロンプトだけを戻せます。
+              カスタマイズ設定、バナー、ホームキャラクター、プロンプト帳は変更しません。
+            </p>
+            <button className="primary" onClick={onOpenMockupRestore}>モックアップだけ復元する</button>
+          </section>
+
           <details className="customize-accordion">
             <summary><span>データ管理・アプリ</span><b>⌄</b></summary>
             <div className="customize-accordion-body">

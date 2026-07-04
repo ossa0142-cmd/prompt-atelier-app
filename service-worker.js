@@ -1,4 +1,4 @@
-const PROMPT_ATELIER_SW = "prompt-atelier-shell-v1";
+const PROMPT_ATELIER_SW = "prompt-atelier-shell-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());

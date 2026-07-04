@@ -3451,7 +3451,12 @@ function HomeCustomize({
     className: "customize-layout"
   }, /*#__PURE__*/React.createElement("div", {
     className: "customize-settings"
-  }, /*#__PURE__*/React.createElement("details", {
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "customize-card restore-shortcut-card"
+  }, /*#__PURE__*/React.createElement("h3", null, "モックアップ復元"), /*#__PURE__*/React.createElement("p", null, "モックアップライブラリのカテゴリと中のプロンプトだけを戻せます。 カスタマイズ設定、バナー、ホームキャラクター、プロンプト帳は変更しません。"), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: onOpenMockupRestore
+  }, "モックアップだけ復元する")), /*#__PURE__*/React.createElement("details", {
     className: "customize-accordion"
   }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "データ管理・アプリ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
     className: "customize-accordion-body"
