@@ -178,6 +178,7 @@ type BannerPositions = Record<BannerSize, { x: number; y: number }>;
 type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
 type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "hidden";
 type HomeCharacterMessageMode = "auto" | "fixed" | "project";
+type HomeCharacterSize = "small" | "medium" | "large";
 type DisplayDensity = "comfortable" | "normal" | "compact";
 type CardRadiusStyle = "small" | "medium" | "large" | "pillowy";
 type CardShadowStyle = "none" | "soft" | "normal" | "dreamy";
@@ -247,6 +248,7 @@ type PageDisplaySettings = {
 type HomeCharacterSettings = {
   image: any;
   position: HomeCharacterPosition;
+  size: HomeCharacterSize;
   speechEnabled: boolean;
   messageMode: HomeCharacterMessageMode;
   fixedMessage: string;
@@ -596,6 +598,7 @@ const defaultHomeSettings: HomeSettings = {
   homeCharacter: {
     image: "",
     position: "right-bottom",
+    size: "medium",
     speechEnabled: true,
     messageMode: "auto",
     fixedMessage: "今日も制作がんばろう♡",
@@ -634,6 +637,9 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
   const safeIconSet: IconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet)
     ? settings.iconSet as IconSet
     : "line";
+  const safeCharacterSize: HomeCharacterSize = ["small", "medium", "large"].includes(rawCharacter.size)
+    ? rawCharacter.size as HomeCharacterSize
+    : "medium";
   const safePosition = (value: any) => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
   const safeBannerSize: BannerSize = bannerSizes.includes(settings?.bannerSize as BannerSize) ? settings.bannerSize as BannerSize : "medium";
   const legacyPosition = {
@@ -689,7 +695,7 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
     },
     fontPreset: safeFontPreset,
     iconSet: safeIconSet,
-    homeCharacter: { ...rawCharacter, messageMode: safeMessageMode },
+    homeCharacter: { ...rawCharacter, size: safeCharacterSize, messageMode: safeMessageMode },
     homeStatsCards: { ...defaultHomeSettings.homeStatsCards, ...(settings?.homeStatsCards || {}) },
     visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
     order: [
@@ -2757,8 +2763,9 @@ function CharacterSpeechBubble({ message }: { message: string }) {
 function HomeCharacter({ settings, projects, prompts }: { settings: HomeCharacterSettings; projects: Project[]; prompts: MyPrompt[] }) {
   if (!settings?.image || settings.position === "hidden") return null;
   const message = characterMessage(settings, projects, prompts);
+  const size = ["small", "medium", "large"].includes(settings.size) ? settings.size : "medium";
   return (
-    <aside className={`home-character ${settings.position}`} aria-label="アトリエキャラクター">
+    <aside className={`home-character ${settings.position} character-size-${size}`} aria-label="アトリエキャラクター">
       {settings.speechEnabled && <CharacterSpeechBubble message={message} />}
       <img src={imageSrc(settings.image) || imageThumbnail(settings.image)} alt="アトリエキャラクター" />
     </aside>
@@ -2823,6 +2830,13 @@ function HomeCharacterSettingsPanel({ settings, updateSettings, projects }: any)
           <option value="right-center">右側中央</option>
           <option value="left-bottom">左下</option>
           <option value="hidden">非表示</option>
+        </select>
+      </label>
+      <label>表示サイズ
+        <select value={character.size || "medium"} onChange={(event) => updateCharacter({ size: event.target.value as HomeCharacterSize })}>
+          <option value="small">小</option>
+          <option value="medium">中</option>
+          <option value="large">大</option>
         </select>
       </label>
       <label className="switch-row">

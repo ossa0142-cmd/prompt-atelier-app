@@ -588,6 +588,7 @@ const defaultHomeSettings = {
   homeCharacter: {
     image: "",
     position: "right-bottom",
+    size: "medium",
     speechEnabled: true,
     messageMode: "auto",
     fixedMessage: "今日も制作がんばろう♡",
@@ -626,6 +627,7 @@ const normalizeHomeSettings = settings => {
   const safeDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity) ? settings.displayDensity : "normal";
   const safeFontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset) ? settings.fontPreset : "simple";
   const safeIconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet) ? settings.iconSet : "line";
+  const safeCharacterSize = ["small", "medium", "large"].includes(rawCharacter.size) ? rawCharacter.size : "medium";
   const safePosition = value => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 50));
   const safeBannerSize = bannerSizes.includes(settings?.bannerSize) ? settings.bannerSize : "medium";
   const legacyPosition = {
@@ -698,6 +700,7 @@ const normalizeHomeSettings = settings => {
     iconSet: safeIconSet,
     homeCharacter: {
       ...rawCharacter,
+      size: safeCharacterSize,
       messageMode: safeMessageMode
     },
     homeStatsCards: {
@@ -2720,8 +2723,9 @@ function HomeCharacter({
 }) {
   if (!settings?.image || settings.position === "hidden") return null;
   const message = characterMessage(settings, projects, prompts);
+  const size = ["small", "medium", "large"].includes(settings.size) ? settings.size : "medium";
   return /*#__PURE__*/React.createElement("aside", {
-    className: `home-character ${settings.position}`,
+    className: `home-character ${settings.position} character-size-${size}`,
     "aria-label": "アトリエキャラクター"
   }, settings.speechEnabled && /*#__PURE__*/React.createElement(CharacterSpeechBubble, {
     message: message
@@ -2807,7 +2811,18 @@ function HomeCharacterSettingsPanel({
     value: "left-bottom"
   }, "左下"), /*#__PURE__*/React.createElement("option", {
     value: "hidden"
-  }, "非表示"))), /*#__PURE__*/React.createElement("label", {
+  }, "非表示"))), /*#__PURE__*/React.createElement("label", null, "表示サイズ", /*#__PURE__*/React.createElement("select", {
+    value: character.size || "medium",
+    onChange: event => updateCharacter({
+      size: event.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "small"
+  }, "小"), /*#__PURE__*/React.createElement("option", {
+    value: "medium"
+  }, "中"), /*#__PURE__*/React.createElement("option", {
+    value: "large"
+  }, "大"))), /*#__PURE__*/React.createElement("label", {
     className: "switch-row"
   }, /*#__PURE__*/React.createElement("span", null, "吹き出し表示"), /*#__PURE__*/React.createElement("input", {
     type: "checkbox",

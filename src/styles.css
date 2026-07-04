@@ -423,8 +423,32 @@ main {
   z-index: 6;
   display: grid;
   justify-items: center;
-  max-width: min(320px, 24vw);
+  max-width: min(var(--home-character-width, 320px), var(--home-character-vw, 24vw));
   pointer-events: none;
+}
+
+.home-character.character-size-small {
+  --home-character-width: 220px;
+  --home-character-vw: 18vw;
+  --home-character-image-width: 180px;
+  --home-character-image-height: 280px;
+  --home-character-bubble-width: 210px;
+}
+
+.home-character.character-size-medium {
+  --home-character-width: 320px;
+  --home-character-vw: 24vw;
+  --home-character-image-width: 260px;
+  --home-character-image-height: 360px;
+  --home-character-bubble-width: 260px;
+}
+
+.home-character.character-size-large {
+  --home-character-width: 420px;
+  --home-character-vw: 31vw;
+  --home-character-image-width: 340px;
+  --home-character-image-height: 460px;
+  --home-character-bubble-width: 300px;
 }
 
 .home-character.right-bottom {
@@ -445,15 +469,15 @@ main {
 
 .home-character img {
   display: block;
-  max-width: min(260px, 22vw);
-  max-height: 360px;
+  max-width: min(var(--home-character-image-width, 260px), calc(var(--home-character-vw, 24vw) - 16px));
+  max-height: var(--home-character-image-height, 360px);
   object-fit: contain;
   filter: drop-shadow(0 14px 20px rgba(73, 58, 45, 0.14));
 }
 
 .character-speech-bubble {
   position: relative;
-  max-width: 260px;
+  max-width: var(--home-character-bubble-width, 260px);
   margin-bottom: 10px;
   border: 1px solid var(--border);
   border-radius: 22px 22px 22px 8px;
