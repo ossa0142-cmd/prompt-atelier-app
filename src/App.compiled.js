@@ -2930,14 +2930,15 @@ function HomeCustomize({
     }
   };
   const startBannerDrag = event => {
-    if (!homeBannerImageValue(settings) || (settings.bannerFit || "contain") !== "cover") return;
+    const currentSettings = settingsRef.current;
+    if (!homeBannerImageValue(currentSettings)) return;
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     bannerDragRef.current = {
       startX: event.clientX,
       startY: event.clientY,
-      x: settings.bannerPositionX ?? 50,
-      y: settings.bannerPositionY ?? 50,
+      x: currentSettings.bannerPositionX ?? 50,
+      y: currentSettings.bannerPositionY ?? 50,
       width: bounds.width || 1,
       height: bounds.height || 1
     };
@@ -3077,7 +3078,7 @@ function HomeCustomize({
     ...customStyle(settings)
   };
   const previewClassName = customizeClassName(settings);
-  const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
+  const bannerCanDrag = Boolean(bannerImageValue);
   const handleCustomizeInstallPwa = () => {
     if (canInstallPwa) {
       onInstallPwa();
@@ -3727,6 +3728,7 @@ function HomeCustomize({
     onPointerMove: moveBannerDrag,
     onPointerUp: endBannerDrag,
     onPointerCancel: endBannerDrag,
+    onPointerLeave: endBannerDrag,
     onLostPointerCapture: endBannerDrag
   }, bannerSrc ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
     src: bannerSrc,
@@ -3737,7 +3739,7 @@ function HomeCustomize({
     }
   }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
     className: "banner-drag-hint"
-  }, "ドラッグで位置調整")) : /*#__PURE__*/React.createElement("div", {
+  }, "画像をドラッグして表示位置を調整")) : /*#__PURE__*/React.createElement("div", {
     className: "home-mini-banner-placeholder"
   }, /*#__PURE__*/React.createElement("span", null, "今日の制作ボード"), /*#__PURE__*/React.createElement("strong", null, "Creative Board"))), bannerImageValue && /*#__PURE__*/React.createElement("div", {
     className: "preview-banner-actions"

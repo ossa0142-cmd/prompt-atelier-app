@@ -2882,14 +2882,15 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     }
   };
   const startBannerDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!homeBannerImageValue(settings) || (settings.bannerFit || "contain") !== "cover") return;
+    const currentSettings = settingsRef.current;
+    if (!homeBannerImageValue(currentSettings)) return;
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     bannerDragRef.current = {
       startX: event.clientX,
       startY: event.clientY,
-      x: settings.bannerPositionX ?? 50,
-      y: settings.bannerPositionY ?? 50,
+      x: currentSettings.bannerPositionX ?? 50,
+      y: currentSettings.bannerPositionY ?? 50,
       width: bounds.width || 1,
       height: bounds.height || 1,
     };
@@ -3003,7 +3004,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   const activeTheme = homeThemes.find((theme) => theme.id === settings.themeId) || homeThemes[0];
   const previewStyle = { ...themeStyle(activeTheme), ...customStyle(settings) };
   const previewClassName = customizeClassName(settings);
-  const bannerCanDrag = Boolean(bannerImageValue) && (settings.bannerFit || "contain") === "cover";
+  const bannerCanDrag = Boolean(bannerImageValue);
   const handleCustomizeInstallPwa = () => {
     if (canInstallPwa) {
       onInstallPwa();
@@ -3538,6 +3539,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 onPointerMove={moveBannerDrag}
                 onPointerUp={endBannerDrag}
                 onPointerCancel={endBannerDrag}
+                onPointerLeave={endBannerDrag}
                 onLostPointerCapture={endBannerDrag}
               >
                 {bannerSrc ? (
@@ -3548,7 +3550,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                       draggable={false}
                       style={{ objectPosition: `${settings.bannerPositionX ?? 50}% ${settings.bannerPositionY ?? 50}%` }}
                     />
-                    {bannerCanDrag && <span className="banner-drag-hint">ドラッグで位置調整</span>}
+                    {bannerCanDrag && <span className="banner-drag-hint">画像をドラッグして表示位置を調整</span>}
                   </>
                 ) : (
                   <div className="home-mini-banner-placeholder">

@@ -4032,6 +4032,7 @@ main {
 .preview-banner.is-draggable {
   cursor: grab;
   touch-action: none;
+  user-select: none;
 }
 
 .preview-banner.is-draggable:active {
@@ -4053,6 +4054,7 @@ main {
   line-height: 1.3;
   text-align: center;
   box-shadow: 0 8px 20px rgba(73, 58, 45, 0.08);
+  user-select: none;
   pointer-events: none;
 }
 
