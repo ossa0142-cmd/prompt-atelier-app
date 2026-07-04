@@ -2292,6 +2292,8 @@ function App() {
     workTools: workTools,
     setWorkTools: setWorkTools,
     projects: projects,
+    myPrompts: myPrompts,
+    mjSettings: mjSettings,
     canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
     isStandaloneApp: isStandaloneApp,
     onInstallPwa: installPwa
@@ -2862,6 +2864,8 @@ function HomeCustomize({
   workTools,
   setWorkTools,
   projects,
+  myPrompts,
+  mjSettings,
   canInstallPwa,
   isStandaloneApp,
   onInstallPwa
@@ -3003,6 +3007,29 @@ function HomeCustomize({
     visible: true,
     ...tool
   })).slice(0, 10);
+  const previewDashboardItems = [{
+    id: "mockups",
+    title: "Mockup",
+    value: String(Math.max(libraryPrompts.length, 128)),
+    icon: "mockup"
+  }, {
+    id: "prompts",
+    title: "Prompt",
+    value: String(Math.max((myPrompts || []).length, 42)),
+    icon: "notebook"
+  }, {
+    id: "mjSettings",
+    title: "MJ",
+    value: String(Math.max((mjSettings || []).length, 18)),
+    icon: "magic"
+  }, {
+    id: "projects",
+    title: "Project",
+    value: String(Math.min((projects || []).length, 30)),
+    icon: "folder"
+  }].filter(item => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false).slice(0, 4);
+  const previewTools = normalizedTools.filter(tool => tool.visible !== false).slice(0, 4);
+  const previewFeatureEntries = [["library", "Mockup", "mockup"], ["prompts", "Prompt", "notebook"], ["videos", "Video", "video"], ["mj", "MJ", "magic"]].filter(([id]) => settings.visible[id] !== false).slice(0, 4);
   const saveWorkTool = tool => {
     const rawUrl = tool.url.trim();
     const safeUrl = rawUrl ? /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}` : "https://";
@@ -3722,48 +3749,42 @@ function HomeCustomize({
       event.stopPropagation();
       updateBannerPosition(50, 50, true);
     }
-  }, "中央に戻す")), /*#__PURE__*/React.createElement("section", {
+  }, "中央に戻す")), settings.visible.dashboard !== false && previewDashboardItems.length > 0 && /*#__PURE__*/React.createElement("section", {
     className: "home-mini-stats",
     "aria-label": "ミニ件数カード"
-  }, [["mockup", "Mockup", "12"], ["notebook", "Prompt", "48"], ["magic", "MJ", "18"], ["folder", "Project", "03"]].map(([icon, label, value]) => /*#__PURE__*/React.createElement("article", {
+  }, previewDashboardItems.map(item => /*#__PURE__*/React.createElement("article", {
     className: "home-mini-stat",
-    key: label
+    key: item.id
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "stat-icon"
+  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+    name: item.icon
+  })), /*#__PURE__*/React.createElement("small", null, item.title), /*#__PURE__*/React.createElement("strong", null, item.value)))), settings.visible.quickActions !== false && previewTools.length > 0 && /*#__PURE__*/React.createElement("section", {
+    className: `home-mini-tools ${settings.workToolIconStyle || "pastel"}`,
+    "aria-label": "ミニ作業ツール"
+  }, previewTools.map(tool => /*#__PURE__*/React.createElement("article", {
+    className: "home-mini-tool",
+    key: tool.id
+  }, /*#__PURE__*/React.createElement("span", null, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
+    src: imageThumbnail(tool.iconImage),
+    alt: ""
+  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("small", null, tool.name)))), settings.visible.featureCards !== false && previewFeatureEntries.length > 0 && /*#__PURE__*/React.createElement("section", {
+    className: "home-mini-features",
+    "aria-label": "ミニメイン機能カード"
+  }, previewFeatureEntries.map(([id, label, icon]) => /*#__PURE__*/React.createElement("article", {
+    className: "home-mini-feature",
+    key: id
   }, /*#__PURE__*/React.createElement("span", {
     className: "stat-icon"
   }, /*#__PURE__*/React.createElement(FeatureIcon, {
     name: icon
-  })), /*#__PURE__*/React.createElement("small", null, label), /*#__PURE__*/React.createElement("strong", null, value)))), /*#__PURE__*/React.createElement("section", {
+  })), /*#__PURE__*/React.createElement("strong", null, label)))), settings.visible.dashboard !== false && (projects || []).length > 0 && /*#__PURE__*/React.createElement("section", {
     className: "home-mini-main-card"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "mini-pill"
-  }, "今日の制作ボード"), /*#__PURE__*/React.createElement("h4", null, "Creative Board"), /*#__PURE__*/React.createElement("strong", {
+  }, "Project"), /*#__PURE__*/React.createElement("h4", null, (projects[0]?.name || "Project").slice(0, 18)), /*#__PURE__*/React.createElement("strong", {
     className: "preview-number-text"
-  }, "12 / 48 / 300DPI")), /*#__PURE__*/React.createElement("p", null, "Prompt Atelier")), /*#__PURE__*/React.createElement("section", {
-    className: "home-mini-tools",
-    "aria-label": "ミニ作業ツール"
-  }, ["GPT", "MJ", "Run"].map(label => /*#__PURE__*/React.createElement("article", {
-    className: "home-mini-tool",
-    key: label
-  }, /*#__PURE__*/React.createElement("span", null, label), /*#__PURE__*/React.createElement("small", null, label === "Run" ? "Video" : label)))), /*#__PURE__*/React.createElement("section", {
-    className: "home-mini-recent",
-    "aria-label": "ミニ最近カード"
-  }, /*#__PURE__*/React.createElement("article", null, /*#__PURE__*/React.createElement("span", {
-    className: "mini-pill"
-  }, "Mockup"), /*#__PURE__*/React.createElement("strong", null, "Soft Sticker")), /*#__PURE__*/React.createElement("article", null, /*#__PURE__*/React.createElement("span", {
-    className: "mini-pill"
-  }, "Prompt"), /*#__PURE__*/React.createElement("strong", null, "Pastel Clipart"))), /*#__PURE__*/React.createElement("section", {
-    className: "home-mini-gallery",
-    "aria-label": "ミニギャラリー"
-  }, /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("i", null)), /*#__PURE__*/React.createElement("nav", {
-    className: "home-mini-nav",
-    "aria-label": "ミニナビ"
-  }, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "mockup"
-  }), " Mockup"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "notebook"
-  }), " Prompt"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: "video"
-  }), " Video"))), /*#__PURE__*/React.createElement("button", {
+  }, projects.length, " Projects")), /*#__PURE__*/React.createElement("p", null, "Today"))), /*#__PURE__*/React.createElement("button", {
     className: "primary preview-save-home",
     onClick: () => {
       setSettings(persistHomeSettings());

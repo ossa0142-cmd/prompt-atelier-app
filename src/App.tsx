@@ -2368,6 +2368,8 @@ function App() {
             workTools={workTools}
             setWorkTools={setWorkTools}
             projects={projects}
+            myPrompts={myPrompts}
+            mjSettings={mjSettings}
             canInstallPwa={Boolean(installPrompt || (window as any).__promptAtelierInstallPrompt)}
             isStandaloneApp={isStandaloneApp}
             onInstallPwa={installPwa}
@@ -2833,7 +2835,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
   );
 }
 
-function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
   const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -2947,6 +2949,19 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
     });
   };
   const normalizedTools = (workTools as WorkTool[]).map((tool) => ({ visible: true, ...tool })).slice(0, 10);
+  const previewDashboardItems = [
+    { id: "mockups", title: "Mockup", value: String(Math.max(libraryPrompts.length, 128)), icon: "mockup" },
+    { id: "prompts", title: "Prompt", value: String(Math.max((myPrompts || []).length, 42)), icon: "notebook" },
+    { id: "mjSettings", title: "MJ", value: String(Math.max((mjSettings || []).length, 18)), icon: "magic" },
+    { id: "projects", title: "Project", value: String(Math.min((projects || []).length, 30)), icon: "folder" },
+  ].filter((item) => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id as HomeStatsCardId] !== false).slice(0, 4);
+  const previewTools = normalizedTools.filter((tool) => tool.visible !== false).slice(0, 4);
+  const previewFeatureEntries = [
+    ["library", "Mockup", "mockup"],
+    ["prompts", "Prompt", "notebook"],
+    ["videos", "Video", "video"],
+    ["mj", "MJ", "magic"],
+  ].filter(([id]) => settings.visible[id] !== false).slice(0, 4);
   const saveWorkTool = (tool: WorkTool) => {
     const rawUrl = tool.url.trim();
     const safeUrl = rawUrl ? (/^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`) : "https://";
@@ -3555,56 +3570,47 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 </button>
               </div>
             )}
-            <section className="home-mini-stats" aria-label="ミニ件数カード">
-              {[
-                ["mockup", "Mockup", "12"],
-                ["notebook", "Prompt", "48"],
-                ["magic", "MJ", "18"],
-                ["folder", "Project", "03"],
-              ].map(([icon, label, value]) => (
-                <article className="home-mini-stat" key={label}>
-                  <span className="stat-icon"><FeatureIcon name={icon} /></span>
-                  <small>{label}</small>
-                  <strong>{value}</strong>
-                </article>
-              ))}
-            </section>
-            <section className="home-mini-main-card">
-              <div>
-                <span className="mini-pill">今日の制作ボード</span>
-                <h4>Creative Board</h4>
-                <strong className="preview-number-text">12 / 48 / 300DPI</strong>
-              </div>
-              <p>Prompt Atelier</p>
-            </section>
-            <section className="home-mini-tools" aria-label="ミニ作業ツール">
-              {["GPT", "MJ", "Run"].map((label) => (
-                <article className="home-mini-tool" key={label}>
-                  <span>{label}</span>
-                  <small>{label === "Run" ? "Video" : label}</small>
-                </article>
-              ))}
-            </section>
-            <section className="home-mini-recent" aria-label="ミニ最近カード">
-              <article>
-                <span className="mini-pill">Mockup</span>
-                <strong>Soft Sticker</strong>
-              </article>
-              <article>
-                <span className="mini-pill">Prompt</span>
-                <strong>Pastel Clipart</strong>
-              </article>
-            </section>
-            <section className="home-mini-gallery" aria-label="ミニギャラリー">
-              <i />
-              <i />
-              <i />
-            </section>
-            <nav className="home-mini-nav" aria-label="ミニナビ">
-              <span><FeatureIcon name="mockup" /> Mockup</span>
-              <span><FeatureIcon name="notebook" /> Prompt</span>
-              <span><FeatureIcon name="video" /> Video</span>
-            </nav>
+            {settings.visible.dashboard !== false && previewDashboardItems.length > 0 && (
+              <section className="home-mini-stats" aria-label="ミニ件数カード">
+                {previewDashboardItems.map((item) => (
+                  <article className="home-mini-stat" key={item.id}>
+                    <span className="stat-icon"><FeatureIcon name={item.icon} /></span>
+                    <small>{item.title}</small>
+                    <strong>{item.value}</strong>
+                  </article>
+                ))}
+              </section>
+            )}
+            {settings.visible.quickActions !== false && previewTools.length > 0 && (
+              <section className={`home-mini-tools ${settings.workToolIconStyle || "pastel"}`} aria-label="ミニ作業ツール">
+                {previewTools.map((tool: WorkTool) => (
+                  <article className="home-mini-tool" key={tool.id}>
+                    <span>{tool.iconImage ? <img src={imageThumbnail(tool.iconImage)} alt="" /> : <b>{tool.iconText || tool.name.slice(0, 2)}</b>}</span>
+                    <small>{tool.name}</small>
+                  </article>
+                ))}
+              </section>
+            )}
+            {settings.visible.featureCards !== false && previewFeatureEntries.length > 0 && (
+              <section className="home-mini-features" aria-label="ミニメイン機能カード">
+                {previewFeatureEntries.map(([id, label, icon]) => (
+                  <article className="home-mini-feature" key={id}>
+                    <span className="stat-icon"><FeatureIcon name={icon} /></span>
+                    <strong>{label}</strong>
+                  </article>
+                ))}
+              </section>
+            )}
+            {settings.visible.dashboard !== false && (projects || []).length > 0 && (
+              <section className="home-mini-main-card">
+                <div>
+                  <span className="mini-pill">Project</span>
+                  <h4>{(projects[0]?.name || "Project").slice(0, 18)}</h4>
+                  <strong className="preview-number-text">{projects.length} Projects</strong>
+                </div>
+                <p>Today</p>
+              </section>
+            )}
           </div>
           <button className="primary preview-save-home" onClick={() => { setSettings(persistHomeSettings()); setScreen("home"); }}>
             保存してホームへ
