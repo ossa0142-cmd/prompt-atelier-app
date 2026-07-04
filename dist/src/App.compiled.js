@@ -4207,6 +4207,37 @@ function Library({
     setDraggedCategoryId("");
     setDragOverCategoryId("");
   };
+  const startCategoryPointerDrag = (event, categoryId) => {
+    if (isCategorySearching) return;
+    event.preventDefault();
+    event.stopPropagation();
+    let targetId = categoryId;
+    let moved = false;
+    setDraggedCategoryId(categoryId);
+    setDragOverCategoryId("");
+    const handleMove = moveEvent => {
+      moved = true;
+      const targetCard = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest("[data-category-id]");
+      const nextTargetId = targetCard?.dataset.categoryId || "";
+      if (nextTargetId && nextTargetId !== targetId) {
+        targetId = nextTargetId;
+        setDragOverCategoryId(nextTargetId);
+      }
+    };
+    const handleEnd = () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleEnd);
+      window.removeEventListener("pointercancel", handleEnd);
+      if (moved && targetId && targetId !== categoryId) {
+        reorderCategories(categoryId, targetId);
+      }
+      setDraggedCategoryId("");
+      setDragOverCategoryId("");
+    };
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleEnd);
+    window.addEventListener("pointercancel", handleEnd);
+  };
   return /*#__PURE__*/React.createElement("section", {
     className: `page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`
   }, !currentCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
@@ -4232,6 +4263,7 @@ function Library({
   }, filteredCategories.map(category => /*#__PURE__*/React.createElement("article", {
     className: `library-category-card ${draggedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
     key: category.id,
+    "data-category-id": category.id,
     onDragOver: event => overCategoryDrag(event, category.id),
     onDrop: event => dropCategoryDrag(event, category.id),
     onDragLeave: () => dragOverCategoryId === category.id && setDragOverCategoryId("")
@@ -4242,6 +4274,7 @@ function Library({
     "aria-label": `${category.title}を並び替え`,
     title: "ドラッグして並び替え",
     onClick: event => event.stopPropagation(),
+    onPointerDown: event => startCategoryPointerDrag(event, category.id),
     onDragStart: event => startCategoryDrag(event, category.id),
     onDragEnd: endCategoryDrag,
     disabled: isCategorySearching

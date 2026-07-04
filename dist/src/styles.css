@@ -1380,27 +1380,12 @@ main {
 }
 
 .home-search-results button,
-.home-search-results > small {
+.home-search-results small {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card-bg);
   color: var(--text-sub);
   padding: 10px 14px;
-}
-
-.home-search-results button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.home-search-results button small {
-  border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  color: var(--muted);
-  font-size: 11px;
-  padding: 3px 7px;
 }
 
 .home-feature-grid {
@@ -1867,6 +1852,8 @@ main {
   cursor: grab;
   font-size: 14px;
   letter-spacing: 0;
+  touch-action: none;
+  user-select: none;
 }
 
 .category-drag-handle:active {
