@@ -1,1 +1,1 @@
-v56 part2/2。prompt-atelier-localstorage-rescue.jsonをsampleSeedではなくlocalStorageスナップショットとして初回投入します。part1からpart2まで全部アップしてください。
+v56 part1/2。prompt-atelier-localstorage-rescue.jsonをsampleSeedではなくlocalStorageスナップショットとして初回投入します。part1からpart2まで全部アップしてください。

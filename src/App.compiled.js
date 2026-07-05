@@ -3035,6 +3035,27 @@ async function loadInitialLocalStorageSnapshotIfNeeded() {
     return false;
   }
 }
+async function applyInitialLocalStorageSnapshotForDev() {
+  const before = {
+    hasInitialized: localStorage.getItem("promptAtelier_hasInitialized") !== null,
+    snapshotMarker: localStorage.getItem(INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY) !== null
+  };
+  const response = await fetch(INITIAL_LOCAL_STORAGE_SNAPSHOT_PATH, {
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error("Initial localStorage snapshot was not found.");
+  const snapshot = await response.json();
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) throw new Error("Initial localStorage snapshot is invalid.");
+  const entries = Object.entries(snapshot).filter(([key]) => key.startsWith("promptAtelier") || key.startsWith("prompt-atelier"));
+  entries.forEach(([key, value]) => {
+    localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+  });
+  localStorage.setItem(INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY, "done");
+  return {
+    before,
+    appliedKeys: entries.map(([key]) => key)
+  };
+}
 function readDeletedSampleIds() {
   const values = [DELETED_SAMPLE_IDS_KEY, LEGACY_DELETED_SAMPLE_IDS_KEY].flatMap(key => {
     try {
@@ -4111,6 +4132,18 @@ function HomeCustomize({
       window.alert("バックアップファイルを読み込めませんでした。");
     }
   };
+  const applyRescueSnapshot = async () => {
+    if (!window.confirm("確認用として、rescue JSONの初期データをこのブラウザへ上書き適用しますか？")) return;
+    try {
+      const result = await applyInitialLocalStorageSnapshotForDev();
+      sessionStorage.setItem("promptAtelierRestoreMessage", `rescue JSONを手動適用しました（${result.appliedKeys.length}キー / 初回フラグ${result.before.hasInitialized ? "あり" : "なし"}）`);
+      console.info("[Prompt Atelier] rescue snapshot applied", result);
+      window.location.reload();
+    } catch (error) {
+      console.error("[Prompt Atelier] rescue JSONの手動適用に失敗しました", error);
+      window.alert("rescue JSONを手動適用できませんでした。");
+    }
+  };
   const pageSettings = settings.pageDisplaySettings || defaultPageDisplaySettings;
   const updatePageDisplay = (page, patch) => {
     const current = settingsRef.current.pageDisplaySettings || defaultPageDisplaySettings;
@@ -4811,7 +4844,12 @@ function HomeCustomize({
     className: "developer-tools"
   }, /*#__PURE__*/React.createElement("strong", null, "配布用サンプルデータ"), /*#__PURE__*/React.createElement("p", null, "現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。"), /*#__PURE__*/React.createElement("button", {
     onClick: exportPromptAtelierSampleSeed
-  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("input", {
+  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("div", {
+    className: "developer-tools"
+  }, /*#__PURE__*/React.createElement("strong", null, "確認用rescueデータ"), /*#__PURE__*/React.createElement("p", null, "初回フラグに関係なく、同梱したlocalStorageスナップショットをこのブラウザに上書き適用します。"), /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: applyRescueSnapshot
+  }, "rescue JSONを手動適用")), /*#__PURE__*/React.createElement("input", {
     ref: backupInputRef,
     type: "file",
     accept: "application/json,.json",

@@ -2179,6 +2179,26 @@ async function loadInitialLocalStorageSnapshotIfNeeded() {
   }
 }
 
+async function applyInitialLocalStorageSnapshotForDev() {
+  const before = {
+    hasInitialized: localStorage.getItem("promptAtelier_hasInitialized") !== null,
+    snapshotMarker: localStorage.getItem(INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY) !== null,
+  };
+  const response = await fetch(INITIAL_LOCAL_STORAGE_SNAPSHOT_PATH, { cache: "no-store" });
+  if (!response.ok) throw new Error("Initial localStorage snapshot was not found.");
+  const snapshot = await response.json();
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) throw new Error("Initial localStorage snapshot is invalid.");
+  const entries = Object.entries(snapshot).filter(([key]) => key.startsWith("promptAtelier") || key.startsWith("prompt-atelier"));
+  entries.forEach(([key, value]) => {
+    localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+  });
+  localStorage.setItem(INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY, "done");
+  return {
+    before,
+    appliedKeys: entries.map(([key]) => key),
+  };
+}
+
 function readDeletedSampleIds() {
   const values = [DELETED_SAMPLE_IDS_KEY, LEGACY_DELETED_SAMPLE_IDS_KEY].flatMap((key) => {
     try {
@@ -3139,6 +3159,21 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
       window.alert("バックアップファイルを読み込めませんでした。");
     }
   };
+  const applyRescueSnapshot = async () => {
+    if (!window.confirm("確認用として、rescue JSONの初期データをこのブラウザへ上書き適用しますか？")) return;
+    try {
+      const result = await applyInitialLocalStorageSnapshotForDev();
+      sessionStorage.setItem(
+        "promptAtelierRestoreMessage",
+        `rescue JSONを手動適用しました（${result.appliedKeys.length}キー / 初回フラグ${result.before.hasInitialized ? "あり" : "なし"}）`
+      );
+      console.info("[Prompt Atelier] rescue snapshot applied", result);
+      window.location.reload();
+    } catch (error) {
+      console.error("[Prompt Atelier] rescue JSONの手動適用に失敗しました", error);
+      window.alert("rescue JSONを手動適用できませんでした。");
+    }
+  };
   const pageSettings = settings.pageDisplaySettings || defaultPageDisplaySettings;
   const updatePageDisplay = (page: keyof PageDisplaySettings, patch: any) => {
     const current = settingsRef.current.pageDisplaySettings || defaultPageDisplaySettings;
@@ -3697,6 +3732,11 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <strong>配布用サンプルデータ</strong>
               <p>現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。</p>
               <button onClick={exportPromptAtelierSampleSeed}>現在のデータをサンプルとして書き出す</button>
+            </div>
+            <div className="developer-tools">
+              <strong>確認用rescueデータ</strong>
+              <p>初回フラグに関係なく、同梱したlocalStorageスナップショットをこのブラウザに上書き適用します。</p>
+              <button className="primary" onClick={applyRescueSnapshot}>rescue JSONを手動適用</button>
             </div>
             <input
               ref={backupInputRef}
