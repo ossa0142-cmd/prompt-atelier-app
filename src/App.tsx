@@ -6288,6 +6288,7 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
           >
             <button type="button" onClick={() => backgroundInputRef.current?.click()}>＋ 背景を追加</button>
             <small>画像をドロップして背景にできます</small>
+            <small>推奨アスペクト比：3:2</small>
           </div>
           {selectedCustomBackground && (
             <div className="journal-background-editor">

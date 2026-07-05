@@ -7194,7 +7194,7 @@ function JournalPage({
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => backgroundInputRef.current?.click()
-  }, "＋ 背景を追加"), /*#__PURE__*/React.createElement("small", null, "画像をドロップして背景にできます")), selectedCustomBackground && /*#__PURE__*/React.createElement("div", {
+  }, "＋ 背景を追加"), /*#__PURE__*/React.createElement("small", null, "画像をドロップして背景にできます"), /*#__PURE__*/React.createElement("small", null, "推奨アスペクト比：3:2")), selectedCustomBackground && /*#__PURE__*/React.createElement("div", {
     className: "journal-background-editor"
   }, /*#__PURE__*/React.createElement("label", null, "背景名", /*#__PURE__*/React.createElement("input", {
     value: selectedCustomBackground.title,
