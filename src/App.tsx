@@ -1081,6 +1081,8 @@ const BUILT_IN_MOCKUP_RESTORE_DATA = {"categories":[{"id":"sticker","title":"ス
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
+const INITIAL_LOCAL_STORAGE_SNAPSHOT_PATH = "./src/data/initialLocalStorageSnapshot.json";
+const INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY = "promptAtelierInitialLocalStorageSnapshotV1";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
 const SAMPLE_EXPORT_KEYS = [
@@ -2142,6 +2144,41 @@ function sampleIdOf(item: any) {
   return item?.sampleId || "";
 }
 
+function hasExistingPromptAtelierUserData(keys: string[]) {
+  return keys.some((key) => {
+    if (key === INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY) return false;
+    const raw = localStorage.getItem(key);
+    if (raw == null || raw === "") return false;
+    if (raw === "[]" || raw === "{}") return false;
+    return true;
+  });
+}
+
+async function loadInitialLocalStorageSnapshotIfNeeded() {
+  try {
+    if (localStorage.getItem(INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY) === "done") return false;
+    const response = await fetch(INITIAL_LOCAL_STORAGE_SNAPSHOT_PATH, { cache: "no-store" });
+    if (!response.ok) return false;
+    const snapshot = await response.json();
+    if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return false;
+    const entries = Object.entries(snapshot).filter(([key]) => key.startsWith("promptAtelier") || key.startsWith("prompt-atelier"));
+    const keys = entries.map(([key]) => key);
+    if (hasExistingPromptAtelierUserData(keys)) {
+      localStorage.setItem(INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY, "done");
+      return false;
+    }
+    entries.forEach(([key, value]) => {
+      if (localStorage.getItem(key) != null) return;
+      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+    });
+    localStorage.setItem(INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY, "done");
+    return entries.length > 0;
+  } catch (error) {
+    console.warn("[Prompt Atelier] 初期localStorageスナップショットの読み込みをスキップしました", error);
+    return false;
+  }
+}
+
 function readDeletedSampleIds() {
   const values = [DELETED_SAMPLE_IDS_KEY, LEGACY_DELETED_SAMPLE_IDS_KEY].flatMap((key) => {
     try {
@@ -2228,6 +2265,7 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
 
 async function loadSampleSeedIfNeeded() {
   try {
+    if (localStorage.getItem(INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY) === "done") return false;
     const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
     if (!response.ok) return false;
     const seed = await response.json();
@@ -2357,6 +2395,12 @@ function App() {
     const prepareImages = async () => {
       try {
         setIsImageMigrating(true);
+        const initialSnapshotImported = await loadInitialLocalStorageSnapshotIfNeeded();
+        if (initialSnapshotImported) {
+          sessionStorage.setItem("promptAtelierRestoreMessage", "初期データを読み込みました");
+          window.location.reload();
+          return;
+        }
         await refreshIndexedDbImageCache();
         const migrated = await migrateLocalStorageImagesToIndexedDb();
         await refreshIndexedDbImageCache();
