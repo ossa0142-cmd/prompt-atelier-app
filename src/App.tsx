@@ -2217,15 +2217,30 @@ function mergeJournalSample(existing: any, incoming: any, deletedIds: Set<string
   return next;
 }
 
+function pickSampleClockSettings(settings: any) {
+  if (!settings || typeof settings !== "object") return null;
+  const next: Record<string, any> = {};
+  if (settings.homeClockStyle) next.homeClockStyle = settings.homeClockStyle;
+  if (settings.homeClockSize) next.homeClockSize = settings.homeClockSize;
+  if (settings.homeClockColor) next.homeClockColor = settings.homeClockColor;
+  return Object.keys(next).length ? next : null;
+}
+
+function mergeHomeSettingsSample(existing: any, incoming: any, stats?: SampleSeedImportStats, key = "promptAtelierHomeSettings") {
+  const clockSettings = pickSampleClockSettings(incoming);
+  const categoryStats = sampleSeedCategoryStats(stats, key);
+  if (categoryStats) {
+    categoryStats.incoming = clockSettings ? 1 : 0;
+    if (existing == null && clockSettings) categoryStats.added = 1;
+    else if (existing != null && clockSettings) categoryStats.skippedExisting = 1;
+  }
+  if (existing != null) return existing;
+  return clockSettings ?? existing;
+}
+
 function mergeSampleValue(existing: any, incoming: any, key: string, deletedIds: Set<string>, stats?: SampleSeedImportStats) {
   if (key.includes("HomeSettings")) {
-    const categoryStats = sampleSeedCategoryStats(stats, key);
-    if (categoryStats) {
-      categoryStats.incoming = incoming ? 1 : 0;
-      if (existing == null && incoming) categoryStats.added = 1;
-      else if (existing != null && incoming) categoryStats.skippedExisting = 1;
-    }
-    return existing ?? incoming;
+    return mergeHomeSettingsSample(existing, incoming, stats, key);
   }
   if (key.includes("Journal")) return mergeJournalSample(existing, incoming, deletedIds, stats, key);
   return mergeSampleCollection(existing, incoming, deletedIds, stats, key);
@@ -2259,8 +2274,8 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
       customBackgrounds,
     };
   }
-  if (seedData.homeSettings && typeof seedData.homeSettings === "object") storageData.promptAtelierHomeSettings = seedData.homeSettings;
-  if (seedData.customizeSettings && typeof seedData.customizeSettings === "object") storageData.promptAtelierHomeSettings = seedData.customizeSettings;
+  const homeClockSettings = pickSampleClockSettings(seedData.homeSettings) || pickSampleClockSettings(seedData.customizeSettings);
+  if (homeClockSettings) storageData.promptAtelierHomeSettings = homeClockSettings;
   append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
   return storageData;
 }
