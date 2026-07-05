@@ -181,6 +181,8 @@ type HomeCharacterMessageMode = "auto" | "fixed" | "project";
 type HomeCharacterSize = "small" | "medium" | "large";
 type DisplayDensity = "comfortable" | "normal" | "compact";
 type HomeClockStyle = "pill" | "digital" | "retro" | "neon" | "doodle" | "stamp" | "minimal" | "hidden";
+type HomeClockSize = "small" | "medium" | "large";
+type HomeClockColor = "theme" | "pink" | "brown" | "blue" | "mono" | "rainbow";
 type CardRadiusStyle = "small" | "medium" | "large" | "pillowy";
 type CardShadowStyle = "none" | "soft" | "normal" | "dreamy";
 type CardTransparencyStyle = "solid" | "soft" | "glass";
@@ -271,6 +273,8 @@ type HomeSettings = {
   bannerPositions: BannerPositions;
   workToolIconStyle: WorkToolIconStyle;
   homeClockStyle: HomeClockStyle;
+  homeClockSize: HomeClockSize;
+  homeClockColor: HomeClockColor;
   displayDensity: DisplayDensity;
   pageDisplaySettings: PageDisplaySettings;
   cardStyle: CardStyleSettings;
@@ -329,6 +333,21 @@ const homeClockStyleOptions: { id: HomeClockStyle; label: string; description: s
   { id: "stamp", label: "スタンプ", description: "ハートスタンプ風の表示" },
   { id: "minimal", label: "最小", description: "月日と曜日だけ表示" },
   { id: "hidden", label: "非表示", description: "ホームに日付を出さない" },
+];
+
+const homeClockSizeOptions: { id: HomeClockSize; label: string }[] = [
+  { id: "small", label: "小" },
+  { id: "medium", label: "中" },
+  { id: "large", label: "大" },
+];
+
+const homeClockColorOptions: { id: HomeClockColor; label: string }[] = [
+  { id: "theme", label: "テーマ" },
+  { id: "pink", label: "ピンク" },
+  { id: "brown", label: "ブラウン" },
+  { id: "blue", label: "ブルー" },
+  { id: "mono", label: "モノクロ" },
+  { id: "rainbow", label: "レインボー" },
 ];
 
 const homeStatsCardOptions: { id: HomeStatsCardId; label: string }[] = [
@@ -595,6 +614,8 @@ const defaultHomeSettings: HomeSettings = {
   bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
   homeClockStyle: "pill",
+  homeClockSize: "medium",
+  homeClockColor: "theme",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
   cardStyle: defaultCardStyle,
@@ -646,6 +667,12 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
   const safeClockStyle: HomeClockStyle = ["pill", "digital", "retro", "neon", "doodle", "stamp", "minimal", "hidden"].includes(settings?.homeClockStyle)
     ? settings.homeClockStyle as HomeClockStyle
     : "pill";
+  const safeClockSize: HomeClockSize = ["small", "medium", "large"].includes(settings?.homeClockSize)
+    ? settings.homeClockSize as HomeClockSize
+    : "medium";
+  const safeClockColor: HomeClockColor = ["theme", "pink", "brown", "blue", "mono", "rainbow"].includes(settings?.homeClockColor)
+    ? settings.homeClockColor as HomeClockColor
+    : "theme";
   const safeFontPreset: FontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset)
     ? settings.fontPreset as FontPreset
     : "simple";
@@ -682,6 +709,8 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
     bannerPositionY: activeBannerPosition.y,
     bannerPositions,
     homeClockStyle: safeClockStyle,
+    homeClockSize: safeClockSize,
+    homeClockColor: safeClockColor,
     displayDensity: safeDensity,
     pageDisplaySettings: {
       gallery: { ...defaultPageDisplaySettings.gallery, ...(rawPageSettings as any).gallery },
@@ -2570,10 +2599,10 @@ function getHomeDateParts() {
   return { year, month, day, weekday, monthName, paddedDay, paddedMonth };
 }
 
-function HomeDateDisplay({ style = "pill", mini = false }: { style?: HomeClockStyle; mini?: boolean }) {
+function HomeDateDisplay({ style = "pill", size = "medium", color = "theme", mini = false }: { style?: HomeClockStyle; size?: HomeClockSize; color?: HomeClockColor; mini?: boolean }) {
   if (style === "hidden") return null;
   const { year, month, day, weekday, monthName, paddedDay, paddedMonth } = getHomeDateParts();
-  const className = `${mini ? "home-mini-date" : "home-date-display"} ${style}`;
+  const className = `${mini ? "home-mini-date" : "home-date-display"} ${style} size-${size} color-${color}`;
   const dateTime = `${year}-${paddedMonth}-${paddedDay}`;
   if (style === "minimal") {
     return <time className={className} dateTime={dateTime}>{month}/{day}（{weekday}）</time>;
@@ -2732,7 +2761,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
     <section className="page home-page">
       <div className="home-topbar">
         <span>Prompt Atelier Home</span>
-        <HomeDateDisplay style={settings.homeClockStyle || "pill"} />
+        <HomeDateDisplay style={settings.homeClockStyle || "pill"} size={settings.homeClockSize || "medium"} color={settings.homeClockColor || "theme"} />
       </div>
       {settings.bannerVisible && (
         <div className={`home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
@@ -3598,6 +3627,36 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                 </button>
               ))}
             </div>
+            <div className="clock-control-row">
+              <div>
+                <strong>サイズ</strong>
+                <div className="inline-buttons">
+                  {homeClockSizeOptions.map((item) => (
+                    <button
+                      key={item.id}
+                      className={(settings.homeClockSize || "medium") === item.id ? "active-soft" : ""}
+                      onClick={() => updateSettings({ homeClockSize: item.id })}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <strong>色味</strong>
+                <div className="inline-buttons clock-color-buttons">
+                  {homeClockColorOptions.map((item) => (
+                    <button
+                      key={item.id}
+                      className={`clock-color-choice clock-color-${item.id} ${(settings.homeClockColor || "theme") === item.id ? "active-soft" : ""}`}
+                      onClick={() => updateSettings({ homeClockColor: item.id })}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </section>
 
           <section className="customize-card customize-nested-card">
@@ -3676,7 +3735,12 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
           >
             <div className="home-mini-topbar">
               <strong>Prompt Atelier</strong>
-              <HomeDateDisplay style={settings.homeClockStyle || "pill"} mini />
+              <HomeDateDisplay
+                style={settings.homeClockStyle || "pill"}
+                size={settings.homeClockSize || "medium"}
+                color={settings.homeClockColor || "theme"}
+                mini
+              />
             </div>
             {settings.bannerVisible && (
               <div

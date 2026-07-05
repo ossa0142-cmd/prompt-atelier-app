@@ -64,6 +64,35 @@ const homeClockStyleOptions = [{
   label: "非表示",
   description: "ホームに日付を出さない"
 }];
+const homeClockSizeOptions = [{
+  id: "small",
+  label: "小"
+}, {
+  id: "medium",
+  label: "中"
+}, {
+  id: "large",
+  label: "大"
+}];
+const homeClockColorOptions = [{
+  id: "theme",
+  label: "テーマ"
+}, {
+  id: "pink",
+  label: "ピンク"
+}, {
+  id: "brown",
+  label: "ブラウン"
+}, {
+  id: "blue",
+  label: "ブルー"
+}, {
+  id: "mono",
+  label: "モノクロ"
+}, {
+  id: "rainbow",
+  label: "レインボー"
+}];
 const homeStatsCardOptions = [{
   id: "mockups",
   label: "モックアップカードを表示"
@@ -603,6 +632,8 @@ const defaultHomeSettings = {
   bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
   homeClockStyle: "pill",
+  homeClockSize: "medium",
+  homeClockColor: "theme",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
   cardStyle: defaultCardStyle,
@@ -656,6 +687,8 @@ const normalizeHomeSettings = settings => {
   const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
   const safeDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity) ? settings.displayDensity : "normal";
   const safeClockStyle = ["pill", "digital", "retro", "neon", "doodle", "stamp", "minimal", "hidden"].includes(settings?.homeClockStyle) ? settings.homeClockStyle : "pill";
+  const safeClockSize = ["small", "medium", "large"].includes(settings?.homeClockSize) ? settings.homeClockSize : "medium";
+  const safeClockColor = ["theme", "pink", "brown", "blue", "mono", "rainbow"].includes(settings?.homeClockColor) ? settings.homeClockColor : "theme";
   const safeFontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset) ? settings.fontPreset : "simple";
   const safeIconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet) ? settings.iconSet : "line";
   const safeCharacterSize = ["small", "medium", "large"].includes(rawCharacter.size) ? rawCharacter.size : "medium";
@@ -686,6 +719,8 @@ const normalizeHomeSettings = settings => {
     bannerPositionY: activeBannerPosition.y,
     bannerPositions,
     homeClockStyle: safeClockStyle,
+    homeClockSize: safeClockSize,
+    homeClockColor: safeClockColor,
     displayDensity: safeDensity,
     pageDisplaySettings: {
       gallery: {
@@ -2535,6 +2570,8 @@ function getHomeDateParts() {
 }
 function HomeDateDisplay({
   style = "pill",
+  size = "medium",
+  color = "theme",
   mini = false
 }) {
   if (style === "hidden") return null;
@@ -2547,7 +2584,7 @@ function HomeDateDisplay({
     paddedDay,
     paddedMonth
   } = getHomeDateParts();
-  const className = `${mini ? "home-mini-date" : "home-date-display"} ${style}`;
+  const className = `${mini ? "home-mini-date" : "home-date-display"} ${style} size-${size} color-${color}`;
   const dateTime = `${year}-${paddedMonth}-${paddedDay}`;
   if (style === "minimal") {
     return /*#__PURE__*/React.createElement("time", {
@@ -2742,7 +2779,9 @@ function Home({
   }, /*#__PURE__*/React.createElement("div", {
     className: "home-topbar"
   }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
-    style: settings.homeClockStyle || "pill"
+    style: settings.homeClockStyle || "pill",
+    size: settings.homeClockSize || "medium",
+    color: settings.homeClockColor || "theme"
   })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`
   }, bannerSrc ? /*#__PURE__*/React.createElement("img", {
@@ -3835,7 +3874,25 @@ function HomeCustomize({
     onClick: () => updateSettings({
       homeClockStyle: item.id
     })
-  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description)))), /*#__PURE__*/React.createElement("div", {
+    className: "clock-control-row"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "サイズ"), /*#__PURE__*/React.createElement("div", {
+    className: "inline-buttons"
+  }, homeClockSizeOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: (settings.homeClockSize || "medium") === item.id ? "active-soft" : "",
+    onClick: () => updateSettings({
+      homeClockSize: item.id
+    })
+  }, item.label)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "色味"), /*#__PURE__*/React.createElement("div", {
+    className: "inline-buttons clock-color-buttons"
+  }, homeClockColorOptions.map(item => /*#__PURE__*/React.createElement("button", {
+    key: item.id,
+    className: `clock-color-choice clock-color-${item.id} ${(settings.homeClockColor || "theme") === item.id ? "active-soft" : ""}`,
+    onClick: () => updateSettings({
+      homeClockColor: item.id
+    })
+  }, item.label)))))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "order-list"
@@ -3901,6 +3958,8 @@ function HomeCustomize({
     className: "home-mini-topbar"
   }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
     style: settings.homeClockStyle || "pill",
+    size: settings.homeClockSize || "medium",
+    color: settings.homeClockColor || "theme",
     mini: true
   })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
