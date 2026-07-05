@@ -5603,11 +5603,11 @@ p {
 }
 
 .atelier-marquee-track.is-moving {
-  animation: atelier-marquee-row-drift 90s linear infinite alternate;
+  animation: atelier-marquee-row-drift 45s linear infinite alternate;
 }
 
 .atelier-marquee-track.is-single {
-  animation: atelier-marquee-single-drift 90s linear infinite alternate;
+  animation: atelier-marquee-single-drift 45s linear infinite alternate;
 }
 
 .atelier-marquee:hover .atelier-marquee-track {
