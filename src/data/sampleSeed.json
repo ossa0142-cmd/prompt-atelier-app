@@ -1470,6 +1470,116 @@
       }
     ],
     "homeSettings": {
+      "themeId": "vivid-pink",
+      "bannerImage": "/samples/banners/1783238964761-0371df5d605228.png",
+      "bannerImageUrl": "/samples/banners/1783238964761-0371df5d605228.png",
+      "bannerVisible": true,
+      "bannerSize": "medium",
+      "bannerFit": "contain",
+      "bannerPositionX": 50,
+      "bannerPositionY": 50,
+      "bannerPositions": {
+        "small": {
+          "x": 50,
+          "y": 50
+        },
+        "medium": {
+          "x": 50,
+          "y": 50
+        },
+        "large": {
+          "x": 50,
+          "y": 50
+        }
+      },
+      "workToolIconStyle": "pastel",
+      "displayDensity": "normal",
+      "pageDisplaySettings": {
+        "gallery": {
+          "gap": "normal",
+          "ratio": "square",
+          "showHeart": true,
+          "columns": "auto"
+        },
+        "prompts": {
+          "viewMode": "card",
+          "showTags": true,
+          "showMemo": true,
+          "imageSize": "normal"
+        },
+        "videoPrompts": {
+          "viewMode": "card",
+          "showTags": true,
+          "showMemo": true,
+          "thumbnailSize": "normal"
+        },
+        "projects": {
+          "sortBy": "deadline",
+          "showCompleted": true,
+          "showAlarms": true
+        },
+        "mockups": {
+          "categoryCardSize": "normal",
+          "showDescription": true,
+          "showCount": true
+        }
+      },
+      "cardStyle": {
+        "radius": "medium",
+        "shadow": "normal",
+        "transparency": "solid",
+        "border": "soft"
+      },
+      "backgroundStyle": {
+        "type": "solid",
+        "color": "#fdf0ff",
+        "gradient": "milkPink",
+        "pattern": "none",
+        "image": "",
+        "imageFit": "cover",
+        "imagePosition": "center",
+        "imageBlur": "none",
+        "imageOpacity": "normal",
+        "showDecorations": true
+      },
+      "fontPreset": "simple",
+      "iconSet": "label",
+      "homeCharacter": {
+        "image": "/samples/characters/1783058253744-84b8061a1760a8.webp",
+        "position": "right-center",
+        "size": "medium",
+        "speechEnabled": true,
+        "messageMode": "fixed",
+        "fixedMessage": "ここもカスタマイズで変更できます♡",
+        "selectedProjectId": ""
+      },
+      "homeStatsCards": {
+        "mockups": true,
+        "prompts": true,
+        "mjSettings": true,
+        "projects": true,
+        "achievement": false
+      },
+      "visible": {
+        "library": true,
+        "prompts": true,
+        "videos": true,
+        "mj": true,
+        "projects": true,
+        "atelier": true,
+        "dashboard": true,
+        "quickActions": true,
+        "featureCards": true,
+        "favorites": true,
+        "search": true
+      },
+      "order": [
+        "dashboard",
+        "quickActions",
+        "featureCards",
+        "favorites",
+        "atelier"
+      ],
       "homeClockStyle": "doodle",
       "homeClockSize": "large",
       "homeClockColor": "pink"

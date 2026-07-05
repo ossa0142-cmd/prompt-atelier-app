@@ -3736,23 +3736,26 @@ function mergeJournalSample(existing, incoming, deletedIds, stats, key = "prompt
   }
   return next;
 }
-function pickSampleClockSettings(settings) {
+function pickSampleHomeSettings(settings) {
   if (!settings || typeof settings !== "object") return null;
   const next = {};
+  ["themeId", "bannerImage", "bannerImageUrl", "bannerVisible", "bannerSize", "bannerFit", "bannerPositionX", "bannerPositionY", "bannerPositions", "workToolIconStyle", "displayDensity", "pageDisplaySettings", "cardStyle", "backgroundStyle", "fontPreset", "iconSet", "homeCharacter", "homeStatsCards", "visible", "order"].forEach(key => {
+    if (settings[key] !== undefined) next[key] = settings[key];
+  });
   if (settings.homeClockStyle) next.homeClockStyle = settings.homeClockStyle;
   if (settings.homeClockSize) next.homeClockSize = settings.homeClockSize;
   if (settings.homeClockColor) next.homeClockColor = settings.homeClockColor;
   return Object.keys(next).length ? next : null;
 }
 function mergeHomeSettingsSample(existing, incoming, stats, key = "promptAtelierHomeSettings") {
-  const clockSettings = pickSampleClockSettings(incoming);
+  const sampleHomeSettings = pickSampleHomeSettings(incoming);
   const categoryStats = sampleSeedCategoryStats(stats, key);
   if (categoryStats) {
-    categoryStats.incoming = clockSettings ? 1 : 0;
-    if (existing == null && clockSettings) categoryStats.added = 1;else if (existing != null && clockSettings) categoryStats.skippedExisting = 1;
+    categoryStats.incoming = sampleHomeSettings ? 1 : 0;
+    if (existing == null && sampleHomeSettings) categoryStats.added = 1;else if (existing != null && sampleHomeSettings) categoryStats.skippedExisting = 1;
   }
   if (existing != null) return existing;
-  return clockSettings ?? existing;
+  return sampleHomeSettings ?? existing;
 }
 function mergeSampleValue(existing, incoming, key, deletedIds, stats) {
   if (key.includes("HomeSettings")) {
@@ -3789,8 +3792,8 @@ function sampleSeedDataToStorage(seedData) {
       customBackgrounds
     };
   }
-  const homeClockSettings = pickSampleClockSettings(seedData.homeSettings) || pickSampleClockSettings(seedData.customizeSettings);
-  if (homeClockSettings) storageData.promptAtelierHomeSettings = homeClockSettings;
+  const sampleHomeSettings = pickSampleHomeSettings(seedData.homeSettings) || pickSampleHomeSettings(seedData.customizeSettings);
+  if (sampleHomeSettings) storageData.promptAtelierHomeSettings = sampleHomeSettings;
   append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
   return storageData;
 }
