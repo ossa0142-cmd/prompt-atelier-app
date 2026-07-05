@@ -5595,7 +5595,7 @@ p {
   display: flex;
   width: max-content;
   gap: 14px;
-  animation: atelier-scroll 72s linear infinite;
+  animation: atelier-scroll 140s linear infinite;
 }
 
 .atelier-track figure {

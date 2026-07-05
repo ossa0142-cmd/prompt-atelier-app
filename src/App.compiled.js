@@ -2888,35 +2888,13 @@ function sortProjectsForDisplay(items) {
     return String(b.id || "").localeCompare(String(a.id || ""));
   });
 }
-function collectAtelierImages(prompts, mjSettings, galleryImages) {
-  const promptImages = prompts.filter(prompt => prompt.imageUrl).map(prompt => ({
-    id: `prompt-${prompt.id}`,
-    src: prompt.imageUrl,
-    thumbnail: prompt.imageUrl,
-    title: prompt.title || "プロンプト画像",
-    memo: prompt.note || prompt.description || "",
-    createdAt: prompt.id,
-    source: "prompt",
-    favorite: Boolean(prompt.favorite)
-  }));
-  const mjImages = mjSettings.flatMap(setting => (setting.images || (setting.imageUrl ? [setting.imageUrl] : [])).map((src, index) => ({
-    id: `mj-${setting.id}-${index}`,
-    src: typeof src === "string" ? src : src.src || "",
-    thumbnail: typeof src === "string" ? src : src.thumbnail || src.src || "",
-    title: setting.title || "MJ画像",
-    memo: setting.memo || setting.note || "",
-    createdAt: setting.createdAt || setting.id,
-    source: "midjourney",
-    favorite: false
-  })));
-  const normalizedGalleryImages = galleryImages.map(item => ({
+function collectAtelierImages(galleryImages) {
+  const galleryOnlyImages = galleryImages.filter(item => item.src && item.source !== "journal" && item.source !== "journal-background").map(item => ({
     ...item,
-    src: item.src,
     thumbnail: item.thumbnail || item.src
   }));
-  const merged = [...promptImages, ...mjImages, ...normalizedGalleryImages].filter(item => item.src);
   const seen = new Set();
-  return merged.filter(item => {
+  return galleryOnlyImages.filter(item => {
     if (seen.has(item.src)) return false;
     seen.add(item.src);
     return true;
@@ -3921,7 +3899,7 @@ function App() {
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
-  const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
+  const atelierImages = collectAtelierImages(galleryImages);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
     if (id) setRecentIds(ids => [id, ...ids.filter(item => item !== id)].slice(0, 8));
