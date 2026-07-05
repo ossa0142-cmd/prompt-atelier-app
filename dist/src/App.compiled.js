@@ -2597,7 +2597,10 @@ function HomeDateDisplay({
       className: className,
       dateTime: dateTime,
       "aria-label": `${year}年${month}月${day}日 ${weekday}曜日`
-    }, /*#__PURE__*/React.createElement("strong", null, monthName, ".", paddedDay), /*#__PURE__*/React.createElement("small", null, year, " / ", weekday));
+    }, style === "stamp" && /*#__PURE__*/React.createElement("span", {
+      className: "stamp-heart-outline",
+      "aria-hidden": "true"
+    }, "♡"), /*#__PURE__*/React.createElement("strong", null, monthName, ".", paddedDay), /*#__PURE__*/React.createElement("small", null, year, " / ", weekday));
   }
   return /*#__PURE__*/React.createElement("time", {
     className: className,
@@ -3469,7 +3472,12 @@ function HomeCustomize({
     onClick: () => updateSettings({
       displayDensity: item.id
     })
-  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+  }, item.id !== "hidden" && /*#__PURE__*/React.createElement("span", {
+    className: `clock-option-preview ${item.id}`
+  }, item.id === "stamp" && /*#__PURE__*/React.createElement("span", {
+    className: "stamp-heart-outline",
+    "aria-hidden": "true"
+  }, "♡"), /*#__PURE__*/React.createElement("b", null, "APR.26")), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "カード質感設定"), /*#__PURE__*/React.createElement("p", null, "カードの角丸・影・透明感・枠線を調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "style-control-grid"

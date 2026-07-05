@@ -2610,6 +2610,7 @@ function HomeDateDisplay({ style = "pill", size = "medium", color = "theme", min
   if (["digital", "retro", "neon", "doodle", "stamp"].includes(style)) {
     return (
       <time className={className} dateTime={dateTime} aria-label={`${year}年${month}月${day}日 ${weekday}曜日`}>
+        {style === "stamp" && <span className="stamp-heart-outline" aria-hidden="true">♡</span>}
         <strong>{monthName}.{paddedDay}</strong>
         <small>{year} / {weekday}</small>
       </time>
@@ -3338,6 +3339,12 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
                   className={settings.displayDensity === item.id ? "active-soft" : ""}
                   onClick={() => updateSettings({ displayDensity: item.id })}
                 >
+                  {item.id !== "hidden" && (
+                    <span className={`clock-option-preview ${item.id}`}>
+                      {item.id === "stamp" && <span className="stamp-heart-outline" aria-hidden="true">♡</span>}
+                      <b>APR.26</b>
+                    </span>
+                  )}
                   <strong>{item.label}</strong>
                   <small>{item.description}</small>
                 </button>

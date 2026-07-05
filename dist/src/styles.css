@@ -346,6 +346,18 @@ main {
   --clock-ink: var(--ink);
   --clock-soft: color-mix(in srgb, var(--accent) 16%, var(--card-bg));
   --clock-line: color-mix(in srgb, var(--accent) 42%, var(--border));
+  --clock-pad-y: 9px;
+  --clock-pad-x: 14px;
+  --clock-minimal-size: 14px;
+  --clock-digital-title: 19px;
+  --clock-retro-title: 25px;
+  --clock-neon-title: 25px;
+  --clock-doodle-title: 23px;
+  --clock-stamp-title: 18px;
+  --clock-small-size: 10px;
+  --clock-stamp-width: 116px;
+  --clock-stamp-height: 82px;
+  --clock-stamp-heart: 96px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -416,30 +428,42 @@ main {
   background: var(--clock-soft);
   box-shadow: 0 12px 24px rgba(73, 58, 45, 0.06);
   color: var(--clock-ink);
-  padding: 9px 14px;
+  padding: var(--clock-pad-y) var(--clock-pad-x);
 }
 
 .home-date-display.minimal {
   color: var(--clock-ink);
-  font-size: 14px;
+  font-size: var(--clock-minimal-size);
 }
 
 .home-date-display.size-small {
-  transform: scale(0.86);
-  transform-origin: right center;
+  --clock-pad-y: 7px;
+  --clock-pad-x: 11px;
+  --clock-minimal-size: 12px;
+  --clock-digital-title: 16px;
+  --clock-retro-title: 20px;
+  --clock-neon-title: 20px;
+  --clock-doodle-title: 18px;
+  --clock-stamp-title: 15px;
+  --clock-small-size: 8px;
+  --clock-stamp-width: 96px;
+  --clock-stamp-height: 68px;
+  --clock-stamp-heart: 80px;
 }
 
 .home-date-display.size-large {
-  transform: scale(1.18);
-  transform-origin: right center;
-}
-
-.home-date-display.size-small.minimal {
-  font-size: 12px;
-}
-
-.home-date-display.size-large.minimal {
-  font-size: 17px;
+  --clock-pad-y: 12px;
+  --clock-pad-x: 18px;
+  --clock-minimal-size: 18px;
+  --clock-digital-title: 25px;
+  --clock-retro-title: 32px;
+  --clock-neon-title: 32px;
+  --clock-doodle-title: 29px;
+  --clock-stamp-title: 23px;
+  --clock-small-size: 12px;
+  --clock-stamp-width: 144px;
+  --clock-stamp-height: 104px;
+  --clock-stamp-heart: 122px;
 }
 
 .home-date-display.digital,
@@ -461,18 +485,18 @@ main {
   box-shadow: 0 10px 22px rgba(26, 20, 28, 0.16);
   color: #f6f0ff;
   font-family: "Courier New", ui-monospace, monospace;
-  padding: 8px 12px;
+  padding: var(--clock-pad-y) var(--clock-pad-x);
 }
 
 .home-date-display.digital strong {
-  font-size: 19px;
+  font-size: var(--clock-digital-title);
   font-weight: 500;
   text-shadow: 0 0 8px rgba(244, 235, 255, 0.36);
 }
 
 .home-date-display.digital small {
   color: rgba(246, 240, 255, 0.72);
-  font-size: 9px;
+  font-size: var(--clock-small-size);
 }
 
 .home-date-display.retro {
@@ -482,14 +506,14 @@ main {
 }
 
 .home-date-display.retro strong {
-  font-size: 25px;
+  font-size: var(--clock-retro-title);
   font-weight: 900;
   letter-spacing: 0.08em;
 }
 
 .home-date-display.retro small {
   color: color-mix(in srgb, var(--clock-ink) 72%, var(--muted));
-  font-size: 10px;
+  font-size: var(--clock-small-size);
   letter-spacing: 0.08em;
 }
 
@@ -504,13 +528,13 @@ main {
 }
 
 .home-date-display.neon strong {
-  font-size: 25px;
+  font-size: var(--clock-neon-title);
   font-weight: 950;
 }
 
 .home-date-display.neon small {
   color: color-mix(in srgb, var(--clock-ink) 72%, var(--muted));
-  font-size: 10px;
+  font-size: var(--clock-small-size);
   text-shadow: none;
 }
 
@@ -518,7 +542,7 @@ main {
   position: relative;
   color: var(--clock-ink);
   font-family: "Comic Sans MS", "Bradley Hand", cursive;
-  padding: 7px 16px;
+  padding: var(--clock-pad-y) var(--clock-pad-x);
 }
 
 .home-date-display.doodle::before,
@@ -542,33 +566,49 @@ main {
 }
 
 .home-date-display.doodle strong {
-  font-size: 23px;
+  font-size: var(--clock-doodle-title);
   font-weight: 500;
   letter-spacing: 0.03em;
 }
 
 .home-date-display.doodle small {
   color: color-mix(in srgb, var(--clock-ink) 68%, var(--muted));
-  font-size: 10px;
+  font-size: var(--clock-small-size);
 }
 
 .home-date-display.stamp {
-  min-width: 102px;
-  border: 2px solid color-mix(in srgb, var(--clock-main) 58%, #7d5b50);
-  border-radius: 48% 52% 45% 55% / 54% 46% 54% 46%;
+  position: relative;
+  min-width: var(--clock-stamp-width);
+  min-height: var(--clock-stamp-height);
+  align-content: center;
+  border: 0;
   color: color-mix(in srgb, var(--clock-main) 64%, #6d4d43);
   font-family: "Courier New", ui-monospace, monospace;
-  padding: 12px 14px 10px;
+  isolation: isolate;
+  padding: 12px 18px 10px;
   transform: rotate(-2deg);
 }
 
+.home-date-display.stamp .stamp-heart-outline {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: -1;
+  color: color-mix(in srgb, var(--clock-main) 72%, #7d5b50);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: var(--clock-stamp-heart);
+  font-weight: 400;
+  line-height: 0.72;
+  opacity: 0.9;
+  transform: translate(-50%, -50%) rotate(1deg) scaleX(1.25);
+}
+
 .home-date-display.stamp strong {
-  font-size: 18px;
+  font-size: var(--clock-stamp-title);
   letter-spacing: 0.08em;
 }
 
 .home-date-display.stamp small {
-  font-size: 9px;
+  font-size: var(--clock-small-size);
   letter-spacing: 0.08em;
 }
 
@@ -577,6 +617,8 @@ main {
   --clock-ink: var(--preview-ink);
   --clock-soft: color-mix(in srgb, var(--accent) 14%, var(--preview-card));
   --clock-line: color-mix(in srgb, var(--accent) 38%, var(--preview-line));
+  --clock-stamp-height: 34px;
+  --clock-stamp-heart: 40px;
   flex: 0 0 auto;
   color: var(--text-sub);
   font-size: 9px;
@@ -591,13 +633,15 @@ main {
 }
 
 .home-mini-date.size-small {
-  transform: scale(0.84);
-  transform-origin: right center;
+  font-size: 7px;
+  --clock-stamp-height: 28px;
+  --clock-stamp-heart: 33px;
 }
 
 .home-mini-date.size-large {
-  transform: scale(1.14);
-  transform-origin: right center;
+  font-size: 11px;
+  --clock-stamp-height: 40px;
+  --clock-stamp-heart: 47px;
 }
 
 .home-mini-date.minimal,
@@ -634,18 +678,99 @@ main {
 }
 
 .home-mini-date.stamp {
+  position: relative;
+  min-width: calc(var(--clock-stamp-height) * 1.36);
+  min-height: var(--clock-stamp-height);
   border: 1px solid color-mix(in srgb, var(--clock-main) 58%, #7d5b50);
-  border-radius: 48%;
+  border: 0;
   color: color-mix(in srgb, var(--clock-main) 64%, #6d4d43);
   font-family: "Courier New", ui-monospace, monospace;
   padding: 5px 7px;
   transform: rotate(-2deg);
 }
 
+.home-mini-date.stamp .stamp-heart-outline {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: -1;
+  color: color-mix(in srgb, var(--clock-main) 72%, #7d5b50);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: var(--clock-stamp-heart);
+  line-height: 0.72;
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scaleX(1.25);
+}
+
 .clock-control-row {
   display: grid;
   gap: 16px;
   margin-top: 16px;
+}
+
+.clock-option-preview {
+  position: relative;
+  display: inline-grid;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.clock-option-preview b {
+  position: relative;
+  z-index: 1;
+}
+
+.clock-option-preview.digital {
+  border-radius: 6px;
+  background: #111116;
+  color: #fff7ff;
+  font-family: "Courier New", ui-monospace, monospace;
+  padding: 6px 8px;
+}
+
+.clock-option-preview.retro {
+  color: #6c3d31;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+}
+
+.clock-option-preview.neon {
+  color: #ff5d9e;
+  font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  font-size: 17px;
+  text-shadow: 1px 1px 0 #52d6df, 2px 2px 0 #ffd56e;
+}
+
+.clock-option-preview.doodle {
+  color: #7f5f57;
+  font-family: "Comic Sans MS", "Bradley Hand", cursive;
+  font-size: 16px;
+}
+
+.clock-option-preview.stamp {
+  min-width: 70px;
+  min-height: 46px;
+  color: color-mix(in srgb, var(--accent) 68%, #6d4d43);
+  font-family: "Courier New", ui-monospace, monospace;
+  transform: rotate(-2deg);
+}
+
+.clock-option-preview.stamp .stamp-heart-outline {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 0;
+  color: color-mix(in srgb, var(--accent) 70%, #7d5b50);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 56px;
+  font-weight: 400;
+  line-height: 0.72;
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scaleX(1.22);
 }
 
 .clock-control-row > div {
