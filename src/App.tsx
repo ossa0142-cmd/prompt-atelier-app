@@ -979,24 +979,7 @@ const defaultLibraryBoardPrompts: LibraryBoardPrompt[] = [
   },
 ];
 
-const samplePrompts: MyPrompt[] = [
-  {
-    ...libraryPrompts[0],
-    id: "my-1",
-    title: "かわいい動物ステッカー",
-    note: "動物クリップアートのステッカー販売ページ用。",
-    tags: ["かわいい", "動物", "ステッカー"],
-    favorite: false,
-  },
-  {
-    ...libraryPrompts[5],
-    id: "my-2",
-    title: "植物アートプリント",
-    note: "水彩植物シリーズ用。額縁は明るめ。",
-    tags: ["植物", "壁掛けアート"],
-    favorite: false,
-  },
-];
+const samplePrompts: MyPrompt[] = [];
 
 const sampleMj: MjSetting[] = [
   {
@@ -2228,6 +2211,9 @@ function mergeJournalSample(existing: any, incoming: any, deletedIds: Set<string
   if (Array.isArray(incoming?.stockImages)) next.stockImages = mergeSampleCollection(current.stockImages || [], incoming.stockImages, deletedIds, stats, `${key}:stockImages`);
   if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds, stats, `${key}:items`);
   if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds, stats, `${key}:customBackgrounds`);
+  if ((!next.background || next.background === "paper") && Array.isArray(next.customBackgrounds) && next.customBackgrounds.length) {
+    next.background = `custom-${next.customBackgrounds[0].id}`;
+  }
   return next;
 }
 
@@ -2257,16 +2243,20 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
+  if (Array.isArray(seedData.promptCards) && seedData.promptCards.length === 0 && Array.isArray(seedData.promptStocks) && seedData.promptStocks.length === 0) {
+    storageData["prompt-atelier-prompts-ja-v2"] = [];
+  }
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
   append("promptAtelierVideoPromptStocks", Array.isArray(seedData.videoPromptStocks) ? seedData.videoPromptStocks : []);
   append("promptAtelierMidjourneySettings", Array.isArray(seedData.midjourneySettings) ? seedData.midjourneySettings : []);
   append("prompt-atelier-projects-ja-v2", Array.isArray(seedData.projects) ? seedData.projects : []);
   append("promptAtelierGallery", Array.isArray(seedData.galleryItems) ? seedData.galleryItems : []);
   if (Array.isArray(seedData.journalItems) || Array.isArray(seedData.journalBackgrounds)) {
+    const customBackgrounds = Array.isArray(seedData.journalBackgrounds) ? seedData.journalBackgrounds : [];
     storageData.promptAtelierJournal = {
-      background: seedData.journalBackground || "paper",
+      background: seedData.journalBackground || (customBackgrounds[0]?.id ? `custom-${customBackgrounds[0].id}` : "paper"),
       items: Array.isArray(seedData.journalItems) ? seedData.journalItems : [],
-      customBackgrounds: Array.isArray(seedData.journalBackgrounds) ? seedData.journalBackgrounds : [],
+      customBackgrounds,
     };
   }
   if (seedData.homeSettings && typeof seedData.homeSettings === "object") storageData.promptAtelierHomeSettings = seedData.homeSettings;
