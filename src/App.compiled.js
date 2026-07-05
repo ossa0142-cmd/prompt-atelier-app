@@ -4395,7 +4395,7 @@ function Home({
         "aria-label": "アトリエ画像"
       }, /*#__PURE__*/React.createElement("div", {
         className: "atelier-track"
-      }, [...atelierImages, ...atelierImages].map((image, index) => /*#__PURE__*/React.createElement("figure", {
+      }, atelierImages.map((image, index) => /*#__PURE__*/React.createElement("figure", {
         key: `${image.id}-${index}`
       }, /*#__PURE__*/React.createElement("img", {
         src: imageDisplaySrc(image),

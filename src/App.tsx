@@ -2833,7 +2833,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
           {atelierImages.length ? (
             <div className="atelier-tape" aria-label="アトリエ画像">
               <div className="atelier-track">
-                {[...atelierImages, ...atelierImages].map((image: AtelierImage, index: number) => (
+                {atelierImages.map((image: AtelierImage, index: number) => (
                   <figure key={`${image.id}-${index}`}>
                     <img src={imageDisplaySrc(image)} alt="" />
                   </figure>
