@@ -5606,10 +5606,6 @@ p {
   animation: atelier-marquee-drift 90s ease-in-out infinite alternate;
 }
 
-.atelier-marquee-track.is-static {
-  animation: none;
-}
-
 .atelier-marquee:hover .atelier-marquee-track {
   animation-play-state: paused;
 }

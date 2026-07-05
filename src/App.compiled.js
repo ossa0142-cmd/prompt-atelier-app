@@ -4394,7 +4394,7 @@ function Home({
         className: "atelier-marquee",
         "aria-label": "アトリエ画像"
       }, /*#__PURE__*/React.createElement("div", {
-        className: `atelier-marquee-track ${atelierImages.length > 1 ? "is-moving" : "is-static"}`
+        className: "atelier-marquee-track is-moving"
       }, atelierImages.map((image, index) => /*#__PURE__*/React.createElement("figure", {
         className: "atelier-marquee-card",
         key: `${image.id}-${index}`
