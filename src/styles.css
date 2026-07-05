@@ -613,10 +613,6 @@ main {
 }
 
 .home-mini-date {
-  --clock-main: var(--accent);
-  --clock-ink: var(--preview-ink);
-  --clock-soft: color-mix(in srgb, var(--accent) 14%, var(--preview-card));
-  --clock-line: color-mix(in srgb, var(--accent) 38%, var(--preview-line));
   --clock-mini-title: 11px;
   --clock-mini-small: 7px;
   --clock-mini-pad-y: 5px;
@@ -626,6 +622,13 @@ main {
   flex: 0 0 auto;
   color: var(--text-sub);
   font-size: 9px;
+}
+
+.home-mini-date.color-theme {
+  --clock-main: var(--accent);
+  --clock-ink: var(--preview-ink);
+  --clock-soft: color-mix(in srgb, var(--accent) 14%, var(--preview-card));
+  --clock-line: color-mix(in srgb, var(--accent) 38%, var(--preview-line));
 }
 
 .home-mini-date.pill {
@@ -728,6 +731,58 @@ main {
   line-height: 0.72;
   opacity: 0.9;
   transform: translate(-50%, -50%) scaleX(1.25);
+}
+
+.home-date-display.digital.color-mono,
+.home-mini-date.digital.color-mono {
+  background: linear-gradient(135deg, #2f2d32, #050505);
+  color: #ffffff;
+}
+
+.home-date-display.digital.color-blue,
+.home-mini-date.digital.color-blue {
+  color: #eaf6ff;
+  text-shadow: 0 0 9px rgba(132, 203, 255, 0.52);
+}
+
+.home-date-display.digital.color-pink,
+.home-mini-date.digital.color-pink {
+  color: #fff2f8;
+  text-shadow: 0 0 9px rgba(255, 132, 190, 0.52);
+}
+
+.home-date-display.digital.color-brown,
+.home-mini-date.digital.color-brown {
+  color: #fff1e3;
+  text-shadow: 0 0 8px rgba(228, 171, 128, 0.42);
+}
+
+.home-date-display.digital.color-rainbow,
+.home-mini-date.digital.color-rainbow {
+  background: linear-gradient(135deg, #1a1118, #111827 52%, #201807);
+  color: #fff9fb;
+}
+
+.home-date-display.color-rainbow.neon strong,
+.home-mini-date.color-rainbow.neon strong,
+.home-date-display.color-rainbow.retro strong,
+.home-mini-date.color-rainbow.retro strong,
+.home-date-display.color-rainbow.doodle strong,
+.home-mini-date.color-rainbow.doodle strong,
+.home-date-display.color-rainbow.minimal,
+.home-mini-date.color-rainbow.minimal {
+  background: linear-gradient(90deg, #ff5d9e, #52d6df 48%, #ffd56e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.home-date-display.color-rainbow.pill,
+.home-mini-date.color-rainbow.pill {
+  background:
+    linear-gradient(var(--clock-soft), var(--clock-soft)) padding-box,
+    linear-gradient(90deg, #ff5d9e, #52d6df, #ffd56e) border-box;
+  border-color: transparent;
 }
 
 .clock-control-row {
