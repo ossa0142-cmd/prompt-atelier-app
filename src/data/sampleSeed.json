@@ -2,7 +2,7 @@
   "app": "Prompt Atelier",
   "type": "prompt-atelier-sample-seed",
   "version": 1,
-  "exportedAt": "2026-07-05T20:58:00.000Z",
+  "exportedAt": "2026-07-05T21:24:00.000Z",
   "data": {
     "libraryItems": [
       {
@@ -1030,7 +1030,7 @@
     "mockupStocks": [],
     "promptCards": [
       {
-        "id": "my-1",
+        "id": "sample-v41-prompt-card-001",
         "title": "かわいい動物ステッカー",
         "category": "ステッカーモックアップ",
         "description": "白背景でステッカーの質感が見えやすい、Etsy向けの定番モックアップ。",
@@ -1045,10 +1045,10 @@
         "favorite": true,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-prompt-card-001"
+        "sampleId": "sample-v41-prompt-card-001"
       },
       {
-        "id": "my-2",
+        "id": "sample-v41-prompt-card-002",
         "title": "植物アートプリント",
         "category": "アートプリントモックアップ",
         "description": "アートプリントをリビングの壁に飾った販売ページ向け写真。",
@@ -1062,13 +1062,13 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-prompt-card-002"
+        "sampleId": "sample-v41-prompt-card-002"
       }
     ],
     "promptStocks": [],
     "videoPromptCards": [
       {
-        "id": "video-sample-1",
+        "id": "sample-v41-video-card-001",
         "title": "淡いステッカー紹介動画",
         "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
         "model": "Runway",
@@ -1084,13 +1084,13 @@
         "createdAt": "2026-07-02T00:00:00.000Z",
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-video-card-001"
+        "sampleId": "sample-v41-video-card-001"
       }
     ],
     "videoPromptStocks": [],
     "midjourneySettings": [
       {
-        "id": "1783252628179-13f417414368d8",
+        "id": "sample-v41-mj-setting-001",
         "title": "新しいMJプロンプト",
         "description": "",
         "images": [
@@ -1134,7 +1134,7 @@
         "createdAt": "2026-07-05T11:57:08.179Z",
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-mj-setting-001"
+        "sampleId": "sample-v41-mj-setting-001"
       }
     ],
     "projects": [
@@ -1178,7 +1178,7 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-gallery-001"
+        "sampleId": "sample-v41-gallery-001"
       },
       {
         "id": "1783252290061-4fa29ff17b871",
@@ -1197,7 +1197,7 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-gallery-002"
+        "sampleId": "sample-v41-gallery-002"
       },
       {
         "id": "1783252289773-b477368d7a1378",
@@ -1216,7 +1216,7 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-gallery-003"
+        "sampleId": "sample-v41-gallery-003"
       },
       {
         "id": "1783252289573-c9e40b7ffbd6",
@@ -1235,7 +1235,7 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-gallery-004"
+        "sampleId": "sample-v41-gallery-004"
       },
       {
         "id": "1783252289664-d31842158411d8",
@@ -1254,7 +1254,7 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-gallery-005"
+        "sampleId": "sample-v41-gallery-005"
       },
       {
         "id": "1783252289909-0347b2bad324e",
@@ -1273,7 +1273,7 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-gallery-006"
+        "sampleId": "sample-v41-gallery-006"
       }
     ],
     "journalItems": [
@@ -1464,7 +1464,7 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-journal-bg-001"
+        "sampleId": "sample-v41-journal-bg-001"
       },
       {
         "id": "1783238412073-54546b2f75b4",
@@ -1483,7 +1483,7 @@
         "favorite": false,
         "isSample": true,
         "createdFromSeedExport": true,
-        "sampleId": "sample-journal-bg-002"
+        "sampleId": "sample-v41-journal-bg-002"
       }
     ],
     "homeSettings": {
@@ -1596,7 +1596,10 @@
         "featureCards",
         "favorites",
         "atelier"
-      ]
+      ],
+      "homeClockStyle": "neon",
+      "homeClockSize": "large",
+      "homeClockColor": "rainbow"
     },
     "workTools": [
       {
