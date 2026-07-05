@@ -2819,13 +2819,6 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       );
     }
     if (sectionId === "atelier") {
-      const minAtelierMarqueeItems = 8;
-      const repeatCount = atelierImages.length
-        ? Math.max(atelierImages.length === 1 ? minAtelierMarqueeItems : 2, Math.ceil(minAtelierMarqueeItems / atelierImages.length))
-        : 0;
-      const evenRepeatCount = repeatCount % 2 === 0 ? repeatCount : repeatCount + 1;
-      const atelierMarqueeImages = Array.from({ length: evenRepeatCount }).flatMap(() => atelierImages);
-
       return (
         <section className="atelier-corner home-module" key={sectionId}>
           <div className="atelier-head">
@@ -2839,8 +2832,8 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
           </div>
           {atelierImages.length ? (
             <div className="atelier-marquee" aria-label="アトリエ画像">
-              <div className="atelier-marquee-track">
-                {atelierMarqueeImages.map((image: AtelierImage, index: number) => (
+              <div className={`atelier-marquee-track ${atelierImages.length > 1 ? "is-moving" : "is-static"}`}>
+                {atelierImages.map((image: AtelierImage, index: number) => (
                   <figure className="atelier-marquee-card" key={`${image.id}-${index}`}>
                     <img src={imageDisplaySrc(image)} alt="" />
                   </figure>

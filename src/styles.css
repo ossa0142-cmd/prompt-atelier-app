@@ -5599,8 +5599,15 @@ p {
   width: max-content;
   min-width: max-content;
   gap: 24px;
-  animation: atelier-marquee-scroll 90s linear infinite;
   will-change: transform;
+}
+
+.atelier-marquee-track.is-moving {
+  animation: atelier-marquee-drift 90s ease-in-out infinite alternate;
+}
+
+.atelier-marquee-track.is-static {
+  animation: none;
 }
 
 .atelier-marquee:hover .atelier-marquee-track {
@@ -5702,9 +5709,9 @@ p {
   background: color-mix(in srgb, var(--sand) 20%, var(--card-bg));
 }
 
-@keyframes atelier-marquee-scroll {
+@keyframes atelier-marquee-drift {
   from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  to { transform: translateX(-28px); }
 }
 
 .gallery-grid {
