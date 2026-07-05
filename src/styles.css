@@ -5583,41 +5583,53 @@ p {
   gap: 10px;
 }
 
-.atelier-tape {
+.atelier-marquee {
+  width: 100%;
   overflow: hidden;
+  position: relative;
   border-radius: 26px;
   border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   background: color-mix(in srgb, var(--card-bg) 68%, transparent);
   padding: 14px;
 }
 
-.atelier-track {
+.atelier-marquee-track {
   display: flex;
+  align-items: center;
   width: max-content;
-  gap: 14px;
-  animation: atelier-scroll 90s linear infinite;
+  min-width: max-content;
+  gap: 24px;
+  animation: atelier-marquee-scroll 90s linear infinite;
+  will-change: transform;
 }
 
-.atelier-track figure {
-  width: 154px;
+.atelier-marquee:hover .atelier-marquee-track {
+  animation-play-state: paused;
+}
+
+.atelier-marquee-card {
+  flex: 0 0 auto;
+  width: 180px;
+  height: 180px;
   margin: 0;
-  border-radius: 22px;
+  border-radius: 24px;
   background: color-mix(in srgb, var(--card-bg) 88%, var(--decorative-shape));
   box-shadow: 0 12px 24px rgba(73, 58, 45, 0.08);
   padding: 8px;
+  overflow: hidden;
   transform: rotate(-1.5deg);
 }
 
-.atelier-track figure:nth-child(2n) {
+.atelier-marquee-card:nth-child(2n) {
   transform: rotate(1.4deg);
 }
 
-.atelier-track img {
+.atelier-marquee-card img {
   display: block;
   width: 100%;
-  aspect-ratio: 1;
-  border-radius: 16px;
-  object-fit: cover;
+  height: 100%;
+  border-radius: 18px;
+  object-fit: contain;
   background: var(--sand);
 }
 
@@ -5649,7 +5661,7 @@ p {
   background: linear-gradient(145deg, color-mix(in srgb, var(--card-bg) 90%, var(--shell)), color-mix(in srgb, var(--shell) 42%, transparent));
 }
 
-.theme-cool .atelier-track figure {
+.theme-cool .atelier-marquee-card {
   border-radius: 16px;
   transform: none;
 }
@@ -5659,7 +5671,7 @@ p {
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.24);
 }
 
-.theme-dark .atelier-track figure {
+.theme-dark .atelier-marquee-card {
   background: color-mix(in srgb, var(--card-bg) 78%, white 8%);
 }
 
@@ -5685,12 +5697,12 @@ p {
     linear-gradient(145deg, color-mix(in srgb, var(--sand) 30%, var(--card-bg)), var(--card-bg));
 }
 
-.theme-natural .atelier-track figure {
+.theme-natural .atelier-marquee-card {
   border-radius: 18px;
   background: color-mix(in srgb, var(--sand) 20%, var(--card-bg));
 }
 
-@keyframes atelier-scroll {
+@keyframes atelier-marquee-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }

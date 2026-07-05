@@ -4378,6 +4378,12 @@ function Home({
       })));
     }
     if (sectionId === "atelier") {
+      const minAtelierMarqueeItems = 8;
+      const repeatCount = atelierImages.length ? Math.max(atelierImages.length === 1 ? minAtelierMarqueeItems : 2, Math.ceil(minAtelierMarqueeItems / atelierImages.length)) : 0;
+      const evenRepeatCount = repeatCount % 2 === 0 ? repeatCount : repeatCount + 1;
+      const atelierMarqueeImages = Array.from({
+        length: evenRepeatCount
+      }).flatMap(() => atelierImages);
       return /*#__PURE__*/React.createElement("section", {
         className: "atelier-corner home-module",
         key: sectionId
@@ -4391,11 +4397,12 @@ function Home({
         className: "primary",
         onClick: () => setScreen("gallery")
       }, "ギャラリーへ"))), atelierImages.length ? /*#__PURE__*/React.createElement("div", {
-        className: "atelier-tape",
+        className: "atelier-marquee",
         "aria-label": "アトリエ画像"
       }, /*#__PURE__*/React.createElement("div", {
-        className: "atelier-track"
-      }, atelierImages.map((image, index) => /*#__PURE__*/React.createElement("figure", {
+        className: "atelier-marquee-track"
+      }, atelierMarqueeImages.map((image, index) => /*#__PURE__*/React.createElement("figure", {
+        className: "atelier-marquee-card",
         key: `${image.id}-${index}`
       }, /*#__PURE__*/React.createElement("img", {
         src: imageDisplaySrc(image),
