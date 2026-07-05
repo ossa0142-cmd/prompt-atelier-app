@@ -685,6 +685,81 @@ main {
   line-height: 1;
 }
 
+.home-mini-date.minimal,
+.home-mini-date.retro,
+.home-mini-date.doodle {
+  color: var(--clock-ink);
+}
+
+.home-mini-date.minimal strong,
+.home-mini-date.minimal small,
+.home-mini-date.retro strong,
+.home-mini-date.retro small,
+.home-mini-date.doodle strong,
+.home-mini-date.doodle small {
+  color: var(--clock-ink);
+}
+
+.home-mini-date.color-pink.minimal,
+.home-mini-date.color-pink.retro,
+.home-mini-date.color-pink.doodle,
+.home-mini-date.color-pink.minimal strong,
+.home-mini-date.color-pink.retro strong,
+.home-mini-date.color-pink.doodle strong {
+  color: #f45c9a;
+}
+
+.home-mini-date.color-brown.minimal,
+.home-mini-date.color-brown.retro,
+.home-mini-date.color-brown.doodle,
+.home-mini-date.color-brown.minimal strong,
+.home-mini-date.color-brown.retro strong,
+.home-mini-date.color-brown.doodle strong {
+  color: #8a5a44;
+}
+
+.home-mini-date.color-blue.minimal,
+.home-mini-date.color-blue.retro,
+.home-mini-date.color-blue.doodle,
+.home-mini-date.color-blue.minimal strong,
+.home-mini-date.color-blue.retro strong,
+.home-mini-date.color-blue.doodle strong {
+  color: #4b91d8;
+}
+
+.home-mini-date.color-mono.minimal,
+.home-mini-date.color-mono.retro,
+.home-mini-date.color-mono.doodle,
+.home-mini-date.color-mono.minimal strong,
+.home-mini-date.color-mono.retro strong,
+.home-mini-date.color-mono.doodle strong {
+  color: #2f2d32;
+}
+
+.home-mini-date.color-pink.minimal small,
+.home-mini-date.color-pink.retro small,
+.home-mini-date.color-pink.doodle small {
+  color: #a95a78;
+}
+
+.home-mini-date.color-brown.minimal small,
+.home-mini-date.color-brown.retro small,
+.home-mini-date.color-brown.doodle small {
+  color: #6f4d3f;
+}
+
+.home-mini-date.color-blue.minimal small,
+.home-mini-date.color-blue.retro small,
+.home-mini-date.color-blue.doodle small {
+  color: #466b8e;
+}
+
+.home-mini-date.color-mono.minimal small,
+.home-mini-date.color-mono.retro small,
+.home-mini-date.color-mono.doodle small {
+  color: #5b565d;
+}
+
 .home-mini-date.digital {
   border-radius: 6px;
   background: color-mix(in srgb, var(--clock-main) 18%, #101014);
