@@ -44,8 +44,5 @@ if (fs.existsSync(path.join(root, "src", "data"))) {
   copyDir(path.join(root, "src", "data"), path.join(dist, "src", "data"));
 }
 copyDir(path.join(root, "public"), path.join(dist, "public"));
-if (fs.existsSync(path.join(root, "public", "samples"))) {
-  copyDir(path.join(root, "public", "samples"), path.join(dist, "samples"));
-}
 
 console.log("Prompt Atelier exported to dist/");

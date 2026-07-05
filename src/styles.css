@@ -340,650 +340,6 @@ main {
   text-transform: uppercase;
 }
 
-.home-date-display,
-.home-mini-date {
-  --clock-main: var(--accent);
-  --clock-ink: var(--ink);
-  --clock-soft: color-mix(in srgb, var(--accent) 16%, var(--card-bg));
-  --clock-line: color-mix(in srgb, var(--accent) 42%, var(--border));
-  --clock-pad-y: 9px;
-  --clock-pad-x: 14px;
-  --clock-minimal-size: 14px;
-  --clock-digital-title: 19px;
-  --clock-retro-title: 25px;
-  --clock-neon-title: 25px;
-  --clock-doodle-title: 23px;
-  --clock-stamp-title: 18px;
-  --clock-small-size: 10px;
-  --clock-stamp-width: 116px;
-  --clock-stamp-height: 82px;
-  --clock-stamp-heart: 96px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--muted);
-  font-weight: 900;
-  letter-spacing: 0;
-  text-transform: none;
-  white-space: nowrap;
-}
-
-.home-date-display.color-pink,
-.home-mini-date.color-pink {
-  --clock-main: #f45c9a;
-  --clock-ink: #7d4961;
-  --clock-soft: #fff0f7;
-  --clock-line: #f4bfd7;
-}
-
-.home-date-display.color-brown,
-.home-mini-date.color-brown {
-  --clock-main: #8a5a44;
-  --clock-ink: #5d3c31;
-  --clock-soft: #fff3e8;
-  --clock-line: #d9b99f;
-}
-
-.home-date-display.color-blue,
-.home-mini-date.color-blue {
-  --clock-main: #4b91d8;
-  --clock-ink: #36546f;
-  --clock-soft: #eef7ff;
-  --clock-line: #b7d6f3;
-}
-
-.home-date-display.color-mono,
-.home-mini-date.color-mono {
-  --clock-main: #2f2d32;
-  --clock-ink: #2f2d32;
-  --clock-soft: #f5f3f2;
-  --clock-line: #c9c4c0;
-}
-
-.home-date-display.color-rainbow,
-.home-mini-date.color-rainbow {
-  --clock-main: #ff5d9e;
-  --clock-ink: #6f5e83;
-  --clock-soft: #fff4fb;
-  --clock-line: #dac6ff;
-}
-
-.home-date-display span,
-.home-date-display strong,
-.home-date-display small,
-.home-mini-date span,
-.home-mini-date strong,
-.home-mini-date small {
-  color: inherit;
-  font-size: inherit;
-  line-height: 1;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.home-date-display.pill {
-  border: 1px solid var(--clock-line);
-  border-radius: 999px;
-  background: var(--clock-soft);
-  box-shadow: 0 12px 24px rgba(73, 58, 45, 0.06);
-  color: var(--clock-ink);
-  padding: var(--clock-pad-y) var(--clock-pad-x);
-}
-
-.home-date-display.minimal {
-  color: var(--clock-ink);
-  font-size: var(--clock-minimal-size);
-}
-
-.home-date-display.size-small {
-  --clock-pad-y: 7px;
-  --clock-pad-x: 11px;
-  --clock-minimal-size: 12px;
-  --clock-digital-title: 16px;
-  --clock-retro-title: 20px;
-  --clock-neon-title: 20px;
-  --clock-doodle-title: 18px;
-  --clock-stamp-title: 15px;
-  --clock-small-size: 8px;
-  --clock-stamp-width: 96px;
-  --clock-stamp-height: 68px;
-  --clock-stamp-heart: 80px;
-}
-
-.home-date-display.size-large {
-  --clock-pad-y: 12px;
-  --clock-pad-x: 18px;
-  --clock-minimal-size: 18px;
-  --clock-digital-title: 25px;
-  --clock-retro-title: 32px;
-  --clock-neon-title: 32px;
-  --clock-doodle-title: 29px;
-  --clock-stamp-title: 23px;
-  --clock-small-size: 12px;
-  --clock-stamp-width: 144px;
-  --clock-stamp-height: 104px;
-  --clock-stamp-heart: 122px;
-}
-
-.home-date-display.digital,
-.home-date-display.retro,
-.home-date-display.neon,
-.home-date-display.doodle,
-.home-date-display.stamp {
-  display: grid;
-  gap: 3px;
-  text-align: center;
-}
-
-.home-date-display.digital {
-  border: 1px solid color-mix(in srgb, var(--clock-line) 42%, rgba(255, 255, 255, 0.28));
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 28%),
-    linear-gradient(135deg, color-mix(in srgb, var(--clock-main) 18%, #17161b), #060608);
-  box-shadow: 0 10px 22px rgba(26, 20, 28, 0.16);
-  color: #f6f0ff;
-  font-family: "Courier New", ui-monospace, monospace;
-  padding: var(--clock-pad-y) var(--clock-pad-x);
-}
-
-.home-date-display.digital strong {
-  font-size: var(--clock-digital-title);
-  font-weight: 500;
-  text-shadow: 0 0 8px rgba(244, 235, 255, 0.36);
-}
-
-.home-date-display.digital small {
-  color: rgba(246, 240, 255, 0.72);
-  font-size: var(--clock-small-size);
-}
-
-.home-date-display.retro {
-  color: var(--clock-ink);
-  font-family: Georgia, "Times New Roman", serif;
-  padding: 4px 2px;
-}
-
-.home-date-display.retro strong {
-  font-size: var(--clock-retro-title);
-  font-weight: 900;
-  letter-spacing: 0.08em;
-}
-
-.home-date-display.retro small {
-  color: color-mix(in srgb, var(--clock-ink) 72%, var(--muted));
-  font-size: var(--clock-small-size);
-  letter-spacing: 0.08em;
-}
-
-.home-date-display.neon {
-  color: var(--clock-main);
-  font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
-  padding: 4px 2px;
-  text-shadow:
-    1px 1px 0 #52d6df,
-    2px 2px 0 color-mix(in srgb, var(--clock-line) 70%, #ffd56e),
-    0 6px 14px rgba(255, 93, 158, 0.2);
-}
-
-.home-date-display.neon strong {
-  font-size: var(--clock-neon-title);
-  font-weight: 950;
-}
-
-.home-date-display.neon small {
-  color: color-mix(in srgb, var(--clock-ink) 72%, var(--muted));
-  font-size: var(--clock-small-size);
-  text-shadow: none;
-}
-
-.home-date-display.doodle {
-  position: relative;
-  color: var(--clock-ink);
-  font-family: "Comic Sans MS", "Bradley Hand", cursive;
-  padding: var(--clock-pad-y) var(--clock-pad-x);
-}
-
-.home-date-display.doodle::before,
-.home-date-display.doodle::after {
-  position: absolute;
-  color: color-mix(in srgb, var(--clock-main) 72%, #8a665b);
-  font-size: 12px;
-  line-height: 1;
-  content: "✧";
-}
-
-.home-date-display.doodle::before {
-  top: 2px;
-  left: 2px;
-}
-
-.home-date-display.doodle::after {
-  right: 1px;
-  bottom: 5px;
-  content: "♡";
-}
-
-.home-date-display.doodle strong {
-  font-size: var(--clock-doodle-title);
-  font-weight: 500;
-  letter-spacing: 0.03em;
-}
-
-.home-date-display.doodle small {
-  color: color-mix(in srgb, var(--clock-ink) 68%, var(--muted));
-  font-size: var(--clock-small-size);
-}
-
-.home-date-display.stamp {
-  position: relative;
-  min-width: var(--clock-stamp-width);
-  min-height: var(--clock-stamp-height);
-  align-content: center;
-  border: 0;
-  color: color-mix(in srgb, var(--clock-main) 64%, #6d4d43);
-  font-family: "Courier New", ui-monospace, monospace;
-  isolation: isolate;
-  padding: 12px 18px 10px;
-  transform: rotate(-2deg);
-}
-
-.home-date-display.stamp .stamp-heart-outline {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  z-index: -1;
-  color: color-mix(in srgb, var(--clock-main) 72%, #7d5b50);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: var(--clock-stamp-heart);
-  font-weight: 400;
-  line-height: 0.72;
-  opacity: 0.9;
-  transform: translate(-50%, -50%) rotate(1deg) scaleX(1.25);
-}
-
-.home-date-display.stamp strong {
-  font-size: var(--clock-stamp-title);
-  letter-spacing: 0.08em;
-}
-
-.home-date-display.stamp small {
-  font-size: var(--clock-small-size);
-  letter-spacing: 0.08em;
-}
-
-.home-mini-date {
-  --clock-mini-title: 11px;
-  --clock-mini-small: 7px;
-  --clock-mini-pad-y: 5px;
-  --clock-mini-pad-x: 7px;
-  --clock-stamp-height: 34px;
-  --clock-stamp-heart: 40px;
-  flex: 0 0 auto;
-  color: var(--text-sub);
-  font-size: 9px;
-}
-
-.home-mini-date.color-theme {
-  --clock-main: var(--accent);
-  --clock-ink: var(--preview-ink);
-  --clock-soft: color-mix(in srgb, var(--accent) 14%, var(--preview-card));
-  --clock-line: color-mix(in srgb, var(--accent) 38%, var(--preview-line));
-}
-
-.home-mini-date.pill {
-  gap: 4px;
-  border: 1px solid color-mix(in srgb, var(--clock-line) 72%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--clock-soft) 82%, transparent);
-  color: var(--clock-ink);
-  padding: var(--clock-mini-pad-y) var(--clock-mini-pad-x);
-}
-
-.home-mini-date.size-small {
-  --clock-mini-title: 9px;
-  --clock-mini-small: 6px;
-  --clock-mini-pad-y: 4px;
-  --clock-mini-pad-x: 6px;
-  --clock-stamp-height: 28px;
-  --clock-stamp-heart: 33px;
-}
-
-.home-mini-date.size-large {
-  --clock-mini-title: 14px;
-  --clock-mini-small: 8px;
-  --clock-mini-pad-y: 6px;
-  --clock-mini-pad-x: 9px;
-  --clock-stamp-height: 40px;
-  --clock-stamp-heart: 47px;
-}
-
-.home-mini-date.minimal,
-.home-mini-date.digital,
-.home-mini-date.retro,
-.home-mini-date.neon,
-.home-mini-date.doodle,
-.home-mini-date.stamp {
-  font-size: var(--clock-mini-title);
-}
-
-.home-mini-date strong {
-  color: inherit;
-  font-family: inherit;
-  font-size: var(--clock-mini-title);
-  font-weight: inherit;
-  letter-spacing: inherit;
-  line-height: 1;
-}
-
-.home-mini-date small {
-  color: inherit;
-  font-family: inherit;
-  font-size: var(--clock-mini-small);
-  font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1;
-}
-
-.home-mini-date.minimal,
-.home-mini-date.retro,
-.home-mini-date.doodle {
-  color: var(--clock-ink);
-}
-
-.home-mini-date.minimal strong,
-.home-mini-date.minimal small,
-.home-mini-date.retro strong,
-.home-mini-date.retro small,
-.home-mini-date.doodle strong,
-.home-mini-date.doodle small {
-  color: var(--clock-ink);
-}
-
-.home-mini-date.color-pink.minimal,
-.home-mini-date.color-pink.retro,
-.home-mini-date.color-pink.doodle,
-.home-mini-date.color-pink.minimal strong,
-.home-mini-date.color-pink.retro strong,
-.home-mini-date.color-pink.doodle strong {
-  color: #f45c9a;
-}
-
-.home-mini-date.color-brown.minimal,
-.home-mini-date.color-brown.retro,
-.home-mini-date.color-brown.doodle,
-.home-mini-date.color-brown.minimal strong,
-.home-mini-date.color-brown.retro strong,
-.home-mini-date.color-brown.doodle strong {
-  color: #8a5a44;
-}
-
-.home-mini-date.color-blue.minimal,
-.home-mini-date.color-blue.retro,
-.home-mini-date.color-blue.doodle,
-.home-mini-date.color-blue.minimal strong,
-.home-mini-date.color-blue.retro strong,
-.home-mini-date.color-blue.doodle strong {
-  color: #4b91d8;
-}
-
-.home-mini-date.color-mono.minimal,
-.home-mini-date.color-mono.retro,
-.home-mini-date.color-mono.doodle,
-.home-mini-date.color-mono.minimal strong,
-.home-mini-date.color-mono.retro strong,
-.home-mini-date.color-mono.doodle strong {
-  color: #2f2d32;
-}
-
-.home-mini-date.color-pink.minimal small,
-.home-mini-date.color-pink.retro small,
-.home-mini-date.color-pink.doodle small {
-  color: #a95a78;
-}
-
-.home-mini-date.color-brown.minimal small,
-.home-mini-date.color-brown.retro small,
-.home-mini-date.color-brown.doodle small {
-  color: #6f4d3f;
-}
-
-.home-mini-date.color-blue.minimal small,
-.home-mini-date.color-blue.retro small,
-.home-mini-date.color-blue.doodle small {
-  color: #466b8e;
-}
-
-.home-mini-date.color-mono.minimal small,
-.home-mini-date.color-mono.retro small,
-.home-mini-date.color-mono.doodle small {
-  color: #5b565d;
-}
-
-.home-mini-date.digital {
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--clock-main) 18%, #101014);
-  color: #f8f2ff;
-  font-family: "Courier New", ui-monospace, monospace;
-  padding: var(--clock-mini-pad-y) var(--clock-mini-pad-x);
-}
-
-.home-mini-date.retro {
-  color: var(--clock-ink);
-  font-family: Georgia, "Times New Roman", serif;
-}
-
-.home-mini-date.neon {
-  color: var(--clock-main);
-  font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
-  text-shadow: 1px 1px 0 #52d6df, 2px 2px 0 color-mix(in srgb, var(--clock-line) 70%, #ffd56e);
-}
-
-.home-mini-date.doodle {
-  color: var(--clock-ink);
-  font-family: "Comic Sans MS", "Bradley Hand", cursive;
-}
-
-.home-mini-date.stamp {
-  position: relative;
-  min-width: calc(var(--clock-stamp-height) * 1.36);
-  min-height: var(--clock-stamp-height);
-  border: 1px solid color-mix(in srgb, var(--clock-main) 58%, #7d5b50);
-  border: 0;
-  color: color-mix(in srgb, var(--clock-main) 64%, #6d4d43);
-  font-family: "Courier New", ui-monospace, monospace;
-  padding: var(--clock-mini-pad-y) var(--clock-mini-pad-x);
-  transform: rotate(-2deg);
-}
-
-.home-mini-date.stamp .stamp-heart-outline {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  z-index: -1;
-  color: color-mix(in srgb, var(--clock-main) 72%, #7d5b50);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: var(--clock-stamp-heart);
-  line-height: 0.72;
-  opacity: 0.9;
-  transform: translate(-50%, -50%) scaleX(1.25);
-}
-
-.home-date-display.digital.color-mono,
-.home-mini-date.digital.color-mono {
-  background: linear-gradient(135deg, #2f2d32, #050505);
-  color: #ffffff;
-}
-
-.home-date-display.digital.color-blue,
-.home-mini-date.digital.color-blue {
-  color: #eaf6ff;
-  text-shadow: 0 0 9px rgba(132, 203, 255, 0.52);
-}
-
-.home-date-display.digital.color-pink,
-.home-mini-date.digital.color-pink {
-  color: #fff2f8;
-  text-shadow: 0 0 9px rgba(255, 132, 190, 0.52);
-}
-
-.home-date-display.digital.color-brown,
-.home-mini-date.digital.color-brown {
-  color: #fff1e3;
-  text-shadow: 0 0 8px rgba(228, 171, 128, 0.42);
-}
-
-.home-date-display.digital.color-rainbow,
-.home-mini-date.digital.color-rainbow {
-  background: linear-gradient(135deg, #1a1118, #111827 52%, #201807);
-  color: #fff9fb;
-}
-
-.home-date-display.color-rainbow.neon strong,
-.home-mini-date.color-rainbow.neon strong,
-.home-date-display.color-rainbow.retro strong,
-.home-mini-date.color-rainbow.retro strong,
-.home-date-display.color-rainbow.doodle strong,
-.home-mini-date.color-rainbow.doodle strong,
-.home-date-display.color-rainbow.minimal,
-.home-mini-date.color-rainbow.minimal {
-  background: linear-gradient(90deg, #ff5d9e, #52d6df 48%, #ffd56e);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.home-date-display.color-rainbow.pill,
-.home-mini-date.color-rainbow.pill {
-  background:
-    linear-gradient(var(--clock-soft), var(--clock-soft)) padding-box,
-    linear-gradient(90deg, #ff5d9e, #52d6df, #ffd56e) border-box;
-  border-color: transparent;
-}
-
-.clock-control-row {
-  display: grid;
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.clock-option-preview {
-  position: relative;
-  display: inline-grid;
-  min-height: 34px;
-  align-items: center;
-  justify-content: center;
-  justify-self: start;
-  margin-bottom: 8px;
-  color: var(--accent);
-  font-size: 13px;
-  letter-spacing: 0.04em;
-}
-
-.clock-option-preview b {
-  position: relative;
-  z-index: 1;
-}
-
-.clock-option-preview.digital {
-  border-radius: 6px;
-  background: #111116;
-  color: #fff7ff;
-  font-family: "Courier New", ui-monospace, monospace;
-  padding: 6px 8px;
-}
-
-.clock-option-preview.retro {
-  color: #6c3d31;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 17px;
-}
-
-.clock-option-preview.neon {
-  color: #ff5d9e;
-  font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
-  font-size: 17px;
-  text-shadow: 1px 1px 0 #52d6df, 2px 2px 0 #ffd56e;
-}
-
-.clock-option-preview.doodle {
-  color: #7f5f57;
-  font-family: "Comic Sans MS", "Bradley Hand", cursive;
-  font-size: 16px;
-}
-
-.clock-option-preview.stamp {
-  min-width: 70px;
-  min-height: 46px;
-  color: color-mix(in srgb, var(--accent) 68%, #6d4d43);
-  font-family: "Courier New", ui-monospace, monospace;
-  transform: rotate(-2deg);
-}
-
-.clock-option-preview.stamp .stamp-heart-outline {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  z-index: 0;
-  color: color-mix(in srgb, var(--accent) 70%, #7d5b50);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 56px;
-  font-weight: 400;
-  line-height: 0.72;
-  opacity: 0.9;
-  transform: translate(-50%, -50%) scaleX(1.22);
-}
-
-.clock-control-row > div {
-  display: grid;
-  gap: 8px;
-}
-
-.clock-control-row strong {
-  color: var(--customize-ink, var(--ink));
-  font-size: 13px;
-}
-
-.clock-color-choice {
-  position: relative;
-  padding-left: 30px;
-}
-
-.clock-color-choice::before {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  width: 10px;
-  height: 10px;
-  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  border-radius: 999px;
-  background: var(--accent);
-  content: "";
-  transform: translateY(-50%);
-}
-
-.clock-color-theme::before {
-  background: var(--accent);
-}
-
-.clock-color-pink::before {
-  background: #f45c9a;
-}
-
-.clock-color-brown::before {
-  background: #8a5a44;
-}
-
-.clock-color-blue::before {
-  background: #4b91d8;
-}
-
-.clock-color-mono::before {
-  background: #2f2d32;
-}
-
-.clock-color-rainbow::before {
-  background: linear-gradient(135deg, #ff5d9e, #52d6df 50%, #ffd56e);
-}
-
 .home-banner {
   position: relative;
   display: grid;
@@ -2024,12 +1380,27 @@ main {
 }
 
 .home-search-results button,
-.home-search-results small {
+.home-search-results > small {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card-bg);
   color: var(--text-sub);
   padding: 10px 14px;
+}
+
+.home-search-results button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-search-results button small {
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--muted);
+  font-size: 11px;
+  padding: 3px 7px;
 }
 
 .home-feature-grid {
@@ -2478,17 +1849,11 @@ main {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent), 0 22px 48px rgba(73, 58, 45, 0.1);
 }
 
-.category-reorder-controls {
+.category-drag-handle {
   position: absolute;
   top: 12px;
   left: 12px;
   z-index: 4;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.category-drag-handle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2502,8 +1867,6 @@ main {
   cursor: grab;
   font-size: 14px;
   letter-spacing: 0;
-  touch-action: none;
-  user-select: none;
 }
 
 .category-drag-handle:active {
@@ -2513,10 +1876,6 @@ main {
 .category-drag-handle:disabled {
   cursor: default;
   opacity: 0.45;
-}
-
-.is-category-reordering .category-open {
-  pointer-events: none;
 }
 
 .category-sort-note {
@@ -2704,39 +2063,6 @@ main {
   aspect-ratio: 1.25;
   object-fit: cover;
   background: var(--sand);
-}
-
-.prompt-favorite-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 5;
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--border) 52%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
-  box-shadow: 0 8px 20px rgba(73, 58, 45, 0.1);
-  color: var(--accent);
-  font-size: 20px;
-  line-height: 1;
-  padding: 0;
-}
-
-.image-prompt-heart {
-  top: 12px;
-  right: auto;
-  left: 12px;
-  z-index: 12;
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-  background: color-mix(in srgb, var(--card-bg) 96%, white 4%);
-  box-shadow: 0 10px 24px rgba(73, 58, 45, 0.16);
-}
-
-.prompt-favorite-button:hover {
-  transform: translateY(-1px) scale(1.03);
 }
 
 .cover-image-carousel {
@@ -3020,27 +2346,12 @@ main {
 }
 
 .text-stock-frame {
-  position: relative;
   display: grid;
   gap: 12px;
   border: 1px solid rgba(226, 218, 209, 0.95);
   border-radius: 16px;
   background: #fff;
-  padding: 22px 18px 18px;
-}
-
-.text-stock-heart {
-  top: 12px;
-  right: 12px;
-  left: auto;
-  width: 34px;
-  height: 34px;
-  font-size: 18px;
-}
-
-.text-stock-heart:disabled {
-  cursor: default;
-  opacity: 0.35;
+  padding: 18px;
 }
 
 .text-stock-frame input,
@@ -4422,7 +3733,7 @@ main {
   min-width: 0;
 }
 
-.home-mini-topbar > strong {
+.home-mini-topbar strong {
   overflow: hidden;
   font-family: var(--font-heading);
   font-size: 13px;
@@ -4432,7 +3743,7 @@ main {
   white-space: nowrap;
 }
 
-.home-mini-topbar > span {
+.home-mini-topbar span {
   flex: 0 0 auto;
   color: var(--text-sub);
   font-size: 10px;
@@ -5583,60 +4894,41 @@ p {
   gap: 10px;
 }
 
-.atelier-marquee {
-  width: 100%;
+.atelier-tape {
   overflow: hidden;
-  position: relative;
   border-radius: 26px;
   border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   background: color-mix(in srgb, var(--card-bg) 68%, transparent);
   padding: 14px;
 }
 
-.atelier-marquee-track {
+.atelier-track {
   display: flex;
-  align-items: center;
   width: max-content;
-  min-width: max-content;
-  gap: 24px;
-  will-change: transform;
+  gap: 14px;
+  animation: atelier-scroll 72s linear infinite;
 }
 
-.atelier-marquee-track.is-moving {
-  animation: atelier-marquee-row-drift 45s linear infinite alternate;
-}
-
-.atelier-marquee-track.is-single {
-  animation: atelier-marquee-single-drift 45s linear infinite alternate;
-}
-
-.atelier-marquee:hover .atelier-marquee-track {
-  animation-play-state: paused;
-}
-
-.atelier-marquee-card {
-  flex: 0 0 auto;
-  width: 180px;
-  height: 180px;
+.atelier-track figure {
+  width: 154px;
   margin: 0;
-  border-radius: 24px;
+  border-radius: 22px;
   background: color-mix(in srgb, var(--card-bg) 88%, var(--decorative-shape));
   box-shadow: 0 12px 24px rgba(73, 58, 45, 0.08);
   padding: 8px;
-  overflow: hidden;
   transform: rotate(-1.5deg);
 }
 
-.atelier-marquee-card:nth-child(2n) {
+.atelier-track figure:nth-child(2n) {
   transform: rotate(1.4deg);
 }
 
-.atelier-marquee-card img {
+.atelier-track img {
   display: block;
   width: 100%;
-  height: 100%;
-  border-radius: 18px;
-  object-fit: contain;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  object-fit: cover;
   background: var(--sand);
 }
 
@@ -5668,7 +4960,7 @@ p {
   background: linear-gradient(145deg, color-mix(in srgb, var(--card-bg) 90%, var(--shell)), color-mix(in srgb, var(--shell) 42%, transparent));
 }
 
-.theme-cool .atelier-marquee-card {
+.theme-cool .atelier-track figure {
   border-radius: 16px;
   transform: none;
 }
@@ -5678,7 +4970,7 @@ p {
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.24);
 }
 
-.theme-dark .atelier-marquee-card {
+.theme-dark .atelier-track figure {
   background: color-mix(in srgb, var(--card-bg) 78%, white 8%);
 }
 
@@ -5704,19 +4996,14 @@ p {
     linear-gradient(145deg, color-mix(in srgb, var(--sand) 30%, var(--card-bg)), var(--card-bg));
 }
 
-.theme-natural .atelier-marquee-card {
+.theme-natural .atelier-track figure {
   border-radius: 18px;
   background: color-mix(in srgb, var(--sand) 20%, var(--card-bg));
 }
 
-@keyframes atelier-marquee-row-drift {
+@keyframes atelier-scroll {
   from { transform: translateX(0); }
-  to { transform: translateX(-180px); }
-}
-
-@keyframes atelier-marquee-single-drift {
-  from { transform: translateX(0); }
-  to { transform: translateX(clamp(160px, 54vw, 960px)); }
+  to { transform: translateX(-50%); }
 }
 
 .gallery-grid {
@@ -6218,40 +5505,10 @@ p {
   gap: 8px;
 }
 
-.journal-stock-item {
-  position: relative;
-}
-
-.journal-stock-add {
-  width: 100%;
+.journal-stock button {
   overflow: hidden;
   border-radius: 14px;
   padding: 0;
-}
-
-.journal-stock-delete {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 2;
-  display: grid;
-  width: 28px;
-  height: 28px;
-  min-height: 0;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg) 92%, white 8%);
-  box-shadow: 0 8px 18px rgba(73, 58, 45, 0.14);
-  color: #9e4538;
-  font-size: 16px;
-  font-weight: 950;
-  line-height: 1;
-  padding: 0;
-}
-
-.journal-stock-delete:hover {
-  transform: translateY(-1px);
 }
 
 .journal-stock img {
@@ -6266,26 +5523,6 @@ p {
   gap: 12px;
   border-top: 1px solid var(--border);
   padding-top: 14px;
-}
-
-.journal-canvas {
-  display: grid;
-  align-content: start;
-  gap: 12px;
-}
-
-.journal-board-note {
-  width: fit-content;
-  max-width: 100%;
-  margin: 0;
-  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg) 78%, transparent);
-  color: var(--text-sub);
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1.5;
-  padding: 8px 14px;
 }
 
 .journal-board {
@@ -6439,6 +5676,17 @@ p {
   outline: 3px solid color-mix(in srgb, var(--accent) 58%, transparent);
 }
 
+.journal-empty {
+  position: absolute;
+  inset: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 28px;
+  color: var(--text-sub);
+  text-align: center;
+}
+
 .filters {
   display: grid;
   grid-template-columns: 1fr 230px 190px;
@@ -6568,6 +5816,34 @@ p {
   background: var(--custom-card-bg);
   backdrop-filter: var(--custom-card-backdrop-filter);
   box-shadow: var(--custom-card-shadow);
+}
+
+.app-shell .customize-settings .customize-card,
+.app-shell .customize-settings .customize-nested-card,
+.app-shell .customize-settings .customize-accordion:not(.customize-card) {
+  border: 1px solid var(--customize-line);
+  border-radius: 26px;
+  background: var(--customize-card);
+  color: var(--customize-ink);
+  box-shadow: 0 14px 34px rgba(73, 58, 45, 0.06);
+  backdrop-filter: none;
+}
+
+.app-shell .customize-settings .customize-nested-card {
+  border-color: color-mix(in srgb, var(--customize-line) 68%, transparent);
+  background: color-mix(in srgb, var(--customize-card) 82%, transparent);
+  box-shadow: none;
+}
+
+.app-shell .customize-settings .customize-accordion > summary,
+.app-shell .customize-settings .customize-accordion > summary span {
+  color: var(--customize-ink);
+}
+
+.app-shell .customize-settings .customize-accordion > summary b {
+  border-color: color-mix(in srgb, var(--customize-line) 82%, transparent);
+  background: color-mix(in srgb, var(--customize-card-soft) 70%, transparent);
+  color: var(--customize-muted);
 }
 
 .app-shell .home-feature-card,

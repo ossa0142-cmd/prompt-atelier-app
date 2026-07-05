@@ -31,68 +31,6 @@ const homeFeatures = [{
   id: "projects",
   label: "プロジェクト"
 }];
-const homeClockStyleOptions = [{
-  id: "pill",
-  label: "ふんわり",
-  description: "淡い丸ラベルで表示"
-}, {
-  id: "digital",
-  label: "デジタル",
-  description: "黒い液晶風の表示"
-}, {
-  id: "retro",
-  label: "レトロ",
-  description: "古い印字風の文字"
-}, {
-  id: "neon",
-  label: "ネオン",
-  description: "カラフルな立体文字"
-}, {
-  id: "doodle",
-  label: "手描き",
-  description: "らくがき風のゆるい日付"
-}, {
-  id: "stamp",
-  label: "スタンプ",
-  description: "ハートスタンプ風の表示"
-}, {
-  id: "minimal",
-  label: "最小",
-  description: "月日と曜日だけ表示"
-}, {
-  id: "hidden",
-  label: "非表示",
-  description: "ホームに日付を出さない"
-}];
-const homeClockSizeOptions = [{
-  id: "small",
-  label: "小"
-}, {
-  id: "medium",
-  label: "中"
-}, {
-  id: "large",
-  label: "大"
-}];
-const homeClockColorOptions = [{
-  id: "theme",
-  label: "テーマ"
-}, {
-  id: "pink",
-  label: "ピンク"
-}, {
-  id: "brown",
-  label: "ブラウン"
-}, {
-  id: "blue",
-  label: "ブルー"
-}, {
-  id: "mono",
-  label: "モノクロ"
-}, {
-  id: "rainbow",
-  label: "レインボー"
-}];
 const homeStatsCardOptions = [{
   id: "mockups",
   label: "モックアップカードを表示"
@@ -512,8 +450,6 @@ const defaultWorkTools = [{
 const sampleAtelierImages = [];
 const defaultJournal = {
   background: "paper",
-  stockImages: [],
-  hiddenStockImageIds: [],
   items: []
 };
 const sampleVideos = [{
@@ -633,9 +569,6 @@ const defaultHomeSettings = {
   bannerPositionY: 50,
   bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
-  homeClockStyle: "pill",
-  homeClockSize: "medium",
-  homeClockColor: "theme",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
   cardStyle: defaultCardStyle,
@@ -664,11 +597,12 @@ const defaultHomeSettings = {
     videos: true,
     mj: true,
     projects: true,
+    favorites: true,
     atelier: true,
     dashboard: true,
     quickActions: true,
-    featureCards: true,
-    favorites: true
+    search: false,
+    featureCards: true
   },
   order: ["dashboard", "quickActions", "featureCards", "favorites", "atelier"]
 };
@@ -688,9 +622,6 @@ const normalizeHomeSettings = settings => {
   };
   const safeMessageMode = ["auto", "fixed", "project"].includes(rawCharacter.messageMode) ? rawCharacter.messageMode : "auto";
   const safeDensity = ["comfortable", "normal", "compact"].includes(settings?.displayDensity) ? settings.displayDensity : "normal";
-  const safeClockStyle = ["pill", "digital", "retro", "neon", "doodle", "stamp", "minimal", "hidden"].includes(settings?.homeClockStyle) ? settings.homeClockStyle : "pill";
-  const safeClockSize = ["small", "medium", "large"].includes(settings?.homeClockSize) ? settings.homeClockSize : "medium";
-  const safeClockColor = ["theme", "pink", "brown", "blue", "mono", "rainbow"].includes(settings?.homeClockColor) ? settings.homeClockColor : "theme";
   const safeFontPreset = ["simple", "elegant", "cute", "korean", "handwritten", "cool"].includes(settings?.fontPreset) ? settings.fontPreset : "simple";
   const safeIconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet) ? settings.iconSet : "line";
   const safeCharacterSize = ["small", "medium", "large"].includes(rawCharacter.size) ? rawCharacter.size : "medium";
@@ -720,9 +651,6 @@ const normalizeHomeSettings = settings => {
     bannerPositionX: activeBannerPosition.x,
     bannerPositionY: activeBannerPosition.y,
     bannerPositions,
-    homeClockStyle: safeClockStyle,
-    homeClockSize: safeClockSize,
-    homeClockColor: safeClockColor,
     displayDensity: safeDensity,
     pageDisplaySettings: {
       gallery: {
@@ -911,12 +839,6 @@ function normalizeMockupCategoryOrder(items) {
     order: index + 1
   }));
 }
-function assignMockupCategoryOrder(items) {
-  return [...(items || [])].map((category, index) => ({
-    ...category,
-    order: index + 1
-  }));
-}
 const defaultLibraryBoardPrompts = [...libraryPrompts.map(prompt => ({
   ...prompt,
   categoryId: mockupCategoryIdByTitle[prompt.category],
@@ -982,7 +904,21 @@ const defaultLibraryBoardPrompts = [...libraryPrompts.map(prompt => ({
   tags: [],
   imageUrl: ""
 }];
-const samplePrompts = [];
+const samplePrompts = [{
+  ...libraryPrompts[0],
+  id: "my-1",
+  title: "かわいい動物ステッカー",
+  note: "動物クリップアートのステッカー販売ページ用。",
+  tags: ["かわいい", "動物", "ステッカー"],
+  favorite: true
+}, {
+  ...libraryPrompts[5],
+  id: "my-2",
+  title: "植物アートプリント",
+  note: "水彩植物シリーズ用。額縁は明るめ。",
+  tags: ["植物", "壁掛けアート"],
+  favorite: false
+}];
 const sampleMj = [{
   id: "mj-1",
   title: "かわいいクリップアート基本設定",
@@ -1061,12 +997,45 @@ const blankProject = () => ({
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolean);
 const tagText = tags => tags.join(", ");
-const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
-const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
-const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
-const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json", "./src/data/sampleSeed.json"];
-const EMBEDDED_SAMPLE_SEED_DATA = {
-  "libraryItems": [{
+const normalizeSearchText = value => String(value ?? "").normalize("NFKC").toLowerCase().replace(/[\u30a1-\u30f6]/g, char => String.fromCharCode(char.charCodeAt(0) - 0x60));
+const lowerIncludes = (source, query) => {
+  const sourceText = normalizeSearchText(source);
+  const tokens = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+  return tokens.length > 0 && tokens.every(token => sourceText.includes(token));
+};
+function searchableTextFromValue(value, depth = 0) {
+  if (value == null || depth > 4) return "";
+  if (typeof value === "string") {
+    if (/^data:image|^blob:/i.test(value)) return "";
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map(item => searchableTextFromValue(item, depth + 1)).join(" ");
+  if (typeof value === "object") {
+    return Object.entries(value).filter(([key]) => !/^(src|image|imageUrl|thumbnail|coverImage|coverImages|bannerImage|iconImage)$/i.test(key)).map(([, item]) => searchableTextFromValue(item, depth + 1)).join(" ");
+  }
+  return "";
+}
+function storedMockupCategoriesForSearch() {
+  try {
+    const saved = localStorage.getItem("prompt-atelier-mockup-categories-v2");
+    const parsed = saved ? JSON.parse(saved) : null;
+    return Array.isArray(parsed) && parsed.length ? parsed : defaultMockupCategories;
+  } catch {
+    return defaultMockupCategories;
+  }
+}
+function scrollToSearchTarget(elementId) {
+  window.setTimeout(() => {
+    document.getElementById(elementId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest"
+    });
+  }, 120);
+}
+const BUILT_IN_MOCKUP_RESTORE_DATA = {
+  "categories": [{
     "id": "sticker",
     "title": "ステッカー",
     "description": "シート、透明、ライフスタイルなど販売画像に使いやすいモックアップ。",
@@ -1483,7 +1452,7 @@ const EMBEDDED_SAMPLE_SEED_DATA = {
     "createdFromSeedExport": true,
     "sampleId": "sample-library-013"
   }],
-  "mockupItems": [{
+  "prompts": [{
     "id": "lib-sticker-1",
     "title": "ステッカー・デジタル同時出力",
     "category": "ステッカーモックアップ",
@@ -1711,8 +1680,7 @@ const EMBEDDED_SAMPLE_SEED_DATA = {
       "width": 1200,
       "height": 900,
       "createdAt": "2026-07-03T07:14:07.419Z"
-    }],
-    "favorite": true
+    }]
   }, {
     "id": "1783062951005-3cf68d9af43518",
     "title": "文房具",
@@ -1979,634 +1947,11 @@ const EMBEDDED_SAMPLE_SEED_DATA = {
     "isSample": true,
     "createdFromSeedExport": true,
     "sampleId": "sample-mockup-014"
-  }],
-  "mockupStocks": [],
-  "promptCards": [{
-    "id": "my-1",
-    "title": "かわいい動物ステッカー",
-    "category": "ステッカーモックアップ",
-    "description": "白背景でステッカーの質感が見えやすい、Etsy向けの定番モックアップ。",
-    "prompt": "温かみのある白い紙の上に置いた、清潔感のあるステッカーシートの平置きモックアップ。自然光、やわらかな影、上品なハンドメイド文具の雰囲気、透過PNGアートを配置しやすい余白。",
-    "tags": ["かわいい", "動物", "ステッカー"],
-    "imageUrl": "data:image/svg+xml,%0A%20%20%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22650%22%20viewBox%3D%220%200%20900%20650%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20stop-color%3D%22%23f8ead8%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23dfe8df%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%22900%22%20height%3D%22650%22%20rx%3D%2242%22%20fill%3D%22url(%23g)%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22190%22%20cy%3D%22165%22%20r%3D%2280%22%20fill%3D%22%23fff%22%20opacity%3D%22.42%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22720%22%20cy%3D%22500%22%20r%3D%22140%22%20fill%3D%22%23fff%22%20opacity%3D%22.28%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22210%22%20y%3D%22190%22%20width%3D%22480%22%20height%3D%22270%22%20rx%3D%2228%22%20fill%3D%22%23fffaf4%22%20opacity%3D%22.92%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22450%22%20y%3D%22335%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%22%20font-size%3D%2242%22%20fill%3D%22%234b4038%22%3E%E3%82%B9%E3%83%86%E3%83%83%E3%82%AB%E3%83%BC%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E",
-    "note": "動物クリップアートのステッカー販売ページ用。",
-    "favorite": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-prompt-card-001"
-  }, {
-    "id": "my-2",
-    "title": "植物アートプリント",
-    "category": "アートプリントモックアップ",
-    "description": "アートプリントをリビングの壁に飾った販売ページ向け写真。",
-    "prompt": "落ち着いたリビングの壁に飾った額入りアートプリントのモックアップ。オーク材の額縁、ニュートラルなソファ、やわらかな日差し、北欧風インテリア、リアルなファインアート紙。",
-    "tags": ["植物", "壁掛けアート"],
-    "imageUrl": "data:image/svg+xml,%0A%20%20%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22650%22%20viewBox%3D%220%200%20900%20650%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20stop-color%3D%22%23e4e7df%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23f8efe2%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%22900%22%20height%3D%22650%22%20rx%3D%2242%22%20fill%3D%22url(%23g)%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22190%22%20cy%3D%22165%22%20r%3D%2280%22%20fill%3D%22%23fff%22%20opacity%3D%22.42%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22720%22%20cy%3D%22500%22%20r%3D%22140%22%20fill%3D%22%23fff%22%20opacity%3D%22.28%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22210%22%20y%3D%22190%22%20width%3D%22480%22%20height%3D%22270%22%20rx%3D%2228%22%20fill%3D%22%23fffaf4%22%20opacity%3D%22.92%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%22450%22%20y%3D%22335%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%22%20font-size%3D%2242%22%20fill%3D%22%234b4038%22%3E%E3%82%A2%E3%83%BC%E3%83%88%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E",
-    "note": "水彩植物シリーズ用。額縁は明るめ。",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-prompt-card-002"
-  }],
-  "promptStocks": [],
-  "videoPromptCards": [{
-    "id": "video-sample-1",
-    "title": "淡いステッカー紹介動画",
-    "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    "model": "Runway",
-    "thumbnail": "",
-    "prompt": "soft pastel clipart sticker sheet reveal, gentle camera push in, cozy stationery desk, clean white background, smooth motion",
-    "memo": "Etsyのサムネイル動画やSNS用に使いやすい構成。",
-    "tags": ["sticker", "pastel", "reveal"],
-    "favorite": true,
-    "createdAt": "2026-07-02T00:00:00.000Z",
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-video-card-001"
-  }, {
-    "id": "video-sample-2",
-    "title": "招待状モックアップ動画",
-    "url": "",
-    "model": "Kling",
-    "thumbnail": "",
-    "prompt": "wedding invitation card mockup on linen fabric, slow top-down camera movement, elegant natural light, warm ivory tone",
-    "memo": "招待状パックの販売ページ用。",
-    "tags": ["invitation", "mockup", "wedding"],
-    "favorite": false,
-    "createdAt": "2026-07-02T00:00:00.000Z",
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-video-card-002"
-  }],
-  "videoPromptStocks": [],
-  "midjourneySettings": [{
-    "id": "mj-1",
-    "title": "かわいいクリップアート基本設定",
-    "description": "Etsy向けのかわいい単品クリップアート生成用。",
-    "ar": "1:1",
-    "stylize": "50",
-    "chaos": "10",
-    "profile": "XXXXX",
-    "seed": "",
-    "raw": true,
-    "extra": "かわいいクリップアート風、白背景、印刷しやすいシンプルな形",
-    "note": "背景透過にしやすい白背景で使う。",
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-mj-setting-001"
-  }, {
-    "id": "mj-2",
-    "title": "ステッカーシート確認用",
-    "description": "複数ステッカーを1枚に並べるプレビュー用。",
-    "ar": "4:5",
-    "stylize": "80",
-    "chaos": "6",
-    "profile": "",
-    "seed": "1234",
-    "raw": false,
-    "extra": "統一感のあるステッカーシート、清潔感のある白背景",
-    "note": "商品画像の1枚目候補。",
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-mj-setting-002"
-  }],
-  "projects": [{
-    "id": "project-1",
-    "name": "ハロウィンクリップアート",
-    "description": "秋から販売するハロウィン素材セット。",
-    "promptIds": ["my-1"],
-    "mjIds": ["mj-1"],
-    "note": "9月上旬までに30点作成。",
-    "tags": ["季節商品", "ハロウィン"],
-    "dueDate": "2026-09-01",
-    "remindOnHome": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-project-001"
-  }],
-  "galleryItems": [{
-    "id": "1783238485945-26456fb486f468",
-    "dbId": "1783238485945-26456fb486f468",
-    "category": "journal",
-    "src": "indexeddb:1783238485945-26456fb486f468",
-    "thumbnail": "indexeddb-thumb:1783238485945-26456fb486f468",
-    "originalName": "10.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:25.945Z",
-    "title": "10",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-001"
-  }, {
-    "id": "1783238482965-040cdae1067b2",
-    "dbId": "1783238482965-040cdae1067b2",
-    "category": "journal",
-    "src": "indexeddb:1783238482965-040cdae1067b2",
-    "thumbnail": "indexeddb-thumb:1783238482965-040cdae1067b2",
-    "originalName": "11.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:22.965Z",
-    "title": "11",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-002"
-  }, {
-    "id": "1783238485589-d7be1d346ce0f",
-    "dbId": "1783238485589-d7be1d346ce0f",
-    "category": "journal",
-    "src": "indexeddb:1783238485589-d7be1d346ce0f",
-    "thumbnail": "indexeddb-thumb:1783238485589-d7be1d346ce0f",
-    "originalName": "12.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:25.589Z",
-    "title": "12",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-003"
-  }, {
-    "id": "1783238484988-04380cb462172",
-    "dbId": "1783238484988-04380cb462172",
-    "category": "journal",
-    "src": "indexeddb:1783238484988-04380cb462172",
-    "thumbnail": "indexeddb-thumb:1783238484988-04380cb462172",
-    "originalName": "13.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:24.988Z",
-    "title": "13",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-004"
-  }, {
-    "id": "1783238483310-bf58ffe0bed08",
-    "dbId": "1783238483310-bf58ffe0bed08",
-    "category": "journal",
-    "src": "indexeddb:1783238483310-bf58ffe0bed08",
-    "thumbnail": "indexeddb-thumb:1783238483310-bf58ffe0bed08",
-    "originalName": "14.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:23.310Z",
-    "title": "14",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-005"
-  }, {
-    "id": "1783238483999-3d3dba8b5d5e9",
-    "dbId": "1783238483999-3d3dba8b5d5e9",
-    "category": "journal",
-    "src": "indexeddb:1783238483999-3d3dba8b5d5e9",
-    "thumbnail": "indexeddb-thumb:1783238483999-3d3dba8b5d5e9",
-    "originalName": "15.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:23.999Z",
-    "title": "15",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-006"
-  }, {
-    "id": "1783238483664-b645dd0ceb2c",
-    "dbId": "1783238483664-b645dd0ceb2c",
-    "category": "journal",
-    "src": "indexeddb:1783238483664-b645dd0ceb2c",
-    "thumbnail": "indexeddb-thumb:1783238483664-b645dd0ceb2c",
-    "originalName": "16.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:23.664Z",
-    "title": "16",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-007"
-  }, {
-    "id": "1783238484624-947d886157a1e",
-    "dbId": "1783238484624-947d886157a1e",
-    "category": "journal",
-    "src": "indexeddb:1783238484624-947d886157a1e",
-    "thumbnail": "indexeddb-thumb:1783238484624-947d886157a1e",
-    "originalName": "17.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:24.624Z",
-    "title": "17",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-008"
-  }, {
-    "id": "1783238484314-e2181836bf31c",
-    "dbId": "1783238484314-e2181836bf31c",
-    "category": "journal",
-    "src": "indexeddb:1783238484314-e2181836bf31c",
-    "thumbnail": "indexeddb-thumb:1783238484314-e2181836bf31c",
-    "originalName": "18.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:24.314Z",
-    "title": "18",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-009"
-  }, {
-    "id": "1783238486346-c2811457ef04f8",
-    "dbId": "1783238486346-c2811457ef04f8",
-    "category": "journal",
-    "src": "indexeddb:1783238486346-c2811457ef04f8",
-    "thumbnail": "indexeddb-thumb:1783238486346-c2811457ef04f8",
-    "originalName": "19.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:26.346Z",
-    "title": "19",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-010"
-  }, {
-    "id": "1783238485324-86b4fbadec6048",
-    "dbId": "1783238485324-86b4fbadec6048",
-    "category": "journal",
-    "src": "indexeddb:1783238485324-86b4fbadec6048",
-    "thumbnail": "indexeddb-thumb:1783238485324-86b4fbadec6048",
-    "originalName": "20.png",
-    "mimeType": "image/webp",
-    "width": 1400,
-    "height": 1400,
-    "createdAt": "2026-07-05T08:01:25.324Z",
-    "title": "20",
-    "memo": "ジャーナルから追加",
-    "source": "journal",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-gallery-011"
-  }],
-  "journalItems": [{
-    "id": "1783238486376-b8d957bac41a8",
-    "imageId": "1783238485945-26456fb486f468",
-    "src": "indexeddb:1783238485945-26456fb486f468",
-    "thumbnail": "indexeddb-thumb:1783238485945-26456fb486f468",
-    "x": 631.58203125,
-    "y": 511.6953125,
-    "width": 132,
-    "rotate": 13,
-    "stickerEffect": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-001"
-  }, {
-    "id": "1783238486376-bdef4f9175791",
-    "imageId": "1783238482965-040cdae1067b2",
-    "src": "indexeddb:1783238482965-040cdae1067b2",
-    "thumbnail": "indexeddb-thumb:1783238482965-040cdae1067b2",
-    "x": 397.05859375,
-    "y": 281.42578125,
-    "width": 165,
-    "rotate": 0,
-    "stickerEffect": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-002"
-  }, {
-    "id": "1783238486376-7d52ce0f8976e8",
-    "imageId": "1783238485589-d7be1d346ce0f",
-    "src": "indexeddb:1783238485589-d7be1d346ce0f",
-    "thumbnail": "indexeddb-thumb:1783238485589-d7be1d346ce0f",
-    "x": 57.84375,
-    "y": 558.4609375,
-    "width": 115,
-    "rotate": 10,
-    "stickerEffect": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-003"
-  }, {
-    "id": "1783238486376-b7f508112055b",
-    "imageId": "1783238484988-04380cb462172",
-    "src": "indexeddb:1783238484988-04380cb462172",
-    "thumbnail": "indexeddb-thumb:1783238484988-04380cb462172",
-    "x": 802.07421875,
-    "y": 414.3984375,
-    "width": 123,
-    "rotate": -8,
-    "stickerEffect": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-004"
-  }, {
-    "id": "1783238486376-5f10c156e24c2",
-    "imageId": "1783238483310-bf58ffe0bed08",
-    "src": "indexeddb:1783238483310-bf58ffe0bed08",
-    "thumbnail": "indexeddb-thumb:1783238483310-bf58ffe0bed08",
-    "x": 820.18359375,
-    "y": 78.37890625,
-    "width": 104,
-    "rotate": -8,
-    "stickerEffect": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-005"
-  }, {
-    "id": "1783238486376-b022f3dca801f8",
-    "imageId": "1783238483664-b645dd0ceb2c",
-    "src": "indexeddb:1783238483664-b645dd0ceb2c",
-    "thumbnail": "indexeddb-thumb:1783238483664-b645dd0ceb2c",
-    "x": 370.30078125,
-    "y": 36.77734375,
-    "width": 225,
-    "rotate": 0,
-    "stickerEffect": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-006"
-  }, {
-    "id": "1783238486376-f1ca2a7a233718",
-    "imageId": "1783238484624-947d886157a1e",
-    "src": "indexeddb:1783238484624-947d886157a1e",
-    "thumbnail": "indexeddb-thumb:1783238484624-947d886157a1e",
-    "x": 458.421875,
-    "y": 476.90625,
-    "width": 85,
-    "rotate": 3,
-    "stickerEffect": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-007"
-  }, {
-    "id": "1783238486376-875df76c91c15",
-    "imageId": "1783238484314-e2181836bf31c",
-    "src": "indexeddb:1783238484314-e2181836bf31c",
-    "thumbnail": "indexeddb-thumb:1783238484314-e2181836bf31c",
-    "x": 414.05859375,
-    "y": 478.8671875,
-    "width": 88,
-    "rotate": -8,
-    "stickerEffect": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-008"
-  }, {
-    "id": "1783238486376-4485f2a61345a8",
-    "imageId": "1783238486346-c2811457ef04f8",
-    "src": "indexeddb:1783238486346-c2811457ef04f8",
-    "thumbnail": "indexeddb-thumb:1783238486346-c2811457ef04f8",
-    "x": 285.62109375,
-    "y": 68.85546875,
-    "width": 98,
-    "rotate": -8,
-    "stickerEffect": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-009"
-  }, {
-    "id": "1783238486376-74ce4db2cabd88",
-    "imageId": "1783238485324-86b4fbadec6048",
-    "src": "indexeddb:1783238485324-86b4fbadec6048",
-    "thumbnail": "indexeddb-thumb:1783238485324-86b4fbadec6048",
-    "x": 36.46875,
-    "y": 426.65625,
-    "width": 107,
-    "rotate": -8,
-    "stickerEffect": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-010"
-  }, {
-    "id": "1783238492970-e0e9ce6db318d8",
-    "imageId": "1783238485589-d7be1d346ce0f",
-    "src": "indexeddb:1783238485589-d7be1d346ce0f",
-    "thumbnail": "indexeddb-thumb:1783238485589-d7be1d346ce0f",
-    "x": 618.2109375,
-    "y": 273.43359375,
-    "width": 117,
-    "rotate": 6,
-    "stickerEffect": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-011"
-  }, {
-    "id": "1783238619612-8a32513c2a2f9",
-    "imageId": "1783238483999-3d3dba8b5d5e9",
-    "src": "indexeddb:1783238483999-3d3dba8b5d5e9",
-    "thumbnail": "indexeddb-thumb:1783238483999-3d3dba8b5d5e9",
-    "x": 246.20703125,
-    "y": 316.2890625,
-    "width": 108,
-    "rotate": -17,
-    "stickerEffect": true,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-item-012"
-  }],
-  "journalBackgrounds": [{
-    "id": "1783238412073-54546b2f75b4",
-    "dbId": "1783238412073-54546b2f75b4",
-    "category": "background",
-    "src": "indexeddb:1783238412073-54546b2f75b4",
-    "thumbnail": "indexeddb-thumb:1783238412073-54546b2f75b4",
-    "originalName": "71961abc-98c8-4d7f-8147-e4620c8d7723.png",
-    "mimeType": "image/webp",
-    "width": 1536,
-    "height": 1024,
-    "createdAt": "2026-07-05T08:00:12.073Z",
-    "title": "71961abc-98c8-4d7f-8147-e4620c8d7723",
-    "memo": "",
-    "source": "journal-background",
-    "favorite": false,
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-journal-bg-001"
-  }],
-  "homeSettings": {
-    "themeId": "vivid-pink",
-    "bannerImage": "indexeddb:1783238964761-0371df5d605228",
-    "bannerImageUrl": "indexeddb:1783238964761-0371df5d605228",
-    "bannerVisible": true,
-    "bannerSize": "medium",
-    "bannerFit": "contain",
-    "bannerPositionX": 50,
-    "bannerPositionY": 50,
-    "bannerPositions": {
-      "small": {
-        "x": 50,
-        "y": 50
-      },
-      "medium": {
-        "x": 50,
-        "y": 50
-      },
-      "large": {
-        "x": 50,
-        "y": 50
-      }
-    },
-    "workToolIconStyle": "pastel",
-    "displayDensity": "normal",
-    "pageDisplaySettings": {
-      "gallery": {
-        "gap": "normal",
-        "ratio": "square",
-        "showHeart": true,
-        "columns": "auto"
-      },
-      "prompts": {
-        "viewMode": "card",
-        "showTags": true,
-        "showMemo": true,
-        "imageSize": "normal"
-      },
-      "videoPrompts": {
-        "viewMode": "card",
-        "showTags": true,
-        "showMemo": true,
-        "thumbnailSize": "normal"
-      },
-      "projects": {
-        "sortBy": "deadline",
-        "showCompleted": true,
-        "showAlarms": true
-      },
-      "mockups": {
-        "categoryCardSize": "normal",
-        "showDescription": true,
-        "showCount": true
-      }
-    },
-    "cardStyle": {
-      "radius": "medium",
-      "shadow": "normal",
-      "transparency": "solid",
-      "border": "soft"
-    },
-    "backgroundStyle": {
-      "type": "solid",
-      "color": "#fdf0ff",
-      "gradient": "milkPink",
-      "pattern": "none",
-      "image": "",
-      "imageFit": "cover",
-      "imagePosition": "center",
-      "imageBlur": "none",
-      "imageOpacity": "normal",
-      "showDecorations": true
-    },
-    "fontPreset": "simple",
-    "iconSet": "label",
-    "homeCharacter": {
-      "image": "indexeddb:1783058253744-84b8061a1760a8",
-      "position": "right-center",
-      "size": "medium",
-      "speechEnabled": true,
-      "messageMode": "fixed",
-      "fixedMessage": "ここもカスタマイズで変更できます♡",
-      "selectedProjectId": ""
-    },
-    "homeStatsCards": {
-      "mockups": true,
-      "prompts": true,
-      "mjSettings": true,
-      "projects": true,
-      "achievement": false
-    },
-    "visible": {
-      "library": true,
-      "prompts": true,
-      "videos": true,
-      "mj": true,
-      "projects": true,
-      "atelier": true,
-      "dashboard": true,
-      "quickActions": true,
-      "featureCards": true,
-      "favorites": true,
-      "search": true
-    },
-    "order": ["dashboard", "quickActions", "featureCards", "favorites", "atelier"]
-  },
-  "workTools": [{
-    "id": "tool-midjourney",
-    "name": "Midjourney",
-    "url": "https://www.midjourney.com/",
-    "iconText": "MJ",
-    "iconImage": "",
-    "memo": "画像生成",
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-work-tool-001"
-  }, {
-    "id": "tool-pinterest",
-    "name": "Pinterest",
-    "url": "https://www.pinterest.com/",
-    "iconText": "P",
-    "iconImage": "",
-    "memo": "参考画像",
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-work-tool-002"
-  }, {
-    "id": "tool-chatgpt",
-    "name": "ChatGPT",
-    "url": "https://chatgpt.com/",
-    "iconText": "GPT",
-    "iconImage": "",
-    "memo": "文章づくり",
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-work-tool-003"
-  }, {
-    "id": "1783058352541-0d206a16267628",
-    "name": "Gemmini",
-    "url": "https://gemini.google.com/app?hl=ja",
-    "iconText": "Gemmini",
-    "iconImage": "",
-    "memo": "",
-    "isSample": true,
-    "createdFromSeedExport": true,
-    "sampleId": "sample-work-tool-004"
   }]
 };
+const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
+const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
+const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
 const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
@@ -2768,6 +2113,7 @@ function customizeClassName(settings) {
 }
 function customBackgroundLayers(settings) {
   const bg = settings.backgroundStyle || defaultBackgroundStyle;
+  const isInitialSolidBackground = bg.type === "solid" && ["#fffafc", "#fdf0ff"].includes(String(bg.color || "").toLowerCase());
   const gradients = {
     milkPink: "linear-gradient(135deg, #fffafc 0%, #f8dce6 48%, #fff7ed 100%)",
     peachBeige: "linear-gradient(135deg, #fff8ed 0%, #f4d3c1 48%, #efe4d4 100%)",
@@ -2783,7 +2129,7 @@ function customBackgroundLayers(settings) {
     grid: "linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px)",
     paper: "linear-gradient(90deg, rgba(120,100,82,0.045) 50%, transparent 50%), linear-gradient(rgba(120,100,82,0.035) 50%, transparent 50%)"
   };
-  if (bg.type === "solid") return `linear-gradient(${bg.color}, ${bg.color})`;
+  if (bg.type === "solid") return isInitialSolidBackground ? "none" : `linear-gradient(${bg.color}, ${bg.color})`;
   if (bg.type === "gradient") return gradients[bg.gradient] || gradients.milkPink;
   if (bg.type === "pattern") {
     const pattern = patternLayers[bg.pattern] || "";
@@ -2875,20 +2221,39 @@ function sortProjectsForDisplay(items) {
     return String(b.id || "").localeCompare(String(a.id || ""));
   });
 }
-function collectAtelierImages(galleryImages) {
-  const galleryOnlyImages = galleryImages.filter(isGalleryOnlyImage).map(item => ({
+function collectAtelierImages(prompts, mjSettings, galleryImages) {
+  const promptImages = prompts.filter(prompt => prompt.imageUrl).map(prompt => ({
+    id: `prompt-${prompt.id}`,
+    src: prompt.imageUrl,
+    thumbnail: prompt.imageUrl,
+    title: prompt.title || "プロンプト画像",
+    memo: prompt.note || prompt.description || "",
+    createdAt: prompt.id,
+    source: "prompt",
+    favorite: Boolean(prompt.favorite)
+  }));
+  const mjImages = mjSettings.flatMap(setting => (setting.images || (setting.imageUrl ? [setting.imageUrl] : [])).map((src, index) => ({
+    id: `mj-${setting.id}-${index}`,
+    src: typeof src === "string" ? src : src.src || "",
+    thumbnail: typeof src === "string" ? src : src.thumbnail || src.src || "",
+    title: setting.title || "MJ画像",
+    memo: setting.memo || setting.note || "",
+    createdAt: setting.createdAt || setting.id,
+    source: "midjourney",
+    favorite: false
+  })));
+  const normalizedGalleryImages = galleryImages.map(item => ({
     ...item,
+    src: item.src,
     thumbnail: item.thumbnail || item.src
   }));
+  const merged = [...promptImages, ...mjImages, ...normalizedGalleryImages].filter(item => item.src);
   const seen = new Set();
-  return galleryOnlyImages.filter(item => {
+  return merged.filter(item => {
     if (seen.has(item.src)) return false;
     seen.add(item.src);
     return true;
   }).sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 24);
-}
-function isGalleryOnlyImage(item) {
-  return Boolean(item?.src) && item.source !== "journal" && item.source !== "journal-background";
 }
 function resolveIndexedDbImage(value, preferThumbnail = false) {
   if (!isIndexedDbImageRef(value)) return value;
@@ -3655,114 +3020,37 @@ function rememberDeletedSampleIdsFromItems(items) {
   sampleIds.forEach(sampleId => deletedIds.add(sampleId));
   writeDeletedSampleIds(deletedIds);
 }
-function createSampleSeedStats(source = "unknown") {
-  return {
-    source,
-    categories: {},
-    images: {
-      incoming: 0,
-      added: 0,
-      skippedExisting: 0,
-      skippedDeleted: 0,
-      failed: 0
-    },
-    errors: []
-  };
-}
-function sampleSeedCategoryStats(stats, key) {
-  if (!stats) return null;
-  if (!stats.categories[key]) {
-    stats.categories[key] = {
-      incoming: 0,
-      added: 0,
-      skippedExisting: 0,
-      skippedDeleted: 0,
-      skippedMissingSampleId: 0
-    };
-  }
-  return stats.categories[key];
-}
-function writeSampleSeedDebug(stats) {
-  try {
-    console.info("[sampleSeed] import result", stats);
-    window.__promptAtelierSampleSeedDebug = stats;
-    sessionStorage.setItem("promptAtelierSampleSeedDebug", JSON.stringify(stats));
-  } catch {
-    // Debug only. Never block the app for this.
-  }
-}
-function mergeSampleCollection(existing, incoming, deletedIds, stats, key = "unknown") {
+function mergeSampleCollection(existing, incoming, deletedIds) {
   if (!Array.isArray(incoming)) return existing ?? incoming;
   const current = Array.isArray(existing) ? existing : [];
   const currentSampleIds = new Set(current.map(sampleIdOf).filter(Boolean));
-  const categoryStats = sampleSeedCategoryStats(stats, key);
   const next = [...current];
-  incoming.forEach((item, index) => {
-    const sampleId = sampleIdOf(item) || `${key}-${padSampleIndex(index)}`;
-    if (categoryStats) categoryStats.incoming += 1;
-    if (!sampleId) {
-      if (categoryStats) categoryStats.skippedMissingSampleId += 1;
-      return;
-    }
-    if (deletedIds.has(sampleId)) {
-      if (categoryStats) categoryStats.skippedDeleted += 1;
-      return;
-    }
-    if (currentSampleIds.has(sampleId)) {
-      if (categoryStats) categoryStats.skippedExisting += 1;
-      return;
-    }
+  incoming.forEach(item => {
+    const sampleId = sampleIdOf(item);
+    if (!sampleId || deletedIds.has(sampleId) || currentSampleIds.has(sampleId)) return;
     next.push({
       ...cleanSampleValue(item),
       isSample: true,
       sampleId
     });
     currentSampleIds.add(sampleId);
-    if (categoryStats) categoryStats.added += 1;
   });
   return next;
 }
-function mergeJournalSample(existing, incoming, deletedIds, stats, key = "promptAtelierJournal") {
+function mergeJournalSample(existing, incoming, deletedIds) {
   const current = existing && typeof existing === "object" ? existing : {};
   const next = {
     ...current
   };
   if (!next.background && incoming?.background) next.background = incoming.background;
-  if (Array.isArray(incoming?.stockImages)) next.stockImages = mergeSampleCollection(current.stockImages || [], incoming.stockImages, deletedIds, stats, `${key}:stockImages`);
-  if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds, stats, `${key}:items`);
-  if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds, stats, `${key}:customBackgrounds`);
-  if ((!next.background || next.background === "paper") && Array.isArray(next.customBackgrounds) && next.customBackgrounds.length) {
-    next.background = `custom-${next.customBackgrounds[0].id}`;
-  }
+  if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds);
+  if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds);
   return next;
 }
-function pickSampleHomeSettings(settings) {
-  if (!settings || typeof settings !== "object") return null;
-  const next = {};
-  ["themeId", "bannerImage", "bannerImageUrl", "bannerVisible", "bannerSize", "bannerFit", "bannerPositionX", "bannerPositionY", "bannerPositions", "workToolIconStyle", "displayDensity", "pageDisplaySettings", "cardStyle", "backgroundStyle", "fontPreset", "iconSet", "homeCharacter", "homeStatsCards", "visible", "order"].forEach(key => {
-    if (settings[key] !== undefined) next[key] = settings[key];
-  });
-  if (settings.homeClockStyle) next.homeClockStyle = settings.homeClockStyle;
-  if (settings.homeClockSize) next.homeClockSize = settings.homeClockSize;
-  if (settings.homeClockColor) next.homeClockColor = settings.homeClockColor;
-  return Object.keys(next).length ? next : null;
-}
-function mergeHomeSettingsSample(existing, incoming, stats, key = "promptAtelierHomeSettings") {
-  const sampleHomeSettings = pickSampleHomeSettings(incoming);
-  const categoryStats = sampleSeedCategoryStats(stats, key);
-  if (categoryStats) {
-    categoryStats.incoming = sampleHomeSettings ? 1 : 0;
-    if (existing == null && sampleHomeSettings) categoryStats.added = 1;else if (existing != null && sampleHomeSettings) categoryStats.skippedExisting = 1;
-  }
-  if (existing != null) return existing;
-  return sampleHomeSettings ?? existing;
-}
-function mergeSampleValue(existing, incoming, key, deletedIds, stats) {
-  if (key.includes("HomeSettings")) {
-    return mergeHomeSettingsSample(existing, incoming, stats, key);
-  }
-  if (key.includes("Journal")) return mergeJournalSample(existing, incoming, deletedIds, stats, key);
-  return mergeSampleCollection(existing, incoming, deletedIds, stats, key);
+function mergeSampleValue(existing, incoming, key, deletedIds) {
+  if (key.includes("HomeSettings")) return existing ?? incoming;
+  if (key.includes("Journal")) return mergeJournalSample(existing, incoming, deletedIds);
+  return mergeSampleCollection(existing, incoming, deletedIds);
 }
 function sampleSeedDataToStorage(seedData) {
   const storageData = {};
@@ -3776,112 +3064,90 @@ function sampleSeedDataToStorage(seedData) {
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
   append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
-  if (Array.isArray(seedData.promptCards) && seedData.promptCards.length === 0 && Array.isArray(seedData.promptStocks) && seedData.promptStocks.length === 0) {
-    storageData["prompt-atelier-prompts-ja-v2"] = [];
-  }
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
   append("promptAtelierVideoPromptStocks", Array.isArray(seedData.videoPromptStocks) ? seedData.videoPromptStocks : []);
   append("promptAtelierMidjourneySettings", Array.isArray(seedData.midjourneySettings) ? seedData.midjourneySettings : []);
   append("prompt-atelier-projects-ja-v2", Array.isArray(seedData.projects) ? seedData.projects : []);
   append("promptAtelierGallery", Array.isArray(seedData.galleryItems) ? seedData.galleryItems : []);
   if (Array.isArray(seedData.journalItems) || Array.isArray(seedData.journalBackgrounds)) {
-    const customBackgrounds = Array.isArray(seedData.journalBackgrounds) ? seedData.journalBackgrounds : [];
     storageData.promptAtelierJournal = {
-      background: seedData.journalBackground || (customBackgrounds[0]?.id ? `custom-${customBackgrounds[0].id}` : "paper"),
+      background: seedData.journalBackground || "paper",
       items: Array.isArray(seedData.journalItems) ? seedData.journalItems : [],
-      customBackgrounds
+      customBackgrounds: Array.isArray(seedData.journalBackgrounds) ? seedData.journalBackgrounds : []
     };
   }
-  const sampleHomeSettings = pickSampleHomeSettings(seedData.homeSettings) || pickSampleHomeSettings(seedData.customizeSettings);
-  if (sampleHomeSettings) storageData.promptAtelierHomeSettings = sampleHomeSettings;
+  if (seedData.homeSettings && typeof seedData.homeSettings === "object") storageData.promptAtelierHomeSettings = seedData.homeSettings;
+  if (seedData.customizeSettings && typeof seedData.customizeSettings === "object") storageData.promptAtelierHomeSettings = seedData.customizeSettings;
   append("promptAtelierWorkTools", Array.isArray(seedData.workTools) ? seedData.workTools : []);
   return storageData;
 }
 async function loadSampleSeedIfNeeded() {
-  let stats = createSampleSeedStats("not-loaded");
   try {
-    let seed = null;
-    let seedSource = "";
-    for (const path of SAMPLE_SEED_PATHS) {
-      try {
-        const response = await fetch(path, {
-          cache: "no-store"
-        });
-        if (!response.ok) continue;
-        seed = await response.json();
-        seedSource = path;
-        break;
-      } catch (error) {
-        stats.errors.push(`fetch failed: ${path} ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-    if (!seed) {
-      seed = {
-        type: "prompt-atelier-sample-seed",
-        data: EMBEDDED_SAMPLE_SEED_DATA
-      };
-      seedSource = "embedded-fallback";
-    }
-    stats = createSampleSeedStats(seedSource || "unknown");
-    if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) {
-      stats.errors.push(`unsupported seed shape: ${seed?.type || "missing-type"}`);
-      writeSampleSeedDebug(stats);
-      return false;
-    }
+    const response = await fetch(SAMPLE_SEED_PATH, {
+      cache: "no-store"
+    });
+    if (!response.ok) return false;
+    const seed = await response.json();
+    if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) return false;
     const deletedIds = readDeletedSampleIds();
     let changed = false;
     const storageData = Object.keys(SAMPLE_DATA_STORAGE_MAP).some(key => key in seed.data) ? sampleSeedDataToStorage(seed.data) : seed.data;
     Object.entries(storageData).forEach(([key, incoming]) => {
       if (!SAMPLE_EXPORT_KEYS.includes(key)) return;
       const existing = parseStorageValueForSample(key);
-      const merged = mergeSampleValue(existing, incoming, key, deletedIds, stats);
+      const merged = mergeSampleValue(existing, incoming, key, deletedIds);
       if (JSON.stringify(existing) !== JSON.stringify(merged)) {
-        try {
-          localStorage.setItem(key, JSON.stringify(merged));
-          changed = true;
-        } catch (error) {
-          stats.errors.push(`localStorage save failed: ${key} ${error instanceof Error ? error.message : String(error)}`);
-          console.warn("[sampleSeed] localStorage save failed", key, error);
-        }
+        localStorage.setItem(key, JSON.stringify(merged));
+        changed = true;
       }
     });
     if (Array.isArray(seed.images)) {
-      stats.images.incoming = seed.images.length;
       for (const image of seed.images) {
         const sampleId = sampleIdOf(image);
-        if (sampleId && deletedIds.has(sampleId)) {
-          stats.images.skippedDeleted += 1;
-          continue;
-        }
-        if (!image?.id || !image?.src) {
-          stats.images.failed += 1;
-          stats.errors.push("image skipped: missing id or src");
-          continue;
-        }
-        if (indexedDbImageCache.has(image.id)) {
-          stats.images.skippedExisting += 1;
-          continue;
-        }
-        try {
+        if (sampleId && deletedIds.has(sampleId)) continue;
+        if (sampleId && [...indexedDbImageCache.values()].some(record => record?.sampleId === sampleId)) continue;
+        if (image?.id && image?.src && !indexedDbImageCache.has(image.id)) {
           await putIndexedDbImage({
             ...cleanSampleValue(image),
             isSample: true
           });
-          stats.images.added += 1;
           changed = true;
-        } catch (error) {
-          stats.images.failed += 1;
-          stats.errors.push(`image save failed: ${image.id} ${error instanceof Error ? error.message : String(error)}`);
-          console.warn("[sampleSeed] image save failed", image.id, error);
         }
       }
     }
-    writeSampleSeedDebug(stats);
     return changed;
+  } catch {
+    return false;
+  }
+}
+async function restoreMockupSamplesIfEmpty() {
+  try {
+    const RESTORE_VERSION_KEY = "promptAtelierMockupForceRestore20260705v2";
+    const CATEGORY_KEY = "prompt-atelier-mockup-categories-v2";
+    const PROMPT_KEY = "prompt-atelier-library-prompts-v5";
+    const readArray = key => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+    const categoriesCurrent = readArray(CATEGORY_KEY);
+    const promptsCurrent = readArray(PROMPT_KEY);
+    const alreadyForced = localStorage.getItem(RESTORE_VERSION_KEY) === "done";
+    const shouldForceRestore = !alreadyForced || categoriesCurrent.length < BUILT_IN_MOCKUP_RESTORE_DATA.categories.length || promptsCurrent.length < BUILT_IN_MOCKUP_RESTORE_DATA.prompts.length;
+    if (!shouldForceRestore) return false;
+    const stamp = new Date().toISOString().replace(/[.:]/g, "-");
+    if (categoriesCurrent.length) localStorage.setItem(`${CATEGORY_KEY}__before_force_restore_${stamp}`, JSON.stringify(categoriesCurrent));
+    if (promptsCurrent.length) localStorage.setItem(`${PROMPT_KEY}__before_force_restore_${stamp}`, JSON.stringify(promptsCurrent));
+    localStorage.setItem(CATEGORY_KEY, JSON.stringify(BUILT_IN_MOCKUP_RESTORE_DATA.categories));
+    localStorage.setItem(PROMPT_KEY, JSON.stringify(BUILT_IN_MOCKUP_RESTORE_DATA.prompts));
+    localStorage.setItem(RESTORE_VERSION_KEY, "done");
+    sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップライブラリを復元しました（カテゴリ${BUILT_IN_MOCKUP_RESTORE_DATA.categories.length}件・プロンプト${BUILT_IN_MOCKUP_RESTORE_DATA.prompts.length}件）`);
+    return true;
   } catch (error) {
-    stats.errors.push(`sample seed import failed: ${error instanceof Error ? error.message : String(error)}`);
-    console.warn("Sample seed import failed", error);
-    writeSampleSeedDebug(stats);
+    console.warn("[Prompt Atelier] モックアップ復元に失敗しました", error);
     return false;
   }
 }
@@ -3898,6 +3164,7 @@ function App() {
   const [journal, setJournal] = useStoredState("promptAtelierJournal", defaultJournal);
   const [videos, setVideos] = useStoredState("promptAtelierVideoPrompts", initialVideoPrompts());
   const [videoStocks, setVideoStocks] = useStoredState("promptAtelierVideoPromptStocks", []);
+  const [navigationTarget, setNavigationTarget] = React.useState(null);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [installPrompt, setInstallPrompt] = React.useState(null);
@@ -3912,9 +3179,8 @@ function App() {
   };
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
-  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
-  const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
-  const atelierImages = collectAtelierImages(visibleGalleryImages);
+  const favorites = myPrompts.filter(p => p.favorite).slice(0, 4);
+  const atelierImages = collectAtelierImages(myPrompts, mjSettings, galleryImages);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
     if (id) setRecentIds(ids => [id, ...ids.filter(item => item !== id)].slice(0, 8));
@@ -3942,9 +3208,12 @@ function App() {
         const migrated = await migrateLocalStorageImagesToIndexedDb();
         await refreshIndexedDbImageCache();
         const sampleSeedImported = await loadSampleSeedIfNeeded();
+        const mockupRestored = await restoreMockupSamplesIfEmpty();
         if (cancelled) return;
-        if (migrated || sampleSeedImported) {
-          sessionStorage.setItem("promptAtelierRestoreMessage", sampleSeedImported ? "サンプルデータを読み込みました" : "画像データを最適化しました");
+        if (migrated || sampleSeedImported || mockupRestored) {
+          if (!mockupRestored) {
+            sessionStorage.setItem("promptAtelierRestoreMessage", sampleSeedImported ? "サンプルデータを読み込みました" : "画像データを最適化しました");
+          }
           window.location.reload();
           return;
         }
@@ -4051,6 +3320,8 @@ function App() {
     myPrompts: myPrompts,
     mjSettings: mjSettings,
     mockupPrompts: mockupPrompts,
+    videos: videos,
+    videoStocks: videoStocks,
     copyText: copyText,
     settings: homeSettings,
     workTools: workTools,
@@ -4073,18 +3344,24 @@ function App() {
     setScreen: setScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
-    setBoardPrompts: setMockupPrompts
+    setBoardPrompts: setMockupPrompts,
+    navigationTarget: navigationTarget,
+    onNavigationTargetHandled: () => setNavigationTarget(null)
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
     setScreen: setScreen,
-    homeSettings: homeSettings
+    homeSettings: homeSettings,
+    navigationTarget: navigationTarget,
+    onNavigationTargetHandled: () => setNavigationTarget(null)
   }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: setScreen,
+    navigationTarget: navigationTarget,
+    onNavigationTargetHandled: () => setNavigationTarget(null)
   }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
     projects: projects,
     setProjects: setProjects,
@@ -4092,24 +3369,32 @@ function App() {
     settings: mjSettings,
     homeSettings: homeSettings,
     copyText: copyText,
-    setScreen: setScreen
+    setScreen: setScreen,
+    navigationTarget: navigationTarget,
+    onNavigationTargetHandled: () => setNavigationTarget(null)
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
+    images: atelierImages,
     journal: journal,
     setJournal: setJournal,
+    setGalleryImages: setGalleryImages,
     setScreen: setScreen
   }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
-    images: visibleGalleryImages,
+    images: galleryImages,
     setImages: setGalleryImages,
     setJournal: setJournal,
     setScreen: setScreen,
-    homeSettings: homeSettings
+    homeSettings: homeSettings,
+    navigationTarget: navigationTarget,
+    onNavigationTargetHandled: () => setNavigationTarget(null)
   }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
     setScreen: setScreen,
-    homeSettings: homeSettings
+    homeSettings: homeSettings,
+    navigationTarget: navigationTarget,
+    onNavigationTargetHandled: () => setNavigationTarget(null)
   })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
     className: "image-migration-overlay"
   }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
@@ -4187,66 +3472,6 @@ function PwaCustomizeCard({
     className: "pwa-install-help"
   }, "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。")));
 }
-function getHomeDateParts() {
-  const now = new Date();
-  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-  const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const weekday = weekdays[now.getDay()];
-  const monthName = monthNames[now.getMonth()];
-  const paddedDay = String(day).padStart(2, "0");
-  const paddedMonth = String(month).padStart(2, "0");
-  return {
-    year,
-    month,
-    day,
-    weekday,
-    monthName,
-    paddedDay,
-    paddedMonth
-  };
-}
-function HomeDateDisplay({
-  style = "pill",
-  size = "medium",
-  color = "theme",
-  mini = false
-}) {
-  if (style === "hidden") return null;
-  const {
-    year,
-    month,
-    day,
-    weekday,
-    monthName,
-    paddedDay,
-    paddedMonth
-  } = getHomeDateParts();
-  const className = `${mini ? "home-mini-date" : "home-date-display"} ${style} size-${size} color-${color}`;
-  const dateTime = `${year}-${paddedMonth}-${paddedDay}`;
-  if (style === "minimal") {
-    return /*#__PURE__*/React.createElement("time", {
-      className: className,
-      dateTime: dateTime
-    }, month, "/", day, "（", weekday, "）");
-  }
-  if (["digital", "retro", "neon", "doodle", "stamp"].includes(style)) {
-    return /*#__PURE__*/React.createElement("time", {
-      className: className,
-      dateTime: dateTime,
-      "aria-label": `${year}年${month}月${day}日 ${weekday}曜日`
-    }, style === "stamp" && /*#__PURE__*/React.createElement("span", {
-      className: "stamp-heart-outline",
-      "aria-hidden": "true"
-    }, "♡"), /*#__PURE__*/React.createElement("strong", null, monthName, ".", paddedDay), /*#__PURE__*/React.createElement("small", null, year, " / ", weekday));
-  }
-  return /*#__PURE__*/React.createElement("time", {
-    className: className,
-    dateTime: dateTime
-  }, /*#__PURE__*/React.createElement("span", null, year), /*#__PURE__*/React.createElement("strong", null, month, "月", day, "日"), /*#__PURE__*/React.createElement("small", null, weekday, "曜日"));
-}
 function Home({
   setScreen,
   recent,
@@ -4255,13 +3480,15 @@ function Home({
   myPrompts,
   mjSettings,
   mockupPrompts,
+  videos,
+  videoStocks,
   copyText,
   settings,
   workTools,
   atelierImages
 }) {
   const isVisible = id => settings.visible[id] !== false;
-  const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "企画管理をする", "folder"]];
+  const entries = [["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"], ["prompts", "プロンプト帳", "自分だけのプロンプトを保存", "notebook"], ["videos", "動画プロンプト帳", "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをまとめて管理します。", "video"], ["mj", "MJ設定", "Midjourneyパラメータ管理", "magic"], ["projects", "プロジェクト", "素材セットごとにまとめる", "folder"]];
   const nextReminder = projects.filter(project => project.remindOnHome && project.dueDate).sort((a, b) => {
     const aInfo = projectDueInfo(a.dueDate || "");
     const bInfo = projectDueInfo(b.dueDate || "");
@@ -4347,6 +3574,9 @@ function Home({
         alt: ""
       }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("strong", null, tool.name)))));
     }
+    if (sectionId === "search") {
+      return null;
+    }
     if (sectionId === "featureCards") {
       const visibleEntries = entries.filter(([id]) => isVisible(id));
       if (!visibleEntries.length) return null;
@@ -4381,7 +3611,8 @@ function Home({
       }, favorites.length ? favorites.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
         key: prompt.id,
         prompt: prompt,
-        onCopy: copyText
+        onCopy: copyText,
+        favorite: true
       })) : /*#__PURE__*/React.createElement(Empty, {
         text: "お気に入りにしたプロンプトがここに表示されます。"
       })));
@@ -4400,12 +3631,11 @@ function Home({
         className: "primary",
         onClick: () => setScreen("gallery")
       }, "ギャラリーへ"))), atelierImages.length ? /*#__PURE__*/React.createElement("div", {
-        className: "atelier-marquee",
+        className: "atelier-tape",
         "aria-label": "アトリエ画像"
       }, /*#__PURE__*/React.createElement("div", {
-        className: `atelier-marquee-track ${atelierImages.length === 1 ? "is-single" : "is-moving"}`
-      }, atelierImages.map((image, index) => /*#__PURE__*/React.createElement("figure", {
-        className: "atelier-marquee-card",
+        className: "atelier-track"
+      }, [...atelierImages, ...atelierImages].map((image, index) => /*#__PURE__*/React.createElement("figure", {
         key: `${image.id}-${index}`
       }, /*#__PURE__*/React.createElement("img", {
         src: imageDisplaySrc(image),
@@ -4422,11 +3652,7 @@ function Home({
     className: "page home-page"
   }, /*#__PURE__*/React.createElement("div", {
     className: "home-topbar"
-  }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
-    style: settings.homeClockStyle || "pill",
-    size: settings.homeClockSize || "medium",
-    color: settings.homeClockColor || "theme"
-  })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`
   }, bannerSrc ? /*#__PURE__*/React.createElement("img", {
     src: bannerSrc,
@@ -5113,12 +4339,7 @@ function HomeCustomize({
     onClick: () => updateSettings({
       displayDensity: item.id
     })
-  }, item.id !== "hidden" && /*#__PURE__*/React.createElement("span", {
-    className: `clock-option-preview ${item.id}`
-  }, item.id === "stamp" && /*#__PURE__*/React.createElement("span", {
-    className: "stamp-heart-outline",
-    "aria-hidden": "true"
-  }, "♡"), /*#__PURE__*/React.createElement("b", null, "APR.26")), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "カード質感設定"), /*#__PURE__*/React.createElement("p", null, "カードの角丸・影・透明感・枠線を調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "style-control-grid"
@@ -5515,34 +4736,6 @@ function HomeCustomize({
     })
   }))))), /*#__PURE__*/React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ホーム日付表示"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する年・月日・曜日の見た目を選べます。"), /*#__PURE__*/React.createElement("div", {
-    className: "preset-card-grid clock-style-grid"
-  }, homeClockStyleOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: (settings.homeClockStyle || "pill") === item.id ? "active-soft" : "",
-    onClick: () => updateSettings({
-      homeClockStyle: item.id
-    })
-  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description)))), /*#__PURE__*/React.createElement("div", {
-    className: "clock-control-row"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "サイズ"), /*#__PURE__*/React.createElement("div", {
-    className: "inline-buttons"
-  }, homeClockSizeOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: (settings.homeClockSize || "medium") === item.id ? "active-soft" : "",
-    onClick: () => updateSettings({
-      homeClockSize: item.id
-    })
-  }, item.label)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "色味"), /*#__PURE__*/React.createElement("div", {
-    className: "inline-buttons clock-color-buttons"
-  }, homeClockColorOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: `clock-color-choice clock-color-${item.id} ${(settings.homeClockColor || "theme") === item.id ? "active-soft" : ""}`,
-    onClick: () => updateSettings({
-      homeClockColor: item.id
-    })
-  }, item.label)))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
   }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
     className: "order-list"
   }, settings.order.map(id => {
@@ -5605,12 +4798,7 @@ function HomeCustomize({
     style: previewStyle
   }, /*#__PURE__*/React.createElement("div", {
     className: "home-mini-topbar"
-  }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
-    style: settings.homeClockStyle || "pill",
-    size: settings.homeClockSize || "medium",
-    color: settings.homeClockColor || "theme",
-    mini: true
-  })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("span", null, "Home Mini Preview")), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
     className: `preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
     onPointerDown: startBannerDrag,
     onPointerMove: moveBannerDrag,
@@ -5803,11 +4991,15 @@ function FeatureIcon({
 }
 function HomePromptCard({
   prompt,
-  onCopy
+  onCopy,
+  favorite
 }) {
   return /*#__PURE__*/React.createElement("article", {
     className: "home-prompt-card"
-  }, /*#__PURE__*/React.createElement("img", {
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "heart-button",
+    "aria-label": "お気に入り"
+  }, favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("img", {
     src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", {
@@ -5830,7 +5022,9 @@ function Library({
   setScreen,
   homeSettings,
   boardPrompts,
-  setBoardPrompts
+  setBoardPrompts,
+  navigationTarget,
+  onNavigationTargetHandled
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -5841,17 +5035,15 @@ function Library({
   const [stockFrameCounts, setStockFrameCounts] = React.useState({});
   const [draggedCategoryId, setDraggedCategoryId] = React.useState("");
   const [dragOverCategoryId, setDragOverCategoryId] = React.useState("");
-  const [armedCategoryId, setArmedCategoryId] = React.useState("");
-  const categoryDragMovedRef = React.useRef(false);
-  const categoryMoveGuardRef = React.useRef("");
   const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
-  const isCategorySearching = false;
-  const filteredCategories = orderedCategories;
+  const isCategorySearching = !currentCategory && query.trim().length > 0;
+  const filteredCategories = orderedCategories.filter(item => lowerIncludes(searchableTextFromValue(item), query));
   const filteredPrompts = boardPrompts.filter(item => {
-    return item.categoryId === currentCategory?.id;
+    const haystack = searchableTextFromValue(item);
+    return item.categoryId === currentCategory?.id && lowerIncludes(haystack, query);
   });
   const categoryPrompts = currentCategory ? boardPrompts.filter(item => item.categoryId === currentCategory.id) : [];
   const imagePrompts = filteredPrompts.filter(item => !item.isTextStock).slice(0, 20);
@@ -5867,6 +5059,24 @@ function Library({
   const imagePromptSlots = currentCategory ? Array.from({
     length: imageSlotCount
   }, (_, index) => imagePrompts[index] || null) : [];
+  React.useEffect(() => {
+    if (!navigationTarget || navigationTarget.screen !== "library") return;
+    if (navigationTarget.kind === "mockup-category" && navigationTarget.id) {
+      const category = orderedCategories.find(item => item.id === navigationTarget.id);
+      if (category) setSelectedCategory(category);
+      setQuery("");
+      onNavigationTargetHandled?.();
+      return;
+    }
+    if ((navigationTarget.kind === "mockup-prompt" || navigationTarget.kind === "mockup-stock") && navigationTarget.id) {
+      const prompt = boardPrompts.find(item => item.id === navigationTarget.id);
+      const category = orderedCategories.find(item => item.id === (navigationTarget.categoryId || prompt?.categoryId));
+      if (category) setSelectedCategory(category);
+      setQuery("");
+      onNavigationTargetHandled?.();
+      scrollToSearchTarget(`${navigationTarget.kind}-${navigationTarget.id}`);
+    }
+  }, [navigationTarget, orderedCategories, boardPrompts, onNavigationTargetHandled]);
   const createBlankLibraryPrompt = (textOnly = false) => ({
     id: "",
     title: "",
@@ -5879,7 +5089,6 @@ function Library({
     imageUrl: "",
     coverImages: [],
     japaneseTranslation: "",
-    favorite: false,
     isTextStock: textOnly
   });
   const saveCategory = item => {
@@ -5985,139 +5194,46 @@ function Library({
       return items.filter(item => item.id !== id);
     });
   };
-  const persistCategoryOrder = items => {
-    const next = assignMockupCategoryOrder(items);
-    setBoardCategories(next);
-    try {
-      localStorage.setItem("prompt-atelier-mockup-categories-v2", JSON.stringify(next));
-    } catch (error) {
-      console.warn("[Prompt Atelier] カテゴリ順の保存に失敗しました", error);
-    }
-  };
   const reorderCategories = (sourceId, targetId) => {
     if (isCategorySearching || !sourceId || !targetId || sourceId === targetId) return;
-    const normalized = normalizeMockupCategoryOrder(orderedCategories);
-    const fromIndex = normalized.findIndex(category => category.id === sourceId);
-    const toIndex = normalized.findIndex(category => category.id === targetId);
-    if (fromIndex < 0 || toIndex < 0) return;
-    const next = [...normalized];
-    const [moved] = next.splice(fromIndex, 1);
-    next.splice(toIndex, 0, moved);
-    persistCategoryOrder(next);
-  };
-  const categoryIdFromPoint = (x, y, sourceId) => {
-    let closestId = "";
-    let closestDistance = Number.POSITIVE_INFINITY;
-    document.querySelectorAll("[data-category-id]").forEach(card => {
-      const categoryId = card.dataset.categoryId || "";
-      if (!categoryId || categoryId === sourceId) return;
-      const rect = card.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const distance = Math.hypot(centerX - x, centerY - y);
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestId = categoryId;
-      }
+    setBoardCategories(items => {
+      const normalized = normalizeMockupCategoryOrder(items);
+      const fromIndex = normalized.findIndex(category => category.id === sourceId);
+      const toIndex = normalized.findIndex(category => category.id === targetId);
+      if (fromIndex < 0 || toIndex < 0) return normalized;
+      const next = [...normalized];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return normalizeMockupCategoryOrder(next);
     });
-    return closestId;
   };
-  const reorderCategoryByDirection = (sourceId, direction) => {
-    if (!sourceId) return;
-    const normalized = normalizeMockupCategoryOrder(orderedCategories);
-    const fromIndex = normalized.findIndex(category => category.id === sourceId);
-    const toIndex = fromIndex + direction;
-    if (fromIndex < 0 || toIndex < 0 || toIndex >= normalized.length) return;
-    const next = [...normalized];
-    const [moved] = next.splice(fromIndex, 1);
-    next.splice(toIndex, 0, moved);
-    persistCategoryOrder(next);
-  };
-  const triggerCategoryMove = (event, categoryId, direction) => {
-    event.preventDefault();
+  const startCategoryDrag = (event, categoryId) => {
+    if (isCategorySearching) {
+      event.preventDefault();
+      return;
+    }
     event.stopPropagation();
-    const guardKey = `${categoryId}:${direction}:${Math.floor(Date.now() / 160)}`;
-    if (categoryMoveGuardRef.current === guardKey) return;
-    categoryMoveGuardRef.current = guardKey;
-    reorderCategoryByDirection(categoryId, direction);
+    setDraggedCategoryId(categoryId);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", categoryId);
   };
-  const handleCategoryKeyDown = (event, categoryId) => {
-    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      event.preventDefault();
-      event.stopPropagation();
-      reorderCategoryByDirection(categoryId, -1);
-    }
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      event.preventDefault();
-      event.stopPropagation();
-      reorderCategoryByDirection(categoryId, 1);
-    }
+  const overCategoryDrag = (event, categoryId) => {
+    if (isCategorySearching || !draggedCategoryId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverCategoryId(categoryId);
   };
-  const startCategoryPointerDrag = (event, categoryId) => {
+  const dropCategoryDrag = (event, categoryId) => {
     if (isCategorySearching) return;
     event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    let targetId = categoryId;
-    let moved = false;
-    const startX = event.clientX;
-    const startY = event.clientY;
-    categoryDragMovedRef.current = false;
-    document.body.classList.add("is-category-reordering");
-    setDraggedCategoryId(categoryId);
+    const sourceId = draggedCategoryId || event.dataTransfer.getData("text/plain");
+    reorderCategories(sourceId, categoryId);
+    setDraggedCategoryId("");
     setDragOverCategoryId("");
-    const handleMove = moveEvent => {
-      moveEvent.preventDefault();
-      const movedDistance = Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY);
-      if (movedDistance > 4) {
-        moved = true;
-        categoryDragMovedRef.current = true;
-      }
-      const nextTargetId = categoryIdFromPoint(moveEvent.clientX, moveEvent.clientY, categoryId);
-      if (nextTargetId && nextTargetId !== targetId) {
-        targetId = nextTargetId;
-        setDragOverCategoryId(nextTargetId);
-      }
-    };
-    const handleEnd = endEvent => {
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", handleEnd);
-      window.removeEventListener("pointercancel", handleEnd);
-      document.body.classList.remove("is-category-reordering");
-      const finalTargetId = categoryIdFromPoint(endEvent.clientX, endEvent.clientY, categoryId) || targetId;
-      if (moved && finalTargetId && finalTargetId !== categoryId) {
-        reorderCategories(categoryId, finalTargetId);
-      } else if (moved) {
-        const deltaX = endEvent.clientX - startX;
-        const deltaY = endEvent.clientY - startY;
-        const mainDelta = Math.abs(deltaX) >= Math.abs(deltaY) ? deltaX : deltaY;
-        if (Math.abs(mainDelta) > 24) {
-          reorderCategoryByDirection(categoryId, mainDelta > 0 ? 1 : -1);
-        }
-      }
-      setDraggedCategoryId("");
-      setDragOverCategoryId("");
-    };
-    window.addEventListener("pointermove", handleMove);
-    window.addEventListener("pointerup", handleEnd);
-    window.addEventListener("pointercancel", handleEnd);
   };
-  const handleCategoryHandleClick = (event, categoryId) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (categoryDragMovedRef.current) {
-      categoryDragMovedRef.current = false;
-      setArmedCategoryId("");
-      return;
-    }
-    if (!armedCategoryId) {
-      setArmedCategoryId(categoryId);
-      return;
-    }
-    if (armedCategoryId !== categoryId) {
-      reorderCategories(armedCategoryId, categoryId);
-    }
-    setArmedCategoryId("");
+  const endCategoryDrag = () => {
+    setDraggedCategoryId("");
+    setDragOverCategoryId("");
   };
   return /*#__PURE__*/React.createElement("section", {
     className: `page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`
@@ -6139,25 +5255,32 @@ function Library({
     }, "＋ カテゴリを追加"))
   }), /*#__PURE__*/React.createElement("div", {
     className: "library-intro"
-  }, /*#__PURE__*/React.createElement("p", null, "販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("p", null, "販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: "カテゴリを検索..."
+  })), isCategorySearching && /*#__PURE__*/React.createElement("p", {
+    className: "category-sort-note"
+  }, "並び替えは検索を解除すると使用できます。"), /*#__PURE__*/React.createElement("div", {
     className: "library-category-grid"
   }, filteredCategories.map(category => /*#__PURE__*/React.createElement("article", {
-    className: `library-category-card ${draggedCategoryId === category.id || armedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
+    id: `mockup-category-${category.id}`,
+    className: `library-category-card ${draggedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
     key: category.id,
-    "data-category-id": category.id
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "category-reorder-controls",
-    onClick: event => event.stopPropagation()
+    onDragOver: event => overCategoryDrag(event, category.id),
+    onDrop: event => dropCategoryDrag(event, category.id),
+    onDragLeave: () => dragOverCategoryId === category.id && setDragOverCategoryId("")
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     className: "category-drag-handle",
+    draggable: !isCategorySearching,
     "aria-label": `${category.title}を並び替え`,
-    title: "ドラッグして並び替え",
-    onClick: event => handleCategoryHandleClick(event, category.id),
-    onKeyDown: event => handleCategoryKeyDown(event, category.id),
-    onPointerDown: event => startCategoryPointerDrag(event, category.id),
+    title: isCategorySearching ? "検索を解除すると並び替えできます" : "ドラッグして並び替え",
+    onClick: event => event.stopPropagation(),
+    onDragStart: event => startCategoryDrag(event, category.id),
+    onDragEnd: endCategoryDrag,
     disabled: isCategorySearching
-  }, "⋮⋮")), /*#__PURE__*/React.createElement(MenuButton, {
+  }, "⋮⋮"), /*#__PURE__*/React.createElement(MenuButton, {
     onEdit: () => setEditingCategory(category),
     onDuplicate: () => duplicateCategory(category),
     onImage: () => setEditingCategory(category),
@@ -6192,7 +5315,11 @@ function Library({
     placeholderLabel: "カテゴリ"
   }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, currentCategory.title), /*#__PURE__*/React.createElement("p", null, currentCategory.description)), /*#__PURE__*/React.createElement("span", {
     className: "prompt-count-pill"
-  }, "画像 ", imagePrompts.length, " / 20・ストック ", textStockCount, " / 100")), /*#__PURE__*/React.createElement("section", {
+  }, "画像 ", imagePrompts.length, " / 20・ストック ", textStockCount, " / 100")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: `${currentCategory.title}内を検索...`
+  })), /*#__PURE__*/React.createElement("section", {
     className: "prompt-area"
   }, /*#__PURE__*/React.createElement("div", {
     className: "prompt-area-head"
@@ -6209,7 +5336,8 @@ function Library({
     copyText: copyText,
     showMemo: () => setMemoPrompt(prompt),
     showTags: true,
-    showMemoButton: true
+    showMemoButton: true,
+    domId: `mockup-prompt-${prompt.id}`
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `empty-prompt-${index}`,
@@ -6227,7 +5355,8 @@ function Library({
     onCreate: saveTextStockFrame,
     onUpdate: updatePrompt,
     copyText: copyText,
-    showMemo: () => prompt && setMemoPrompt(prompt)
+    showMemo: () => prompt && setMemoPrompt(prompt),
+    domId: prompt?.id ? `mockup-stock-${prompt.id}` : undefined
   }))), canAddTextStock && textStockCount >= stockFrameCount && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
     onClick: addTextStockFrame
@@ -6410,24 +5539,17 @@ function LibraryImagePromptCard({
   copyText,
   showMemo,
   showTags = true,
-  showMemoButton = true
+  showMemoButton = true,
+  domId
 }) {
   const updateCoverImages = coverImages => updatePrompt(prompt.id, {
     coverImages,
     imageUrl: coverImages[0] || ""
   });
   return /*#__PURE__*/React.createElement("article", {
+    id: domId,
     className: "library-prompt-card"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "prompt-favorite-button image-prompt-heart",
-    "aria-label": prompt.favorite ? "お気に入りを解除" : "お気に入りに追加",
-    onClick: event => {
-      event.stopPropagation();
-      updatePrompt(prompt.id, {
-        favorite: !prompt.favorite
-      });
-    }
-  }, prompt.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement(PromptMenuButton, {
+  }, /*#__PURE__*/React.createElement(PromptMenuButton, {
     onDuplicate: () => duplicatePrompt(prompt),
     onClearImage: () => updatePrompt(prompt.id, {
       imageUrl: "",
@@ -6497,7 +5619,8 @@ function TextStockFrame({
   onCreate,
   onUpdate,
   copyText,
-  showMemo
+  showMemo,
+  domId
 }) {
   const [title, setTitle] = React.useState(prompt?.title || "");
   const [promptText, setPromptText] = React.useState(prompt?.prompt || "");
@@ -6526,27 +5649,10 @@ function TextStockFrame({
     event.stopPropagation();
     copyText(promptText, prompt?.id);
   };
-  const toggleFavorite = event => {
-    event.stopPropagation();
-    const nextFavorite = !prompt?.favorite;
-    if (isSaved) {
-      onUpdate(prompt.id, {
-        favorite: nextFavorite
-      });
-      return;
-    }
-    save({
-      favorite: nextFavorite
-    });
-  };
   return /*#__PURE__*/React.createElement("article", {
+    id: domId,
     className: "text-stock-frame"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "prompt-favorite-button text-stock-heart",
-    "aria-label": prompt?.favorite ? "お気に入りを解除" : "お気に入りに追加",
-    onClick: toggleFavorite,
-    disabled: !isSaved && !title.trim() && !promptText.trim()
-  }, prompt?.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     value: title,
     onChange: event => setTitle(event.target.value),
     onBlur: () => save({
@@ -6958,8 +6064,11 @@ function PromptBook({
   setPrompts,
   copyText,
   setScreen,
-  homeSettings
+  homeSettings,
+  navigationTarget,
+  onNavigationTargetHandled
 }) {
+  const [query, setQuery] = React.useState("");
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
   const [editing, setEditing] = React.useState(null);
@@ -6970,7 +6079,8 @@ function PromptBook({
   const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
   const tags = Array.from(new Set(prompts.flatMap(p => p.tags))).sort();
   const filtered = prompts.filter(item => {
-    return (tag === "すべて" || item.tags.includes(tag)) && (!favoritesOnly || item.favorite);
+    const haystack = searchableTextFromValue(item);
+    return lowerIncludes(haystack, query) && (tag === "すべて" || item.tags.includes(tag)) && (!favoritesOnly || item.favorite);
   });
   const imagePrompts = filtered.filter(item => !item.isTextStock).slice(0, 20);
   const textPrompts = filtered.filter(item => item.isTextStock);
@@ -6986,6 +6096,15 @@ function PromptBook({
   const textStockSlots = Array.from({
     length: visibleStockFrameCount
   }, (_, index) => textPrompts[index] || null);
+  React.useEffect(() => {
+    if (!navigationTarget || navigationTarget.screen !== "prompts" || !navigationTarget.id) return;
+    if (navigationTarget.kind !== "prompt-card" && navigationTarget.kind !== "prompt-stock") return;
+    setQuery("");
+    setTag("すべて");
+    setFavoritesOnly(false);
+    onNavigationTargetHandled?.();
+    scrollToSearchTarget(`${navigationTarget.kind}-${navigationTarget.id}`);
+  }, [navigationTarget, onNavigationTargetHandled]);
   const save = item => {
     const countForKind = prompts.filter(prompt => Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
     const limit = item.isTextStock ? 100 : 20;
@@ -7052,7 +6171,11 @@ function PromptBook({
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
     }))
-  }), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("select", {
+  }), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: "検索"
+  }), /*#__PURE__*/React.createElement("select", {
     value: tag,
     onChange: e => setTag(e.target.value)
   }, /*#__PURE__*/React.createElement("option", null, "すべて"), tags.map(item => /*#__PURE__*/React.createElement("option", {
@@ -7081,7 +6204,8 @@ function PromptBook({
     showTranslation: () => setTranslationPrompt(prompt),
     showMemo: () => setMemoPrompt(prompt),
     showTags: promptDisplay.showTags !== false,
-    showMemoButton: promptDisplay.showMemo !== false
+    showMemoButton: promptDisplay.showMemo !== false,
+    domId: `prompt-card-${prompt.id}`
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `my-empty-prompt-${index}`,
@@ -7100,7 +6224,8 @@ function PromptBook({
     onUpdate: updatePrompt,
     copyText: copyText,
     showTranslation: () => prompt && setTranslationPrompt(prompt),
-    showMemo: () => prompt && setMemoPrompt(prompt)
+    showMemo: () => prompt && setMemoPrompt(prompt),
+    domId: prompt?.id ? `prompt-stock-${prompt.id}` : undefined
   }))), canAddTextStock && textStockCount >= visibleStockFrameCount && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
     onClick: addTextStockFrame
@@ -7137,7 +6262,9 @@ function Midjourney({
   settings,
   setSettings,
   copyText,
-  setScreen
+  setScreen,
+  navigationTarget,
+  onNavigationTargetHandled
 }) {
   const [query, setQuery] = React.useState("");
   const [basePrompt, setBasePrompt] = React.useState("");
@@ -7154,7 +6281,7 @@ function Midjourney({
   const [imageModal, setImageModal] = React.useState(null);
   const [highlightedId, setHighlightedId] = React.useState("");
   const normalizedSettings = settings.map(item => normalizeMjSetting(item));
-  const filtered = normalizedSettings.filter(item => lowerIncludes(`${item.memo || ""} ${item.note || ""} ${mjCommand(item)} ${(item.extractedParams || []).join(" ")}`, query));
+  const filtered = normalizedSettings.filter(item => lowerIncludes(`${searchableTextFromValue(item)} ${mjCommand(item)}`, query));
   const saveLimitReached = settings.length >= 50 && !editingId;
   const currentParams = parseMidjourneyPrompt(fullPrompt).params;
   const displayedPrompt = activeLanguage === "en" ? promptEn : promptJa;
@@ -7170,6 +6297,14 @@ function Midjourney({
     cardId: item.id,
     index
   })));
+  React.useEffect(() => {
+    if (!navigationTarget || navigationTarget.screen !== "mj" || navigationTarget.kind !== "mj-card" || !navigationTarget.id) return;
+    setQuery("");
+    setHighlightedId(navigationTarget.id);
+    onNavigationTargetHandled?.();
+    scrollToSearchTarget(`mj-card-${navigationTarget.id}`);
+    window.setTimeout(() => setHighlightedId(""), 1800);
+  }, [navigationTarget, onNavigationTargetHandled]);
   const updatePromptField = value => {
     setBasePrompt(value);
     if (activeLanguage === "en") setPromptEn(value);
@@ -7374,7 +6509,11 @@ function Midjourney({
     className: "mj-saved-shelf"
   }, /*#__PURE__*/React.createElement("div", {
     className: "mj-shelf-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "保存済みMJプロンプト"), /*#__PURE__*/React.createElement("p", null, "保存したMJプロンプトと登録画像を一覧で確認できます。")), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "クイック検索"), /*#__PURE__*/React.createElement("p", null, "保存したMJプロンプトを、ワードや画像から探せます。")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: "プロンプトやメモを検索..."
+  })), /*#__PURE__*/React.createElement("div", {
     className: "mj-image-search"
   }, /*#__PURE__*/React.createElement("strong", null, "画像から探す"), /*#__PURE__*/React.createElement("div", {
     className: "mj-image-search-grid"
@@ -7782,7 +6921,9 @@ function GalleryPage({
   setImages,
   setJournal,
   setScreen,
-  homeSettings
+  homeSettings,
+  navigationTarget,
+  onNavigationTargetHandled
 }) {
   const fileInputRef = React.useRef(null);
   const loadMoreRef = React.useRef(null);
@@ -7805,6 +6946,13 @@ function GalleryPage({
     observer.observe(loadMoreRef.current);
     return () => observer.disconnect();
   }, [images.length, visibleCount]);
+  React.useEffect(() => {
+    if (!navigationTarget || navigationTarget.screen !== "gallery" || navigationTarget.kind !== "gallery-card" || !navigationTarget.id) return;
+    const targetIndex = images.findIndex(image => image.id === navigationTarget.id);
+    if (targetIndex >= 0) setVisibleCount(count => Math.max(count, targetIndex + 1));
+    onNavigationTargetHandled?.();
+    scrollToSearchTarget(`gallery-card-${navigationTarget.id}`);
+  }, [navigationTarget, images, onNavigationTargetHandled]);
   const addFiles = async fileList => {
     const files = Array.from(fileList).filter(isSupportedImageFile);
     if (!files.length) return;
@@ -7901,6 +7049,7 @@ function GalleryPage({
   }), images.length ? /*#__PURE__*/React.createElement("div", {
     className: "gallery-grid"
   }, images.slice(0, visibleCount).map(image => /*#__PURE__*/React.createElement("article", {
+    id: `gallery-card-${image.id}`,
     className: "gallery-card",
     key: image.id
   }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
@@ -7986,7 +7135,9 @@ function VideoLibrary({
   videoStocks,
   setVideoStocks,
   setScreen,
-  homeSettings
+  homeSettings,
+  navigationTarget,
+  onNavigationTargetHandled
 }) {
   const thumbnailInputRef = React.useRef(null);
   const videoInputRef = React.useRef(null);
@@ -8183,11 +7334,11 @@ function VideoLibrary({
     memo: item.memo || item.note || "",
     createdAt: item.createdAt || new Date().toISOString()
   }));
-  const stockQuery = "";
+  const stockQuery = query.trim().toLowerCase();
   const filteredStocks = normalizedStocks.filter(item => {
     if (!stockQuery) return true;
-    const haystack = `${item.title} ${item.prompt} ${item.memo}`.toLowerCase();
-    return haystack.includes(stockQuery);
+    const haystack = `${item.title} ${item.prompt} ${item.memo}`;
+    return lowerIncludes(haystack, query);
   });
   const stockCount = normalizedStocks.length;
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
@@ -8222,14 +7373,24 @@ function VideoLibrary({
     if (!canAddStock) return;
     setStockFrameCount(count => Math.min(100, count + 1));
   };
-  const searchActive = Boolean(modelFilter !== "すべて" || favoriteOnly);
+  const searchActive = Boolean(query.trim() || modelFilter !== "すべて" || favoriteOnly);
   const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter(item => {
-    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
+    const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`;
+    if (query && !lowerIncludes(haystack, query)) return false;
     if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
     if (favoriteOnly && !item.favorite) return false;
     return true;
   });
+  React.useEffect(() => {
+    if (!navigationTarget || navigationTarget.screen !== "videos" || !navigationTarget.id) return;
+    if (navigationTarget.kind !== "video-card" && navigationTarget.kind !== "video-stock") return;
+    setQuery("");
+    setModelFilter("すべて");
+    setFavoriteOnly(false);
+    onNavigationTargetHandled?.();
+    scrollToSearchTarget(`${navigationTarget.kind}-${navigationTarget.id}`);
+  }, [navigationTarget, onNavigationTargetHandled]);
   const videoSlotCount = searchActive ? filteredVideos.length : normalizedVideos.length < 20 ? Math.max(8, Math.ceil((normalizedVideos.length + 1) / 4) * 4) : 20;
   const slots = searchActive ? filteredVideos : Array.from({
     length: videoSlotCount
@@ -8448,7 +7609,11 @@ function VideoLibrary({
     }))
   }), /*#__PURE__*/React.createElement("div", {
     className: "video-filter-bar"
-  }, /*#__PURE__*/React.createElement("select", {
+  }, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: event => setQuery(event.target.value),
+    placeholder: "タイトル、プロンプト、メモ、タグで検索..."
+  }), /*#__PURE__*/React.createElement("select", {
     value: modelFilter,
     onChange: event => setModelFilter(event.target.value)
   }, /*#__PURE__*/React.createElement("option", null, "すべて"), videoModels.map(model => /*#__PURE__*/React.createElement("option", {
@@ -8468,6 +7633,7 @@ function VideoLibrary({
   }, slots.map((item, index) => {
     const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
     return item ? /*#__PURE__*/React.createElement("article", {
+      id: `video-card-${item.id}`,
       className: "library-prompt-card video-card video-prompt-card",
       key: item.id,
       onClick: () => editVideo(item)
@@ -8569,7 +7735,8 @@ function VideoLibrary({
     onCreate: saveVideoStockFrame,
     onUpdate: updateVideoStock,
     copyText: copyVideoStockText,
-    showMemo: () => stock && setMemoStock(stock)
+    showMemo: () => stock && setMemoStock(stock),
+    domId: stock?.id ? `video-stock-${stock.id}` : undefined
   }))), canAddStock && !stockQuery && stockCount >= visibleStockFrameCount && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
     onClick: addVideoStockFrame
@@ -8597,8 +7764,10 @@ function VideoLibrary({
   }));
 }
 function JournalPage({
+  images,
   journal,
   setJournal,
+  setGalleryImages,
   setScreen
 }) {
   const fileInputRef = React.useRef(null);
@@ -8608,10 +7777,7 @@ function JournalPage({
   const [isBackgroundDragging, setIsBackgroundDragging] = React.useState(false);
   const boardRef = React.useRef(null);
   const selected = journal.items.find(item => item.id === selectedId);
-  const stockImages = journal.stockImages || [];
   const customBackgrounds = journal.customBackgrounds || [];
-  const hiddenStockImageIds = journal.hiddenStockImageIds || [];
-  const visibleStockImages = stockImages.filter(image => !hiddenStockImageIds.includes(image.id)).slice(0, 18);
   const selectedCustomBackground = customBackgrounds.find(item => journal.background === `custom-${item.id}`);
   const addJournalItem = image => {
     const normalized = {
@@ -8654,10 +7820,7 @@ function JournalPage({
       source: "journal",
       favorite: false
     }));
-    setJournal(current => ({
-      ...current,
-      stockImages: [...nextImages, ...(current.stockImages || [])]
-    }));
+    setGalleryImages(items => [...nextImages, ...items]);
     nextImages.forEach(addJournalItem);
     scheduleStorageWarningCheck();
   };
@@ -8705,19 +7868,6 @@ function JournalPage({
         background: current.background === `custom-${id}` ? "paper" : current.background
       };
     });
-  };
-  const deleteStockImage = image => {
-    const inUseCount = journal.items.filter(item => item.imageId === image.id).length;
-    const message = inUseCount ? `この画像を画像ストックから削除します。ジャーナル上に配置済みの同じ画像${inUseCount}件も削除されます。よろしいですか？` : "この画像を画像ストックから削除します。よろしいですか？";
-    if (!window.confirm(message)) return;
-    rememberDeletedSampleIdsFromItems(image);
-    setJournal(current => ({
-      ...current,
-      stockImages: (current.stockImages || []).filter(item => item.id !== image.id),
-      hiddenStockImageIds: Array.from(new Set([...(current.hiddenStockImageIds || []), image.id])),
-      items: current.items.filter(item => item.imageId !== image.id)
-    }));
-    if (journal.items.some(item => item.imageId === image.id && item.id === selectedId)) setSelectedId("");
   };
   const updateItem = (id, patch) => {
     setJournal(current => ({
@@ -8836,7 +7986,7 @@ function JournalPage({
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => backgroundInputRef.current?.click()
-  }, "＋ 背景を追加"), /*#__PURE__*/React.createElement("small", null, "画像をドロップして背景にできます"), /*#__PURE__*/React.createElement("small", null, "推奨アスペクト比：3:2")), selectedCustomBackground && /*#__PURE__*/React.createElement("div", {
+  }, "＋ 背景を追加"), /*#__PURE__*/React.createElement("small", null, "画像をドロップして背景にできます")), selectedCustomBackground && /*#__PURE__*/React.createElement("div", {
     className: "journal-background-editor"
   }, /*#__PURE__*/React.createElement("label", null, "背景名", /*#__PURE__*/React.createElement("input", {
     value: selectedCustomBackground.title,
@@ -8848,24 +7998,13 @@ function JournalPage({
     onClick: () => deleteBackground(selectedCustomBackground.id)
   }, "背景を削除")), /*#__PURE__*/React.createElement("strong", null, "画像ストック"), /*#__PURE__*/React.createElement("div", {
     className: "journal-stock"
-  }, visibleStockImages.map(image => /*#__PURE__*/React.createElement("div", {
-    className: "journal-stock-item",
-    key: image.id
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "journal-stock-add",
-    onClick: () => addJournalItem(image),
-    "aria-label": `${image.title || "画像"}をジャーナルに追加`
+  }, images.slice(0, 18).map(image => /*#__PURE__*/React.createElement("button", {
+    key: image.id,
+    onClick: () => addJournalItem(image)
   }, /*#__PURE__*/React.createElement("img", {
     src: imageDisplaySrc(image),
     alt: ""
-  })), /*#__PURE__*/React.createElement("button", {
-    className: "journal-stock-delete",
-    "aria-label": `${image.title || "画像"}を削除`,
-    onClick: event => {
-      event.stopPropagation();
-      deleteStockImage(image);
-    }
-  }, "×")))), selected && /*#__PURE__*/React.createElement("div", {
+  })))), selected && /*#__PURE__*/React.createElement("div", {
     className: "journal-edit-panel"
   }, /*#__PURE__*/React.createElement("label", null, "サイズ", /*#__PURE__*/React.createElement("input", {
     type: "range",
@@ -8901,10 +8040,6 @@ function JournalPage({
       };
     })
   }, "選択画像を削除"))), /*#__PURE__*/React.createElement("div", {
-    className: "journal-canvas"
-  }, !journal.items.length && /*#__PURE__*/React.createElement("p", {
-    className: "journal-board-note"
-  }, "画像ストックから追加すると、シール帳のように並べられます。"), /*#__PURE__*/React.createElement("div", {
     ref: boardRef,
     className: `journal-board ${journal.background}`,
     tabIndex: 0,
@@ -8927,7 +8062,7 @@ function JournalPage({
       event.stopPropagation();
       addFiles(files);
     }
-  }, journal.items.map(item => /*#__PURE__*/React.createElement("div", {
+  }, journal.items.length ? journal.items.map(item => /*#__PURE__*/React.createElement("div", {
     className: `journal-sticker ${selectedId === item.id ? "selected" : ""}`,
     key: item.id,
     style: {
@@ -8946,7 +8081,9 @@ function JournalPage({
     src: imageDisplaySrc(item),
     alt: "",
     draggable: false
-  })))))), /*#__PURE__*/React.createElement(PageBackButton, {
+  }))) : /*#__PURE__*/React.createElement("div", {
+    className: "journal-empty"
+  }, "画像を追加して、シール帳のように並べられます。"))), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -8959,14 +8096,23 @@ function Projects({
   settings,
   homeSettings,
   copyText,
-  setScreen
+  setScreen,
+  navigationTarget,
+  onNavigationTargetHandled
 }) {
   const [editing, setEditing] = React.useState(null);
+  const [query, setQuery] = React.useState("");
   const canAddProject = projects.length < 30;
   const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
   const projectMatchesDisplay = item => projectDisplay.showCompleted !== false || !item.completed && item.status !== "completed";
-  const filteredBase = projects.filter(item => projectMatchesDisplay(item));
+  const filteredBase = projects.filter(item => lowerIncludes(searchableTextFromValue(item), query) && projectMatchesDisplay(item));
   const filtered = projectDisplay.sortBy === "manual" ? filteredBase : projectDisplay.sortBy === "created" ? [...filteredBase].sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || ""))) : sortProjectsForDisplay(filteredBase);
+  React.useEffect(() => {
+    if (!navigationTarget || navigationTarget.screen !== "projects" || navigationTarget.kind !== "project-card" || !navigationTarget.id) return;
+    setQuery("");
+    onNavigationTargetHandled?.();
+    scrollToSearchTarget(`project-card-${navigationTarget.id}`);
+  }, [navigationTarget, onNavigationTargetHandled]);
   const save = item => {
     const next = {
       ...item,
@@ -8991,7 +8137,11 @@ function Projects({
     }, "追加する") : /*#__PURE__*/React.createElement("span", {
       className: "limit-message"
     }, "プロジェクトは最大30件まで登録できます"))
-  }), !canAddProject && /*#__PURE__*/React.createElement("p", {
+  }), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("input", {
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: "プロジェクト名、タグ、メモで検索"
+  })), !canAddProject && /*#__PURE__*/React.createElement("p", {
     className: "limit-note"
   }, "プロジェクトは最大30件まで登録できます"), /*#__PURE__*/React.createElement("div", {
     className: "project-grid"
@@ -8999,6 +8149,7 @@ function Projects({
     const linkedPrompts = prompts.filter(p => project.promptIds.includes(p.id));
     const linkedMj = settings.filter(m => project.mjIds.includes(m.id));
     return /*#__PURE__*/React.createElement("article", {
+      id: `project-card-${project.id}`,
       className: "project-card",
       key: project.id
     }, /*#__PURE__*/React.createElement("div", {
@@ -9294,7 +8445,7 @@ function ProjectModal({
     })
   }), "ホーム画面でリマインドする"), /*#__PURE__*/React.createElement(SelectList, {
     title: "関連プロンプト",
-    description: "お気に入りを優先して10件表示します。必要な場合は「もっと見る」で追加表示できます。",
+    description: "お気に入りを優先して10件表示します。もっと探すときは検索できます。",
     items: promptChoices,
     selected: draft.promptIds,
     getLabel: choice => choice.title || "無題のプロンプト",
@@ -9333,24 +8484,31 @@ function SelectList({
   getText,
   onToggle
 }) {
+  const [query, setQuery] = React.useState("");
   const [expanded, setExpanded] = React.useState(false);
-  const shown = expanded ? items : items.slice(0, 10);
+  const filtered = items.filter(item => lowerIncludes(getText(item), query));
+  const shown = expanded || query ? filtered : filtered.slice(0, 10);
   return /*#__PURE__*/React.createElement("div", {
     className: "select-list"
   }, /*#__PURE__*/React.createElement("div", {
     className: "select-list-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, title), description && /*#__PURE__*/React.createElement("small", null, description))), items.length ? shown.map(item => /*#__PURE__*/React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, title), description && /*#__PURE__*/React.createElement("small", null, description))), /*#__PURE__*/React.createElement("input", {
+    className: "select-search",
+    value: query,
+    onChange: e => setQuery(e.target.value),
+    placeholder: `${title}を検索...`
+  }), items.length ? shown.map(item => /*#__PURE__*/React.createElement("label", {
     key: item.id,
     className: "check select-row"
   }, /*#__PURE__*/React.createElement("input", {
     type: "checkbox",
     checked: selected.includes(item.id),
     onChange: () => onToggle(item.id)
-  }), " ", getLabel(item))) : /*#__PURE__*/React.createElement("small", null, "先に項目を追加してください。"), items.length > 10 && !expanded && /*#__PURE__*/React.createElement("button", {
+  }), " ", getLabel(item))) : /*#__PURE__*/React.createElement("small", null, "先に項目を追加してください。"), items.length > 10 && !expanded && !query && /*#__PURE__*/React.createElement("button", {
     className: "ghost more-button",
     type: "button",
     onClick: () => setExpanded(true)
-  }, "もっと見る"));
+  }, "もっと見る"), items.length > 0 && !shown.length && /*#__PURE__*/React.createElement("small", null, "一致する項目がありません。"));
 }
 function mjCommand(item) {
   if (item.prompt) return item.prompt;
