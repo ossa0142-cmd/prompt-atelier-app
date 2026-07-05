@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-title" content="Prompt Atelier" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Prompt Atelier</title>
-    <link rel="manifest" href="./public/manifest.webmanifest?v=20260705-sample-seed-image-fix-v24" />
-    <link rel="icon" href="./public/icons/prompt-atelier-icon.svg?v=20260705-sample-seed-image-fix-v24" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="./public/icons/prompt-atelier-icon-192.png?v=20260705-sample-seed-image-fix-v24" />
-    <link rel="stylesheet" href="./src/styles.css?v=20260705-sample-seed-image-fix-v24" />
+    <link rel="manifest" href="./public/manifest.webmanifest?v=20260705-sample-seed-path-fix-v25" />
+    <link rel="icon" href="./public/icons/prompt-atelier-icon.svg?v=20260705-sample-seed-path-fix-v25" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./public/icons/prompt-atelier-icon-192.png?v=20260705-sample-seed-path-fix-v25" />
+    <link rel="stylesheet" href="./src/styles.css?v=20260705-sample-seed-path-fix-v25" />
   </head>
   <body>
     <div id="root"></div>
@@ -26,11 +26,11 @@
         window.dispatchEvent(new Event("promptatelierinstallready"));
       });
     </script>
-    <script src="./src/App.compiled.js?v=20260705-sample-seed-image-fix-v24"></script>
+    <script src="./src/App.compiled.js?v=20260705-sample-seed-path-fix-v25"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", function () {
-          navigator.serviceWorker.register("./service-worker.js?v=20260705-sample-seed-image-fix-v24").catch(function (error) {
+          navigator.serviceWorker.register("./service-worker.js?v=20260705-sample-seed-path-fix-v25").catch(function (error) {
             console.warn("[Prompt Atelier] service worker registration failed", error);
           });
         });

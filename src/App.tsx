@@ -1087,7 +1087,7 @@ const tagText = (tags: string[]) => tags.join(", ");
 const lowerIncludes = (source: string, query: string) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
-const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
+const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json", "./src/data/sampleSeed.json"];
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
 const SAMPLE_EXPORT_KEYS = [
@@ -2234,9 +2234,18 @@ function sampleSeedDataToStorage(seedData: Record<string, any>) {
 
 async function loadSampleSeedIfNeeded() {
   try {
-    const response = await fetch(SAMPLE_SEED_PATH, { cache: "no-store" });
-    if (!response.ok) return false;
-    const seed = await response.json();
+    let seed: any = null;
+    for (const path of SAMPLE_SEED_PATHS) {
+      try {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) continue;
+        seed = await response.json();
+        break;
+      } catch {
+        continue;
+      }
+    }
+    if (!seed) return false;
     if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) return false;
     const deletedIds = readDeletedSampleIds();
     let changed = false;
