@@ -2832,7 +2832,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
           </div>
           {atelierImages.length ? (
             <div className="atelier-marquee" aria-label="アトリエ画像">
-              <div className="atelier-marquee-track is-moving">
+              <div className={`atelier-marquee-track ${atelierImages.length === 1 ? "is-single" : "is-moving"}`}>
                 {atelierImages.map((image: AtelierImage, index: number) => (
                   <figure className="atelier-marquee-card" key={`${image.id}-${index}`}>
                     <img src={imageDisplaySrc(image)} alt="" />
