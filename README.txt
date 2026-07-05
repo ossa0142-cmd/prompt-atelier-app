@@ -1,1 +1,1 @@
-v54 part1/2。カラーパレット初動反映とダーク系アコーディオン文字修正は残したまま、sampleSeedとpublic/samplesを復旧しています。part1からpart2まで全部アップしてください。
+v54 part2/2。カラーパレット初動反映とダーク系アコーディオン文字修正は残したまま、sampleSeedとpublic/samplesを復旧しています。part1からpart2まで全部アップしてください。
