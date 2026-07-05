@@ -512,6 +512,7 @@ const defaultWorkTools = [{
 const sampleAtelierImages = [];
 const defaultJournal = {
   background: "paper",
+  hiddenStockImageIds: [],
   items: []
 };
 const sampleVideos = [{
@@ -6970,6 +6971,8 @@ function JournalPage({
   const boardRef = React.useRef(null);
   const selected = journal.items.find(item => item.id === selectedId);
   const customBackgrounds = journal.customBackgrounds || [];
+  const hiddenStockImageIds = journal.hiddenStockImageIds || [];
+  const visibleStockImages = images.filter(image => !hiddenStockImageIds.includes(image.id)).slice(0, 18);
   const selectedCustomBackground = customBackgrounds.find(item => journal.background === `custom-${item.id}`);
   const addJournalItem = image => {
     const normalized = {
@@ -7060,6 +7063,19 @@ function JournalPage({
         background: current.background === `custom-${id}` ? "paper" : current.background
       };
     });
+  };
+  const deleteStockImage = image => {
+    const inUseCount = journal.items.filter(item => item.imageId === image.id).length;
+    const message = inUseCount ? `この画像を画像ストックから削除します。ジャーナル上に配置済みの同じ画像${inUseCount}件も削除されます。よろしいですか？` : "この画像を画像ストックから削除します。よろしいですか？";
+    if (!window.confirm(message)) return;
+    rememberDeletedSampleIdsFromItems(image);
+    setGalleryImages(items => items.filter(item => item.id !== image.id));
+    setJournal(current => ({
+      ...current,
+      hiddenStockImageIds: Array.from(new Set([...(current.hiddenStockImageIds || []), image.id])),
+      items: current.items.filter(item => item.imageId !== image.id)
+    }));
+    if (journal.items.some(item => item.imageId === image.id && item.id === selectedId)) setSelectedId("");
   };
   const updateItem = (id, patch) => {
     setJournal(current => ({
@@ -7190,13 +7206,24 @@ function JournalPage({
     onClick: () => deleteBackground(selectedCustomBackground.id)
   }, "背景を削除")), /*#__PURE__*/React.createElement("strong", null, "画像ストック"), /*#__PURE__*/React.createElement("div", {
     className: "journal-stock"
-  }, images.slice(0, 18).map(image => /*#__PURE__*/React.createElement("button", {
-    key: image.id,
-    onClick: () => addJournalItem(image)
+  }, visibleStockImages.map(image => /*#__PURE__*/React.createElement("div", {
+    className: "journal-stock-item",
+    key: image.id
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "journal-stock-add",
+    onClick: () => addJournalItem(image),
+    "aria-label": `${image.title || "画像"}をジャーナルに追加`
   }, /*#__PURE__*/React.createElement("img", {
     src: imageDisplaySrc(image),
     alt: ""
-  })))), selected && /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "journal-stock-delete",
+    "aria-label": `${image.title || "画像"}を削除`,
+    onClick: event => {
+      event.stopPropagation();
+      deleteStockImage(image);
+    }
+  }, "×")))), selected && /*#__PURE__*/React.createElement("div", {
     className: "journal-edit-panel"
   }, /*#__PURE__*/React.createElement("label", null, "サイズ", /*#__PURE__*/React.createElement("input", {
     type: "range",

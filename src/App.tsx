@@ -137,6 +137,7 @@ type IndexedDbImageRecord = OptimizedImageData & {
 type JournalState = {
   background: string;
   customBackgrounds?: AtelierImage[];
+  hiddenStockImageIds?: string[];
   items: JournalItem[];
 };
 
@@ -493,6 +494,7 @@ const sampleAtelierImages: AtelierImage[] = [];
 
 const defaultJournal: JournalState = {
   background: "paper",
+  hiddenStockImageIds: [],
   items: [],
 };
 
@@ -6113,6 +6115,8 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   const boardRef = React.useRef<HTMLDivElement | null>(null);
   const selected = journal.items.find((item: JournalItem) => item.id === selectedId);
   const customBackgrounds = journal.customBackgrounds || [];
+  const hiddenStockImageIds = journal.hiddenStockImageIds || [];
+  const visibleStockImages = images.filter((image: AtelierImage) => !hiddenStockImageIds.includes(image.id)).slice(0, 18);
   const selectedCustomBackground = customBackgrounds.find((item: AtelierImage) => journal.background === `custom-${item.id}`);
   const addJournalItem = (image: AtelierImage) => {
     const normalized = {
@@ -6193,6 +6197,21 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
       const nextBackgrounds = (current.customBackgrounds || []).filter((item) => item.id !== id);
       return { ...current, customBackgrounds: nextBackgrounds, background: current.background === `custom-${id}` ? "paper" : current.background };
     });
+  };
+  const deleteStockImage = (image: AtelierImage) => {
+    const inUseCount = journal.items.filter((item: JournalItem) => item.imageId === image.id).length;
+    const message = inUseCount
+      ? `この画像を画像ストックから削除します。ジャーナル上に配置済みの同じ画像${inUseCount}件も削除されます。よろしいですか？`
+      : "この画像を画像ストックから削除します。よろしいですか？";
+    if (!window.confirm(message)) return;
+    rememberDeletedSampleIdsFromItems(image);
+    setGalleryImages((items: AtelierImage[]) => items.filter((item) => item.id !== image.id));
+    setJournal((current: JournalState) => ({
+      ...current,
+      hiddenStockImageIds: Array.from(new Set([...(current.hiddenStockImageIds || []), image.id])),
+      items: current.items.filter((item: JournalItem) => item.imageId !== image.id),
+    }));
+    if (journal.items.some((item: JournalItem) => item.imageId === image.id && item.id === selectedId)) setSelectedId("");
   };
   const updateItem = (id: string, patch: Partial<JournalItem>) => {
     setJournal((current: JournalState) => ({ ...current, items: current.items.map((item) => item.id === id ? { ...item, ...patch } : item) }));
@@ -6278,8 +6297,22 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
           )}
           <strong>画像ストック</strong>
           <div className="journal-stock">
-            {images.slice(0, 18).map((image: AtelierImage) => (
-              <button key={image.id} onClick={() => addJournalItem(image)}><img src={imageDisplaySrc(image)} alt="" /></button>
+            {visibleStockImages.map((image: AtelierImage) => (
+              <div className="journal-stock-item" key={image.id}>
+                <button className="journal-stock-add" onClick={() => addJournalItem(image)} aria-label={`${image.title || "画像"}をジャーナルに追加`}>
+                  <img src={imageDisplaySrc(image)} alt="" />
+                </button>
+                <button
+                  className="journal-stock-delete"
+                  aria-label={`${image.title || "画像"}を削除`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    deleteStockImage(image);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
             ))}
           </div>
           {selected && (
