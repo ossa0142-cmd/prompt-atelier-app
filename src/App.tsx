@@ -2256,7 +2256,6 @@ async function loadSampleSeedIfNeeded() {
       for (const image of seed.images) {
         const sampleId = sampleIdOf(image);
         if (sampleId && deletedIds.has(sampleId)) continue;
-        if (sampleId && [...indexedDbImageCache.values()].some((record: any) => record?.sampleId === sampleId)) continue;
         if (image?.id && image?.src && !indexedDbImageCache.has(image.id)) {
           await putIndexedDbImage({ ...cleanSampleValue(image), isSample: true });
           changed = true;
