@@ -7259,6 +7259,10 @@ function JournalPage({
       };
     })
   }, "選択画像を削除"))), /*#__PURE__*/React.createElement("div", {
+    className: "journal-canvas"
+  }, !journal.items.length && /*#__PURE__*/React.createElement("p", {
+    className: "journal-board-note"
+  }, "画像ストックから追加すると、シール帳のように並べられます。"), /*#__PURE__*/React.createElement("div", {
     ref: boardRef,
     className: `journal-board ${journal.background}`,
     tabIndex: 0,
@@ -7281,7 +7285,7 @@ function JournalPage({
       event.stopPropagation();
       addFiles(files);
     }
-  }, journal.items.length ? journal.items.map(item => /*#__PURE__*/React.createElement("div", {
+  }, journal.items.map(item => /*#__PURE__*/React.createElement("div", {
     className: `journal-sticker ${selectedId === item.id ? "selected" : ""}`,
     key: item.id,
     style: {
@@ -7300,9 +7304,7 @@ function JournalPage({
     src: imageDisplaySrc(item),
     alt: "",
     draggable: false
-  }))) : /*#__PURE__*/React.createElement("div", {
-    className: "journal-empty"
-  }, "画像を追加して、シール帳のように並べられます。"))), /*#__PURE__*/React.createElement(PageBackButton, {
+  })))))), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")

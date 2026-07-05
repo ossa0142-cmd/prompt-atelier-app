@@ -6327,42 +6327,45 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
             </div>
           )}
         </aside>
-        <div
-          ref={boardRef}
-          className={`journal-board ${journal.background}`}
-          tabIndex={0}
-          style={selectedCustomBackground ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${imageSrc(selectedCustomBackground)})` } : undefined}
-          onPointerMove={moveItem}
-          onPointerUp={() => setDraggingId("")}
-          onPointerLeave={() => setDraggingId("")}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            addFiles(event.dataTransfer.files);
-          }}
-          onPaste={(event) => {
-            const files = clipboardImageFiles(event);
-            if (!files.length) return;
-            event.preventDefault();
-            event.stopPropagation();
-            addFiles(files);
-          }}
-        >
-          {journal.items.length ? journal.items.map((item: JournalItem) => (
-            <div
-              className={`journal-sticker ${selectedId === item.id ? "selected" : ""}`}
-              key={item.id}
-              style={{ left: item.x, top: item.y, width: item.width, transform: `rotate(${item.rotate}deg)` }}
-              onPointerDown={(event) => {
-                event.preventDefault();
-                setSelectedId(item.id);
-                setDraggingId(item.id);
-              }}
-            >
-              <img className={isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image"} src={imageDisplaySrc(item)} alt="" draggable={false} />
-            </div>
-          )) : <div className="journal-empty">画像を追加して、シール帳のように並べられます。</div>}
+        <div className="journal-canvas">
+          {!journal.items.length && <p className="journal-board-note">画像ストックから追加すると、シール帳のように並べられます。</p>}
+          <div
+            ref={boardRef}
+            className={`journal-board ${journal.background}`}
+            tabIndex={0}
+            style={selectedCustomBackground ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${imageSrc(selectedCustomBackground)})` } : undefined}
+            onPointerMove={moveItem}
+            onPointerUp={() => setDraggingId("")}
+            onPointerLeave={() => setDraggingId("")}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              addFiles(event.dataTransfer.files);
+            }}
+            onPaste={(event) => {
+              const files = clipboardImageFiles(event);
+              if (!files.length) return;
+              event.preventDefault();
+              event.stopPropagation();
+              addFiles(files);
+            }}
+          >
+            {journal.items.map((item: JournalItem) => (
+              <div
+                className={`journal-sticker ${selectedId === item.id ? "selected" : ""}`}
+                key={item.id}
+                style={{ left: item.x, top: item.y, width: item.width, transform: `rotate(${item.rotate}deg)` }}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  setSelectedId(item.id);
+                  setDraggingId(item.id);
+                }}
+              >
+                <img className={isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image"} src={imageDisplaySrc(item)} alt="" draggable={false} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <PageBackButton className="page-bottom-back" label="ホームへ戻る" onClick={() => setScreen("home")} />
