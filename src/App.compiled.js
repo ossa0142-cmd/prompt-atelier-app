@@ -512,6 +512,7 @@ const defaultWorkTools = [{
 const sampleAtelierImages = [];
 const defaultJournal = {
   background: "paper",
+  stockImages: [],
   hiddenStockImageIds: [],
   items: []
 };
@@ -2889,7 +2890,7 @@ function sortProjectsForDisplay(items) {
   });
 }
 function collectAtelierImages(galleryImages) {
-  const galleryOnlyImages = galleryImages.filter(item => item.src && item.source !== "journal" && item.source !== "journal-background").map(item => ({
+  const galleryOnlyImages = galleryImages.filter(isGalleryOnlyImage).map(item => ({
     ...item,
     thumbnail: item.thumbnail || item.src
   }));
@@ -2899,6 +2900,9 @@ function collectAtelierImages(galleryImages) {
     seen.add(item.src);
     return true;
   }).sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 24);
+}
+function isGalleryOnlyImage(item) {
+  return Boolean(item?.src) && item.source !== "journal" && item.source !== "journal-background";
 }
 function resolveIndexedDbImage(value, preferThumbnail = false) {
   if (!isIndexedDbImageRef(value)) return value;
@@ -3738,6 +3742,7 @@ function mergeJournalSample(existing, incoming, deletedIds, stats, key = "prompt
     ...current
   };
   if (!next.background && incoming?.background) next.background = incoming.background;
+  if (Array.isArray(incoming?.stockImages)) next.stockImages = mergeSampleCollection(current.stockImages || [], incoming.stockImages, deletedIds, stats, `${key}:stockImages`);
   if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds, stats, `${key}:items`);
   if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds, stats, `${key}:customBackgrounds`);
   return next;
@@ -3899,7 +3904,8 @@ function App() {
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
-  const atelierImages = collectAtelierImages(galleryImages);
+  const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
+  const atelierImages = collectAtelierImages(visibleGalleryImages);
   const copyText = async (text, id) => {
     await navigator.clipboard.writeText(text);
     if (id) setRecentIds(ids => [id, ...ids.filter(item => item !== id)].slice(0, 8));
@@ -4079,13 +4085,11 @@ function App() {
     copyText: copyText,
     setScreen: setScreen
   }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
-    images: atelierImages,
     journal: journal,
     setJournal: setJournal,
-    setGalleryImages: setGalleryImages,
     setScreen: setScreen
   }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
-    images: galleryImages,
+    images: visibleGalleryImages,
     setImages: setGalleryImages,
     setJournal: setJournal,
     setScreen: setScreen,
@@ -8583,10 +8587,8 @@ function VideoLibrary({
   }));
 }
 function JournalPage({
-  images,
   journal,
   setJournal,
-  setGalleryImages,
   setScreen
 }) {
   const fileInputRef = React.useRef(null);
@@ -8596,9 +8598,10 @@ function JournalPage({
   const [isBackgroundDragging, setIsBackgroundDragging] = React.useState(false);
   const boardRef = React.useRef(null);
   const selected = journal.items.find(item => item.id === selectedId);
+  const stockImages = journal.stockImages || [];
   const customBackgrounds = journal.customBackgrounds || [];
   const hiddenStockImageIds = journal.hiddenStockImageIds || [];
-  const visibleStockImages = images.filter(image => !hiddenStockImageIds.includes(image.id)).slice(0, 18);
+  const visibleStockImages = stockImages.filter(image => !hiddenStockImageIds.includes(image.id)).slice(0, 18);
   const selectedCustomBackground = customBackgrounds.find(item => journal.background === `custom-${item.id}`);
   const addJournalItem = image => {
     const normalized = {
@@ -8641,7 +8644,10 @@ function JournalPage({
       source: "journal",
       favorite: false
     }));
-    setGalleryImages(items => [...nextImages, ...items]);
+    setJournal(current => ({
+      ...current,
+      stockImages: [...nextImages, ...(current.stockImages || [])]
+    }));
     nextImages.forEach(addJournalItem);
     scheduleStorageWarningCheck();
   };
@@ -8695,9 +8701,9 @@ function JournalPage({
     const message = inUseCount ? `この画像を画像ストックから削除します。ジャーナル上に配置済みの同じ画像${inUseCount}件も削除されます。よろしいですか？` : "この画像を画像ストックから削除します。よろしいですか？";
     if (!window.confirm(message)) return;
     rememberDeletedSampleIdsFromItems(image);
-    setGalleryImages(items => items.filter(item => item.id !== image.id));
     setJournal(current => ({
       ...current,
+      stockImages: (current.stockImages || []).filter(item => item.id !== image.id),
       hiddenStockImageIds: Array.from(new Set([...(current.hiddenStockImageIds || []), image.id])),
       items: current.items.filter(item => item.imageId !== image.id)
     }));

@@ -136,6 +136,7 @@ type IndexedDbImageRecord = OptimizedImageData & {
 
 type JournalState = {
   background: string;
+  stockImages?: AtelierImage[];
   customBackgrounds?: AtelierImage[];
   hiddenStockImageIds?: string[];
   items: JournalItem[];
@@ -494,6 +495,7 @@ const sampleAtelierImages: AtelierImage[] = [];
 
 const defaultJournal: JournalState = {
   background: "paper",
+  stockImages: [],
   hiddenStockImageIds: [],
   items: [],
 };
@@ -1345,7 +1347,7 @@ function sortProjectsForDisplay(items: Project[]) {
 
 function collectAtelierImages(galleryImages: AtelierImage[]) {
   const galleryOnlyImages = galleryImages
-    .filter((item) => item.src && item.source !== "journal" && item.source !== "journal-background")
+    .filter(isGalleryOnlyImage)
     .map((item) => ({ ...item, thumbnail: item.thumbnail || item.src }));
   const seen = new Set<string>();
   return galleryOnlyImages
@@ -1356,6 +1358,10 @@ function collectAtelierImages(galleryImages: AtelierImage[]) {
     })
     .sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.createdAt).localeCompare(String(a.createdAt)))
     .slice(0, 24);
+}
+
+function isGalleryOnlyImage(item: AtelierImage) {
+  return Boolean(item?.src) && item.source !== "journal" && item.source !== "journal-background";
 }
 
 function resolveIndexedDbImage(value: string, preferThumbnail = false) {
@@ -2219,6 +2225,7 @@ function mergeJournalSample(existing: any, incoming: any, deletedIds: Set<string
   const current = existing && typeof existing === "object" ? existing : {};
   const next = { ...current };
   if (!next.background && incoming?.background) next.background = incoming.background;
+  if (Array.isArray(incoming?.stockImages)) next.stockImages = mergeSampleCollection(current.stockImages || [], incoming.stockImages, deletedIds, stats, `${key}:stockImages`);
   if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds, stats, `${key}:items`);
   if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds, stats, `${key}:customBackgrounds`);
   return next;
@@ -2380,7 +2387,8 @@ function App() {
     ...myPrompts,
     ...mockupPrompts.filter((prompt) => !prompt.isTextStock),
   ].filter((prompt) => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
-  const atelierImages = collectAtelierImages(galleryImages);
+  const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
+  const atelierImages = collectAtelierImages(visibleGalleryImages);
 
   const copyText = async (text: string, id?: string) => {
     await navigator.clipboard.writeText(text);
@@ -2581,8 +2589,8 @@ function App() {
             setScreen={setScreen}
           />
         )}
-        {screen === "journal" && <JournalPage images={atelierImages} journal={journal} setJournal={setJournal} setGalleryImages={setGalleryImages} setScreen={setScreen} />}
-        {screen === "gallery" && <GalleryPage images={galleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} homeSettings={homeSettings} />}
+        {screen === "journal" && <JournalPage journal={journal} setJournal={setJournal} setScreen={setScreen} />}
+        {screen === "gallery" && <GalleryPage images={visibleGalleryImages} setImages={setGalleryImages} setJournal={setJournal} setScreen={setScreen} homeSettings={homeSettings} />}
         {screen === "videos" && <VideoLibrary videos={videos} setVideos={setVideos} videoStocks={videoStocks} setVideoStocks={setVideoStocks} setScreen={setScreen} homeSettings={homeSettings} />}
       </main>
       {isImageMigrating && (
@@ -6188,7 +6196,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   );
 }
 
-function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen }: any) {
+function JournalPage({ journal, setJournal, setScreen }: any) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const backgroundInputRef = React.useRef<HTMLInputElement | null>(null);
   const [draggingId, setDraggingId] = React.useState("");
@@ -6196,9 +6204,10 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
   const [isBackgroundDragging, setIsBackgroundDragging] = React.useState(false);
   const boardRef = React.useRef<HTMLDivElement | null>(null);
   const selected = journal.items.find((item: JournalItem) => item.id === selectedId);
+  const stockImages = journal.stockImages || [];
   const customBackgrounds = journal.customBackgrounds || [];
   const hiddenStockImageIds = journal.hiddenStockImageIds || [];
-  const visibleStockImages = images.filter((image: AtelierImage) => !hiddenStockImageIds.includes(image.id)).slice(0, 18);
+  const visibleStockImages = stockImages.filter((image: AtelierImage) => !hiddenStockImageIds.includes(image.id)).slice(0, 18);
   const selectedCustomBackground = customBackgrounds.find((item: AtelierImage) => journal.background === `custom-${item.id}`);
   const addJournalItem = (image: AtelierImage) => {
     const normalized = {
@@ -6238,7 +6247,10 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
       source: "journal",
       favorite: false,
     }));
-    setGalleryImages((items: AtelierImage[]) => [...nextImages, ...items]);
+    setJournal((current: JournalState) => ({
+      ...current,
+      stockImages: [...nextImages, ...(current.stockImages || [])],
+    }));
     nextImages.forEach(addJournalItem);
     scheduleStorageWarningCheck();
   };
@@ -6287,9 +6299,9 @@ function JournalPage({ images, journal, setJournal, setGalleryImages, setScreen 
       : "この画像を画像ストックから削除します。よろしいですか？";
     if (!window.confirm(message)) return;
     rememberDeletedSampleIdsFromItems(image);
-    setGalleryImages((items: AtelierImage[]) => items.filter((item) => item.id !== image.id));
     setJournal((current: JournalState) => ({
       ...current,
+      stockImages: (current.stockImages || []).filter((item: AtelierImage) => item.id !== image.id),
       hiddenStockImageIds: Array.from(new Set([...(current.hiddenStockImageIds || []), image.id])),
       items: current.items.filter((item: JournalItem) => item.imageId !== image.id),
     }));
