@@ -617,6 +617,10 @@ main {
   --clock-ink: var(--preview-ink);
   --clock-soft: color-mix(in srgb, var(--accent) 14%, var(--preview-card));
   --clock-line: color-mix(in srgb, var(--accent) 38%, var(--preview-line));
+  --clock-mini-title: 11px;
+  --clock-mini-small: 7px;
+  --clock-mini-pad-y: 5px;
+  --clock-mini-pad-x: 7px;
   --clock-stamp-height: 34px;
   --clock-stamp-heart: 40px;
   flex: 0 0 auto;
@@ -629,17 +633,24 @@ main {
   border: 1px solid color-mix(in srgb, var(--clock-line) 72%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, var(--clock-soft) 82%, transparent);
-  padding: 5px 7px;
+  color: var(--clock-ink);
+  padding: var(--clock-mini-pad-y) var(--clock-mini-pad-x);
 }
 
 .home-mini-date.size-small {
-  font-size: 7px;
+  --clock-mini-title: 9px;
+  --clock-mini-small: 6px;
+  --clock-mini-pad-y: 4px;
+  --clock-mini-pad-x: 6px;
   --clock-stamp-height: 28px;
   --clock-stamp-heart: 33px;
 }
 
 .home-mini-date.size-large {
-  font-size: 11px;
+  --clock-mini-title: 14px;
+  --clock-mini-small: 8px;
+  --clock-mini-pad-y: 6px;
+  --clock-mini-pad-x: 9px;
   --clock-stamp-height: 40px;
   --clock-stamp-heart: 47px;
 }
@@ -650,7 +661,25 @@ main {
 .home-mini-date.neon,
 .home-mini-date.doodle,
 .home-mini-date.stamp {
-  font-size: 9px;
+  font-size: var(--clock-mini-title);
+}
+
+.home-mini-date strong {
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--clock-mini-title);
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: 1;
+}
+
+.home-mini-date small {
+  color: inherit;
+  font-family: inherit;
+  font-size: var(--clock-mini-small);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .home-mini-date.digital {
@@ -658,7 +687,7 @@ main {
   background: color-mix(in srgb, var(--clock-main) 18%, #101014);
   color: #f8f2ff;
   font-family: "Courier New", ui-monospace, monospace;
-  padding: 5px 7px;
+  padding: var(--clock-mini-pad-y) var(--clock-mini-pad-x);
 }
 
 .home-mini-date.retro {
@@ -669,7 +698,7 @@ main {
 .home-mini-date.neon {
   color: var(--clock-main);
   font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
-  text-shadow: 1px 1px 0 #52d6df;
+  text-shadow: 1px 1px 0 #52d6df, 2px 2px 0 color-mix(in srgb, var(--clock-line) 70%, #ffd56e);
 }
 
 .home-mini-date.doodle {
@@ -685,7 +714,7 @@ main {
   border: 0;
   color: color-mix(in srgb, var(--clock-main) 64%, #6d4d43);
   font-family: "Courier New", ui-monospace, monospace;
-  padding: 5px 7px;
+  padding: var(--clock-mini-pad-y) var(--clock-mini-pad-x);
   transform: rotate(-2deg);
 }
 
@@ -4263,7 +4292,7 @@ main {
   min-width: 0;
 }
 
-.home-mini-topbar strong {
+.home-mini-topbar > strong {
   overflow: hidden;
   font-family: var(--font-heading);
   font-size: 13px;
@@ -4273,7 +4302,7 @@ main {
   white-space: nowrap;
 }
 
-.home-mini-topbar span {
+.home-mini-topbar > span {
   flex: 0 0 auto;
   color: var(--text-sub);
   font-size: 10px;
