@@ -3687,37 +3687,94 @@ function rememberDeletedSampleIdsFromItems(items) {
   sampleIds.forEach(sampleId => deletedIds.add(sampleId));
   writeDeletedSampleIds(deletedIds);
 }
-function mergeSampleCollection(existing, incoming, deletedIds) {
+function createSampleSeedStats(source = "unknown") {
+  return {
+    source,
+    categories: {},
+    images: {
+      incoming: 0,
+      added: 0,
+      skippedExisting: 0,
+      skippedDeleted: 0,
+      failed: 0
+    },
+    errors: []
+  };
+}
+function sampleSeedCategoryStats(stats, key) {
+  if (!stats) return null;
+  if (!stats.categories[key]) {
+    stats.categories[key] = {
+      incoming: 0,
+      added: 0,
+      skippedExisting: 0,
+      skippedDeleted: 0,
+      skippedMissingSampleId: 0
+    };
+  }
+  return stats.categories[key];
+}
+function writeSampleSeedDebug(stats) {
+  try {
+    console.info("[sampleSeed] import result", stats);
+    window.__promptAtelierSampleSeedDebug = stats;
+    sessionStorage.setItem("promptAtelierSampleSeedDebug", JSON.stringify(stats));
+  } catch {
+    // Debug only. Never block the app for this.
+  }
+}
+function mergeSampleCollection(existing, incoming, deletedIds, stats, key = "unknown") {
   if (!Array.isArray(incoming)) return existing ?? incoming;
   const current = Array.isArray(existing) ? existing : [];
   const currentSampleIds = new Set(current.map(sampleIdOf).filter(Boolean));
+  const categoryStats = sampleSeedCategoryStats(stats, key);
   const next = [...current];
-  incoming.forEach(item => {
-    const sampleId = sampleIdOf(item);
-    if (!sampleId || deletedIds.has(sampleId) || currentSampleIds.has(sampleId)) return;
+  incoming.forEach((item, index) => {
+    const sampleId = sampleIdOf(item) || `${key}-${padSampleIndex(index)}`;
+    if (categoryStats) categoryStats.incoming += 1;
+    if (!sampleId) {
+      if (categoryStats) categoryStats.skippedMissingSampleId += 1;
+      return;
+    }
+    if (deletedIds.has(sampleId)) {
+      if (categoryStats) categoryStats.skippedDeleted += 1;
+      return;
+    }
+    if (currentSampleIds.has(sampleId)) {
+      if (categoryStats) categoryStats.skippedExisting += 1;
+      return;
+    }
     next.push({
       ...cleanSampleValue(item),
       isSample: true,
       sampleId
     });
     currentSampleIds.add(sampleId);
+    if (categoryStats) categoryStats.added += 1;
   });
   return next;
 }
-function mergeJournalSample(existing, incoming, deletedIds) {
+function mergeJournalSample(existing, incoming, deletedIds, stats, key = "promptAtelierJournal") {
   const current = existing && typeof existing === "object" ? existing : {};
   const next = {
     ...current
   };
   if (!next.background && incoming?.background) next.background = incoming.background;
-  if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds);
-  if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds);
+  if (Array.isArray(incoming?.items)) next.items = mergeSampleCollection(current.items || [], incoming.items, deletedIds, stats, `${key}:items`);
+  if (Array.isArray(incoming?.customBackgrounds)) next.customBackgrounds = mergeSampleCollection(current.customBackgrounds || [], incoming.customBackgrounds, deletedIds, stats, `${key}:customBackgrounds`);
   return next;
 }
-function mergeSampleValue(existing, incoming, key, deletedIds) {
-  if (key.includes("HomeSettings")) return existing ?? incoming;
-  if (key.includes("Journal")) return mergeJournalSample(existing, incoming, deletedIds);
-  return mergeSampleCollection(existing, incoming, deletedIds);
+function mergeSampleValue(existing, incoming, key, deletedIds, stats) {
+  if (key.includes("HomeSettings")) {
+    const categoryStats = sampleSeedCategoryStats(stats, key);
+    if (categoryStats) {
+      categoryStats.incoming = incoming ? 1 : 0;
+      if (existing == null && incoming) categoryStats.added = 1;else if (existing != null && incoming) categoryStats.skippedExisting = 1;
+    }
+    return existing ?? incoming;
+  }
+  if (key.includes("Journal")) return mergeJournalSample(existing, incoming, deletedIds, stats, key);
+  return mergeSampleCollection(existing, incoming, deletedIds, stats, key);
 }
 function sampleSeedDataToStorage(seedData) {
   const storageData = {};
@@ -3749,8 +3806,10 @@ function sampleSeedDataToStorage(seedData) {
   return storageData;
 }
 async function loadSampleSeedIfNeeded() {
+  let stats = createSampleSeedStats("not-loaded");
   try {
     let seed = null;
+    let seedSource = "";
     for (const path of SAMPLE_SEED_PATHS) {
       try {
         const response = await fetch(path, {
@@ -3758,43 +3817,79 @@ async function loadSampleSeedIfNeeded() {
         });
         if (!response.ok) continue;
         seed = await response.json();
+        seedSource = path;
         break;
-      } catch {
-        continue;
+      } catch (error) {
+        stats.errors.push(`fetch failed: ${path} ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    if (!seed) seed = {
-      type: "prompt-atelier-sample-seed",
-      data: EMBEDDED_SAMPLE_SEED_DATA
-    };
-    if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) return false;
+    if (!seed) {
+      seed = {
+        type: "prompt-atelier-sample-seed",
+        data: EMBEDDED_SAMPLE_SEED_DATA
+      };
+      seedSource = "embedded-fallback";
+    }
+    stats = createSampleSeedStats(seedSource || "unknown");
+    if (!["sample-seed", "prompt-atelier-sample-seed"].includes(seed?.type) || !seed?.data) {
+      stats.errors.push(`unsupported seed shape: ${seed?.type || "missing-type"}`);
+      writeSampleSeedDebug(stats);
+      return false;
+    }
     const deletedIds = readDeletedSampleIds();
     let changed = false;
     const storageData = Object.keys(SAMPLE_DATA_STORAGE_MAP).some(key => key in seed.data) ? sampleSeedDataToStorage(seed.data) : seed.data;
     Object.entries(storageData).forEach(([key, incoming]) => {
       if (!SAMPLE_EXPORT_KEYS.includes(key)) return;
       const existing = parseStorageValueForSample(key);
-      const merged = mergeSampleValue(existing, incoming, key, deletedIds);
+      const merged = mergeSampleValue(existing, incoming, key, deletedIds, stats);
       if (JSON.stringify(existing) !== JSON.stringify(merged)) {
-        localStorage.setItem(key, JSON.stringify(merged));
-        changed = true;
+        try {
+          localStorage.setItem(key, JSON.stringify(merged));
+          changed = true;
+        } catch (error) {
+          stats.errors.push(`localStorage save failed: ${key} ${error instanceof Error ? error.message : String(error)}`);
+          console.warn("[sampleSeed] localStorage save failed", key, error);
+        }
       }
     });
     if (Array.isArray(seed.images)) {
+      stats.images.incoming = seed.images.length;
       for (const image of seed.images) {
         const sampleId = sampleIdOf(image);
-        if (sampleId && deletedIds.has(sampleId)) continue;
-        if (image?.id && image?.src && !indexedDbImageCache.has(image.id)) {
+        if (sampleId && deletedIds.has(sampleId)) {
+          stats.images.skippedDeleted += 1;
+          continue;
+        }
+        if (!image?.id || !image?.src) {
+          stats.images.failed += 1;
+          stats.errors.push("image skipped: missing id or src");
+          continue;
+        }
+        if (indexedDbImageCache.has(image.id)) {
+          stats.images.skippedExisting += 1;
+          continue;
+        }
+        try {
           await putIndexedDbImage({
             ...cleanSampleValue(image),
             isSample: true
           });
+          stats.images.added += 1;
           changed = true;
+        } catch (error) {
+          stats.images.failed += 1;
+          stats.errors.push(`image save failed: ${image.id} ${error instanceof Error ? error.message : String(error)}`);
+          console.warn("[sampleSeed] image save failed", image.id, error);
         }
       }
     }
+    writeSampleSeedDebug(stats);
     return changed;
-  } catch {
+  } catch (error) {
+    stats.errors.push(`sample seed import failed: ${error instanceof Error ? error.message : String(error)}`);
+    console.warn("Sample seed import failed", error);
+    writeSampleSeedDebug(stats);
     return false;
   }
 }
