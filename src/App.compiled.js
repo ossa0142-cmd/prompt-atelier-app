@@ -1955,6 +1955,7 @@ const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
 const INITIAL_LOCAL_STORAGE_SNAPSHOT_PATH = "./src/data/initialLocalStorageSnapshot.json";
 const MOCKUP_RESCUE_SNAPSHOT_PATH = "./src/data/mockupRescueSnapshot.json";
 const INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY = "promptAtelierInitialLocalStorageSnapshotV1";
+const MOCKUP_FORCE_RESTORE_VERSION_KEY = "promptAtelierMockupForceRestore20260705v2";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
 const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
@@ -3070,6 +3071,7 @@ async function applyMockupRescueSnapshotForDev() {
     if (value === undefined) throw new Error(`Missing mockup rescue key: ${key}`);
     localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
   });
+  localStorage.setItem(MOCKUP_FORCE_RESTORE_VERSION_KEY, "done");
   return allowedKeys;
 }
 function readDeletedSampleIds() {
@@ -3197,7 +3199,6 @@ async function loadSampleSeedIfNeeded() {
 }
 async function restoreMockupSamplesIfEmpty() {
   try {
-    const RESTORE_VERSION_KEY = "promptAtelierMockupForceRestore20260705v2";
     const CATEGORY_KEY = "prompt-atelier-mockup-categories-v2";
     const PROMPT_KEY = "prompt-atelier-library-prompts-v5";
     const readArray = key => {
@@ -3210,16 +3211,24 @@ async function restoreMockupSamplesIfEmpty() {
     };
     const categoriesCurrent = readArray(CATEGORY_KEY);
     const promptsCurrent = readArray(PROMPT_KEY);
-    const alreadyForced = localStorage.getItem(RESTORE_VERSION_KEY) === "done";
-    const shouldForceRestore = !alreadyForced || categoriesCurrent.length < BUILT_IN_MOCKUP_RESTORE_DATA.categories.length || promptsCurrent.length < BUILT_IN_MOCKUP_RESTORE_DATA.prompts.length;
+    const alreadyForced = localStorage.getItem(MOCKUP_FORCE_RESTORE_VERSION_KEY) === "done";
+    const shouldForceRestore = !alreadyForced || categoriesCurrent.length === 0 || promptsCurrent.length === 0;
     if (!shouldForceRestore) return false;
+    const response = await fetch(MOCKUP_RESCUE_SNAPSHOT_PATH, {
+      cache: "no-store"
+    });
+    if (!response.ok) return false;
+    const snapshot = await response.json();
+    const rescueCategories = Array.isArray(snapshot?.[CATEGORY_KEY]) ? snapshot[CATEGORY_KEY] : [];
+    const rescuePrompts = Array.isArray(snapshot?.[PROMPT_KEY]) ? snapshot[PROMPT_KEY] : [];
+    if (!rescueCategories.length || !rescuePrompts.length) return false;
     const stamp = new Date().toISOString().replace(/[.:]/g, "-");
     if (categoriesCurrent.length) localStorage.setItem(`${CATEGORY_KEY}__before_force_restore_${stamp}`, JSON.stringify(categoriesCurrent));
     if (promptsCurrent.length) localStorage.setItem(`${PROMPT_KEY}__before_force_restore_${stamp}`, JSON.stringify(promptsCurrent));
-    localStorage.setItem(CATEGORY_KEY, JSON.stringify(BUILT_IN_MOCKUP_RESTORE_DATA.categories));
-    localStorage.setItem(PROMPT_KEY, JSON.stringify(BUILT_IN_MOCKUP_RESTORE_DATA.prompts));
-    localStorage.setItem(RESTORE_VERSION_KEY, "done");
-    sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップライブラリを復元しました（カテゴリ${BUILT_IN_MOCKUP_RESTORE_DATA.categories.length}件・プロンプト${BUILT_IN_MOCKUP_RESTORE_DATA.prompts.length}件）`);
+    localStorage.setItem(CATEGORY_KEY, JSON.stringify(rescueCategories));
+    localStorage.setItem(PROMPT_KEY, JSON.stringify(rescuePrompts));
+    localStorage.setItem(MOCKUP_FORCE_RESTORE_VERSION_KEY, "done");
+    sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップライブラリを復元しました（カテゴリ${rescueCategories.length}件・プロンプト${rescuePrompts.length}件）`);
     return true;
   } catch (error) {
     console.warn("[Prompt Atelier] モックアップ復元に失敗しました", error);
