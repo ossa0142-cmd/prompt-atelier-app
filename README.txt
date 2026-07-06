@@ -1,1 +1,1 @@
-v56 part2/2。prompt-atelier-localstorage-rescue.jsonをsampleSeedではなくlocalStorageスナップショットとして初回投入します。part1からpart2まで全部アップしてください。
+v58 part1/2。モックアップライブラリだけをrescue JSONから復元する確認ボタンを追加しています。part1からpart2まで全部アップしてください。

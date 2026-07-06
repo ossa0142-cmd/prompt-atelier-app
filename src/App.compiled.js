@@ -1953,6 +1953,7 @@ const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
 const SAMPLE_SEED_PATH = "./src/data/sampleSeed.json";
 const INITIAL_LOCAL_STORAGE_SNAPSHOT_PATH = "./src/data/initialLocalStorageSnapshot.json";
+const MOCKUP_RESCUE_SNAPSHOT_PATH = "./src/data/mockupRescueSnapshot.json";
 const INITIAL_LOCAL_STORAGE_SNAPSHOT_MARKER_KEY = "promptAtelierInitialLocalStorageSnapshotV1";
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
@@ -3056,6 +3057,21 @@ async function applyInitialLocalStorageSnapshotForDev() {
     appliedKeys: entries.map(([key]) => key)
   };
 }
+async function applyMockupRescueSnapshotForDev() {
+  const response = await fetch(MOCKUP_RESCUE_SNAPSHOT_PATH, {
+    cache: "no-store"
+  });
+  if (!response.ok) throw new Error("Mockup rescue snapshot was not found.");
+  const snapshot = await response.json();
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) throw new Error("Mockup rescue snapshot is invalid.");
+  const allowedKeys = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5"];
+  allowedKeys.forEach(key => {
+    const value = snapshot[key];
+    if (value === undefined) throw new Error(`Missing mockup rescue key: ${key}`);
+    localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+  });
+  return allowedKeys;
+}
 function readDeletedSampleIds() {
   const values = [DELETED_SAMPLE_IDS_KEY, LEGACY_DELETED_SAMPLE_IDS_KEY].flatMap(key => {
     try {
@@ -4133,15 +4149,15 @@ function HomeCustomize({
     }
   };
   const applyRescueSnapshot = async () => {
-    if (!window.confirm("確認用として、rescue JSONの初期データをこのブラウザへ上書き適用しますか？")) return;
+    if (!window.confirm("確認用として、モックアップライブラリだけをrescue JSONから上書き復元しますか？")) return;
     try {
-      const result = await applyInitialLocalStorageSnapshotForDev();
-      sessionStorage.setItem("promptAtelierRestoreMessage", `rescue JSONを手動適用しました（${result.appliedKeys.length}キー / 初回フラグ${result.before.hasInitialized ? "あり" : "なし"}）`);
-      console.info("[Prompt Atelier] rescue snapshot applied", result);
+      const appliedKeys = await applyMockupRescueSnapshotForDev();
+      sessionStorage.setItem("promptAtelierRestoreMessage", `モックアップライブラリをrescue JSONから復元しました（${appliedKeys.length}キー）`);
+      console.info("[Prompt Atelier] mockup rescue snapshot applied", appliedKeys);
       window.location.reload();
     } catch (error) {
-      console.error("[Prompt Atelier] rescue JSONの手動適用に失敗しました", error);
-      window.alert("rescue JSONを手動適用できませんでした。");
+      console.error("[Prompt Atelier] モックアップrescue JSONの手動適用に失敗しました", error);
+      window.alert("モックアップrescue JSONを手動適用できませんでした。");
     }
   };
   const pageSettings = settings.pageDisplaySettings || defaultPageDisplaySettings;
@@ -4846,10 +4862,10 @@ function HomeCustomize({
     onClick: exportPromptAtelierSampleSeed
   }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("div", {
     className: "developer-tools"
-  }, /*#__PURE__*/React.createElement("strong", null, "確認用rescueデータ"), /*#__PURE__*/React.createElement("p", null, "初回フラグに関係なく、同梱したlocalStorageスナップショットをこのブラウザに上書き適用します。"), /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("strong", null, "確認用モックアップ復元"), /*#__PURE__*/React.createElement("p", null, "モックアップカテゴリと、その中のプロンプトだけをrescue JSONから上書き復元します。"), /*#__PURE__*/React.createElement("button", {
     className: "primary",
     onClick: applyRescueSnapshot
-  }, "rescue JSONを手動適用")), /*#__PURE__*/React.createElement("input", {
+  }, "モックアップだけ復元")), /*#__PURE__*/React.createElement("input", {
     ref: backupInputRef,
     type: "file",
     accept: "application/json,.json",
