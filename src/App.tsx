@@ -16,6 +16,7 @@ type LibraryPrompt = {
   tags: string[];
   imageUrl: string;
   coverImages?: any[];
+  folder?: string;
 };
 
 type MockupCategory = {
@@ -98,6 +99,7 @@ type AtelierImage = {
   createdAt: string;
   source: string;
   favorite: boolean;
+  folder?: string;
 };
 
 type JournalItem = {
@@ -4861,6 +4863,24 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   );
 }
 
+
+const DEFAULT_FOLDER_NAME = "未整理";
+const folderNameOf = (item: any) => String(item?.folder || item?.folderName || item?.collection || DEFAULT_FOLDER_NAME).trim() || DEFAULT_FOLDER_NAME;
+const folderDescription = (items: any[], unit: string) => `${items.length}${unit}`;
+function groupedByFolder<T>(items: T[]) {
+  const groups: { name: string; items: T[] }[] = [];
+  items.forEach((item: any) => {
+    const name = folderNameOf(item);
+    let group = groups.find((entry) => entry.name === name);
+    if (!group) {
+      group = { name, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  });
+  return groups;
+}
+
 function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: any) {
   const [tag, setTag] = React.useState("すべて");
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
@@ -4869,6 +4889,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
   const [memoPrompt, setMemoPrompt] = React.useState<MyPrompt | null>(null);
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
+  const [viewMode, setViewMode] = React.useState<"list" | "folders">("list");
   const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
   const tags = Array.from(new Set(prompts.flatMap((p: MyPrompt) => p.tags))).sort();
   const filtered = prompts.filter((item: MyPrompt) => {
@@ -4882,6 +4903,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
   const canAddTextStock = textStockCount < 100;
   const imageSlotCount = imagePrompts.length < 20 ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4) : 20;
   const imagePromptSlots = Array.from({ length: imageSlotCount }, (_, index) => imagePrompts[index] || null);
+  const promptFolderGroups = groupedByFolder(filtered);
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, textPrompts.length));
   const textStockSlots = Array.from({ length: visibleStockFrameCount }, (_, index) => textPrompts[index] || null);
   const save = (item: MyPrompt) => {
@@ -4930,6 +4952,12 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
   return (
     <section className={`page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`}>
       <PageHead title="プロンプト帳" action={<div className="actions"><span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>} />
+      <div className="folder-view-toolbar">
+        <div className="folder-view-tabs" role="group" aria-label="プロンプト帳の表示切り替え">
+          <button className={viewMode === "list" ? "active-soft" : ""} onClick={() => setViewMode("list")}>一覧</button>
+          <button className={viewMode === "folders" ? "active-soft" : ""} onClick={() => setViewMode("folders")}>ファイル別</button>
+        </div>
+      </div>
       <Filters>
         <select value={tag} onChange={(e) => setTag(e.target.value)}>
           <option>すべて</option>
@@ -4937,63 +4965,110 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
         </select>
         <label className="check"><input type="checkbox" checked={favoritesOnly} onChange={(e) => setFavoritesOnly(e.target.checked)} /> お気に入りのみ</label>
       </Filters>
-      <section className="prompt-area">
-        <div className="prompt-area-head">
-          <div>
-            <h3>画像付きプロンプト</h3>
-            <p>お気に入り・よく使うプロンプトを、最大20個まで保存できます。</p>
-          </div>
-        </div>
-        <div className="library-prompt-grid">
-          {imagePromptSlots.map((prompt, index) => prompt ? (
-            <LibraryImagePromptCard
-              key={prompt.id}
-              prompt={prompt}
-              inlineEdit={inlineEdit}
-              setInlineEdit={setInlineEdit}
-              updatePrompt={updatePrompt}
-              duplicatePrompt={duplicatePrompt}
-              deletePrompt={() => deletePrompt(prompt.id)}
-              copyText={copyText}
-              showTranslation={() => setTranslationPrompt(prompt)}
-              showMemo={() => setMemoPrompt(prompt)}
-              showTags={promptDisplay.showTags !== false}
-              showMemoButton={promptDisplay.showMemo !== false}
-            />
-          ) : canAddImagePrompt ? (
-            <button className="add-prompt-card" key={`my-empty-prompt-${index}`} onClick={() => setEditing(blankPrompt())}>
-              <span>＋</span>
-              <strong>新しいプロンプト</strong>
-            </button>
-          ) : null)}
-        </div>
-      </section>
-      <section className="prompt-area text-prompt-area">
-        <div className="prompt-area-head">
-          <div>
-            <h3>プロンプトストック</h3>
-            <p>画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
-          </div>
-        </div>
-        <div className="text-prompt-list">
-          {textStockSlots.map((prompt, index) => (
-            <TextStockFrame
-              key={prompt?.id || `my-stock-frame-${index}`}
-              prompt={prompt}
-              blankPrompt={blankPrompt(true)}
-              onCreate={saveTextStockFrame}
-              onUpdate={updatePrompt}
-              copyText={copyText}
-              showTranslation={() => prompt && setTranslationPrompt(prompt)}
-              showMemo={() => prompt && setMemoPrompt(prompt)}
-            />
+      {viewMode === "list" ? (
+        <>
+          <section className="prompt-area">
+            <div className="prompt-area-head">
+              <div>
+                <h3>画像付きプロンプト</h3>
+                <p>お気に入り・よく使うプロンプトを、最大20個まで保存できます。</p>
+              </div>
+            </div>
+            <div className="library-prompt-grid">
+              {imagePromptSlots.map((prompt, index) => prompt ? (
+                <LibraryImagePromptCard
+                  key={prompt.id}
+                  prompt={prompt}
+                  inlineEdit={inlineEdit}
+                  setInlineEdit={setInlineEdit}
+                  updatePrompt={updatePrompt}
+                  duplicatePrompt={duplicatePrompt}
+                  deletePrompt={() => deletePrompt(prompt.id)}
+                  copyText={copyText}
+                  showTranslation={() => setTranslationPrompt(prompt)}
+                  showMemo={() => setMemoPrompt(prompt)}
+                  showTags={promptDisplay.showTags !== false}
+                  showMemoButton={promptDisplay.showMemo !== false}
+                />
+              ) : canAddImagePrompt ? (
+                <button className="add-prompt-card" key={`my-empty-prompt-${index}`} onClick={() => setEditing(blankPrompt())}>
+                  <span>＋</span>
+                  <strong>新しいプロンプト</strong>
+                </button>
+              ) : null)}
+            </div>
+          </section>
+          <section className="prompt-area text-prompt-area">
+            <div className="prompt-area-head">
+              <div>
+                <h3>プロンプトストック</h3>
+                <p>画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+              </div>
+            </div>
+            <div className="text-prompt-list">
+              {textStockSlots.map((prompt, index) => (
+                <TextStockFrame
+                  key={prompt?.id || `my-stock-frame-${index}`}
+                  prompt={prompt}
+                  blankPrompt={blankPrompt(true)}
+                  onCreate={saveTextStockFrame}
+                  onUpdate={updatePrompt}
+                  copyText={copyText}
+                  showTranslation={() => prompt && setTranslationPrompt(prompt)}
+                  showMemo={() => prompt && setMemoPrompt(prompt)}
+                />
+              ))}
+            </div>
+            {canAddTextStock && textStockCount >= visibleStockFrameCount && (
+              <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
+            )}
+            {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+          </section>
+        </>
+      ) : (
+        <section className="folder-board" aria-label="プロンプト帳ファイル">
+          {promptFolderGroups.map((group) => (
+            <details className="folder-panel" key={group.name} open>
+              <summary>
+                <span className="folder-cover" aria-hidden="true">⌁</span>
+                <div>
+                  <strong>{group.name}</strong>
+                  <small>{folderDescription(group.items, "件")}</small>
+                </div>
+              </summary>
+              <div className="folder-prompt-list">
+                {group.items.map((prompt: MyPrompt) => prompt.isTextStock ? (
+                  <TextStockFrame
+                    key={prompt.id}
+                    prompt={prompt}
+                    blankPrompt={blankPrompt(true)}
+                    onCreate={saveTextStockFrame}
+                    onUpdate={updatePrompt}
+                    copyText={copyText}
+                    showTranslation={() => setTranslationPrompt(prompt)}
+                    showMemo={() => setMemoPrompt(prompt)}
+                  />
+                ) : (
+                  <LibraryImagePromptCard
+                    key={prompt.id}
+                    prompt={prompt}
+                    inlineEdit={inlineEdit}
+                    setInlineEdit={setInlineEdit}
+                    updatePrompt={updatePrompt}
+                    duplicatePrompt={duplicatePrompt}
+                    deletePrompt={() => deletePrompt(prompt.id)}
+                    copyText={copyText}
+                    showTranslation={() => setTranslationPrompt(prompt)}
+                    showMemo={() => setMemoPrompt(prompt)}
+                    showTags={promptDisplay.showTags !== false}
+                    showMemoButton={promptDisplay.showMemo !== false}
+                  />
+                ))}
+              </div>
+            </details>
           ))}
-        </div>
-        {canAddTextStock && textStockCount >= visibleStockFrameCount && (
-          <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
-        )}
-        {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
-      </section>
+        </section>
+      )}
       {editing && <PromptModal item={editing} onClose={() => setEditing(null)} onSave={save} />}
       {translationPrompt && <TranslationModal prompt={translationPrompt} onClose={() => setTranslationPrompt(null)} copyText={copyText} />}
       {memoPrompt && (
@@ -5354,6 +5429,12 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
   };
   return (
     <article id={`mj-card-${item.id}`} className={`mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`}>
+      <div className="folder-view-toolbar">
+        <div className="folder-view-tabs" role="group" aria-label="ギャラリーの表示切り替え">
+          <button className={viewMode === "list" ? "active-soft" : ""} onClick={() => setViewMode("list")}>一覧</button>
+          <button className={viewMode === "folders" ? "active-soft" : ""} onClick={() => setViewMode("folders")}>ファイル別</button>
+        </div>
+      </div>
       <input
         ref={fileInputRef}
         style={{ display: "none" }}
@@ -5595,8 +5676,11 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }:
   const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
   const [previewId, setPreviewId] = React.useState("");
   const [visibleCount, setVisibleCount] = React.useState(20);
+  const [viewMode, setViewMode] = React.useState<"list" | "folders">("list");
   const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
   const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
+  const visibleImages = images.slice(0, visibleCount);
+  const galleryFolderGroups = groupedByFolder(images);
   React.useEffect(() => {
     setVisibleCount(20);
   }, [images.length]);
@@ -5689,26 +5773,55 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }:
           event.currentTarget.value = "";
         }}
       />
-      {images.length ? (
-        <div className="gallery-grid">
-          {images.slice(0, visibleCount).map((image: AtelierImage) => (
-            <article className="gallery-card" key={image.id}>
-              {galleryDisplay.showHeart !== false && <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
-                {image.favorite ? "♥" : "♡"}
-              </button>}
-              <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
-                <img src={imageDisplaySrc(image)} alt="" />
-              </button>
-            </article>
+      {images.length ? viewMode === "list" ? (
+        <>
+          <div className="gallery-grid">
+            {visibleImages.map((image: AtelierImage) => (
+              <article className="gallery-card" key={image.id}>
+                {galleryDisplay.showHeart !== false && <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
+                  {image.favorite ? "♥" : "♡"}
+                </button>}
+                <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
+                  <img src={imageDisplaySrc(image)} alt="" />
+                </button>
+              </article>
+            ))}
+          </div>
+          {images.length > visibleCount && <div ref={loadMoreRef} className="lazy-load-sentinel">画像を読み込んでいます…</div>}
+        </>
+      ) : (
+        <section className="folder-board gallery-folder-board" aria-label="ギャラリーファイル">
+          {galleryFolderGroups.map((group) => (
+            <details className="folder-panel" key={group.name} open>
+              <summary>
+                <span className="folder-cover" aria-hidden="true">⌁</span>
+                <div>
+                  <strong>{group.name}</strong>
+                  <small>{folderDescription(group.items, "枚")}</small>
+                </div>
+              </summary>
+              <div className="gallery-grid folder-gallery-grid">
+                {group.items.map((image: AtelierImage) => (
+                  <article className="gallery-card" key={image.id}>
+                    {galleryDisplay.showHeart !== false && <button className="gallery-favorite-button" aria-label="お気に入り" onClick={() => updateImage(image.id, { favorite: !image.favorite })}>
+                      {image.favorite ? "♥" : "♡"}
+                    </button>}
+                    <button className="gallery-image-button" onClick={() => setPreviewId(image.id)}>
+                      <img src={imageDisplaySrc(image)} alt="" />
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </details>
           ))}
-        </div>
+        </section>
       ) : <Empty text="画像を追加すると、ここにギャラリーが表示されます。" />}
-      {images.length > visibleCount && <div ref={loadMoreRef} className="lazy-load-sentinel">画像を読み込んでいます…</div>}
       {preview && (
         <Modal title={preview.title || "画像詳細"} onClose={() => setPreviewId("")}>
           <div className="gallery-detail-modal">
             <img src={imageSrc(preview)} alt="" />
             <label>タイトル<input value={preview.title} onChange={(event) => updateImage(preview.id, { title: event.target.value })} placeholder="タイトル" /></label>
+            <label>ファイル<input value={folderNameOf(preview) === DEFAULT_FOLDER_NAME ? "" : folderNameOf(preview)} onChange={(event) => updateImage(preview.id, { folder: event.target.value })} placeholder="例：春の素材 / 商品画像" /></label>
             <label>メモ<textarea value={preview.memo} onChange={(event) => updateImage(preview.id, { memo: event.target.value })} placeholder="メモ" /></label>
             <small>追加日：{formatSavedAt(preview.createdAt)}</small>
             <label className="check"><input type="checkbox" checked={preview.favorite} onChange={(event) => updateImage(preview.id, { favorite: event.target.checked })} /> お気に入り</label>
@@ -6552,6 +6665,7 @@ function PromptModal({ item, onClose, onSave }: any) {
     <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
       <FormGrid>
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
+        <input value={draft.folder || ""} onChange={(e) => setDraft({ ...draft, folder: e.target.value })} placeholder="ファイル名（例：春のプロンプト）" />
         <select value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>{categories.map((cat) => <option key={cat}>{cat}</option>)}</select>
         <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
