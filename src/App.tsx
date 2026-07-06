@@ -180,7 +180,7 @@ type BannerSize = "small" | "medium" | "large";
 type BannerPositions = Record<BannerSize, { x: number; y: number }>;
 
 type WorkToolIconStyle = "simple" | "pastel" | "frame" | "cool" | "dark" | "vivid" | "cute";
-type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "hidden";
+type HomeCharacterPosition = "right-bottom" | "right-center" | "left-bottom" | "custom" | "hidden";
 type HomeCharacterMessageMode = "auto" | "fixed" | "project";
 type HomeCharacterSize = "small" | "medium" | "large";
 type DisplayDensity = "comfortable" | "normal" | "compact";
@@ -260,6 +260,8 @@ type HomeCharacterSettings = {
   messageMode: HomeCharacterMessageMode;
   fixedMessage: string;
   selectedProjectId?: string;
+  customX?: number;
+  customY?: number;
 };
 
 type HomeStatsCardId = "mockups" | "prompts" | "mjSettings" | "projects" | "achievement";
@@ -643,6 +645,8 @@ const defaultHomeSettings: HomeSettings = {
     messageMode: "auto",
     fixedMessage: "今日も制作がんばろう♡",
     selectedProjectId: "",
+    customX: 86,
+    customY: 62,
   },
   visible: {
     library: true,
@@ -746,7 +750,13 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
     },
     fontPreset: safeFontPreset,
     iconSet: safeIconSet,
-    homeCharacter: { ...rawCharacter, size: safeCharacterSize, messageMode: safeMessageMode },
+    homeCharacter: {
+      ...rawCharacter,
+      size: safeCharacterSize,
+      messageMode: safeMessageMode,
+      customX: safePosition(rawCharacter.customX ?? 86),
+      customY: safePosition(rawCharacter.customY ?? 62),
+    },
     homeStatsCards: { ...defaultHomeSettings.homeStatsCards, ...(settings?.homeStatsCards || {}) },
     visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
     order: [
@@ -1861,6 +1871,21 @@ function useStoredState<T>(key: string, fallback: T) {
   return [value, setValue] as const;
 }
 
+function readStoredArrayCount(key: string, fallback: number) {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return fallback;
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed.length : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readMockupCategoryCount() {
+  return readStoredArrayCount("prompt-atelier-mockup-categories-v2", defaultMockupCategories.length);
+}
+
 function categoryForImageField(key: string) {
   if (/character/i.test(key)) return "character";
   if (/banner/i.test(key)) return "banner";
@@ -2356,6 +2381,7 @@ function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
   const [mockupPrompts, setMockupPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
+  const [mockupCategories, setMockupCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState<Project[]>("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -2547,8 +2573,10 @@ function App() {
             myPrompts={myPrompts}
             mjSettings={mjSettings}
             mockupPrompts={mockupPrompts}
+            mockupCategories={mockupCategories}
             copyText={copyText}
             settings={homeSettings}
+            setSettings={setRawHomeSettings}
             workTools={workTools}
             atelierImages={atelierImages}
           />
@@ -2564,12 +2592,13 @@ function App() {
             myPrompts={myPrompts}
             mjSettings={mjSettings}
             mockupPrompts={mockupPrompts}
+            mockupCategories={mockupCategories}
             canInstallPwa={Boolean(installPrompt || (window as any).__promptAtelierInstallPrompt)}
             isStandaloneApp={isStandaloneApp}
             onInstallPwa={installPwa}
           />
         )}
-        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} boardCategories={mockupCategories} setBoardCategories={setMockupCategories} />}
         {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} />}
         {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={setScreen} />}
         {screen === "projects" && (
@@ -2711,7 +2740,7 @@ function HomeDateDisplay({ style = "pill", size = "medium", color = "theme", min
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, copyText, settings, workTools, atelierImages }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, mockupCategories, copyText, settings, setSettings, workTools, atelierImages }: any) {
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
     ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
@@ -2729,7 +2758,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       return Math.abs(aInfo.diff) - Math.abs(bInfo.diff);
     })[0];
   const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
-  const mockupCount = (mockupPrompts || []).length;
+  const mockupCount = Array.isArray(mockupCategories) ? mockupCategories.length : readMockupCategoryCount();
   const promptCount = (myPrompts || []).length;
   const mjCount = (mjSettings || []).length;
   const projectCount = (projects || []).length;
@@ -2868,7 +2897,18 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
         </div>
       )}
       {settings.order.map((sectionId: HomeSectionId) => renderSection(sectionId))}
-      <HomeCharacter settings={settings.homeCharacter} projects={projects} prompts={myPrompts} />
+      <HomeCharacter
+        settings={settings.homeCharacter}
+        projects={projects}
+        prompts={myPrompts}
+        onChange={(patch) => setSettings((current: HomeSettings) => normalizeHomeSettings({
+          ...current,
+          homeCharacter: {
+            ...(current?.homeCharacter || defaultHomeSettings.homeCharacter),
+            ...patch,
+          },
+        }))}
+      />
     </section>
   );
 }
@@ -2922,14 +2962,72 @@ function CharacterSpeechBubble({ message }: { message: string }) {
   return <div className="character-speech-bubble">{message}</div>;
 }
 
-function HomeCharacter({ settings, projects, prompts }: { settings: HomeCharacterSettings; projects: Project[]; prompts: MyPrompt[] }) {
+function HomeCharacter({ settings, projects, prompts, onChange }: { settings: HomeCharacterSettings; projects: Project[]; prompts: MyPrompt[]; onChange?: (patch: Partial<HomeCharacterSettings>) => void }) {
   if (!settings?.image || settings.position === "hidden") return null;
   const message = characterMessage(settings, projects, prompts);
   const size = ["small", "medium", "large"].includes(settings.size) ? settings.size : "medium";
+  const [livePosition, setLivePosition] = React.useState({
+    x: Math.min(100, Math.max(0, Number(settings.customX ?? 86))),
+    y: Math.min(100, Math.max(0, Number(settings.customY ?? 62))),
+  });
+  const dragRef = React.useRef<{ offsetX: number; offsetY: number; x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+
+  React.useEffect(() => {
+    setLivePosition({
+      x: Math.min(100, Math.max(0, Number(settings.customX ?? 86))),
+      y: Math.min(100, Math.max(0, Number(settings.customY ?? 62))),
+    });
+  }, [settings.customX, settings.customY]);
+
+  const updateFromPointer = (event: React.PointerEvent<HTMLElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return null;
+    const next = {
+      x: Math.min(96, Math.max(4, ((event.clientX - drag.offsetX) / window.innerWidth) * 100)),
+      y: Math.min(94, Math.max(6, ((event.clientY - drag.offsetY) / window.innerHeight) * 100)),
+    };
+    drag.x = next.x;
+    drag.y = next.y;
+    setLivePosition(next);
+    return next;
+  };
+
+  const startDrag = (event: React.PointerEvent<HTMLElement>) => {
+    if (!onChange) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    dragRef.current = {
+      offsetX: event.clientX - (rect.left + rect.width / 2),
+      offsetY: event.clientY - (rect.top + rect.height / 2),
+      x: livePosition.x,
+      y: livePosition.y,
+    };
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const finishDrag = (event: React.PointerEvent<HTMLElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    updateFromPointer(event);
+    dragRef.current = null;
+    setIsDragging(false);
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    onChange?.({ position: "custom", customX: Math.round(drag.x), customY: Math.round(drag.y) });
+  };
+
   return (
-    <aside className={`home-character ${settings.position} character-size-${size}`} aria-label="アトリエキャラクター">
+    <aside
+      className={`home-character ${isDragging || settings.position === "custom" ? "custom" : settings.position} character-size-${size} is-draggable${isDragging ? " is-dragging" : ""}`}
+      aria-label="アトリエキャラクター"
+      style={isDragging || settings.position === "custom" ? { ["--home-character-x" as any]: `${livePosition.x}%`, ["--home-character-y" as any]: `${livePosition.y}%` } : undefined}
+      onPointerDown={startDrag}
+      onPointerMove={updateFromPointer}
+      onPointerUp={finishDrag}
+      onPointerCancel={finishDrag}
+    >
       {settings.speechEnabled && <CharacterSpeechBubble message={message} />}
-      <img src={imageSrc(settings.image) || imageThumbnail(settings.image)} alt="アトリエキャラクター" />
+      <img src={imageSrc(settings.image) || imageThumbnail(settings.image)} alt="アトリエキャラクター" draggable={false} />
     </aside>
   );
 }
@@ -3059,7 +3157,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
   );
 }
 
-function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, mockupPrompts, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, mockupPrompts, mockupCategories, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
   const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -3196,7 +3294,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   };
   const normalizedTools = (workTools as WorkTool[]).map((tool) => ({ visible: true, ...tool })).slice(0, 10);
   const previewDashboardItems = [
-    { id: "mockups", title: "Mockup", value: String((mockupPrompts || []).length), icon: "mockup" },
+    { id: "mockups", title: "Mockup", value: String(Array.isArray(mockupCategories) ? mockupCategories.length : readMockupCategoryCount()), icon: "mockup" },
     { id: "prompts", title: "Prompt", value: String((myPrompts || []).length), icon: "notebook" },
     { id: "mjSettings", title: "MJ", value: String((mjSettings || []).length), icon: "magic" },
     { id: "projects", title: "Project", value: String((projects || []).length), icon: "folder" },
@@ -4009,7 +4107,7 @@ function HomePromptCard({ prompt, onCopy }: any) {
   );
 }
 
-function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts }: any) {
+function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts, boardCategories, setBoardCategories }: any) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
@@ -4022,7 +4120,6 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   const [armedCategoryId, setArmedCategoryId] = React.useState("");
   const categoryDragMovedRef = React.useRef(false);
   const categoryMoveGuardRef = React.useRef("");
-  const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;

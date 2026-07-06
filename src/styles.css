@@ -1077,6 +1077,18 @@ main {
   pointer-events: none;
 }
 
+.home-character.is-draggable {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.home-character.is-dragging {
+  cursor: grabbing;
+}
+
+
 .home-character.character-size-small {
   --home-character-width: 220px;
   --home-character-vw: 18vw;
@@ -1115,6 +1127,12 @@ main {
 .home-character.left-bottom {
   left: clamp(18px, 4vw, 54px);
   bottom: clamp(18px, 4vw, 48px);
+}
+
+.home-character.custom {
+  left: var(--home-character-x, 86%);
+  top: var(--home-character-y, 62%);
+  transform: translate(-50%, -50%);
 }
 
 .home-character img {
