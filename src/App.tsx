@@ -266,6 +266,7 @@ type HomeCharacterSettings = {
 
 type HomeStatsCardId = "mockups" | "prompts" | "mjSettings" | "projects" | "achievement";
 type HomeStatsCards = Record<HomeStatsCardId, boolean>;
+type BackupReminderDays = 0 | 5 | 7 | 14 | 30;
 
 type HomeSettings = {
   themeId: string;
@@ -289,6 +290,7 @@ type HomeSettings = {
   iconSet: IconSet;
   homeCharacter: HomeCharacterSettings;
   homeStatsCards: HomeStatsCards;
+  backupReminderDays: BackupReminderDays;
   visible: Record<string, boolean>;
   order: HomeSectionId[];
 };
@@ -328,6 +330,14 @@ const homeFeatures: { id: HomeFeatureId; label: string }[] = [
   { id: "videos", label: "動画プロンプト帳" },
   { id: "mj", label: "MJ設定" },
   { id: "projects", label: "プロジェクト" },
+];
+
+const backupReminderOptions: { days: BackupReminderDays; label: string }[] = [
+  { days: 5, label: "5日おき" },
+  { days: 7, label: "1週間おき" },
+  { days: 14, label: "2週間おき" },
+  { days: 30, label: "1ヶ月おき" },
+  { days: 0, label: "表示しない" },
 ];
 
 const homeClockStyleOptions: { id: HomeClockStyle; label: string; description: string }[] = [
@@ -637,6 +647,7 @@ const defaultHomeSettings: HomeSettings = {
     projects: true,
     achievement: true,
   },
+  backupReminderDays: 7,
   homeCharacter: {
     image: "",
     position: "right-bottom",
@@ -689,6 +700,9 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
   const safeIconSet: IconSet = ["line", "soft", "minimal", "label", "pixel", "emoji"].includes(settings?.iconSet)
     ? settings.iconSet as IconSet
     : "line";
+  const safeBackupReminderDays: BackupReminderDays = [0, 5, 7, 14, 30].includes(Number((settings as any)?.backupReminderDays))
+    ? Number((settings as any)?.backupReminderDays) as BackupReminderDays
+    : 7;
   const safeCharacterSize: HomeCharacterSize = ["small", "medium", "large"].includes(rawCharacter.size)
     ? rawCharacter.size as HomeCharacterSize
     : "medium";
@@ -758,6 +772,7 @@ const normalizeHomeSettings = (settings: HomeSettings): HomeSettings => {
       customY: safePosition(rawCharacter.customY ?? 62),
     },
     homeStatsCards: { ...defaultHomeSettings.homeStatsCards, ...(settings?.homeStatsCards || {}) },
+    backupReminderDays: safeBackupReminderDays,
     visible: { ...defaultHomeSettings.visible, ...(settings?.visible || {}) },
     order: [
       ...(settings?.order || defaultHomeSettings.order).filter((id) => homeSections.some((section) => section.id === id)),
@@ -2093,6 +2108,41 @@ async function migrateLocalStorageImagesToIndexedDb() {
   return changed;
 }
 
+const BACKUP_LAST_DONE_KEY = "promptAtelierLastBackupAt";
+
+function markPromptAtelierBackupDone() {
+  try {
+    localStorage.setItem(BACKUP_LAST_DONE_KEY, new Date().toISOString());
+  } catch (error) {
+    console.warn("[Prompt Atelier] バックアップ日付の保存に失敗しました", error);
+  }
+}
+
+function readPromptAtelierLastBackupDate() {
+  try {
+    const value = localStorage.getItem(BACKUP_LAST_DONE_KEY);
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  } catch {
+    return null;
+  }
+}
+
+function formatBackupDate(date: Date | null) {
+  if (!date) return "まだ記録がありません";
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+function backupReminderStatus(settings: HomeSettings) {
+  const days = [0, 5, 7, 14, 30].includes(Number(settings?.backupReminderDays)) ? Number(settings.backupReminderDays) : 7;
+  const lastBackupDate = readPromptAtelierLastBackupDate();
+  if (!days) return { isDue: false, days, lastBackupDate, elapsedDays: 0 };
+  if (!lastBackupDate) return { isDue: true, days, lastBackupDate, elapsedDays: null as number | null };
+  const elapsedDays = Math.floor((Date.now() - lastBackupDate.getTime()) / 86400000);
+  return { isDue: elapsedDays >= days, days, lastBackupDate, elapsedDays };
+}
+
 function collectPromptAtelierStorage() {
   const data: Record<string, string> = {};
   for (let index = 0; index < localStorage.length; index += 1) {
@@ -2124,6 +2174,7 @@ async function exportPromptAtelierBackup() {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+  markPromptAtelierBackupDone();
 }
 
 async function restorePromptAtelierBackup(file: File) {
@@ -2919,6 +2970,17 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
     },
   ];
   const visibleDashboardItems = dashboardItems.filter((item) => (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id as HomeStatsCardId] !== false);
+  const [backupReminderDismissed, setBackupReminderDismissed] = React.useState(() => sessionStorage.getItem("promptAtelierBackupReminderDismissed") === "true");
+  const backupReminder = backupReminderStatus(settings);
+  const showBackupReminder = backupReminder.isDue && !backupReminderDismissed;
+  const dismissBackupReminder = () => {
+    sessionStorage.setItem("promptAtelierBackupReminderDismissed", "true");
+    setBackupReminderDismissed(true);
+  };
+  const runBackupFromReminder = async () => {
+    await exportPromptAtelierBackup();
+    dismissBackupReminder();
+  };
   const normalizedTools = (workTools as WorkTool[]).filter((tool) => tool.visible !== false).slice(0, 10);
   const renderSection = (sectionId: HomeSectionId) => {
     if (!isVisible(sectionId)) return null;
@@ -3021,6 +3083,18 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
         <span>Prompt Atelier Home</span>
         <HomeDateDisplay style={settings.homeClockStyle || "pill"} size={settings.homeClockSize || "medium"} color={settings.homeClockColor || "theme"} />
       </div>
+      {showBackupReminder && (
+        <section className="backup-reminder-card home-module">
+          <div>
+            <strong>そろそろバックアップしませんか？</strong>
+            <p>{backupReminder.lastBackupDate ? `前回のバックアップから${backupReminder.elapsedDays}日たっています。` : "まだバックアップ日が記録されていません。"}</p>
+          </div>
+          <div className="backup-reminder-actions">
+            <button className="primary" onClick={runBackupFromReminder}>バックアップする</button>
+            <button onClick={dismissBackupReminder}>あとで</button>
+          </div>
+        </section>
+      )}
       {settings.bannerVisible && (
         <div className={`home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`}>
           {bannerSrc ? (
@@ -3351,6 +3425,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   const updateBackgroundStyle = (patch: Partial<BackgroundStyleSettings>) => updateSettings({
     backgroundStyle: { ...defaultBackgroundStyle, ...(settingsRef.current.backgroundStyle || {}), ...patch },
   });
+  const updateBackupReminder = (days: BackupReminderDays) => updateSettings({ backupReminderDays: days }, true);
   const importCustomBackground = async (file?: File) => {
     if (!file) return;
     try {
@@ -4026,6 +4101,21 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
               <button className="primary" onClick={exportPromptAtelierBackup}>バックアップを書き出す</button>
               <button onClick={() => backupInputRef.current?.click()}>バックアップを読み込む</button>
             </div>
+            <section className="backup-reminder-settings">
+              <h4>バックアップアラーム</h4>
+              <p>ホーム画面に「そろそろバックアップしませんか？」を表示する間隔を選べます。</p>
+              <label>表示間隔
+                <select
+                  value={String(settings.backupReminderDays ?? 7)}
+                  onChange={(event) => updateBackupReminder(Number(event.target.value) as BackupReminderDays)}
+                >
+                  {backupReminderOptions.map((option) => (
+                    <option key={option.days} value={option.days}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <small>最後のバックアップ：{formatBackupDate(readPromptAtelierLastBackupDate())}</small>
+            </section>
             <div className="developer-tools">
               <strong>配布用サンプルデータ</strong>
               <p>現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。</p>
