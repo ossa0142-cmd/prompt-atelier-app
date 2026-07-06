@@ -3760,7 +3760,11 @@ function sampleSeedDataToStorage(seedData) {
   append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
-  storageData["prompt-atelier-prompts-ja-v2"] = [];
+  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
+  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
+  if (Array.isArray(seedData.promptCards) && seedData.promptCards.length === 0 && Array.isArray(seedData.promptStocks) && seedData.promptStocks.length === 0) {
+    storageData["prompt-atelier-prompts-ja-v2"] = [];
+  }
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
   append("promptAtelierVideoPromptStocks", Array.isArray(seedData.videoPromptStocks) ? seedData.videoPromptStocks : []);
   append("promptAtelierMidjourneySettings", Array.isArray(seedData.midjourneySettings) ? seedData.midjourneySettings : []);
@@ -3867,32 +3871,7 @@ async function loadSampleSeedIfNeeded() {
     return false;
   }
 }
-const PROMPT_BOOK_SAMPLE_CLEANUP_KEY = "promptAtelierPromptBookSamplesClearedV1";
-const PROMPT_BOOK_LEGACY_SAMPLE_IDS = new Set(["my-1", "my-2"]);
-function isPromptBookBuiltInSample(item) {
-  const sampleId = String(item?.sampleId || "");
-  const id = String(item?.id || "");
-  return Boolean(item?.isSample || item?.createdFromSeedExport || sampleId.startsWith("sample-prompt-") || PROMPT_BOOK_LEGACY_SAMPLE_IDS.has(id));
-}
-function clearPromptBookBuiltInSamplesOnce() {
-  if (typeof window === "undefined") return;
-  try {
-    if (localStorage.getItem(PROMPT_BOOK_SAMPLE_CLEANUP_KEY) === "done") return;
-    const key = "prompt-atelier-prompts-ja-v2";
-    const current = JSON.parse(localStorage.getItem(key) || "[]");
-    if (Array.isArray(current)) {
-      const next = current.filter(item => !isPromptBookBuiltInSample(item));
-      if (next.length !== current.length) {
-        localStorage.setItem(key, JSON.stringify(next));
-      }
-    }
-    localStorage.setItem(PROMPT_BOOK_SAMPLE_CLEANUP_KEY, "done");
-  } catch (error) {
-    console.warn("[Prompt Atelier] プロンプト帳サンプルの整理に失敗しました", error);
-  }
-}
 function App() {
-  React.useMemo(() => clearPromptBookBuiltInSamplesOnce(), []);
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
   const [mockupPrompts, setMockupPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
@@ -6960,13 +6939,14 @@ function LibraryPromptModal({
     onSave: () => onSave(draft)
   }));
 }
-const DEFAULT_FOLDER_NAME = "未整理";
-const folderNameOf = item => String(item?.folder || item?.folderName || item?.collection || DEFAULT_FOLDER_NAME).trim() || DEFAULT_FOLDER_NAME;
-const folderDescription = (items, unit) => `${items.length}${unit}`;
+const DEFAULT_FOLDER_NAME = "未分類";
+function folderNameOf(item) {
+  return String(item?.folder || DEFAULT_FOLDER_NAME).trim() || DEFAULT_FOLDER_NAME;
+}
 function readFolderList(key) {
   try {
     const parsed = JSON.parse(localStorage.getItem(key) || "[]");
-    return Array.isArray(parsed) ? parsed.map(name => String(name).trim()).filter(Boolean) : [];
+    return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : [];
   } catch {
     return [];
   }
@@ -6999,7 +6979,7 @@ function groupedByFolder(items, folderNames = []) {
   return groups;
 }
 function createFolderName(existing, label) {
-  const raw = window.prompt(`${label}の新しいファイル名を入力してください`);
+  const raw = window.prompt(`の新しいファイル名を入力してください`);
   const name = String(raw || "").trim();
   if (!name) return "";
   if (existing.includes(name)) {
@@ -7144,7 +7124,40 @@ function PromptBook({
     type: "checkbox",
     checked: favoritesOnly,
     onChange: e => setFavoritesOnly(e.target.checked)
-  }), " お気に入りのみ")), viewMode === "list" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
+  }), " お気に入りのみ")), viewMode === "folders" ? /*#__PURE__*/React.createElement("div", {
+    className: "folder-board"
+  }, promptFolderGroups.map(group => /*#__PURE__*/React.createElement("section", {
+    className: "folder-panel",
+    key: group.name
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "folder-cover"
+  }, /*#__PURE__*/React.createElement("span", null, "ファイル"), /*#__PURE__*/React.createElement("strong", null, group.name), /*#__PURE__*/React.createElement("small", null, group.items.length, "件")), group.items.length ? /*#__PURE__*/React.createElement("div", {
+    className: "library-prompt-grid"
+  }, group.items.map(prompt => !prompt.isTextStock ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
+    key: prompt.id,
+    prompt: prompt,
+    inlineEdit: inlineEdit,
+    setInlineEdit: setInlineEdit,
+    updatePrompt: updatePrompt,
+    duplicatePrompt: duplicatePrompt,
+    deletePrompt: () => deletePrompt(prompt.id),
+    copyText: copyText,
+    showTranslation: () => setTranslationPrompt(prompt),
+    showMemo: () => setMemoPrompt(prompt),
+    showTags: promptDisplay.showTags !== false,
+    showMemoButton: promptDisplay.showMemo !== false
+  }) : /*#__PURE__*/React.createElement(TextStockFrame, {
+    key: prompt.id,
+    prompt: prompt,
+    blankPrompt: blankPrompt(true),
+    onCreate: saveTextStockFrame,
+    onUpdate: updatePrompt,
+    copyText: copyText,
+    showTranslation: () => setTranslationPrompt(prompt),
+    showMemo: () => setMemoPrompt(prompt)
+  }))) : /*#__PURE__*/React.createElement("p", {
+    className: "folder-empty-text"
+  }, "このファイルにはまだ項目がありません。")))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
     className: "prompt-area"
   }, /*#__PURE__*/React.createElement("div", {
     className: "prompt-area-head"
@@ -7187,41 +7200,7 @@ function PromptBook({
     onClick: addTextStockFrame
   }, "＋ プロンプトを追加"), !canAddTextStock && /*#__PURE__*/React.createElement("p", {
     className: "limit-message"
-  }, "保存上限（100件）に達しました"))) : /*#__PURE__*/React.createElement("section", {
-    className: "folder-board",
-    "aria-label": "プロンプト帳ファイル"
-  }, promptFolderGroups.map(group => /*#__PURE__*/React.createElement("details", {
-    className: "folder-panel",
-    key: group.name,
-    open: true
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", {
-    className: "folder-cover",
-    "aria-hidden": "true"
-  }, "⌁"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, group.name), /*#__PURE__*/React.createElement("small", null, folderDescription(group.items, "件")))), /*#__PURE__*/React.createElement("div", {
-    className: "folder-prompt-list"
-  }, group.items.map(prompt => prompt.isTextStock ? /*#__PURE__*/React.createElement(TextStockFrame, {
-    key: prompt.id,
-    prompt: prompt,
-    blankPrompt: blankPrompt(true),
-    onCreate: saveTextStockFrame,
-    onUpdate: updatePrompt,
-    copyText: copyText,
-    showTranslation: () => setTranslationPrompt(prompt),
-    showMemo: () => setMemoPrompt(prompt)
-  }) : /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
-    key: prompt.id,
-    prompt: prompt,
-    inlineEdit: inlineEdit,
-    setInlineEdit: setInlineEdit,
-    updatePrompt: updatePrompt,
-    duplicatePrompt: duplicatePrompt,
-    deletePrompt: () => deletePrompt(prompt.id),
-    copyText: copyText,
-    showTranslation: () => setTranslationPrompt(prompt),
-    showMemo: () => setMemoPrompt(prompt),
-    showTags: promptDisplay.showTags !== false,
-    showMemoButton: promptDisplay.showMemo !== false
-  })))))), editing && /*#__PURE__*/React.createElement(PromptModal, {
+  }, "保存上限（100件）に達しました"))), editing && /*#__PURE__*/React.createElement(PromptModal, {
     item: editing,
     onClose: () => setEditing(null),
     onSave: save
@@ -7653,22 +7632,7 @@ function MJEditableCard({
   return /*#__PURE__*/React.createElement("article", {
     id: `mj-card-${item.id}`,
     className: `mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "folder-view-toolbar"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "folder-view-tabs",
-    role: "group",
-    "aria-label": "ギャラリーの表示切り替え"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: viewMode === "list" ? "active-soft" : "",
-    onClick: () => setViewMode("list")
-  }, "一覧"), /*#__PURE__*/React.createElement("button", {
-    className: viewMode === "folders" ? "active-soft" : "",
-    onClick: () => setViewMode("folders")
-  }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
-    className: "folder-create-button",
-    onClick: addGalleryFolder
-  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     ref: fileInputRef,
     style: {
       display: "none"
@@ -8028,7 +7992,22 @@ function GalleryPage({
       className: "primary",
       onClick: () => fileInputRef.current?.click()
     }, "＋ 画像を追加"))
-  }), /*#__PURE__*/React.createElement("input", {
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "folder-view-toolbar"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "folder-view-tabs",
+    role: "group",
+    "aria-label": "ギャラリーの表示切り替え"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: viewMode === "list" ? "active-soft" : "",
+    onClick: () => setViewMode("list")
+  }, "一覧"), /*#__PURE__*/React.createElement("button", {
+    className: viewMode === "folders" ? "active-soft" : "",
+    onClick: () => setViewMode("folders")
+  }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
+    className: "folder-create-button",
+    onClick: addGalleryFolder
+  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement("input", {
     ref: fileInputRef,
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
@@ -8040,7 +8019,33 @@ function GalleryPage({
       if (event.currentTarget.files) addFiles(event.currentTarget.files);
       event.currentTarget.value = "";
     }
-  }), images.length ? viewMode === "list" ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }), viewMode === "folders" ? /*#__PURE__*/React.createElement("div", {
+    className: "folder-board gallery-folder-board"
+  }, galleryFolderGroups.map(group => /*#__PURE__*/React.createElement("section", {
+    className: "folder-panel",
+    key: group.name
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "folder-cover"
+  }, /*#__PURE__*/React.createElement("span", null, "ファイル"), /*#__PURE__*/React.createElement("strong", null, group.name), /*#__PURE__*/React.createElement("small", null, group.items.length, "枚")), group.items.length ? /*#__PURE__*/React.createElement("div", {
+    className: "gallery-grid"
+  }, group.items.map(image => /*#__PURE__*/React.createElement("article", {
+    className: "gallery-card",
+    key: image.id
+  }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
+    className: "gallery-favorite-button",
+    "aria-label": "お気に入り",
+    onClick: () => updateImage(image.id, {
+      favorite: !image.favorite
+    })
+  }, image.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("button", {
+    className: "gallery-image-button",
+    onClick: () => setPreviewId(image.id)
+  }, /*#__PURE__*/React.createElement("img", {
+    src: imageDisplaySrc(image),
+    alt: ""
+  }))))) : /*#__PURE__*/React.createElement("p", {
+    className: "folder-empty-text"
+  }, "このファイルにはまだ画像がありません。")))) : images.length ? /*#__PURE__*/React.createElement("div", {
     className: "gallery-grid"
   }, visibleImages.map(image => /*#__PURE__*/React.createElement("article", {
     className: "gallery-card",
@@ -8057,39 +8062,12 @@ function GalleryPage({
   }, /*#__PURE__*/React.createElement("img", {
     src: imageDisplaySrc(image),
     alt: ""
-  }))))), images.length > visibleCount && /*#__PURE__*/React.createElement("div", {
+  }))))) : /*#__PURE__*/React.createElement(Empty, {
+    text: "画像を追加すると、ここにギャラリーが表示されます。"
+  }), images.length > visibleCount && /*#__PURE__*/React.createElement("div", {
     ref: loadMoreRef,
     className: "lazy-load-sentinel"
-  }, "画像を読み込んでいます…")) : /*#__PURE__*/React.createElement("section", {
-    className: "folder-board gallery-folder-board",
-    "aria-label": "ギャラリーファイル"
-  }, galleryFolderGroups.map(group => /*#__PURE__*/React.createElement("details", {
-    className: "folder-panel",
-    key: group.name,
-    open: true
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", {
-    className: "folder-cover",
-    "aria-hidden": "true"
-  }, "⌁"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, group.name), /*#__PURE__*/React.createElement("small", null, folderDescription(group.items, "枚")))), /*#__PURE__*/React.createElement("div", {
-    className: "gallery-grid folder-gallery-grid"
-  }, group.items.map(image => /*#__PURE__*/React.createElement("article", {
-    className: "gallery-card",
-    key: image.id
-  }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
-    className: "gallery-favorite-button",
-    "aria-label": "お気に入り",
-    onClick: () => updateImage(image.id, {
-      favorite: !image.favorite
-    })
-  }, image.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("button", {
-    className: "gallery-image-button",
-    onClick: () => setPreviewId(image.id)
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(image),
-    alt: ""
-  })))))))) : /*#__PURE__*/React.createElement(Empty, {
-    text: "画像を追加すると、ここにギャラリーが表示されます。"
-  }), preview && /*#__PURE__*/React.createElement(Modal, {
+  }, "画像を読み込んでいます…"), preview && /*#__PURE__*/React.createElement(Modal, {
     title: preview.title || "画像詳細",
     onClose: () => setPreviewId("")
   }, /*#__PURE__*/React.createElement("div", {
@@ -8103,12 +8081,6 @@ function GalleryPage({
       title: event.target.value
     }),
     placeholder: "タイトル"
-  })), /*#__PURE__*/React.createElement("label", null, "ファイル", /*#__PURE__*/React.createElement("input", {
-    value: folderNameOf(preview) === DEFAULT_FOLDER_NAME ? "" : folderNameOf(preview),
-    onChange: event => updateImage(preview.id, {
-      folder: event.target.value
-    }),
-    placeholder: "例：春の素材 / 商品画像"
   })), /*#__PURE__*/React.createElement("label", null, "メモ", /*#__PURE__*/React.createElement("textarea", {
     value: preview.memo,
     onChange: event => updateImage(preview.id, {
@@ -9264,13 +9236,6 @@ function PromptModal({
       title: e.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.folder || "",
-    onChange: e => setDraft({
-      ...draft,
-      folder: e.target.value
-    }),
-    placeholder: "ファイル名（例：春のプロンプト）"
   }), /*#__PURE__*/React.createElement("select", {
     value: draft.category,
     onChange: e => setDraft({
