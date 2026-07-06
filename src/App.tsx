@@ -1388,6 +1388,151 @@ function imageDisplaySrc(image: any) {
   return resolveIndexedDbImage(value, false) || imageThumbnail(image);
 }
 
+function loadCanvasImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    if (/^https?:\/\//.test(src)) image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function drawCoverImage(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number, height: number) {
+  const imageRatio = image.naturalWidth / image.naturalHeight || 1;
+  const targetRatio = width / height || 1;
+  let sourceWidth = image.naturalWidth;
+  let sourceHeight = image.naturalHeight;
+  let sourceX = 0;
+  let sourceY = 0;
+  if (imageRatio > targetRatio) {
+    sourceWidth = image.naturalHeight * targetRatio;
+    sourceX = (image.naturalWidth - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.naturalWidth / targetRatio;
+    sourceY = (image.naturalHeight - sourceHeight) / 2;
+  }
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
+function paintJournalPattern(ctx: CanvasRenderingContext2D, background: string, width: number, height: number) {
+  const fill = (color: string) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, width, height);
+  };
+  fill("#fbf6ed");
+  if (background === "pink") fill("#fff2f6");
+  if (background === "blue") fill("#eef7ff");
+  if (background === "green") fill("#f1faef");
+  if (background === "kraft") fill("#caa77a");
+  if (background === "old-paper") fill("#ead6ad");
+  if (background === "dark") fill("#302b28");
+  if (background === "linen") {
+    fill("#f7f0e4");
+    ctx.strokeStyle = "rgba(120,100,82,0.08)";
+    for (let x = 0; x < width; x += 8) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < height; y += 8) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+  }
+  if (background === "grid" || background === "dot-grid" || background === "lined" || background === "check") {
+    ctx.strokeStyle = "rgba(188, 151, 190, 0.24)";
+    ctx.lineWidth = 1;
+    const step = background === "lined" ? 32 : 36;
+    for (let x = 0; x < width; x += step) {
+      if (background === "lined") continue;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < height; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+  }
+  if (background === "watercolor" || background === "scrapbook" || background === "floral" || background === "washi") {
+    const blobs = [
+      ["rgba(247, 217, 227, 0.68)", width * 0.24, height * 0.22, width * 0.22],
+      ["rgba(216, 239, 229, 0.64)", width * 0.72, height * 0.30, width * 0.18],
+      ["rgba(232, 221, 244, 0.54)", width * 0.58, height * 0.78, width * 0.24],
+    ];
+    blobs.forEach(([color, x, y, radius]: any) => {
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    });
+  }
+}
+
+async function exportJournalCanvas(journal: JournalState, selectedCustomBackground: AtelierImage | undefined, board: HTMLDivElement) {
+  const rect = board.getBoundingClientRect();
+  const scale = 2;
+  const width = Math.max(800, Math.round(rect.width));
+  const height = Math.max(560, Math.round(rect.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas unavailable");
+  ctx.scale(scale, scale);
+
+  if (selectedCustomBackground) {
+    const backgroundSrc = imageSrc(selectedCustomBackground);
+    if (backgroundSrc) {
+      const backgroundImage = await loadCanvasImage(backgroundSrc);
+      drawCoverImage(ctx, backgroundImage, 0, 0, width, height);
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      paintJournalPattern(ctx, "paper", width, height);
+    }
+  } else {
+    paintJournalPattern(ctx, journal.background || "paper", width, height);
+  }
+
+  for (const item of journal.items || []) {
+    const src = imageDisplaySrc(item);
+    if (!src) continue;
+    const image = await loadCanvasImage(src);
+    const itemWidth = item.width || 170;
+    const ratio = image.naturalHeight && image.naturalWidth ? image.naturalHeight / image.naturalWidth : 1;
+    const itemHeight = itemWidth * ratio;
+    ctx.save();
+    ctx.translate((item.x || 0) + itemWidth / 2, (item.y || 0) + itemHeight / 2);
+    ctx.rotate(((item.rotate || 0) * Math.PI) / 180);
+    ctx.shadowColor = isStickerEffectOn(item) ? "rgba(255,255,255,0.96)" : "rgba(73,58,45,0.20)";
+    ctx.shadowBlur = isStickerEffectOn(item) ? 16 : 10;
+    ctx.shadowOffsetY = isStickerEffectOn(item) ? 0 : 8;
+    ctx.drawImage(image, -itemWidth / 2, -itemHeight / 2, itemWidth, itemHeight);
+    if (isStickerEffectOn(item)) {
+      ctx.shadowColor = "rgba(73,58,45,0.16)";
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 8;
+      ctx.drawImage(image, -itemWidth / 2, -itemHeight / 2, itemWidth, itemHeight);
+    }
+    ctx.restore();
+  }
+
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const link = document.createElement("a");
+  link.download = `prompt-atelier-journal-${today}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
 function homeBannerImageValue(settings: HomeSettings) {
   return (settings as any)?.bannerImage || settings?.bannerImageUrl || "";
 }
@@ -2381,7 +2526,6 @@ function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
   const [mockupPrompts, setMockupPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
-  const [mockupCategories, setMockupCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState<Project[]>("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState<string[]>("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -2573,7 +2717,6 @@ function App() {
             myPrompts={myPrompts}
             mjSettings={mjSettings}
             mockupPrompts={mockupPrompts}
-            mockupCategories={mockupCategories}
             copyText={copyText}
             settings={homeSettings}
             setSettings={setRawHomeSettings}
@@ -2592,13 +2735,12 @@ function App() {
             myPrompts={myPrompts}
             mjSettings={mjSettings}
             mockupPrompts={mockupPrompts}
-            mockupCategories={mockupCategories}
             canInstallPwa={Boolean(installPrompt || (window as any).__promptAtelierInstallPrompt)}
             isStandaloneApp={isStandaloneApp}
             onInstallPwa={installPwa}
           />
         )}
-        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} boardCategories={mockupCategories} setBoardCategories={setMockupCategories} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} />}
         {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} />}
         {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={setScreen} />}
         {screen === "projects" && (
@@ -2740,7 +2882,7 @@ function HomeDateDisplay({ style = "pill", size = "medium", color = "theme", min
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, mockupCategories, copyText, settings, setSettings, workTools, atelierImages }: any) {
+function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, mockupPrompts, copyText, settings, setSettings, workTools, atelierImages }: any) {
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
     ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
@@ -2758,7 +2900,7 @@ function Home({ setScreen, recent, favorites, projects, myPrompts, mjSettings, m
       return Math.abs(aInfo.diff) - Math.abs(bInfo.diff);
     })[0];
   const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
-  const mockupCount = Array.isArray(mockupCategories) ? mockupCategories.length : readMockupCategoryCount();
+  const mockupCount = readMockupCategoryCount();
   const promptCount = (myPrompts || []).length;
   const mjCount = (mjSettings || []).length;
   const projectCount = (projects || []).length;
@@ -3157,7 +3299,7 @@ function WorkToolEditor({ tool, onClose, onSave }: any) {
   );
 }
 
-function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, mockupPrompts, mockupCategories, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
+function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkTools, projects, myPrompts, mjSettings, mockupPrompts, canInstallPwa, isStandaloneApp, onInstallPwa }: any) {
   const [editingTool, setEditingTool] = React.useState<WorkTool | null>(null);
   const [showPwaInstructions, setShowPwaInstructions] = React.useState(false);
   const backupInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -3294,7 +3436,7 @@ function HomeCustomize({ settings, setSettings, setScreen, workTools, setWorkToo
   };
   const normalizedTools = (workTools as WorkTool[]).map((tool) => ({ visible: true, ...tool })).slice(0, 10);
   const previewDashboardItems = [
-    { id: "mockups", title: "Mockup", value: String(Array.isArray(mockupCategories) ? mockupCategories.length : readMockupCategoryCount()), icon: "mockup" },
+    { id: "mockups", title: "Mockup", value: String(readMockupCategoryCount()), icon: "mockup" },
     { id: "prompts", title: "Prompt", value: String((myPrompts || []).length), icon: "notebook" },
     { id: "mjSettings", title: "MJ", value: String((mjSettings || []).length), icon: "magic" },
     { id: "projects", title: "Project", value: String((projects || []).length), icon: "folder" },
@@ -4107,7 +4249,7 @@ function HomePromptCard({ prompt, onCopy }: any) {
   );
 }
 
-function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts, boardCategories, setBoardCategories }: any) {
+function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts }: any) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
@@ -4120,6 +4262,7 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   const [armedCategoryId, setArmedCategoryId] = React.useState("");
   const categoryDragMovedRef = React.useRef(false);
   const categoryMoveGuardRef = React.useRef("");
+  const [boardCategories, setBoardCategories] = useStoredState<MockupCategory[]>("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
@@ -6455,6 +6598,7 @@ function JournalPage({ journal, setJournal, setScreen }: any) {
   const [draggingId, setDraggingId] = React.useState("");
   const [selectedId, setSelectedId] = React.useState("");
   const [isBackgroundDragging, setIsBackgroundDragging] = React.useState(false);
+  const [isSavingJournal, setIsSavingJournal] = React.useState(false);
   const boardRef = React.useRef<HTMLDivElement | null>(null);
   const selected = journal.items.find((item: JournalItem) => item.id === selectedId);
   const stockImages = journal.stockImages || [];
@@ -6563,6 +6707,18 @@ function JournalPage({ journal, setJournal, setScreen }: any) {
   const updateItem = (id: string, patch: Partial<JournalItem>) => {
     setJournal((current: JournalState) => ({ ...current, items: current.items.map((item) => item.id === id ? { ...item, ...patch } : item) }));
   };
+  const saveJournalAsImage = async () => {
+    if (!boardRef.current || isSavingJournal) return;
+    setIsSavingJournal(true);
+    try {
+      await exportJournalCanvas(journal, selectedCustomBackground, boardRef.current);
+    } catch (error) {
+      console.warn("[Prompt Atelier] journal export failed", error);
+      window.alert("作品画像を保存できませんでした。外部URL画像が含まれる場合は、画像をアップロードし直してから試してください。");
+    } finally {
+      setIsSavingJournal(false);
+    }
+  };
   const moveItem = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!draggingId || !boardRef.current) return;
     const rect = boardRef.current.getBoundingClientRect();
@@ -6572,7 +6728,7 @@ function JournalPage({ journal, setJournal, setScreen }: any) {
     <section className="page journal-page">
       <PageHead
         title="ジャーナル"
-        action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button onClick={() => setScreen("gallery")}>ギャラリーへ</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
+        action={<div className="actions"><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /><button onClick={() => setScreen("gallery")}>ギャラリーへ</button><button onClick={saveJournalAsImage} disabled={isSavingJournal}>{isSavingJournal ? "保存中..." : "作品として保存"}</button><button className="primary" onClick={() => fileInputRef.current?.click()}>＋ 画像を追加</button></div>}
       />
       <input
         ref={fileInputRef}

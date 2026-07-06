@@ -2917,6 +2917,140 @@ function imageDisplaySrc(image) {
   const value = typeof image === "string" ? image : image.displayImage || image.bannerImage || image.coverImage || image.image || image.previewImage || image.src || image.imageUrl || image.thumbnail || "";
   return resolveIndexedDbImage(value, false) || imageThumbnail(image);
 }
+function loadCanvasImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    if (/^https?:\/\//.test(src)) image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+function drawCoverImage(ctx, image, x, y, width, height) {
+  const imageRatio = image.naturalWidth / image.naturalHeight || 1;
+  const targetRatio = width / height || 1;
+  let sourceWidth = image.naturalWidth;
+  let sourceHeight = image.naturalHeight;
+  let sourceX = 0;
+  let sourceY = 0;
+  if (imageRatio > targetRatio) {
+    sourceWidth = image.naturalHeight * targetRatio;
+    sourceX = (image.naturalWidth - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.naturalWidth / targetRatio;
+    sourceY = (image.naturalHeight - sourceHeight) / 2;
+  }
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+function paintJournalPattern(ctx, background, width, height) {
+  const fill = color => {
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, width, height);
+  };
+  fill("#fbf6ed");
+  if (background === "pink") fill("#fff2f6");
+  if (background === "blue") fill("#eef7ff");
+  if (background === "green") fill("#f1faef");
+  if (background === "kraft") fill("#caa77a");
+  if (background === "old-paper") fill("#ead6ad");
+  if (background === "dark") fill("#302b28");
+  if (background === "linen") {
+    fill("#f7f0e4");
+    ctx.strokeStyle = "rgba(120,100,82,0.08)";
+    for (let x = 0; x < width; x += 8) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < height; y += 8) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+  }
+  if (background === "grid" || background === "dot-grid" || background === "lined" || background === "check") {
+    ctx.strokeStyle = "rgba(188, 151, 190, 0.24)";
+    ctx.lineWidth = 1;
+    const step = background === "lined" ? 32 : 36;
+    for (let x = 0; x < width; x += step) {
+      if (background === "lined") continue;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < height; y += step) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+  }
+  if (background === "watercolor" || background === "scrapbook" || background === "floral" || background === "washi") {
+    const blobs = [["rgba(247, 217, 227, 0.68)", width * 0.24, height * 0.22, width * 0.22], ["rgba(216, 239, 229, 0.64)", width * 0.72, height * 0.30, width * 0.18], ["rgba(232, 221, 244, 0.54)", width * 0.58, height * 0.78, width * 0.24]];
+    blobs.forEach(([color, x, y, radius]) => {
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    });
+  }
+}
+async function exportJournalCanvas(journal, selectedCustomBackground, board) {
+  const rect = board.getBoundingClientRect();
+  const scale = 2;
+  const width = Math.max(800, Math.round(rect.width));
+  const height = Math.max(560, Math.round(rect.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas unavailable");
+  ctx.scale(scale, scale);
+  if (selectedCustomBackground) {
+    const backgroundSrc = imageSrc(selectedCustomBackground);
+    if (backgroundSrc) {
+      const backgroundImage = await loadCanvasImage(backgroundSrc);
+      drawCoverImage(ctx, backgroundImage, 0, 0, width, height);
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      paintJournalPattern(ctx, "paper", width, height);
+    }
+  } else {
+    paintJournalPattern(ctx, journal.background || "paper", width, height);
+  }
+  for (const item of journal.items || []) {
+    const src = imageDisplaySrc(item);
+    if (!src) continue;
+    const image = await loadCanvasImage(src);
+    const itemWidth = item.width || 170;
+    const ratio = image.naturalHeight && image.naturalWidth ? image.naturalHeight / image.naturalWidth : 1;
+    const itemHeight = itemWidth * ratio;
+    ctx.save();
+    ctx.translate((item.x || 0) + itemWidth / 2, (item.y || 0) + itemHeight / 2);
+    ctx.rotate((item.rotate || 0) * Math.PI / 180);
+    ctx.shadowColor = isStickerEffectOn(item) ? "rgba(255,255,255,0.96)" : "rgba(73,58,45,0.20)";
+    ctx.shadowBlur = isStickerEffectOn(item) ? 16 : 10;
+    ctx.shadowOffsetY = isStickerEffectOn(item) ? 0 : 8;
+    ctx.drawImage(image, -itemWidth / 2, -itemHeight / 2, itemWidth, itemHeight);
+    if (isStickerEffectOn(item)) {
+      ctx.shadowColor = "rgba(73,58,45,0.16)";
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 8;
+      ctx.drawImage(image, -itemWidth / 2, -itemHeight / 2, itemWidth, itemHeight);
+    }
+    ctx.restore();
+  }
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const link = document.createElement("a");
+  link.download = `prompt-atelier-journal-${today}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
 function homeBannerImageValue(settings) {
   return settings?.bannerImage || settings?.bannerImageUrl || "";
 }
@@ -3892,7 +4026,6 @@ function App() {
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
   const [mockupPrompts, setMockupPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
-  const [mockupCategories, setMockupCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const [mjSettings, setMjSettings] = useStoredState("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
@@ -4055,7 +4188,6 @@ function App() {
     myPrompts: myPrompts,
     mjSettings: mjSettings,
     mockupPrompts: mockupPrompts,
-    mockupCategories: mockupCategories,
     copyText: copyText,
     settings: homeSettings,
     setSettings: setRawHomeSettings,
@@ -4071,7 +4203,6 @@ function App() {
     myPrompts: myPrompts,
     mjSettings: mjSettings,
     mockupPrompts: mockupPrompts,
-    mockupCategories: mockupCategories,
     canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
     isStandaloneApp: isStandaloneApp,
     onInstallPwa: installPwa
@@ -4080,9 +4211,7 @@ function App() {
     setScreen: setScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
-    setBoardPrompts: setMockupPrompts,
-    boardCategories: mockupCategories,
-    setBoardCategories: setMockupCategories
+    setBoardPrompts: setMockupPrompts
   }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
@@ -4264,7 +4393,6 @@ function Home({
   myPrompts,
   mjSettings,
   mockupPrompts,
-  mockupCategories,
   copyText,
   settings,
   setSettings,
@@ -4280,7 +4408,7 @@ function Home({
     return Math.abs(aInfo.diff) - Math.abs(bInfo.diff);
   })[0];
   const reminderInfo = nextReminder ? projectDueInfo(nextReminder.dueDate || "") : null;
-  const mockupCount = Array.isArray(mockupCategories) ? mockupCategories.length : readMockupCategoryCount();
+  const mockupCount = readMockupCategoryCount();
   const promptCount = (myPrompts || []).length;
   const mjCount = (mjSettings || []).length;
   const projectCount = (projects || []).length;
@@ -4776,7 +4904,6 @@ function HomeCustomize({
   myPrompts,
   mjSettings,
   mockupPrompts,
-  mockupCategories,
   canInstallPwa,
   isStandaloneApp,
   onInstallPwa
@@ -4941,7 +5068,7 @@ function HomeCustomize({
   const previewDashboardItems = [{
     id: "mockups",
     title: "Mockup",
-    value: String(Array.isArray(mockupCategories) ? mockupCategories.length : readMockupCategoryCount()),
+    value: String(readMockupCategoryCount()),
     icon: "mockup"
   }, {
     id: "prompts",
@@ -5908,9 +6035,7 @@ function Library({
   setScreen,
   homeSettings,
   boardPrompts,
-  setBoardPrompts,
-  boardCategories,
-  setBoardCategories
+  setBoardPrompts
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -5924,6 +6049,7 @@ function Library({
   const [armedCategoryId, setArmedCategoryId] = React.useState("");
   const categoryDragMovedRef = React.useRef(false);
   const categoryMoveGuardRef = React.useRef("");
+  const [boardCategories, setBoardCategories] = useStoredState("prompt-atelier-mockup-categories-v2", defaultMockupCategories);
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
@@ -8846,6 +8972,7 @@ function JournalPage({
   const [draggingId, setDraggingId] = React.useState("");
   const [selectedId, setSelectedId] = React.useState("");
   const [isBackgroundDragging, setIsBackgroundDragging] = React.useState(false);
+  const [isSavingJournal, setIsSavingJournal] = React.useState(false);
   const boardRef = React.useRef(null);
   const selected = journal.items.find(item => item.id === selectedId);
   const stockImages = journal.stockImages || [];
@@ -8968,6 +9095,18 @@ function JournalPage({
       } : item)
     }));
   };
+  const saveJournalAsImage = async () => {
+    if (!boardRef.current || isSavingJournal) return;
+    setIsSavingJournal(true);
+    try {
+      await exportJournalCanvas(journal, selectedCustomBackground, boardRef.current);
+    } catch (error) {
+      console.warn("[Prompt Atelier] journal export failed", error);
+      window.alert("作品画像を保存できませんでした。外部URL画像が含まれる場合は、画像をアップロードし直してから試してください。");
+    } finally {
+      setIsSavingJournal(false);
+    }
+  };
   const moveItem = event => {
     if (!draggingId || !boardRef.current) return;
     const rect = boardRef.current.getBoundingClientRect();
@@ -8988,6 +9127,9 @@ function JournalPage({
     }), /*#__PURE__*/React.createElement("button", {
       onClick: () => setScreen("gallery")
     }, "ギャラリーへ"), /*#__PURE__*/React.createElement("button", {
+      onClick: saveJournalAsImage,
+      disabled: isSavingJournal
+    }, isSavingJournal ? "保存中..." : "作品として保存"), /*#__PURE__*/React.createElement("button", {
       className: "primary",
       onClick: () => fileInputRef.current?.click()
     }, "＋ 画像を追加"))
