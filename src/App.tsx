@@ -4867,18 +4867,47 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
 const DEFAULT_FOLDER_NAME = "未整理";
 const folderNameOf = (item: any) => String(item?.folder || item?.folderName || item?.collection || DEFAULT_FOLDER_NAME).trim() || DEFAULT_FOLDER_NAME;
 const folderDescription = (items: any[], unit: string) => `${items.length}${unit}`;
-function groupedByFolder<T>(items: T[]) {
+function readFolderList(key: string) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(parsed) ? parsed.map((name) => String(name).trim()).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+function saveFolderList(key: string, folders: string[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(folders));
+  } catch (error) {
+    console.warn("[Prompt Atelier] ファイル一覧の保存に失敗しました", key, error);
+  }
+}
+function groupedByFolder<T>(items: T[], folderNames: string[] = []) {
   const groups: { name: string; items: T[] }[] = [];
-  items.forEach((item: any) => {
-    const name = folderNameOf(item);
-    let group = groups.find((entry) => entry.name === name);
+  const ensureGroup = (name: string) => {
+    const safeName = String(name || DEFAULT_FOLDER_NAME).trim() || DEFAULT_FOLDER_NAME;
+    let group = groups.find((entry) => entry.name === safeName);
     if (!group) {
-      group = { name, items: [] };
+      group = { name: safeName, items: [] };
       groups.push(group);
     }
-    group.items.push(item);
+    return group;
+  };
+  folderNames.forEach(ensureGroup);
+  items.forEach((item: any) => {
+    ensureGroup(folderNameOf(item)).items.push(item);
   });
   return groups;
+}
+function createFolderName(existing: string[], label: string) {
+  const raw = window.prompt(`${label}の新しいファイル名を入力してください`);
+  const name = String(raw || "").trim();
+  if (!name) return "";
+  if (existing.includes(name)) {
+    window.alert("同じ名前のファイルがすでにあります");
+    return "";
+  }
+  return name;
 }
 
 function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: any) {
@@ -4890,6 +4919,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
   const [inlineEdit, setInlineEdit] = React.useState<{ id: string; field: string } | null>(null);
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const [viewMode, setViewMode] = React.useState<"list" | "folders">("list");
+  const [promptFolders, setPromptFolders] = React.useState<string[]>(() => readFolderList("promptAtelierPromptFolders"));
   const promptDisplay = homeSettings?.pageDisplaySettings?.prompts || defaultPageDisplaySettings.prompts;
   const tags = Array.from(new Set(prompts.flatMap((p: MyPrompt) => p.tags))).sort();
   const filtered = prompts.filter((item: MyPrompt) => {
@@ -4903,7 +4933,15 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
   const canAddTextStock = textStockCount < 100;
   const imageSlotCount = imagePrompts.length < 20 ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4) : 20;
   const imagePromptSlots = Array.from({ length: imageSlotCount }, (_, index) => imagePrompts[index] || null);
-  const promptFolderGroups = groupedByFolder(filtered);
+  const promptFolderGroups = groupedByFolder(filtered, promptFolders);
+  const addPromptFolder = () => {
+    const name = createFolderName(promptFolders, "プロンプト帳");
+    if (!name) return;
+    const next = [...promptFolders, name];
+    setPromptFolders(next);
+    saveFolderList("promptAtelierPromptFolders", next);
+    setViewMode("folders");
+  };
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, textPrompts.length));
   const textStockSlots = Array.from({ length: visibleStockFrameCount }, (_, index) => textPrompts[index] || null);
   const save = (item: MyPrompt) => {
@@ -4957,6 +4995,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
           <button className={viewMode === "list" ? "active-soft" : ""} onClick={() => setViewMode("list")}>一覧</button>
           <button className={viewMode === "folders" ? "active-soft" : ""} onClick={() => setViewMode("folders")}>ファイル別</button>
         </div>
+        <button className="folder-create-button" onClick={addPromptFolder}>＋ 新しいファイル</button>
       </div>
       <Filters>
         <select value={tag} onChange={(e) => setTag(e.target.value)}>
@@ -5434,6 +5473,7 @@ function MJEditableCard({ item, highlighted, onUpdate, onDelete, onCopyPrompt, o
           <button className={viewMode === "list" ? "active-soft" : ""} onClick={() => setViewMode("list")}>一覧</button>
           <button className={viewMode === "folders" ? "active-soft" : ""} onClick={() => setViewMode("folders")}>ファイル別</button>
         </div>
+        <button className="folder-create-button" onClick={addGalleryFolder}>＋ 新しいファイル</button>
       </div>
       <input
         ref={fileInputRef}
@@ -5677,10 +5717,19 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }:
   const [previewId, setPreviewId] = React.useState("");
   const [visibleCount, setVisibleCount] = React.useState(20);
   const [viewMode, setViewMode] = React.useState<"list" | "folders">("list");
+  const [galleryFolders, setGalleryFolders] = React.useState<string[]>(() => readFolderList("promptAtelierGalleryFolders"));
   const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
   const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
   const visibleImages = images.slice(0, visibleCount);
-  const galleryFolderGroups = groupedByFolder(images);
+  const galleryFolderGroups = groupedByFolder(images, galleryFolders);
+  const addGalleryFolder = () => {
+    const name = createFolderName(galleryFolders, "ギャラリー");
+    if (!name) return;
+    const next = [...galleryFolders, name];
+    setGalleryFolders(next);
+    saveFolderList("promptAtelierGalleryFolders", next);
+    setViewMode("folders");
+  };
   React.useEffect(() => {
     setVisibleCount(20);
   }, [images.length]);

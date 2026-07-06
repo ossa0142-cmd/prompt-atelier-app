@@ -7589,3 +7589,37 @@ summary {
     grid-template-columns: 1fr;
   }
 }
+
+.folder-view-toolbar {
+  align-items: center;
+  gap: 10px;
+}
+
+.folder-create-button {
+  min-height: 42px;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--card-bg));
+  color: var(--text-main);
+  box-shadow: 0 10px 22px rgba(73, 58, 45, 0.06);
+}
+
+.folder-create-button:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--card-bg));
+}
+
+@media (max-width: 640px) {
+  .folder-view-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .folder-view-tabs,
+  .folder-create-button {
+    width: 100%;
+  }
+
+  .folder-view-tabs button {
+    flex: 1;
+  }
+}
