@@ -3760,11 +3760,7 @@ function sampleSeedDataToStorage(seedData) {
   append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
-  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
-  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
-  if (Array.isArray(seedData.promptCards) && seedData.promptCards.length === 0 && Array.isArray(seedData.promptStocks) && seedData.promptStocks.length === 0) {
-    storageData["prompt-atelier-prompts-ja-v2"] = [];
-  }
+  storageData["prompt-atelier-prompts-ja-v2"] = [];
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
   append("promptAtelierVideoPromptStocks", Array.isArray(seedData.videoPromptStocks) ? seedData.videoPromptStocks : []);
   append("promptAtelierMidjourneySettings", Array.isArray(seedData.midjourneySettings) ? seedData.midjourneySettings : []);
@@ -3871,7 +3867,32 @@ async function loadSampleSeedIfNeeded() {
     return false;
   }
 }
+const PROMPT_BOOK_SAMPLE_CLEANUP_KEY = "promptAtelierPromptBookSamplesClearedV1";
+const PROMPT_BOOK_LEGACY_SAMPLE_IDS = new Set(["my-1", "my-2"]);
+function isPromptBookBuiltInSample(item) {
+  const sampleId = String(item?.sampleId || "");
+  const id = String(item?.id || "");
+  return Boolean(item?.isSample || item?.createdFromSeedExport || sampleId.startsWith("sample-prompt-") || PROMPT_BOOK_LEGACY_SAMPLE_IDS.has(id));
+}
+function clearPromptBookBuiltInSamplesOnce() {
+  if (typeof window === "undefined") return;
+  try {
+    if (localStorage.getItem(PROMPT_BOOK_SAMPLE_CLEANUP_KEY) === "done") return;
+    const key = "prompt-atelier-prompts-ja-v2";
+    const current = JSON.parse(localStorage.getItem(key) || "[]");
+    if (Array.isArray(current)) {
+      const next = current.filter(item => !isPromptBookBuiltInSample(item));
+      if (next.length !== current.length) {
+        localStorage.setItem(key, JSON.stringify(next));
+      }
+    }
+    localStorage.setItem(PROMPT_BOOK_SAMPLE_CLEANUP_KEY, "done");
+  } catch (error) {
+    console.warn("[Prompt Atelier] プロンプト帳サンプルの整理に失敗しました", error);
+  }
+}
 function App() {
+  React.useMemo(() => clearPromptBookBuiltInSamplesOnce(), []);
   const [screen, setScreen] = React.useState("home");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
   const [mockupPrompts, setMockupPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
