@@ -9,22 +9,20 @@
   "theme_color": "#f7eaf1",
   "background_color": "#fffafc",
   "orientation": "any",
-  "categories": ["productivity", "design", "utilities"],
+  "categories": [
+    "productivity",
+    "design",
+    "utilities"
+  ],
   "icons": [
     {
-      "src": "/public/icons/prompt-atelier-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-192.png",
+      "src": "icons/prompt-atelier-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/prompt-atelier-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

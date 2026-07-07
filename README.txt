@@ -1,14 +1,15 @@
-Prompt Atelier v50
+Prompt Atelier v51
 
 変更内容:
-- カスタマイズ > バックアップ・サンプル に「バックアップアラーム」を追加
-- 5日おき / 1週間おき / 2週間おき / 1ヶ月おき / 表示しない を選択できます
-- ホームに「そろそろバックアップしませんか？」のお知らせを表示します
-- バックアップを書き出すと、最後のバックアップ日を自動記録します
-- 前回のジャーナル「作品として保存」ボタンも含まれています
+- 添付のPA画像をタブアイコンに設定
+- Dock / PWA用の192px・512pxアイコンも同じPA画像に差し替え
+- manifest.webmanifest のアイコン設定を更新
+- index.html の読み込み番号を更新
 
 アップロードするもの:
 - index.html
 - src/App.tsx
 - src/App.compiled.js
 - src/styles.css
+- public/manifest.webmanifest
+- public/icons/
