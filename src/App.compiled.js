@@ -1068,7 +1068,7 @@ const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
-const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json?v=20260708-sample-seed-fixed-v63", "./src/data/sampleSeed.json?v=20260708-sample-seed-fixed-v63"];
+const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json?v=20260709-video-favorite-thumbnail-v65", "./src/data/sampleSeed.json?v=20260709-video-favorite-thumbnail-v65"];
 const EMBEDDED_SAMPLE_SEED_DATA = {
   "libraryItems": [{
     "id": "sticker",
@@ -3945,7 +3945,19 @@ function App() {
   };
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
-  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
+  const videoFavoritePrompts = extractVideoPromptItems(videos).filter(video => video.favorite).map(video => ({
+    id: video.id,
+    title: video.title,
+    category: video.model || "動画プロンプト",
+    description: video.memo || video.prompt || video.url,
+    prompt: video.prompt || video.memo || video.url,
+    imageUrl: video.thumbnail || "",
+    coverImages: video.thumbnail ? [video.thumbnail] : [],
+    tags: video.tags || [],
+    favorite: true,
+    isVideoPrompt: true
+  }));
+  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock), ...videoFavoritePrompts].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
   const copyText = async (text, id) => {
@@ -8407,7 +8419,7 @@ function VideoLibrary({
       window.alert("動画からサムネイルを作成できませんでした。別の動画形式を試してください。");
     }
   };
-  const importUploadedVideo = file => {
+  const importUploadedVideo = async file => {
     if (!file) return;
     if (!isSupportedVideoFile(file)) {
       window.alert("mp4 / webm / mov などの動画ファイルを選んでください。");
@@ -8418,6 +8430,18 @@ function VideoLibrary({
       if (current) URL.revokeObjectURL(current);
       return nextUrl;
     });
+    if (!draft.thumbnail) {
+      try {
+        const image = await createVideoThumbnail(file);
+        updateDraft({
+          title: draft.title || file.name.replace(/\.[^.]+$/, ""),
+          thumbnail: image.src || image.thumbnail
+        });
+        scheduleStorageWarningCheck();
+      } catch {
+        // 動画形式によってはサムネ生成できないことがあります。動画自体の登録は続行します。
+      }
+    }
   };
   const clearUploadedVideo = () => {
     setUploadedVideoUrl(current => {
