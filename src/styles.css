@@ -7754,3 +7754,32 @@ summary {
     justify-content: flex-start;
   }
 }
+
+/* Video prompt card polish: keep actions stable after saved video support. */
+.video-card.video-prompt-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.video-card.video-prompt-card .video-card-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.video-card.video-prompt-card .video-card-body h3,
+.video-card.video-prompt-card .video-card-body p {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.video-card.video-prompt-card .video-card-actions {
+  margin-top: auto;
+}
+
+.video-hide-memo .prompt-card-actions.video-card-actions {
+  grid-template-columns: 1fr;
+}
+
+.video-hide-memo .prompt-card-actions.video-card-actions .primary {
+  width: 100%;
+}

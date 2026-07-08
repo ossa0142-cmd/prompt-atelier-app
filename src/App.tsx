@@ -6309,7 +6309,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }:
 }
 
 function isPlayableVideoUrl(url: string) {
-  return /\.(mp4|webm)(\?.*)?$/i.test(url);
+  return /^data:video\//i.test(url) || /\.(mp4|webm)(\?.*)?$/i.test(url);
 }
 
 function isSupportedVideoFile(file?: File | null) {
@@ -6533,7 +6533,9 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
   };
   const openVideo = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
+    const src = videoDisplaySrc(url);
+    if (!src) return;
+    window.open(src, "_blank", "noopener,noreferrer");
   };
   const copyPrompt = async () => {
     if (!draft.prompt.trim()) return;
@@ -6697,7 +6699,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
             </div>
             <div className="video-thumbnail-tools">
               <button type="button" onClick={() => uploadVideoInputRef.current?.click()}>動画を選ぶ</button>
-              <button type="button" onClick={clearUploadedVideo} disabled={!uploadedVideoUrl}>アップロード動画を削除</button>
+              <button type="button" onClick={clearUploadedVideo} disabled={!uploadedVideoUrl && !draft.videoFile}>アップロード動画を削除</button>
             </div>
             <input ref={thumbnailInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: "none" }} onChange={(event) => { importThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
             <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style={{ display: "none" }} onChange={(event) => { importVideoThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
@@ -6706,7 +6708,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
         </div>
         <div className="video-detail-actions">
           <button onClick={copyPrompt} disabled={!draft.prompt.trim()}>📋 プロンプトをコピー</button>
-          <button onClick={() => openVideo(draft.url)} disabled={!draft.url.trim()}>動画URLを開く</button>
+          <button onClick={() => openVideo(draft.videoFile || draft.url)} disabled={!draft.url.trim() && !draft.videoFile}>動画を開く</button>
           <button className="primary" onClick={saveVideo}>保存する</button>
           {draft.id && <button className="danger" onClick={() => deleteVideo(draft.id)}>削除</button>}
           <PageBackButton label="動画プロンプト帳へ戻る" onClick={resetDraft} />
