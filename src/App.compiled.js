@@ -2632,6 +2632,7 @@ const EMBEDDED_SAMPLE_SEED_DATA = {
 };
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
+const PROMPT_BOOK_SAMPLE_CLEANUP_KEY = "promptAtelierPromptBookSampleCleanupV1";
 const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
 const SAMPLE_DATA_STORAGE_MAP = {
   libraryItems: "prompt-atelier-mockup-categories-v2",
@@ -3976,11 +3977,7 @@ function sampleSeedDataToStorage(seedData) {
   append("prompt-atelier-mockup-categories-v2", Array.isArray(seedData.mockupCategories) ? seedData.mockupCategories : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupItems) ? seedData.mockupItems : []);
   append("prompt-atelier-library-prompts-v5", Array.isArray(seedData.mockupStocks) ? seedData.mockupStocks : []);
-  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptCards) ? seedData.promptCards : []);
-  append("prompt-atelier-prompts-ja-v2", Array.isArray(seedData.promptStocks) ? seedData.promptStocks : []);
-  if (Array.isArray(seedData.promptCards) && seedData.promptCards.length === 0 && Array.isArray(seedData.promptStocks) && seedData.promptStocks.length === 0) {
-    storageData["prompt-atelier-prompts-ja-v2"] = [];
-  }
+  storageData["prompt-atelier-prompts-ja-v2"] = [];
   append("promptAtelierVideoPrompts", Array.isArray(seedData.videoPromptCards) ? seedData.videoPromptCards : []);
   append("promptAtelierVideoPromptStocks", Array.isArray(seedData.videoPromptStocks) ? seedData.videoPromptStocks : []);
   append("promptAtelierMidjourneySettings", Array.isArray(seedData.midjourneySettings) ? seedData.midjourneySettings : []);
@@ -4100,6 +4097,11 @@ function App() {
   const [journal, setJournal] = useStoredState("promptAtelierJournal", defaultJournal);
   const [videos, setVideos] = useStoredState("promptAtelierVideoPrompts", initialVideoPrompts());
   const [videoStocks, setVideoStocks] = useStoredState("promptAtelierVideoPromptStocks", []);
+  React.useEffect(() => {
+    if (localStorage.getItem(PROMPT_BOOK_SAMPLE_CLEANUP_KEY)) return;
+    setMyPrompts(items => items.filter(item => !String(item?.sampleId || "").startsWith("sample-prompt-")));
+    localStorage.setItem(PROMPT_BOOK_SAMPLE_CLEANUP_KEY, "1");
+  }, [setMyPrompts]);
   const [toast, setToast] = React.useState("");
   const [isImageMigrating, setIsImageMigrating] = React.useState(false);
   const [installPrompt, setInstallPrompt] = React.useState(null);
@@ -7294,7 +7296,7 @@ function groupedByFolder(items, folderNames = []) {
   return groups;
 }
 function createFolderName(existing, label) {
-  const raw = window.prompt(`の新しいファイル名を入力してください`);
+  const raw = window.prompt(`${label}の新しいファイル名を入力してください`);
   const name = String(raw || "").trim();
   if (!name) return "";
   if (existing.includes(name)) {
@@ -7337,11 +7339,12 @@ function PromptBook({
   const promptFolderGroups = groupedByFolder(filtered, promptFolders);
   const addPromptFolder = () => {
     const name = createFolderName(promptFolders, "プロンプト帳");
-    if (!name) return;
+    if (!name) return "";
     const next = [...promptFolders, name];
     setPromptFolders(next);
     saveFolderList("promptAtelierPromptFolders", next);
     setViewMode("folders");
+    return name;
   };
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, textPrompts.length));
   const textStockSlots = Array.from({
@@ -7517,6 +7520,8 @@ function PromptBook({
     className: "limit-message"
   }, "保存上限（100件）に達しました"))), editing && /*#__PURE__*/React.createElement(PromptModal, {
     item: editing,
+    folderNames: promptFolders,
+    onCreateFolder: addPromptFolder,
     onClose: () => setEditing(null),
     onSave: save
   }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
@@ -9545,6 +9550,8 @@ function PromptCard({
 }
 function PromptModal({
   item,
+  folderNames = [],
+  onCreateFolder,
   onClose,
   onSave
 }) {
@@ -9557,6 +9564,15 @@ function PromptModal({
     coverImages,
     imageUrl: coverImages[0] || ""
   });
+  const folderOptions = [DEFAULT_FOLDER_NAME, ...folderNames].filter((name, index, list) => name && list.indexOf(name) === index);
+  const currentFolder = folderNameOf(draft);
+  const createFolderFromModal = () => {
+    const name = onCreateFolder?.();
+    if (name) setDraft({
+      ...draft,
+      folder: name
+    });
+  };
   return /*#__PURE__*/React.createElement(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
     onClose: onClose
@@ -9567,15 +9583,21 @@ function PromptModal({
       title: e.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("select", {
-    value: draft.category,
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "modal-folder-row"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: currentFolder,
     onChange: e => setDraft({
       ...draft,
-      category: e.target.value
+      folder: e.target.value === DEFAULT_FOLDER_NAME ? "" : e.target.value
     })
-  }, categories.map(cat => /*#__PURE__*/React.createElement("option", {
-    key: cat
-  }, cat))), /*#__PURE__*/React.createElement("textarea", {
+  }, folderOptions.map(folder => /*#__PURE__*/React.createElement("option", {
+    value: folder,
+    key: folder
+  }, folder))), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: createFolderFromModal
+  }, "＋ 新規ファイル")), /*#__PURE__*/React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,
