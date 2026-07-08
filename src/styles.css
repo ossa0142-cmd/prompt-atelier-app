@@ -6776,16 +6776,17 @@ summary {
   position: fixed;
   inset: 0;
   z-index: 20;
-  display: grid;
-  place-items: start center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
   overflow: auto;
   background: rgba(45, 39, 34, 0.42);
-  padding: max(24px, env(safe-area-inset-top)) 20px 32px;
+  padding: max(72px, env(safe-area-inset-top)) 20px 72px;
 }
 
 .modal {
   width: min(760px, 100%);
-  max-height: calc(100vh - 56px);
+  max-height: calc(100dvh - 144px);
   overflow: auto;
   border-radius: 8px;
   background: var(--card-bg);
