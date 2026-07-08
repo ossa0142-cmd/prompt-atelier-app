@@ -5027,8 +5027,14 @@ function InlineEditable({ value, placeholder, isEditing, onEdit, onSave, multili
       onBlur: save,
       onClick: (event: any) => event.stopPropagation(),
       onKeyDown: (event: any) => {
-        if (event.key === "Enter" && !multiline) save();
-        if (event.key === "Escape") setDraft(value || "");
+        if (event.key === "Enter" && !multiline) {
+          event.preventDefault();
+          return;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setDraft(value || "");
+        }
       },
       autoFocus: true,
       placeholder,
@@ -5175,13 +5181,12 @@ function MockupCategoryModal({ item, onClose, onSave }: any) {
 function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item });
   const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, imageUrl: coverImages[0] || "" });
+  const selectedCategory = categories.find((category: MockupCategory) => category.id === draft.categoryId);
   return (
     <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
       <FormGrid>
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
-        <select value={draft.categoryId} onChange={(e) => setDraft({ ...draft, categoryId: e.target.value })}>
-          {categories.map((category: MockupCategory) => <option value={category.id} key={category.id}>{category.title}</option>)}
-        </select>
+        {selectedCategory && <p className="modal-category-note">保存先：{selectedCategory.title}</p>}
         <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
         <textarea className="tall" value={draft.japaneseTranslation || ""} onChange={(e) => setDraft({ ...draft, japaneseTranslation: e.target.value })} placeholder="和訳本文" />

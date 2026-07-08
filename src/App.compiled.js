@@ -6982,8 +6982,14 @@ function InlineEditable({
       onBlur: save,
       onClick: event => event.stopPropagation(),
       onKeyDown: event => {
-        if (event.key === "Enter" && !multiline) save();
-        if (event.key === "Escape") setDraft(value || "");
+        if (event.key === "Enter" && !multiline) {
+          event.preventDefault();
+          return;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          setDraft(value || "");
+        }
       },
       autoFocus: true,
       placeholder,
@@ -7196,6 +7202,7 @@ function LibraryPromptModal({
     coverImages,
     imageUrl: coverImages[0] || ""
   });
+  const selectedCategory = categories.find(category => category.id === draft.categoryId);
   return /*#__PURE__*/React.createElement(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
     onClose: onClose
@@ -7206,16 +7213,9 @@ function LibraryPromptModal({
       title: e.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("select", {
-    value: draft.categoryId,
-    onChange: e => setDraft({
-      ...draft,
-      categoryId: e.target.value
-    })
-  }, categories.map(category => /*#__PURE__*/React.createElement("option", {
-    value: category.id,
-    key: category.id
-  }, category.title))), /*#__PURE__*/React.createElement("textarea", {
+  }), selectedCategory && /*#__PURE__*/React.createElement("p", {
+    className: "modal-category-note"
+  }, "保存先：", selectedCategory.title), /*#__PURE__*/React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,
