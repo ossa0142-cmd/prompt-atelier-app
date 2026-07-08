@@ -7595,3 +7595,79 @@ summary {
     flex: 1;
   }
 }
+
+/* Video prompt card stability: keep saved videos playable without breaking card actions. */
+.video-card.video-prompt-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.video-card.video-prompt-card .video-thumb-button {
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.video-card.video-prompt-card .video-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.video-card.video-prompt-card .video-card-body h3,
+.video-card.video-prompt-card .video-card-body p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.video-card.video-prompt-card .video-card-body h3 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.video-card.video-prompt-card .video-card-actions {
+  align-items: stretch;
+  margin-top: auto;
+  width: 100%;
+}
+
+.video-card.video-prompt-card .video-card-actions .primary:only-child {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.video-card.video-prompt-card .video-card-actions button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.video-card.video-prompt-card .video-card-actions .primary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.video-thumbnail-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.video-thumbnail-mode label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 850;
+  padding: 8px 11px;
+}
+
+.video-thumbnail-mode input:disabled + span,
+.video-thumbnail-mode label:has(input:disabled) {
+  opacity: 0.56;
+}

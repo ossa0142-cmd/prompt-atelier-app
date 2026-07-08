@@ -546,6 +546,7 @@ const blankVideoPrompt = () => ({
   url: "",
   model: "Runway",
   thumbnail: "",
+  thumbnailMode: "thumbnail",
   prompt: "",
   memo: "",
   tags: [],
@@ -599,6 +600,7 @@ function normalizeVideoPrompt(item) {
     url: item?.url || item?.videoUrl || item?.link || "",
     model: item?.model || item?.aiModel || "その他",
     thumbnail: item?.thumbnail || item?.thumbnailUrl || item?.imageUrl || item?.image || "",
+    thumbnailMode: item?.thumbnailMode === "video" ? "video" : "thumbnail",
     prompt,
     memo: item?.memo || item?.note || "",
     tags,
@@ -1068,7 +1070,7 @@ const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
-const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json?v=20260709-video-favorite-thumbnail-v65", "./src/data/sampleSeed.json?v=20260709-video-favorite-thumbnail-v65"];
+const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json?v=20260709-production-sample-seed-v64", "./src/data/sampleSeed.json?v=20260709-production-sample-seed-v64"];
 const EMBEDDED_SAMPLE_SEED_DATA = {
   "libraryItems": [{
     "id": "sticker",
@@ -3308,6 +3310,30 @@ async function optimizeBannerImage(file) {
     favorite: false
   });
 }
+async function storeVideoFile(file) {
+  if (!isSupportedVideoFile(file)) throw new Error("動画ファイルを選んでください");
+  const id = uid();
+  const now = new Date().toISOString();
+  const dataUrl = await readFileAsDataUrl(file);
+  await putIndexedDbImage({
+    id,
+    dbId: id,
+    category: "video-file",
+    src: dataUrl,
+    thumbnail: "",
+    originalName: file.name,
+    mimeType: file.type || "video/*",
+    width: 0,
+    height: 0,
+    createdAt: now,
+    updatedAt: now,
+    title: file.name,
+    memo: "動画プロンプト本体",
+    favorite: false
+  });
+  scheduleStorageWarningCheck();
+  return indexedDbRef(id);
+}
 async function createVideoThumbnail(file) {
   if (!file.type.startsWith("video/")) throw new Error("動画ファイルを選んでください");
   const url = URL.createObjectURL(file);
@@ -3945,19 +3971,7 @@ function App() {
   };
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
-  const videoFavoritePrompts = extractVideoPromptItems(videos).filter(video => video.favorite).map(video => ({
-    id: video.id,
-    title: video.title,
-    category: video.model || "動画プロンプト",
-    description: video.memo || video.prompt || video.url,
-    prompt: video.prompt || video.memo || video.url,
-    imageUrl: video.thumbnail || "",
-    coverImages: video.thumbnail ? [video.thumbnail] : [],
-    tags: video.tags || [],
-    favorite: true,
-    isVideoPrompt: true
-  }));
-  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock), ...videoFavoritePrompts].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
+  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
   const copyText = async (text, id) => {
@@ -8247,8 +8261,12 @@ function GalleryPage({
     onClick: () => setScreen("home")
   }));
 }
+function videoDisplaySrc(url) {
+  if (!url) return "";
+  return resolveIndexedDbImage(url, false) || url;
+}
 function isPlayableVideoUrl(url) {
-  return /\.(mp4|webm)(\?.*)?$/i.test(url);
+  return /^data:video\//i.test(url) || url.startsWith("blob:") || /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url);
 }
 function isSupportedVideoFile(file) {
   if (!file) return false;
@@ -8399,7 +8417,8 @@ function VideoLibrary({
     try {
       const image = await optimizeImage(file, "video-thumbnail");
       updateDraft({
-        thumbnail: image.src || image.thumbnail
+        thumbnail: image.src || image.thumbnail,
+        thumbnailMode: "thumbnail"
       });
       scheduleStorageWarningCheck();
     } catch {
@@ -8412,7 +8431,8 @@ function VideoLibrary({
       const image = await createVideoThumbnail(file);
       updateDraft({
         title: draft.title || file.name.replace(/\.[^.]+$/, ""),
-        thumbnail: image.src || image.thumbnail
+        thumbnail: image.src || image.thumbnail,
+        thumbnailMode: "thumbnail"
       });
       scheduleStorageWarningCheck();
     } catch {
@@ -8425,29 +8445,32 @@ function VideoLibrary({
       window.alert("mp4 / webm / mov などの動画ファイルを選んでください。");
       return;
     }
-    const nextUrl = URL.createObjectURL(file);
-    setUploadedVideoUrl(current => {
-      if (current) URL.revokeObjectURL(current);
-      return nextUrl;
-    });
-    if (!draft.thumbnail) {
-      try {
-        const image = await createVideoThumbnail(file);
-        updateDraft({
-          title: draft.title || file.name.replace(/\.[^.]+$/, ""),
-          thumbnail: image.src || image.thumbnail
-        });
-        scheduleStorageWarningCheck();
-      } catch {
-        // 動画形式によってはサムネ生成できないことがあります。動画自体の登録は続行します。
-      }
+    try {
+      const storedVideoUrl = await storeVideoFile(file);
+      const previewUrl = videoDisplaySrc(storedVideoUrl);
+      setUploadedVideoUrl(current => {
+        if (current && current.startsWith("blob:")) URL.revokeObjectURL(current);
+        return previewUrl;
+      });
+      updateDraft({
+        title: draft.title || file.name.replace(/\.[^.]+$/, ""),
+        url: storedVideoUrl,
+        thumbnailMode: draft.thumbnail ? draft.thumbnailMode || "thumbnail" : "video"
+      });
+    } catch {
+      window.alert("動画を保存できませんでした。ファイルサイズを小さくしてもう一度試してください。");
     }
   };
   const clearUploadedVideo = () => {
     setUploadedVideoUrl(current => {
-      if (current) URL.revokeObjectURL(current);
+      if (current && current.startsWith("blob:")) URL.revokeObjectURL(current);
       return "";
     });
+    if (draft.url.startsWith("indexeddb:") || draft.url.startsWith("data:video/") || draft.url.startsWith("blob:")) {
+      updateDraft({
+        url: ""
+      });
+    }
     if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
   };
   const openVideo = url => {
@@ -8633,6 +8656,26 @@ function VideoLibrary({
       src: imageDisplaySrc(draft.thumbnail),
       alt: ""
     }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null), /*#__PURE__*/React.createElement("small", null, "クリック・ドロップ・貼り付けでサムネイル追加")), /*#__PURE__*/React.createElement("div", {
+      className: "video-thumbnail-mode",
+      role: "group",
+      "aria-label": "カード表面の表示"
+    }, /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("input", {
+      type: "radio",
+      name: "thumbnailMode",
+      checked: (draft.thumbnailMode || "thumbnail") === "thumbnail",
+      disabled: !draft.thumbnail,
+      onChange: () => updateDraft({
+        thumbnailMode: "thumbnail"
+      })
+    }), " サムネを使う"), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("input", {
+      type: "radio",
+      name: "thumbnailMode",
+      checked: draft.thumbnailMode === "video",
+      disabled: !draft.url && !uploadedVideoUrl,
+      onChange: () => updateDraft({
+        thumbnailMode: "video"
+      })
+    }), " 動画だけ表示")), /*#__PURE__*/React.createElement("div", {
       className: "video-thumbnail-tools"
     }, /*#__PURE__*/React.createElement("button", {
       type: "button",
@@ -8675,7 +8718,7 @@ function VideoLibrary({
       playsInline: true
     }) : /*#__PURE__*/React.createElement("div", {
       className: "video-upload-placeholder"
-    }, /*#__PURE__*/React.createElement("span", null, "▶"), /*#__PURE__*/React.createElement("strong", null, "動画をアップロード"), /*#__PURE__*/React.createElement("small", null, "mp4 / webm / mov に対応。動画本体は保存されません。"))), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("span", null, "▶"), /*#__PURE__*/React.createElement("strong", null, "動画をアップロード"), /*#__PURE__*/React.createElement("small", null, "mp4 / webm / mov に対応。保存後もカード表面で再生できます。"))), /*#__PURE__*/React.createElement("div", {
       className: "video-thumbnail-tools"
     }, /*#__PURE__*/React.createElement("button", {
       type: "button",
@@ -8768,7 +8811,9 @@ function VideoLibrary({
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "動画プロンプト"), /*#__PURE__*/React.createElement("p", null, "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
     className: "library-prompt-grid video-grid"
   }, slots.map((item, index) => {
-    const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
+    const previewUrl = item ? videoDisplaySrc(tempVideoUrls[item.id] || item.url) : "";
+    const useThumbnail = item ? (item.thumbnailMode || "thumbnail") !== "video" && Boolean(item.thumbnail) : false;
+    const showVideoPreview = Boolean(item && previewUrl && isPlayableVideoUrl(previewUrl) && (hoverVideoId === item.id || !useThumbnail));
     return item ? /*#__PURE__*/React.createElement("article", {
       className: "library-prompt-card video-card video-prompt-card",
       key: item.id,
@@ -8818,13 +8863,13 @@ function VideoLibrary({
       },
       onMouseEnter: () => setHoverVideoId(item.id),
       onMouseLeave: () => setHoverVideoId("")
-    }, hoverVideoId === item.id && (isPlayableVideoUrl(previewUrl) || previewUrl.startsWith("blob:")) ? /*#__PURE__*/React.createElement("video", {
+    }, showVideoPreview ? /*#__PURE__*/React.createElement("video", {
       src: previewUrl,
       autoPlay: true,
       muted: true,
       loop: true,
       playsInline: true
-    }) : item.thumbnail ? /*#__PURE__*/React.createElement("img", {
+    }) : useThumbnail ? /*#__PURE__*/React.createElement("img", {
       src: imageDisplaySrc(item.thumbnail),
       alt: ""
     }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null)), /*#__PURE__*/React.createElement("div", {
