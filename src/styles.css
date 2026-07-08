@@ -6871,6 +6871,57 @@ summary {
   white-space: nowrap;
 }
 
+.folder-rule-note {
+  margin: 8px 0 16px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.stock-folder-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.stock-folder-row select {
+  min-width: 0;
+}
+
+.stock-folder-row button,
+.video-editor-folder-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--ink);
+  padding: 10px 14px;
+  font-weight: 850;
+}
+
+.video-folder-list {
+  display: grid;
+  gap: 12px;
+}
+
+.folder-item-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--ink);
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.folder-item-button span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .project-edit-form {
   gap: 18px;
 }

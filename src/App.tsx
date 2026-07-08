@@ -154,6 +154,7 @@ type VideoItem = {
   memo: string;
   tags: string[];
   favorite: boolean;
+  folder?: string;
   createdAt: string;
   updatedAt?: string;
 };
@@ -163,6 +164,7 @@ type VideoPromptStock = {
   title: string;
   prompt: string;
   memo: string;
+  folder?: string;
   createdAt: string;
   updatedAt?: string;
 };
@@ -551,6 +553,7 @@ const blankVideoPrompt = (): VideoItem => ({
   memo: "",
   tags: [],
   favorite: false,
+  folder: "",
   createdAt: "",
 });
 const blankVideoPromptStock = (): VideoPromptStock => ({
@@ -558,6 +561,7 @@ const blankVideoPromptStock = (): VideoPromptStock => ({
   title: "",
   prompt: "",
   memo: "",
+  folder: "",
   createdAt: "",
 });
 
@@ -573,7 +577,7 @@ function loadStoredVideoPrompts() {
       if (!saved) continue;
       const items = JSON.parse(saved);
       const extracted = extractVideoPromptItems(items);
-      if (extracted.length) return extracted.map(normalizeVideoPrompt).slice(0, 20);
+      if (extracted.length) return extracted.map(normalizeVideoPrompt).slice(0, 100);
     }
     return null;
   } catch {
@@ -4691,7 +4695,7 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
             <div className="prompt-area-head">
               <div>
                 <h3>プロンプトストック</h3>
-                <p>画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+                <p>画像を設定しないプロンプトはこちらに保存します。ファイルごとに最大20件まで保存できます。</p>
               </div>
             </div>
             <div className="text-prompt-list">
@@ -4710,7 +4714,7 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
             {canAddTextStock && textStockCount >= stockFrameCount && (
               <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
             )}
-            {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+            {!canAddTextStock && <p className="limit-message">未分類ファイルの保存上限（20件）に達しました</p>}
           </section>
           <PageBackButton className="page-bottom-back" label="ライブラリへ戻る" onClick={() => { setSelectedCategory(null); setQuery(""); }} />
         </>
@@ -4899,16 +4903,25 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
   );
 }
 
-function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showMemo }: any) {
+function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showMemo, folderNames = [], onCreateFolder }: any) {
   const [title, setTitle] = React.useState(prompt?.title || "");
   const [promptText, setPromptText] = React.useState(prompt?.prompt || "");
+  const [folder, setFolder] = React.useState(folderNameOf(prompt || blankPrompt));
   React.useEffect(() => {
     setTitle(prompt?.title || "");
     setPromptText(prompt?.prompt || "");
-  }, [prompt?.id, prompt?.title, prompt?.prompt]);
+    setFolder(folderNameOf(prompt || blankPrompt));
+  }, [prompt?.id, prompt?.title, prompt?.prompt, prompt?.folder, blankPrompt?.folder]);
   const isSaved = Boolean(prompt?.id);
+  const folderOptions = [DEFAULT_FOLDER_NAME, ...folderNames].filter((name, index, list) => name && list.indexOf(name) === index);
+  const createFolderFromStock = () => {
+    const name = onCreateFolder?.();
+    if (!name) return;
+    setFolder(name);
+    if (isSaved) onUpdate(prompt.id, { folder: name });
+  };
   const save = (patch: Partial<LibraryBoardPrompt>) => {
-    const next = { ...blankPrompt, ...prompt, title, prompt: promptText, ...patch, isTextStock: true, imageUrl: "" };
+    const next = { ...blankPrompt, ...prompt, title, prompt: promptText, folder: folder === DEFAULT_FOLDER_NAME ? "" : folder, ...patch, isTextStock: true, imageUrl: "" };
     if (isSaved) {
       onUpdate(prompt.id, patch);
       return;
@@ -4950,6 +4963,16 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
         onBlur={() => save({ prompt: promptText })}
         placeholder="プロンプト本文"
       />
+      <div className="stock-folder-row">
+        <select value={folder} onChange={(event) => {
+          const nextFolder = event.target.value;
+          setFolder(nextFolder);
+          if (isSaved) onUpdate(prompt.id, { folder: nextFolder === DEFAULT_FOLDER_NAME ? "" : nextFolder });
+        }}>
+          {folderOptions.map((name) => <option value={name} key={name}>{name}</option>)}
+        </select>
+        <button type="button" onClick={createFolderFromStock}>＋</button>
+      </div>
       <div className="text-stock-actions">
         <button className="primary" onClick={copyStockPrompt} disabled={!promptText.trim()}>📋 プロンプトをコピー</button>
         <button onClick={(event) => { event.stopPropagation(); showMemo(); }} disabled={!isSaved}>メモ</button>
@@ -5201,6 +5224,10 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
 }
 
 const DEFAULT_FOLDER_NAME = "未分類";
+const PROMPT_FOLDER_LIMIT = 10;
+const VIDEO_FOLDER_LIMIT = 5;
+const PROMPTS_PER_FOLDER_LIMIT = 20;
+const VIDEO_PROMPTS_PER_FOLDER_LIMIT = 20;
 
 function folderNameOf(item: any) {
   return String(item?.folder || DEFAULT_FOLDER_NAME).trim() || DEFAULT_FOLDER_NAME;
@@ -5241,6 +5268,14 @@ function groupedByFolder<T>(items: T[], folderNames: string[] = []) {
   return groups;
 }
 
+function countItemsInFolder(items: any[], folder: string, textOnly: boolean, ignoreId = "") {
+  return items.filter((item) => item?.id !== ignoreId && folderNameOf(item) === folder && Boolean(item?.isTextStock) === textOnly).length;
+}
+
+function countVideoItemsInFolder(items: any[], folder: string, ignoreId = "") {
+  return items.filter((item) => item?.id !== ignoreId && folderNameOf(item) === folder).length;
+}
+
 function createFolderName(existing: string[], label: string) {
   const raw = window.prompt(`${label}の新しいファイル名を入力してください`);
   const name = String(raw || "").trim();
@@ -5267,16 +5302,20 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
   const filtered = prompts.filter((item: MyPrompt) => {
     return (tag === "すべて" || item.tags.includes(tag)) && (!favoritesOnly || item.favorite);
   });
-  const imagePrompts = filtered.filter((item: MyPrompt) => !item.isTextStock).slice(0, 20);
+  const imagePrompts = filtered.filter((item: MyPrompt) => !item.isTextStock);
   const textPrompts = filtered.filter((item: MyPrompt) => item.isTextStock);
   const imagePromptCount = prompts.filter((item: MyPrompt) => !item.isTextStock).length;
   const textStockCount = prompts.filter((item: MyPrompt) => item.isTextStock).length;
-  const canAddImagePrompt = imagePromptCount < 20;
-  const canAddTextStock = textStockCount < 100;
-  const imageSlotCount = imagePrompts.length < 20 ? Math.max(8, Math.ceil((imagePrompts.length + 1) / 4) * 4) : 20;
+  const canAddImagePrompt = countItemsInFolder(prompts, DEFAULT_FOLDER_NAME, false) < PROMPTS_PER_FOLDER_LIMIT;
+  const canAddTextStock = countItemsInFolder(prompts, DEFAULT_FOLDER_NAME, true) < PROMPTS_PER_FOLDER_LIMIT;
+  const imageSlotCount = Math.max(8, Math.ceil((imagePrompts.length + (canAddImagePrompt ? 1 : 0)) / 4) * 4);
   const imagePromptSlots = Array.from({ length: imageSlotCount }, (_, index) => imagePrompts[index] || null);
   const promptFolderGroups = groupedByFolder(filtered, promptFolders);
   const addPromptFolder = () => {
+    if (promptFolders.length >= PROMPT_FOLDER_LIMIT) {
+      window.alert("プロンプト帳のファイルは最大10件まで作れます");
+      return "";
+    }
     const name = createFolderName(promptFolders, "プロンプト帳");
     if (!name) return "";
     const next = [...promptFolders, name];
@@ -5285,12 +5324,13 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
     setViewMode("folders");
     return name;
   };
-  const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, textPrompts.length));
+  const visibleStockFrameCount = Math.min(PROMPTS_PER_FOLDER_LIMIT, Math.max(5, stockFrameCount, textPrompts.length));
   const textStockSlots = Array.from({ length: visibleStockFrameCount }, (_, index) => textPrompts[index] || null);
   const save = (item: MyPrompt) => {
-    const countForKind = prompts.filter((prompt: MyPrompt) => Boolean(prompt.isTextStock) === Boolean(item.isTextStock)).length;
-    const limit = item.isTextStock ? 100 : 20;
-    if (!item.id && countForKind >= limit) {
+    const folder = folderNameOf(item);
+    const countForKind = countItemsInFolder(prompts, folder, Boolean(item.isTextStock), item.id);
+    if (countForKind >= PROMPTS_PER_FOLDER_LIMIT) {
+      window.alert("1ファイル内に保存できる数は、画像付き20件・テキストのみ20件までです");
       setEditing(null);
       return;
     }
@@ -5312,8 +5352,8 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
     setPrompts((items: MyPrompt[]) => items.map((prompt) => prompt.id === id ? { ...prompt, ...patch } : prompt));
   };
   const duplicatePrompt = (prompt: MyPrompt) => {
-    const countForKind = prompts.filter((item: MyPrompt) => Boolean(item.isTextStock) === Boolean(prompt.isTextStock)).length;
-    if (countForKind >= (prompt.isTextStock ? 100 : 20)) return;
+    const countForKind = countItemsInFolder(prompts, folderNameOf(prompt), Boolean(prompt.isTextStock));
+    if (countForKind >= PROMPTS_PER_FOLDER_LIMIT) return;
     setPrompts((items: MyPrompt[]) => [...items, { ...prompt, id: uid(), title: `${prompt.title} コピー` }]);
   };
   const deletePrompt = (id: string) => {
@@ -5328,18 +5368,19 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
   };
   const addTextStockFrame = () => {
     if (!canAddTextStock) return;
-    setStockFrameCount((count) => Math.min(100, count + 1));
+    setStockFrameCount((count) => Math.min(20, count + 1));
   };
   return (
     <section className={`page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`}>
-      <PageHead title="プロンプト帳" action={<div className="actions"><span className="prompt-count-pill">画像 {imagePromptCount} / 20・ストック {textStockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>} />
+      <PageHead title="プロンプト帳" action={<div className="actions"><span className="prompt-count-pill">ファイル {promptFolders.length} / 10・各ファイル 画像20 / テキスト20</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>} />
       <div className="folder-view-toolbar">
         <div className="folder-view-tabs" role="group" aria-label="プロンプト帳の表示切り替え">
           <button className={viewMode === "list" ? "active-soft" : ""} onClick={() => setViewMode("list")}>一覧</button>
           <button className={viewMode === "folders" ? "active-soft" : ""} onClick={() => setViewMode("folders")}>ファイル別</button>
         </div>
-        <button className="folder-create-button" onClick={addPromptFolder}>＋ 新しいファイル</button>
+        <button className="folder-create-button" onClick={addPromptFolder} disabled={promptFolders.length >= PROMPT_FOLDER_LIMIT}>＋ 新しいファイル</button>
       </div>
+      <p className="folder-rule-note">プロンプト帳：ファイル最大10件。1ファイル内は画像付き20件・テキストのみ20件まで。画像は1プロンプト3枚まで。</p>
       <Filters>
         <select value={tag} onChange={(e) => setTag(e.target.value)}>
           <option>すべて</option>
@@ -5383,6 +5424,8 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
                       copyText={copyText}
                       showTranslation={() => setTranslationPrompt(prompt)}
                       showMemo={() => setMemoPrompt(prompt)}
+                      folderNames={promptFolders}
+                      onCreateFolder={addPromptFolder}
                     />
                   ))}
                 </div>
@@ -5396,7 +5439,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
         <div className="prompt-area-head">
           <div>
             <h3>画像付きプロンプト</h3>
-            <p>お気に入り・よく使うプロンプトを、最大20個まで保存できます。</p>
+            <p>お気に入り・よく使うプロンプトを、ファイルごとに最大20件まで保存できます。</p>
           </div>
         </div>
         <div className="library-prompt-grid">
@@ -5416,7 +5459,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
               showMemoButton={promptDisplay.showMemo !== false}
             />
           ) : canAddImagePrompt ? (
-            <button className="add-prompt-card" key={`my-empty-prompt-${index}`} onClick={() => setEditing(blankPrompt())}>
+            <button className="add-prompt-card" key={`my-empty-prompt-${index}`} onClick={() => setEditing({ ...blankPrompt(), folder: "" })}>
               <span>＋</span>
               <strong>新しいプロンプト</strong>
             </button>
@@ -5427,7 +5470,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
         <div className="prompt-area-head">
           <div>
             <h3>プロンプトストック</h3>
-            <p>画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+            <p>画像を設定しないプロンプトはこちらに保存します。ファイルごとに最大20件まで保存できます。</p>
           </div>
         </div>
         <div className="text-prompt-list">
@@ -5441,13 +5484,15 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
               copyText={copyText}
               showTranslation={() => prompt && setTranslationPrompt(prompt)}
               showMemo={() => prompt && setMemoPrompt(prompt)}
+              folderNames={promptFolders}
+              onCreateFolder={addPromptFolder}
             />
           ))}
         </div>
         {canAddTextStock && textStockCount >= visibleStockFrameCount && (
           <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
         )}
-        {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+        {!canAddTextStock && <p className="limit-message">未分類ファイルの保存上限（20件）に達しました</p>}
       </section>
       </>
       )}
@@ -6269,8 +6314,23 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const [favoriteOnly, setFavoriteOnly] = React.useState(false);
   const [hoverVideoId, setHoverVideoId] = React.useState("");
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
+  const [viewMode, setViewMode] = React.useState<"list" | "folders">("list");
+  const [videoFolders, setVideoFolders] = React.useState<string[]>(() => readFolderList("promptAtelierVideoPromptFolders"));
   const [memoStock, setMemoStock] = React.useState<VideoPromptStock | null>(null);
   const videoItems = extractVideoPromptItems(videos);
+  const addVideoFolder = () => {
+    if (videoFolders.length >= VIDEO_FOLDER_LIMIT) {
+      window.alert("動画プロンプト帳のファイルは最大5件まで作れます");
+      return "";
+    }
+    const name = createFolderName(videoFolders, "動画プロンプト帳");
+    if (!name) return "";
+    const next = [...videoFolders, name];
+    setVideoFolders(next);
+    saveFolderList("promptAtelierVideoPromptFolders", next);
+    setViewMode("folders");
+    return name;
+  };
   const videoDisplay = homeSettings?.pageDisplaySettings?.videoPrompts || defaultPageDisplaySettings.videoPrompts;
   React.useEffect(() => {
     uploadedVideoUrlRef.current = uploadedVideoUrl;
@@ -6323,13 +6383,13 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       window.alert("動画URLを入力するか、動画をアップロードしてください");
       return;
     }
-    if (!draft.id && videoItems.length >= 20) {
-      window.alert("動画プロンプトは最大20件まで保存できます");
+    if (countVideoItemsInFolder(videoItems, folderNameOf(next), draft.id) >= VIDEO_PROMPTS_PER_FOLDER_LIMIT) {
+      window.alert("1ファイル内の動画付き動画プロンプトは最大20件までです");
       return;
     }
     setVideos((items: VideoItem[]) => {
       const current = extractVideoPromptItems(items);
-      return draft.id ? current.map((item) => item.id === draft.id ? next : item) : [next, ...current].slice(0, 20);
+      return draft.id ? current.map((item) => item.id === draft.id ? next : item) : [next, ...current];
     });
     if (uploadedVideoUrl) {
       setTempVideoUrls((items) => ({ ...items, [next.id]: uploadedVideoUrl }));
@@ -6441,16 +6501,19 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     return haystack.includes(stockQuery);
   });
   const stockCount = normalizedStocks.length;
-  const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, filteredStocks.length));
+  const visibleStockFrameCount = Math.min(VIDEO_PROMPTS_PER_FOLDER_LIMIT, Math.max(5, stockFrameCount, filteredStocks.length));
   const stockSlots = stockQuery
     ? filteredStocks
     : Array.from({ length: visibleStockFrameCount }, (_, index) => normalizedStocks[index] || null);
-  const canAddStock = stockCount < 100;
+  const canAddStock = countVideoItemsInFolder(normalizedStocks, DEFAULT_FOLDER_NAME) < VIDEO_PROMPTS_PER_FOLDER_LIMIT;
   const updateVideoStock = (id: string, patch: Partial<VideoPromptStock>) => {
     setVideoStocks((items: VideoPromptStock[]) => items.map((item) => item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item));
   };
   const saveVideoStockFrame = (item: VideoPromptStock) => {
-    if (stockCount >= 100) return;
+    if (countVideoItemsInFolder(normalizedStocks, folderNameOf(item), item.id) >= VIDEO_PROMPTS_PER_FOLDER_LIMIT) {
+      window.alert("1ファイル内のテキストのみ動画プロンプトは最大20件までです");
+      return;
+    }
     const now = new Date().toISOString();
     const next = {
       ...blankVideoPromptStock(),
@@ -6463,24 +6526,31 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       updatedAt: now,
     };
     if (!next.title.trim() && !next.prompt.trim()) return;
-    setVideoStocks((items: VideoPromptStock[]) => [...items, next].slice(0, 100));
+    setVideoStocks((items: VideoPromptStock[]) => [...items, next]);
   };
   const addVideoStockFrame = () => {
     if (!canAddStock) return;
-    setStockFrameCount((count) => Math.min(100, count + 1));
+    setStockFrameCount((count) => Math.min(VIDEO_PROMPTS_PER_FOLDER_LIMIT, count + 1));
   };
   const searchActive = Boolean(modelFilter !== "すべて" || favoriteOnly);
-  const normalizedVideos = videoItems.slice(0, 20).map(normalizeVideoPrompt);
+  const normalizedVideos = videoItems.map(normalizeVideoPrompt);
   const filteredVideos = normalizedVideos.filter((item) => {
     const haystack = `${item.title} ${item.prompt} ${item.memo} ${(item.tags || []).join(" ")} ${item.model}`.toLowerCase();
     if (modelFilter !== "すべて" && item.model !== modelFilter) return false;
     if (favoriteOnly && !item.favorite) return false;
     return true;
   });
-  const videoSlotCount = searchActive ? filteredVideos.length : (normalizedVideos.length < 20 ? Math.max(8, Math.ceil((normalizedVideos.length + 1) / 4) * 4) : 20);
+  const canAddVideo = countVideoItemsInFolder(normalizedVideos, DEFAULT_FOLDER_NAME) < VIDEO_PROMPTS_PER_FOLDER_LIMIT;
+  const videoSlotCount = searchActive ? filteredVideos.length : Math.max(8, Math.ceil((normalizedVideos.length + (canAddVideo ? 1 : 0)) / 4) * 4);
   const slots = searchActive
     ? filteredVideos
     : Array.from({ length: videoSlotCount }, (_, index) => normalizedVideos[index] || null);
+  const videoFolderGroups = groupedByFolder(filteredVideos, videoFolders);
+  const videoStockFolderGroups = groupedByFolder(filteredStocks, videoFolders);
+  const videoFolderNamesForView = Array.from(new Set([
+    ...videoFolderGroups.map((entry) => entry.name),
+    ...videoStockFolderGroups.map((entry) => entry.name),
+  ]));
   if (selectedId) {
     return (
       <section
@@ -6505,6 +6575,10 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
             <label>タイトル<input value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="タイトル" /></label>
             <label>動画URL<input value={draft.url} onChange={(event) => updateDraft({ url: event.target.value })} placeholder="YouTube / Google Drive / Runway などのURL" /></label>
             <label>使用モデル<select value={draft.model} onChange={(event) => updateDraft({ model: event.target.value })}>{videoModels.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+            <label>ファイル<select value={folderNameOf(draft)} onChange={(event) => updateDraft({ folder: event.target.value === DEFAULT_FOLDER_NAME ? "" : event.target.value })}>
+              {[DEFAULT_FOLDER_NAME, ...videoFolders].filter((name, index, list) => name && list.indexOf(name) === index).map((name) => <option value={name} key={name}>{name}</option>)}
+            </select></label>
+            <button type="button" className="folder-create-button video-editor-folder-button" onClick={() => { const name = addVideoFolder(); if (name) updateDraft({ folder: name }); }}>＋ 新規ファイル</button>
             <label>動画プロンプト<textarea className="video-prompt-input" value={draft.prompt} onChange={(event) => updateDraft({ prompt: event.target.value })} placeholder="動画生成プロンプト" /></label>
             <label>メモ<textarea value={draft.memo} onChange={(event) => updateDraft({ memo: event.target.value })} placeholder="メモ" /></label>
             <label>タグ<input value={tagDraft} onChange={(event) => setTagDraft(event.target.value)} placeholder="cinematic, camera move, product demo" /></label>
@@ -6578,8 +6652,16 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     <section className={`page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`}>
       <PageHead
         title="動画プロンプト帳"
-        action={<div className="actions"><span className="prompt-count-pill">動画 {normalizedVideos.length} / 20・ストック {stockCount} / 100</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>}
+        action={<div className="actions"><span className="prompt-count-pill">ファイル {videoFolders.length} / 5・各ファイル 動画20 / テキスト20</span><PageBackButton label="ホームへ戻る" onClick={() => setScreen("home")} /></div>}
       />
+      <div className="folder-view-toolbar">
+        <div className="folder-view-tabs" role="group" aria-label="動画プロンプト帳の表示切り替え">
+          <button className={viewMode === "list" ? "active-soft" : ""} onClick={() => setViewMode("list")}>一覧</button>
+          <button className={viewMode === "folders" ? "active-soft" : ""} onClick={() => setViewMode("folders")}>ファイル別</button>
+        </div>
+        <button className="folder-create-button" onClick={addVideoFolder} disabled={videoFolders.length >= VIDEO_FOLDER_LIMIT}>＋ 新しいファイル</button>
+      </div>
+      <p className="folder-rule-note">動画プロンプト帳：ファイル最大5件。1ファイル内は動画付き20件・テキストのみ20件まで。サムネイルは1件1枚、動画本体は保存されません。</p>
       <div className="video-filter-bar">
         <select value={modelFilter} onChange={(event) => setModelFilter(event.target.value)}>
           <option>すべて</option>
@@ -6587,11 +6669,51 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
         </select>
         <label className="check"><input type="checkbox" checked={favoriteOnly} onChange={(event) => setFavoriteOnly(event.target.checked)} /> お気に入りのみ</label>
       </div>
+      {viewMode === "folders" ? (
+        <div className="folder-board video-folder-board">
+          {videoFolderNamesForView.map((folderName) => {
+            const group = videoFolderGroups.find((entry) => entry.name === folderName) || { name: folderName, items: [] };
+            const stockGroup = videoStockFolderGroups.find((entry) => entry.name === folderName) || { name: folderName, items: [] };
+            return (
+              <section className="folder-panel" key={group.name}>
+                <div className="folder-cover">
+                  <span>動画ファイル</span>
+                  <strong>{group.name}</strong>
+                  <small>動画 {group.items.length}件・テキスト {stockGroup.items.length}件</small>
+                </div>
+                <div className="video-folder-list">
+                  {group.items.map((item: any) => (
+                    <button className="folder-item-button" key={item.id} onClick={() => editVideo(item)}>
+                      <strong>{item.title || "動画プロンプト"}</strong>
+                      <span>{item.model || "その他"}</span>
+                    </button>
+                  ))}
+                  {stockGroup.items.map((stock: any) => (
+                    <TextStockFrame
+                      key={stock.id}
+                      prompt={stock}
+                      blankPrompt={blankVideoPromptStock()}
+                      onCreate={saveVideoStockFrame}
+                      onUpdate={updateVideoStock}
+                      copyText={copyVideoStockText}
+                      showMemo={() => setMemoStock(stock)}
+                      folderNames={videoFolders}
+                      onCreateFolder={addVideoFolder}
+                    />
+                  ))}
+                  {!group.items.length && !stockGroup.items.length && <p className="folder-empty-text">このファイルにはまだ項目がありません。</p>}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+      <>
       <section className="prompt-area video-prompt-area">
         <div className="prompt-area-head">
           <div>
             <h3>動画プロンプト</h3>
-            <p>Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。</p>
+            <p>Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトをファイルごとに最大20件まで保存できます。</p>
           </div>
         </div>
         <div className="library-prompt-grid video-grid">
@@ -6609,7 +6731,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
                 <summary aria-label="メニュー">…</summary>
                 <div>
                   <button onClick={(event) => { event.preventDefault(); editVideo(item); }}>編集</button>
-                  <button onClick={(event) => { event.preventDefault(); setVideos((items: VideoItem[]) => [{ ...item, id: uid(), title: `${item.title} コピー`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...extractVideoPromptItems(items)].slice(0, 20)); }}>複製</button>
+                  <button onClick={(event) => { event.preventDefault(); setVideos((items: VideoItem[]) => [{ ...item, id: uid(), title: `${item.title} コピー`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...extractVideoPromptItems(items)]); }}>複製</button>
                   <button className="danger" onClick={(event) => { event.preventDefault(); deleteVideo(item.id); }}>削除</button>
                 </div>
               </details>
@@ -6639,21 +6761,21 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
               </div>
             </article>
           ) : (
-            <button className="add-prompt-card video-add-card" key={`empty-${index}`} onClick={openNewVideo} disabled={videoItems.length >= 20}>
+            <button className="add-prompt-card video-add-card" key={`empty-${index}`} onClick={openNewVideo} disabled={!canAddVideo}>
               <span>＋</span>
               <strong>新しい動画プロンプト</strong>
             </button>
           );
           })}
         </div>
-        {!searchActive && videoItems.length >= 20 && <p className="limit-message">動画プロンプトは最大20件まで保存できます</p>}
+        {!searchActive && !canAddVideo && <p className="limit-message">未分類ファイルの保存上限（20件）に達しました</p>}
         {searchActive && !filteredVideos.length && <Empty text="条件に合う動画プロンプトがありません。" />}
       </section>
       <section className="prompt-area text-prompt-area video-stock-area">
         <div className="prompt-area-head">
           <div>
             <h3>プロンプトストック</h3>
-            <p>動画を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。</p>
+            <p>動画を設定しないプロンプトはこちらに保存します。ファイルごとに最大20件まで保存できます。</p>
           </div>
         </div>
         <div className="text-prompt-list">
@@ -6666,15 +6788,19 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
               onUpdate={updateVideoStock}
               copyText={copyVideoStockText}
               showMemo={() => stock && setMemoStock(stock)}
+              folderNames={videoFolders}
+              onCreateFolder={addVideoFolder}
             />
           ))}
         </div>
         {canAddStock && !stockQuery && stockCount >= visibleStockFrameCount && (
           <button className="add-stock-button" onClick={addVideoStockFrame}>＋ プロンプトを追加</button>
         )}
-        {!canAddStock && <p className="limit-message">保存上限（100件）に達しました</p>}
+        {!canAddStock && <p className="limit-message">未分類ファイルの保存上限（20件）に達しました</p>}
         {stockQuery && !filteredStocks.length && <Empty text="条件に合うプロンプトストックがありません。" />}
       </section>
+      </>
+      )}
       {memoStock && (
         <MemoModal
           prompt={{ ...memoStock, id: memoStock.id, memo: memoStock.memo || "" }}
