@@ -1068,7 +1068,7 @@ const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
-const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json", "./src/data/sampleSeed.json"];
+const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json?v=20260708-sample-seed-fixed-v63", "./src/data/sampleSeed.json?v=20260708-sample-seed-fixed-v63"];
 const EMBEDDED_SAMPLE_SEED_DATA = {
   "libraryItems": [{
     "id": "sticker",

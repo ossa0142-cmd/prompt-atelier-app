@@ -1,13 +1,14 @@
-
-  <svg xmlns="http://www.w3.org/2000/svg" width="900" height="650" viewBox="0 0 900 650">
-    <defs>
-      <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-        <stop stop-color="#f8efe6"/><stop offset="1" stop-color="#eadfcf"/>
-      </linearGradient>
-    </defs>
-    <rect width="900" height="650" rx="42" fill="url(#g)"/>
-    <circle cx="190" cy="165" r="80" fill="#fff" opacity=".42"/>
-    <circle cx="720" cy="500" r="140" fill="#fff" opacity=".28"/>
-    <rect x="210" y="190" width="480" height="270" rx="28" fill="#fffaf4" opacity=".92"/>
-    <text x="450" y="335" text-anchor="middle" font-family="Arial" font-size="42" fill="#4b4038">Etsy</text>
-  </svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="650" viewBox="0 0 900 650">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#f7ecff"/>
+      <stop offset="1" stop-color="#fff3f8"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="650" rx="42" fill="url(#g)"/>
+  <circle cx="190" cy="155" r="78" fill="#ffffff" opacity=".46"/>
+  <circle cx="728" cy="494" r="140" fill="#ffffff" opacity=".30"/>
+  <rect x="185" y="170" width="530" height="310" rx="30" fill="#fffafc" opacity=".94"/>
+  <text x="450" y="334" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#4b4038">Etsy</text>
+  <text x="450" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#8f7589">Thumbnail</text>
+</svg>
