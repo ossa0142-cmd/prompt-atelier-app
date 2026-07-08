@@ -4696,7 +4696,7 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
   );
 }
 
-function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, showMemo }: any) {
+function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, onDelete, copyText, showMemo }: any) {
   const [title, setTitle] = React.useState(prompt?.title || "");
   const [promptText, setPromptText] = React.useState(prompt?.prompt || "");
   React.useEffect(() => {
@@ -4750,6 +4750,17 @@ function TextStockFrame({ prompt, blankPrompt, onCreate, onUpdate, copyText, sho
       <div className="text-stock-actions">
         <button className="primary" onClick={copyStockPrompt} disabled={!promptText.trim()}>📋 プロンプトをコピー</button>
         <button onClick={(event) => { event.stopPropagation(); showMemo(); }} disabled={!isSaved}>メモ</button>
+        {isSaved && onDelete && (
+          <button
+            className="danger text-stock-delete"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(prompt.id);
+            }}
+          >
+            削除
+          </button>
+        )}
       </div>
     </article>
   );
@@ -5171,6 +5182,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
                       blankPrompt={blankPrompt(true)}
                       onCreate={saveTextStockFrame}
                       onUpdate={updatePrompt}
+                      onDelete={deletePrompt}
                       copyText={copyText}
                       showTranslation={() => setTranslationPrompt(prompt)}
                       showMemo={() => setMemoPrompt(prompt)}
@@ -5229,13 +5241,14 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
               blankPrompt={blankPrompt(true)}
               onCreate={saveTextStockFrame}
               onUpdate={updatePrompt}
+              onDelete={deletePrompt}
               copyText={copyText}
               showTranslation={() => prompt && setTranslationPrompt(prompt)}
               showMemo={() => prompt && setMemoPrompt(prompt)}
             />
           ))}
         </div>
-        {canAddTextStock && textStockCount >= visibleStockFrameCount && (
+        {canAddTextStock && (
           <button className="add-stock-button" onClick={addTextStockFrame}>＋ プロンプトを追加</button>
         )}
         {!canAddTextStock && <p className="limit-message">保存上限（100件）に達しました</p>}
@@ -6240,6 +6253,13 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const updateVideoStock = (id: string, patch: Partial<VideoPromptStock>) => {
     setVideoStocks((items: VideoPromptStock[]) => items.map((item) => item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item));
   };
+  const deleteVideoStock = (id: string) => {
+    if (!id || !window.confirm("このプロンプトストックを削除しますか？")) return;
+    setVideoStocks((items: VideoPromptStock[]) => {
+      rememberDeletedSampleIdsFromItems(items.find((item) => item.id === id));
+      return items.filter((item) => item.id !== id);
+    });
+  };
   const saveVideoStockFrame = (item: VideoPromptStock) => {
     if (stockCount >= 100) return;
     const now = new Date().toISOString();
@@ -6455,12 +6475,13 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
               blankPrompt={blankVideoPromptStock()}
               onCreate={saveVideoStockFrame}
               onUpdate={updateVideoStock}
+              onDelete={deleteVideoStock}
               copyText={copyVideoStockText}
               showMemo={() => stock && setMemoStock(stock)}
             />
           ))}
         </div>
-        {canAddStock && !stockQuery && stockCount >= visibleStockFrameCount && (
+        {canAddStock && !stockQuery && (
           <button className="add-stock-button" onClick={addVideoStockFrame}>＋ プロンプトを追加</button>
         )}
         {!canAddStock && <p className="limit-message">保存上限（100件）に達しました</p>}

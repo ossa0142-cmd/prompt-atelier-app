@@ -6597,6 +6597,7 @@ function TextStockFrame({
   blankPrompt,
   onCreate,
   onUpdate,
+  onDelete,
   copyText,
   showMemo
 }) {
@@ -6673,7 +6674,13 @@ function TextStockFrame({
       showMemo();
     },
     disabled: !isSaved
-  }, "メモ")));
+  }, "メモ"), isSaved && onDelete && /*#__PURE__*/React.createElement("button", {
+    className: "danger text-stock-delete",
+    onClick: event => {
+      event.stopPropagation();
+      onDelete(prompt.id);
+    }
+  }, "削除")));
 }
 function PromptThumbnail({
   imageUrl
@@ -7267,6 +7274,7 @@ function PromptBook({
     blankPrompt: blankPrompt(true),
     onCreate: saveTextStockFrame,
     onUpdate: updatePrompt,
+    onDelete: deletePrompt,
     copyText: copyText,
     showTranslation: () => setTranslationPrompt(prompt),
     showMemo: () => setMemoPrompt(prompt)
@@ -7307,10 +7315,11 @@ function PromptBook({
     blankPrompt: blankPrompt(true),
     onCreate: saveTextStockFrame,
     onUpdate: updatePrompt,
+    onDelete: deletePrompt,
     copyText: copyText,
     showTranslation: () => prompt && setTranslationPrompt(prompt),
     showMemo: () => prompt && setMemoPrompt(prompt)
-  }))), canAddTextStock && textStockCount >= visibleStockFrameCount && /*#__PURE__*/React.createElement("button", {
+  }))), canAddTextStock && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
     onClick: addTextStockFrame
   }, "＋ プロンプトを追加"), !canAddTextStock && /*#__PURE__*/React.createElement("p", {
@@ -8464,6 +8473,13 @@ function VideoLibrary({
       updatedAt: new Date().toISOString()
     } : item));
   };
+  const deleteVideoStock = id => {
+    if (!id || !window.confirm("このプロンプトストックを削除しますか？")) return;
+    setVideoStocks(items => {
+      rememberDeletedSampleIdsFromItems(items.find(item => item.id === id));
+      return items.filter(item => item.id !== id);
+    });
+  };
   const saveVideoStockFrame = item => {
     if (stockCount >= 100) return;
     const now = new Date().toISOString();
@@ -8830,9 +8846,10 @@ function VideoLibrary({
     blankPrompt: blankVideoPromptStock(),
     onCreate: saveVideoStockFrame,
     onUpdate: updateVideoStock,
+    onDelete: deleteVideoStock,
     copyText: copyVideoStockText,
     showMemo: () => stock && setMemoStock(stock)
-  }))), canAddStock && !stockQuery && stockCount >= visibleStockFrameCount && /*#__PURE__*/React.createElement("button", {
+  }))), canAddStock && !stockQuery && /*#__PURE__*/React.createElement("button", {
     className: "add-stock-button",
     onClick: addVideoStockFrame
   }, "＋ プロンプトを追加"), !canAddStock && /*#__PURE__*/React.createElement("p", {
