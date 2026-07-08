@@ -6776,30 +6776,22 @@ summary {
   position: fixed;
   inset: 0;
   z-index: 20;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   overflow: auto;
   background: rgba(45, 39, 34, 0.42);
-  padding: max(72px, env(safe-area-inset-top)) 20px 72px;
+  padding: 20px;
 }
 
 .modal {
   width: min(760px, 100%);
-  max-height: calc(100dvh - 144px);
+  max-height: 92vh;
   overflow: auto;
   border-radius: 8px;
   background: var(--card-bg);
   color: var(--ink);
   box-shadow: 0 26px 80px rgba(45, 39, 34, 0.24);
   padding: 26px;
-}
-
-.modal-category-note {
-  margin: -4px 0 2px;
-  color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 800;
 }
 
 .modal-head,
@@ -6852,74 +6844,6 @@ summary {
 .form-grid {
   display: grid;
   gap: 12px;
-}
-
-.modal-folder-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items: center;
-}
-
-.modal-folder-row button {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--card-bg);
-  color: var(--ink);
-  padding: 12px 16px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-
-.folder-rule-note {
-  margin: 8px 0 16px;
-  color: var(--muted);
-  font-size: 0.92rem;
-  font-weight: 800;
-}
-
-.stock-folder-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-  align-items: center;
-}
-
-.stock-folder-row select {
-  min-width: 0;
-}
-
-.stock-folder-row button,
-.video-editor-folder-button {
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--card-bg);
-  color: var(--ink);
-  padding: 10px 14px;
-  font-weight: 850;
-}
-
-.video-folder-list {
-  display: grid;
-  gap: 12px;
-}
-
-.folder-item-button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--card-bg);
-  color: var(--ink);
-  padding: 14px 16px;
-  text-align: left;
-}
-
-.folder-item-button span {
-  color: var(--muted);
-  font-weight: 800;
 }
 
 .project-edit-form {
@@ -7670,116 +7594,4 @@ summary {
   .folder-view-tabs button {
     flex: 1;
   }
-}
-
-.backup-reminder-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  border-radius: 26px;
-  margin: 20px auto 24px;
-  padding: 18px 22px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--card-bg)), var(--card-bg));
-  box-shadow: 0 18px 36px rgba(73, 58, 45, 0.08);
-}
-
-.backup-reminder-card strong {
-  color: var(--text-main);
-  font-size: 18px;
-  font-weight: 950;
-}
-
-.backup-reminder-card p {
-  margin: 6px 0 0;
-  color: var(--text-sub);
-  font-size: 13px;
-  font-weight: 750;
-  line-height: 1.6;
-}
-
-.backup-reminder-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.backup-reminder-settings {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-  border: 1px solid var(--customize-border);
-  border-radius: 20px;
-  padding: 16px;
-  background: color-mix(in srgb, var(--customize-card) 82%, var(--accent) 8%);
-}
-
-.backup-reminder-settings h4 {
-  margin: 0;
-  color: var(--customize-ink);
-  font-size: 18px;
-  font-weight: 950;
-}
-
-.backup-reminder-settings p {
-  margin: 0;
-  color: var(--customize-muted);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.backup-reminder-settings label {
-  display: grid;
-  gap: 8px;
-  max-width: 280px;
-}
-
-.backup-reminder-settings small {
-  color: var(--customize-muted);
-  font-size: 12px;
-  font-weight: 750;
-}
-
-@media (max-width: 720px) {
-  .backup-reminder-card {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .backup-reminder-actions {
-    justify-content: flex-start;
-  }
-}
-
-/* Video prompt card polish: keep actions stable after saved video support. */
-.video-card.video-prompt-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.video-card.video-prompt-card .video-card-body {
-  flex: 1;
-  min-height: 0;
-}
-
-.video-card.video-prompt-card .video-card-body h3,
-.video-card.video-prompt-card .video-card-body p {
-  overflow-wrap: anywhere;
-  word-break: normal;
-}
-
-.video-card.video-prompt-card .video-card-actions {
-  margin-top: auto;
-}
-
-.video-hide-memo .prompt-card-actions.video-card-actions {
-  grid-template-columns: 1fr;
-}
-
-.video-hide-memo .prompt-card-actions.video-card-actions .primary {
-  width: 100%;
 }

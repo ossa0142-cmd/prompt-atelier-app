@@ -2,7 +2,7 @@
   "app": "Prompt Atelier",
   "type": "prompt-atelier-sample-seed",
   "version": 1,
-  "exportedAt": "2026-07-05T08:20:08.871Z",
+  "exportedAt": "2026-07-08T00:00:00.000Z",
   "data": {
     "libraryItems": [
       {
@@ -459,6 +459,76 @@
         "isSample": true,
         "createdFromSeedExport": true,
         "sampleId": "sample-library-013"
+      },
+      {
+        "id": "1783485588871-5b1c4e459943a",
+        "title": "ナーサリーポスター",
+        "description": "保育園・幼稚園での使用シーンと子供部屋がランダムで生成されます。",
+        "coverImage": {
+          "id": "1783485587315-c3968ad03b8cf",
+          "dbId": "1783485587315-c3968ad03b8cf",
+          "category": "mockup",
+          "src": "/samples/mockups/1783485587315-c3968ad03b8cf.webp",
+          "thumbnail": "/samples/mockups/1783485587315-c3968ad03b8cf-thumb.webp",
+          "originalName": "a0e9869e-fe79-4a19-b334-e98bcb214aea.png",
+          "mimeType": "image/webp",
+          "width": 1200,
+          "height": 900,
+          "createdAt": "2026-07-08T04:39:47.315Z"
+        },
+        "coverImages": [
+          {
+            "id": "1783485587315-c3968ad03b8cf",
+            "dbId": "1783485587315-c3968ad03b8cf",
+            "category": "mockup",
+            "src": "/samples/mockups/1783485587315-c3968ad03b8cf.webp",
+            "thumbnail": "/samples/mockups/1783485587315-c3968ad03b8cf-thumb.webp",
+            "originalName": "a0e9869e-fe79-4a19-b334-e98bcb214aea.png",
+            "mimeType": "image/webp",
+            "width": 1200,
+            "height": 900,
+            "createdAt": "2026-07-08T04:39:47.315Z"
+          }
+        ],
+        "order": 14,
+        "isSample": true,
+        "createdFromSeedExport": true,
+        "sampleId": "sample-library-014"
+      },
+      {
+        "id": "1783487192726-987adbd0a00168",
+        "title": "バック・ポーチ",
+        "description": "PODで使える、バックや巾着、ポーチなど。",
+        "coverImage": {
+          "id": "1783487190033-1c27986b3bbb8",
+          "dbId": "1783487190033-1c27986b3bbb8",
+          "category": "mockup",
+          "src": "/samples/mockups/1783487190033-1c27986b3bbb8.webp",
+          "thumbnail": "/samples/mockups/1783487190033-1c27986b3bbb8-thumb.webp",
+          "originalName": "6d8ff3fe-2938-48cf-9888-64bddbc30f92.png",
+          "mimeType": "image/webp",
+          "width": 1200,
+          "height": 900,
+          "createdAt": "2026-07-08T05:06:30.033Z"
+        },
+        "coverImages": [
+          {
+            "id": "1783487190033-1c27986b3bbb8",
+            "dbId": "1783487190033-1c27986b3bbb8",
+            "category": "mockup",
+            "src": "/samples/mockups/1783487190033-1c27986b3bbb8.webp",
+            "thumbnail": "/samples/mockups/1783487190033-1c27986b3bbb8-thumb.webp",
+            "originalName": "6d8ff3fe-2938-48cf-9888-64bddbc30f92.png",
+            "mimeType": "image/webp",
+            "width": 1200,
+            "height": 900,
+            "createdAt": "2026-07-08T05:06:30.033Z"
+          }
+        ],
+        "order": 15,
+        "isSample": true,
+        "createdFromSeedExport": true,
+        "sampleId": "sample-library-015"
       }
     ],
     "mockupItems": [
@@ -1025,48 +1095,71 @@
         "isSample": true,
         "createdFromSeedExport": true,
         "sampleId": "sample-mockup-014"
+      },
+      {
+        "id": "1783487268243-cacb805cefef4",
+        "title": "バック・ポーチ",
+        "category": "ステッカーモックアップ",
+        "categoryId": "1783487192726-987adbd0a00168",
+        "description": "PODで使えるバック類",
+        "prompt": "Create premium Etsy-style Bag mockups using ONLY the uploaded clipart artwork.\n\nThe uploaded artwork must remain completely unchanged.\n\nDo not redraw, repaint, recolor, simplify, replace, or reinterpret the artwork.\n\nUse the uploaded artwork exactly as provided as professionally printed bag designs.\n\n━━━━━━━━━━━━━━━━━━\nPRIMARY DESIGN\n━━━━━━━━━━━━━━━━━━\n\nCreate realistic Etsy bestseller mockups showing how the uploaded artwork could be sold on premium bags.\n\nThe bags are the product.\n\nThe goal is to help customers imagine carrying and using the bags in everyday life.\n\n━━━━━━━━━━━━━━━━━━\nIMAGE FORMAT\n━━━━━━━━━━━━━━━━━━\n\n• Final ratio: 4:3 landscape\n\n• Generate 10 separate images.\n\n• Display approximately 1–3 coordinated bags per image.\n\n• The bags should occupy approximately 45–75% of the frame.\n\n• The printed designs must remain clearly visible at Etsy thumbnail size.\n\n━━━━━━━━━━━━━━━━━━\nBAG TYPE VARIATION\n━━━━━━━━━━━━━━━━━━\n\nRandomly generate premium print-on-demand bag styles.\n\nPossible products include:\n\n• canvas tote bag\n\n• cotton tote bag\n\n• oversized market tote\n\n• reusable shopping bag\n\n• grocery tote\n\n• book tote\n\n• beach tote\n\n• mini tote\n\n• utility tote\n\n• zipper tote\n\n• drawstring bag\n\n• lunch tote\n\n• wine tote\n\n• cosmetic pouch\n\n• makeup pouch\n\n• travel pouch\n\nDistribute different bag types naturally across the 10 images.\n\nSome images may contain one hero bag.\n\nOthers may contain two or three coordinated products.\n\n━━━━━━━━━━━━━━━━━━\nTHEME FIRST\n━━━━━━━━━━━━━━━━━━\n\nAlways build the entire mockup around the uploaded artwork's:\n\n• theme\n\n• subject\n\n• season\n\n• intended use\n\n• target audience\n\nNever build the scene around matching colors.\n\nThe artwork theme always has the highest priority.\n\n━━━━━━━━━━━━━━━━━━\nBAG DESIGN\n━━━━━━━━━━━━━━━━━━\n\nGenerate 10 unique bag mockups.\n\nVariation Types:\n\n**5 mockups should feature Statement Designs.**\n\nUse approximately 1–5 carefully selected artwork elements.\n\nEach bag should feature its own unique composition.\n\nExamples:\n\n• tote → one large hero illustration\n\n• mini tote → two coordinated illustrations\n\n• zipper pouch → compact centered design\n\n• book tote → modern stacked composition\n\nMaintain generous negative space.\n\nThe artwork should occupy approximately 20–45% of the visible bag surface.\n\nAvoid oversized graphics.\n\nThe finished products should resemble premium print-on-demand bags sold on Etsy.\n\n---\n\n**5 mockups should feature Pattern Designs.**\n\nCreate coordinated repeating textile-style patterns.\n\nEvery bag should feature its own unique pattern variation.\n\nExamples:\n\n• tote → medium repeating pattern\n\n• mini tote → larger repeat\n\n• cosmetic pouch → dense micro pattern\n\n• zipper pouch → diagonal repeat\n\n• lunch tote → offset repeat\n\nVary naturally:\n\n• artwork selection\n\n• spacing\n\n• scale\n\n• rotation\n\n• density\n\nNever copy the exact same pattern onto every bag.\n\nEvery product should feel individually designed while clearly belonging to the same coordinated collection.\n\nWhen multiple bags appear in one image, every bag must feature a different artwork arrangement or repeating pattern.\n\n━━━━━━━━━━━━━━━━━━\nBAG STYLING\n━━━━━━━━━━━━━━━━━━\n\nThe bags themselves may include tasteful premium design details inspired by modern print-on-demand products.\n\nPossible variations include:\n\n• contrast handles\n\n• colored handles\n\n• striped handles\n\n• colored side panels\n\n• colored bottoms\n\n• zipper closure\n\n• outside pocket\n\n• gusseted construction\n\n• premium stitching\n\n• reinforced handles\n\n• decorative piping\n\n• canvas trim\n\n• heavy cotton canvas\n\n• linen canvas\n\nThe bag construction should enhance the artwork without overpowering it.\n\n━━━━━━━━━━━━━━━━━━\nBACKGROUND\n━━━━━━━━━━━━━━━━━━\n\nCreate an elevated lifestyle environment inspired by premium Etsy photography, Pinterest interiors, boutique brands and print-on-demand product listings.\n\nPossible settings include:\n\n• charming European street\n\n• artisan café\n\n• stylish bookstore\n\n• flower market\n\n• creative studio\n\n• boutique storefront\n\n• Mediterranean village\n\n• Scandinavian home\n\n• Japandi interior\n\n• cozy travel destination\n\n• picnic setup\n\n• farmers market\n\n• modern home entryway\n\n• sunlit boutique corner\n\nBuild the environment around the uploaded artwork's theme rather than matching colors.\n\nThe background should feel warm, stylish, curated and highly photogenic.\n\nIt should support the bags without stealing attention.\n\n━━━━━━━━━━━━━━━━━━\nDISPLAY STYLING\n━━━━━━━━━━━━━━━━━━\n\nDisplay the bags naturally.\n\nPossible presentations:\n\n• hanging on wooden hooks\n\n• leaning against a chair\n\n• displayed on a bench\n\n• boutique shelf\n\n• folded neatly\n\n• picnic basket\n\n• market display\n\n• bookstore display\n\n• café table\n\n• travel styling\n\nCreate realistic depth and natural overlap.\n\nThe bags should always remain the hero.\n\n━━━━━━━━━━━━━━━━━━\nLIGHTING\n━━━━━━━━━━━━━━━━━━\n\nUse natural daylight.\n\nSoft window light.\n\nWarm highlights.\n\nGentle shadows.\n\nHighlight realistic canvas texture, stitching and print quality.\n\nCreate premium commercial lifestyle photography.\n\n━━━━━━━━━━━━━━━━━━\nNO PEOPLE\n━━━━━━━━━━━━━━━━━━\n\nDo not include:\n\n• people\n\n• hands\n\n• body parts\n\n• mannequins\n\n• reflections\n\n• silhouettes\n\nDisplay the bags as standalone products.\n\n━━━━━━━━━━━━━━━━━━\n10 VARIATIONS\n━━━━━━━━━━━━━━━━━━\n\nGenerate 10 completely different mockups.\n\nVary:\n\n• bag type\n\n• one, two or three products\n\n• statement vs pattern design\n\n• artwork placement\n\n• artwork composition\n\n• bag material\n\n• bag construction\n\n• display styling\n\n• background\n\n• props\n\n• camera angle\n\n• lighting\n\nEvery image should feel like a different professionally photographed Etsy listing.\n\n━━━━━━━━━━━━━━━━━━\nSTRICTLY AVOID\n━━━━━━━━━━━━━━━━━━\n\nUsing all uploaded artwork.\n\nApplying identical artwork layouts to every bag.\n\nApplying identical repeating patterns to every bag.\n\nClipart catalog appearance.\n\nOversized artwork.\n\nCrowded layouts.\n\nTiny unreadable artwork.\n\nLuxury fashion campaign styling.\n\nCorporate branding.\n\nPeople.\n\nBackgrounds overpowering the bags.\n\n━━━━━━━━━━━━━━━━━━\nOUTPUT\n━━━━━━━━━━━━━━━━━━\n\nGenerate 10 separate bag mockups.\n\n• 5 images should feature Statement Designs.\n\n• 5 images should feature Pattern Designs.\n\nRandomly generate different premium bag types.\n\nWhen multiple bags appear in the same image, every bag should feature a different artwork layout or repeating pattern while remaining part of the same coordinated collection.\n\nDo not create a collage.\n\nDo not create a grid.\n\nDo not create a contact sheet.\n\nDo not combine multiple mockups into one canvas.\n\nEach image must look like a real Etsy bestseller print-on-demand bag listing.\n\nPhotorealistic.\n\nPinterest-worthy.\n\nPremium Etsy styling.\n\nBoutique lifestyle photography.\n\nProfessional commercial product photography.\n\nRealistic canvas and fabric textures.\n\nTheme-based lifestyle storytelling.\n\nWarm, stylish and slightly playful.\n\nNo people.",
+        "memo": "",
+        "tags": [],
+        "imageUrl": {
+          "id": "1783487287967-fb504a0a52c96",
+          "dbId": "1783487287967-fb504a0a52c96",
+          "category": "prompt",
+          "src": "/samples/prompts/1783487287967-fb504a0a52c96.webp",
+          "thumbnail": "/samples/prompts/1783487287967-fb504a0a52c96-thumb.webp",
+          "originalName": "6d8ff3fe-2938-48cf-9888-64bddbc30f92.png",
+          "mimeType": "image/webp",
+          "width": 1200,
+          "height": 900,
+          "createdAt": "2026-07-08T05:08:07.967Z"
+        },
+        "coverImages": [
+          {
+            "id": "1783487287967-fb504a0a52c96",
+            "dbId": "1783487287967-fb504a0a52c96",
+            "category": "prompt",
+            "src": "/samples/prompts/1783487287967-fb504a0a52c96.webp",
+            "thumbnail": "/samples/prompts/1783487287967-fb504a0a52c96-thumb.webp",
+            "originalName": "6d8ff3fe-2938-48cf-9888-64bddbc30f92.png",
+            "mimeType": "image/webp",
+            "width": 1200,
+            "height": 900,
+            "createdAt": "2026-07-08T05:08:07.967Z"
+          }
+        ],
+        "japaneseTranslation": "Create premium Etsy-style Bag mockups using ONLY the uploaded clipart artwork.\n\nThe uploaded artwork must remain completely unchanged.\n\nDo not redraw, repaint, recolor, simplify, replace, or reinterpret the artwork.\n\nUse the uploaded artwork exactly as provided as professionally printed bag designs.\n\n━━━━━━━━━━━━━━━━━━\nPRIMARY DESIGN\n━━━━━━━━━━━━━━━━━━\n\nCreate realistic Etsy bestseller mockups showing how the uploaded artwork could be sold on premium bags.\n\nThe bags are the product.\n\nThe goal is to help customers imagine carrying and using the bags in everyday life.\n\n━━━━━━━━━━━━━━━━━━\nIMAGE FORMAT\n━━━━━━━━━━━━━━━━━━\n\n• Final ratio: 4:3 landscape\n\n• Generate 10 separate images.\n\n• Display approximately 1–3 coordinated bags per image.\n\n• The bags should occupy approximately 45–75% of the frame.\n\n• The printed designs must remain clearly visible at Etsy thumbnail size.\n\n━━━━━━━━━━━━━━━━━━\nBAG TYPE VARIATION\n━━━━━━━━━━━━━━━━━━\n\nRandomly generate premium print-on-demand bag styles.\n\nPossible products include:\n\n• canvas tote bag\n\n• cotton tote bag\n\n• oversized market tote\n\n• reusable shopping bag\n\n• grocery tote\n\n• book tote\n\n• beach tote\n\n• mini tote\n\n• utility tote\n\n• zipper tote\n\n• drawstring bag\n\n• lunch tote\n\n• wine tote\n\n• cosmetic pouch\n\n• makeup pouch\n\n• travel pouch\n\nDistribute different bag types naturally across the 10 images.\n\nSome images may contain one hero bag.\n\nOthers may contain two or three coordinated products.\n\n━━━━━━━━━━━━━━━━━━\nTHEME FIRST\n━━━━━━━━━━━━━━━━━━\n\nAlways build the entire mockup around the uploaded artwork's:\n\n• theme\n\n• subject\n\n• season\n\n• intended use\n\n• target audience\n\nNever build the scene around matching colors.\n\nThe artwork theme always has the highest priority.\n\n━━━━━━━━━━━━━━━━━━\nBAG DESIGN\n━━━━━━━━━━━━━━━━━━\n\nGenerate 10 unique bag mockups.\n\nVariation Types:\n\n**5 mockups should feature Statement Designs.**\n\nUse approximately 1–5 carefully selected artwork elements.\n\nEach bag should feature its own unique composition.\n\nExamples:\n\n• tote → one large hero illustration\n\n• mini tote → two coordinated illustrations\n\n• zipper pouch → compact centered design\n\n• book tote → modern stacked composition\n\nMaintain generous negative space.\n\nThe artwork should occupy approximately 20–45% of the visible bag surface.\n\nAvoid oversized graphics.\n\nThe finished products should resemble premium print-on-demand bags sold on Etsy.\n\n---\n\n**5 mockups should feature Pattern Designs.**\n\nCreate coordinated repeating textile-style patterns.\n\nEvery bag should feature its own unique pattern variation.\n\nExamples:\n\n• tote → medium repeating pattern\n\n• mini tote → larger repeat\n\n• cosmetic pouch → dense micro pattern\n\n• zipper pouch → diagonal repeat\n\n• lunch tote → offset repeat\n\nVary naturally:\n\n• artwork selection\n\n• spacing\n\n• scale\n\n• rotation\n\n• density\n\nNever copy the exact same pattern onto every bag.\n\nEvery product should feel individually designed while clearly belonging to the same coordinated collection.\n\nWhen multiple bags appear in one image, every bag must feature a different artwork arrangement or repeating pattern.\n\n━━━━━━━━━━━━━━━━━━\nBAG STYLING\n━━━━━━━━━━━━━━━━━━\n\nThe bags themselves may include tasteful premium design details inspired by modern print-on-demand products.\n\nPossible variations include:\n\n• contrast handles\n\n• colored handles\n\n• striped handles\n\n• colored side panels\n\n• colored bottoms\n\n• zipper closure\n\n• outside pocket\n\n• gusseted construction\n\n• premium stitching\n\n• reinforced handles\n\n• decorative piping\n\n• canvas trim\n\n• heavy cotton canvas\n\n• linen canvas\n\nThe bag construction should enhance the artwork without overpowering it.\n\n━━━━━━━━━━━━━━━━━━\nBACKGROUND\n━━━━━━━━━━━━━━━━━━\n\nCreate an elevated lifestyle environment inspired by premium Etsy photography, Pinterest interiors, boutique brands and print-on-demand product listings.\n\nPossible settings include:\n\n• charming European street\n\n• artisan café\n\n• stylish bookstore\n\n• flower market\n\n• creative studio\n\n• boutique storefront\n\n• Mediterranean village\n\n• Scandinavian home\n\n• Japandi interior\n\n• cozy travel destination\n\n• picnic setup\n\n• farmers market\n\n• modern home entryway\n\n• sunlit boutique corner\n\nBuild the environment around the uploaded artwork's theme rather than matching colors.\n\nThe background should feel warm, stylish, curated and highly photogenic.\n\nIt should support the bags without stealing attention.\n\n━━━━━━━━━━━━━━━━━━\nDISPLAY STYLING\n━━━━━━━━━━━━━━━━━━\n\nDisplay the bags naturally.\n\nPossible presentations:\n\n• hanging on wooden hooks\n\n• leaning against a chair\n\n• displayed on a bench\n\n• boutique shelf\n\n• folded neatly\n\n• picnic basket\n\n• market display\n\n• bookstore display\n\n• café table\n\n• travel styling\n\nCreate realistic depth and natural overlap.\n\nThe bags should always remain the hero.\n\n━━━━━━━━━━━━━━━━━━\nLIGHTING\n━━━━━━━━━━━━━━━━━━\n\nUse natural daylight.\n\nSoft window light.\n\nWarm highlights.\n\nGentle shadows.\n\nHighlight realistic canvas texture, stitching and print quality.\n\nCreate premium commercial lifestyle photography.\n\n━━━━━━━━━━━━━━━━━━\nNO PEOPLE\n━━━━━━━━━━━━━━━━━━\n\nDo not include:\n\n• people\n\n• hands\n\n• body parts\n\n• mannequins\n\n• reflections\n\n• silhouettes\n\nDisplay the bags as standalone products.\n\n━━━━━━━━━━━━━━━━━━\n10 VARIATIONS\n━━━━━━━━━━━━━━━━━━\n\nGenerate 10 completely different mockups.\n\nVary:\n\n• bag type\n\n• one, two or three products\n\n• statement vs pattern design\n\n• artwork placement\n\n• artwork composition\n\n• bag material\n\n• bag construction\n\n• display styling\n\n• background\n\n• props\n\n• camera angle\n\n• lighting\n\nEvery image should feel like a different professionally photographed Etsy listing.\n\n━━━━━━━━━━━━━━━━━━\nSTRICTLY AVOID\n━━━━━━━━━━━━━━━━━━\n\nUsing all uploaded artwork.\n\nApplying identical artwork layouts to every bag.\n\nApplying identical repeating patterns to every bag.\n\nClipart catalog appearance.\n\nOversized artwork.\n\nCrowded layouts.\n\nTiny unreadable artwork.\n\nLuxury fashion campaign styling.\n\nCorporate branding.\n\nPeople.\n\nBackgrounds overpowering the bags.\n\n━━━━━━━━━━━━━━━━━━\nOUTPUT\n━━━━━━━━━━━━━━━━━━\n\nGenerate 10 separate bag mockups.\n\n• 5 images should feature Statement Designs.\n\n• 5 images should feature Pattern Designs.\n\nRandomly generate different premium bag types.\n\nWhen multiple bags appear in the same image, every bag should feature a different artwork layout or repeating pattern while remaining part of the same coordinated collection.\n\nDo not create a collage.\n\nDo not create a grid.\n\nDo not create a contact sheet.\n\nDo not combine multiple mockups into one canvas.\n\nEach image must look like a real Etsy bestseller print-on-demand bag listing.\n\nPhotorealistic.\n\nPinterest-worthy.\n\nPremium Etsy styling.\n\nBoutique lifestyle photography.\n\nProfessional commercial product photography.\n\nRealistic canvas and fabric textures.\n\nTheme-based lifestyle storytelling.\n\nWarm, stylish and slightly playful.\n\nNo people.",
+        "favorite": false,
+        "isTextStock": false,
+        "isSample": true,
+        "createdFromSeedExport": true,
+        "sampleId": "sample-mockup-015"
       }
     ],
     "mockupStocks": [],
-    "promptCards": [
-      {
-        "id": "my-1",
-        "title": "かわいい動物ステッカー",
-        "category": "ステッカーモックアップ",
-        "description": "白背景でステッカーの質感が見えやすい、Etsy向けの定番モックアップ。",
-        "prompt": "温かみのある白い紙の上に置いた、清潔感のあるステッカーシートの平置きモックアップ。自然光、やわらかな影、上品なハンドメイド文具の雰囲気、透過PNGアートを配置しやすい余白。",
-        "tags": [
-          "かわいい",
-          "動物",
-          "ステッカー"
-        ],
-        "imageUrl": "/samples/inline/imageUrl-002.svg",
-        "note": "動物クリップアートのステッカー販売ページ用。",
-        "favorite": true,
-        "isSample": true,
-        "createdFromSeedExport": true,
-        "sampleId": "sample-prompt-card-001"
-      },
-      {
-        "id": "my-2",
-        "title": "植物アートプリント",
-        "category": "アートプリントモックアップ",
-        "description": "アートプリントをリビングの壁に飾った販売ページ向け写真。",
-        "prompt": "落ち着いたリビングの壁に飾った額入りアートプリントのモックアップ。オーク材の額縁、ニュートラルなソファ、やわらかな日差し、北欧風インテリア、リアルなファインアート紙。",
-        "tags": [
-          "植物",
-          "壁掛けアート"
-        ],
-        "imageUrl": "/samples/inline/imageUrl-003.svg",
-        "note": "水彩植物シリーズ用。額縁は明るめ。",
-        "favorite": false,
-        "isSample": true,
-        "createdFromSeedExport": true,
-        "sampleId": "sample-prompt-card-002"
-      }
-    ],
+    "promptCards": [],
     "promptStocks": [],
     "videoPromptCards": [
+      {
+        "id": "1783485048464-ab7bbc483f67f8",
+        "title": "Generate_a_second_video_usin",
+        "url": "",
+        "model": "Runway",
+        "thumbnail": "",
+        "prompt": "",
+        "memo": "",
+        "tags": [],
+        "favorite": false,
+        "folder": "",
+        "createdAt": "2026-07-08T04:30:48.464Z",
+        "updatedAt": "2026-07-08T04:32:54.616Z",
+        "isSample": true,
+        "createdFromSeedExport": true,
+        "sampleId": "sample-video-card-001"
+      },
       {
         "id": "video-sample-1",
         "title": "淡いステッカー紹介動画",
@@ -1724,5 +1817,6 @@
         "sampleId": "sample-work-tool-004"
       }
     ]
-  }
+  },
+  "images": []
 }
