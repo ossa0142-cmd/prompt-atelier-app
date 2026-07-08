@@ -148,6 +148,7 @@ type VideoItem = {
   id: string;
   title: string;
   url: string;
+  videoFile?: string;
   model: string;
   thumbnail?: string;
   prompt: string;
@@ -547,6 +548,7 @@ const blankVideoPrompt = (): VideoItem => ({
   id: "",
   title: "",
   url: "",
+  videoFile: "",
   model: "Runway",
   thumbnail: "",
   prompt: "",
@@ -606,6 +608,7 @@ function normalizeVideoPrompt(item: any): VideoItem {
     id: item?.id || uid(),
     title,
     url: item?.url || item?.videoUrl || item?.link || "",
+    videoFile: item?.videoFile || item?.uploadedVideo || "",
     model: item?.model || item?.aiModel || "その他",
     thumbnail: item?.thumbnail || item?.thumbnailUrl || item?.imageUrl || item?.image || "",
     prompt,
@@ -1146,8 +1149,10 @@ const IMAGE_STORE_NAME = "images";
 const indexedDbImageCache = new Map<string, IndexedDbImageRecord>();
 const indexedDbRef = (id: string) => `indexeddb:${id}`;
 const indexedDbThumbRef = (id: string) => `indexeddb-thumb:${id}`;
+const indexedDbVideoRef = (id: string) => `indexeddb-video:${id}`;
 const isIndexedDbImageRef = (value: string) => /^indexeddb(?:-thumb)?:/.test(value);
-const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb)?:/, "");
+const isIndexedDbVideoRef = (value: string) => /^indexeddb-video:/.test(value);
+const indexedDbIdFromRef = (value: string) => value.replace(/^indexeddb(?:-thumb|-video)?:/, "");
 const isDataImageUrl = (value: unknown) => typeof value === "string" && /^data:image\/(png|jpe?g|webp);base64,/i.test(value);
 const imageQualityProfiles: Record<string, { maxSide: number; quality: number; thumbnailSide: number; thumbnailQuality: number; keepOriginalMaxSide?: number }> = {
   banner: { maxSide: 3200, quality: 0.98, thumbnailSide: 1800, thumbnailQuality: 0.95, keepOriginalMaxSide: 3200 },
@@ -1406,6 +1411,14 @@ function imageDisplaySrc(image: any) {
     ? image
     : image.displayImage || image.bannerImage || image.coverImage || image.image || image.previewImage || image.src || image.imageUrl || image.thumbnail || "";
   return resolveIndexedDbImage(value, false) || imageThumbnail(image);
+}
+
+function videoDisplaySrc(value: any) {
+  const src = typeof value === "string" ? value : value?.videoFile || value?.url || "";
+  if (!src) return "";
+  if (!isIndexedDbVideoRef(src)) return src;
+  const record = indexedDbImageCache.get(indexedDbIdFromRef(src));
+  return record?.src || "";
 }
 
 function loadCanvasImage(src: string): Promise<HTMLImageElement> {
@@ -1852,6 +1865,29 @@ async function storeOptimizedImage(image: OptimizedImageData, category = "galler
   };
   await putIndexedDbImage(record);
   return imageReference(id, category, patch.title || image.originalName || "image");
+}
+
+async function storeVideoFile(file: File) {
+  const id = uid();
+  const now = new Date().toISOString();
+  const dataUrl = await readFileAsDataUrl(file);
+  await putIndexedDbImage({
+    id,
+    dbId: id,
+    category: "video-file",
+    src: dataUrl,
+    thumbnail: "",
+    originalName: file.name,
+    mimeType: file.type || "video/*",
+    width: 0,
+    height: 0,
+    title: file.name,
+    memo: "動画プロンプト帳の保存動画",
+    favorite: false,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return indexedDbVideoRef(id);
 }
 
 async function storeExistingImageValue(value: any, category = "gallery", title = "image") {
@@ -6379,7 +6415,11 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       createdAt: draft.createdAt || now,
       updatedAt: now,
     };
-    if (!next.url && !uploadedVideoUrl) {
+    if (uploadedVideoUrl && !next.videoFile) {
+      window.alert("動画ファイルを保存中です。少し待ってから保存してください");
+      return;
+    }
+    if (!next.url && !next.videoFile) {
       window.alert("動画URLを入力するか、動画をアップロードしてください");
       return;
     }
@@ -6411,6 +6451,10 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   };
   const deleteVideo = (id: string) => {
     if (!id || !window.confirm("この動画プロンプトを削除しますか？")) return;
+    const targetVideo = videoItems.find((item) => item.id === id);
+    if (targetVideo?.videoFile && isIndexedDbVideoRef(targetVideo.videoFile)) {
+      deleteIndexedDbImage(indexedDbIdFromRef(targetVideo.videoFile)).catch((error) => console.warn("[Prompt Atelier] 動画ファイルの削除に失敗しました", error));
+    }
     setTempVideoUrls((items) => {
       if (items[id]) URL.revokeObjectURL(items[id]);
       const next = { ...items };
@@ -6447,7 +6491,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       window.alert("動画からサムネイルを作成できませんでした。別の動画形式を試してください。");
     }
   };
-  const importUploadedVideo = (file?: File) => {
+  const importUploadedVideo = async (file?: File) => {
     if (!file) return;
     if (!isSupportedVideoFile(file)) {
       window.alert("mp4 / webm / mov などの動画ファイルを選んでください。");
@@ -6458,12 +6502,34 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       if (current) URL.revokeObjectURL(current);
       return nextUrl;
     });
+    setDraft((current) => ({
+      ...current,
+      title: current.title || file.name.replace(/\.[^.]+$/, ""),
+    }));
+    try {
+      const [videoFileRef, image] = await Promise.all([
+        storeVideoFile(file),
+        createVideoThumbnail(file).catch(() => null),
+      ]);
+      const thumbnail = image ? image.src || image.thumbnail : "";
+      setDraft((current) => ({
+        ...current,
+        title: current.title || file.name.replace(/\.[^.]+$/, ""),
+        videoFile: videoFileRef,
+        thumbnail: current.thumbnail || thumbnail,
+      }));
+      scheduleStorageWarningCheck();
+    } catch (error) {
+      console.warn("[Prompt Atelier] 動画ファイルの保存に失敗しました", error);
+      window.alert("動画ファイルを保存できませんでした。容量が大きい場合は、短い動画にするか不要なデータを整理してください。");
+    }
   };
   const clearUploadedVideo = () => {
     setUploadedVideoUrl((current) => {
       if (current) URL.revokeObjectURL(current);
       return "";
     });
+    updateDraft({ videoFile: "" });
     if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
   };
   const openVideo = (url: string) => {
@@ -6619,13 +6685,13 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
                 importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
               }}
             >
-              {uploadedVideoUrl ? (
-                <video src={uploadedVideoUrl} controls playsInline />
+              {uploadedVideoUrl || videoDisplaySrc(draft.videoFile || "") ? (
+                <video src={uploadedVideoUrl || videoDisplaySrc(draft.videoFile || "")} controls playsInline />
               ) : (
                 <div className="video-upload-placeholder">
                   <span>▶</span>
                   <strong>動画をアップロード</strong>
-                  <small>mp4 / webm / mov に対応。動画本体は保存されません。</small>
+                  <small>mp4 / webm / mov に対応。1プロンプトにつき1本保存できます。</small>
                 </div>
               )}
             </div>
@@ -6661,7 +6727,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
         </div>
         <button className="folder-create-button" onClick={addVideoFolder} disabled={videoFolders.length >= VIDEO_FOLDER_LIMIT}>＋ 新しいファイル</button>
       </div>
-      <p className="folder-rule-note">動画プロンプト帳：ファイル最大5件。1ファイル内は動画付き20件・テキストのみ20件まで。サムネイルは1件1枚、動画本体は保存されません。</p>
+      <p className="folder-rule-note">動画プロンプト帳：ファイル最大5件。1ファイル内は動画付き20件・テキストのみ20件まで。1動画プロンプトにつき動画1本・サムネイル1枚まで保存できます。</p>
       <div className="video-filter-bar">
         <select value={modelFilter} onChange={(event) => setModelFilter(event.target.value)}>
           <option>すべて</option>
@@ -6718,7 +6784,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
         </div>
         <div className="library-prompt-grid video-grid">
           {slots.map((item: VideoItem | null, index: number) => {
-            const previewUrl = item ? tempVideoUrls[item.id] || item.url : "";
+            const previewUrl = item ? tempVideoUrls[item.id] || videoDisplaySrc(item.videoFile || "") || item.url : "";
             return item ? (
             <article className="library-prompt-card video-card video-prompt-card" key={item.id} onClick={() => editVideo(item)}>
               <button className="video-favorite-button" aria-label="お気に入り" onClick={(event) => {
