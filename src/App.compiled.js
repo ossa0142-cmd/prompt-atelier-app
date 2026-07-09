@@ -5949,7 +5949,8 @@ function HomePromptCard({
   const [isHovering, setIsHovering] = React.useState(false);
   const videoSrc = prompt.isVideoPrompt ? videoDisplaySrc(prompt.videoUrl || "") : "";
   const canPlayVideo = Boolean(videoSrc && isPlayableVideoUrl(videoSrc));
-  const showVideo = canPlayVideo && isHovering;
+  const hasPromptImage = Boolean(imageDisplaySrc(prompt.imageUrl));
+  const showVideo = canPlayVideo && (isHovering || !hasPromptImage);
   return /*#__PURE__*/React.createElement("article", {
     className: `home-prompt-card ${prompt.isVideoPrompt ? "home-video-prompt-card" : ""}`,
     onMouseEnter: () => setIsHovering(true),
@@ -5961,7 +5962,7 @@ function HomePromptCard({
     loop: true,
     playsInline: true
   }) : /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
+    src: imageDisplaySrc(prompt.imageUrl) || (prompt.isVideoPrompt ? art("動画", "#fff4fb", "#f8dbe9") : art("プロンプト", "#f5eadc", "#e7e7df")),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", {
     className: "home-prompt-body"
