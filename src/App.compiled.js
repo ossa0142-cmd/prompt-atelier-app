@@ -3981,7 +3981,9 @@ function App() {
     coverImages: video.thumbnail ? [video.thumbnail] : [],
     tags: video.tags || [],
     favorite: true,
-    isVideoPrompt: true
+    isVideoPrompt: true,
+    videoUrl: video.url || "",
+    thumbnailMode: video.thumbnailMode || "thumbnail"
   }));
   const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock), ...videoFavoritePrompts].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
@@ -5944,9 +5946,21 @@ function HomePromptCard({
   prompt,
   onCopy
 }) {
+  const [isHovering, setIsHovering] = React.useState(false);
+  const videoSrc = prompt.isVideoPrompt ? videoDisplaySrc(prompt.videoUrl || "") : "";
+  const canPlayVideo = Boolean(videoSrc && isPlayableVideoUrl(videoSrc));
+  const showVideo = canPlayVideo && isHovering;
   return /*#__PURE__*/React.createElement("article", {
-    className: "home-prompt-card"
-  }, /*#__PURE__*/React.createElement("img", {
+    className: `home-prompt-card ${prompt.isVideoPrompt ? "home-video-prompt-card" : ""}`,
+    onMouseEnter: () => setIsHovering(true),
+    onMouseLeave: () => setIsHovering(false)
+  }, showVideo ? /*#__PURE__*/React.createElement("video", {
+    src: videoSrc,
+    autoPlay: true,
+    muted: true,
+    loop: true,
+    playsInline: true
+  }) : /*#__PURE__*/React.createElement("img", {
     src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", {

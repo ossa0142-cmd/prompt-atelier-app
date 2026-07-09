@@ -2478,6 +2478,8 @@ function App() {
       tags: video.tags || [],
       favorite: true,
       isVideoPrompt: true,
+      videoUrl: video.url || "",
+      thumbnailMode: video.thumbnailMode || "thumbnail",
     }));
   const favorites = [
     ...myPrompts,
@@ -4165,9 +4167,21 @@ function FeatureIcon({ name }: { name: string }) {
 }
 
 function HomePromptCard({ prompt, onCopy }: any) {
+  const [isHovering, setIsHovering] = React.useState(false);
+  const videoSrc = prompt.isVideoPrompt ? videoDisplaySrc(prompt.videoUrl || "") : "";
+  const canPlayVideo = Boolean(videoSrc && isPlayableVideoUrl(videoSrc));
+  const showVideo = canPlayVideo && isHovering;
   return (
-    <article className="home-prompt-card">
-      <img src={imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+    <article
+      className={`home-prompt-card ${prompt.isVideoPrompt ? "home-video-prompt-card" : ""}`}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      {showVideo ? (
+        <video src={videoSrc} autoPlay muted loop playsInline />
+      ) : (
+        <img src={imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+      )}
       <div className="home-prompt-body">
         <span className="mini-pill">{prompt.category}</span>
         <h3>{prompt.title}</h3>

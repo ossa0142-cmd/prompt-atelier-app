@@ -7671,3 +7671,36 @@ summary {
 .video-thumbnail-mode label:has(input:disabled) {
   opacity: 0.56;
 }
+
+
+/* Home favorite video preview: play only while hovering to keep the top page light. */
+.home-video-prompt-card video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.08;
+  object-fit: cover;
+  background: #111;
+}
+
+.home-video-prompt-card::after {
+  content: "▶";
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(73, 58, 45, 0.12);
+  pointer-events: none;
+}
+
+.home-video-prompt-card:hover::after {
+  opacity: 0;
+}
