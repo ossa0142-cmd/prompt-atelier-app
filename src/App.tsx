@@ -2464,9 +2464,25 @@ function App() {
 
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
+  const videoFavoritePrompts = extractVideoPromptItems(videos)
+    .map(normalizeVideoPrompt)
+    .filter((video) => video.favorite)
+    .map((video) => ({
+      id: video.id,
+      title: video.title,
+      category: video.model || "動画プロンプト",
+      description: video.memo || video.prompt || video.url,
+      prompt: video.prompt || video.memo || video.url,
+      imageUrl: video.thumbnail || "",
+      coverImages: video.thumbnail ? [video.thumbnail] : [],
+      tags: video.tags || [],
+      favorite: true,
+      isVideoPrompt: true,
+    }));
   const favorites = [
     ...myPrompts,
     ...mockupPrompts.filter((prompt) => !prompt.isTextStock),
+    ...videoFavoritePrompts,
   ].filter((prompt) => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
@@ -6339,6 +6355,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const slots = searchActive
     ? filteredVideos
     : Array.from({ length: videoSlotCount }, (_, index) => normalizedVideos[index] || null);
+  const draftVideoPreviewUrl = videoDisplaySrc(uploadedVideoUrl || draft.url);
+  const hasDraftVideoPreview = Boolean(draftVideoPreviewUrl && isPlayableVideoUrl(draftVideoPreviewUrl));
   if (selectedId) {
     return (
       <section
@@ -6407,8 +6425,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
                 importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
               }}
             >
-              {uploadedVideoUrl ? (
-                <video src={uploadedVideoUrl} controls playsInline />
+              {hasDraftVideoPreview ? (
+                <video src={draftVideoPreviewUrl} controls playsInline />
               ) : (
                 <div className="video-upload-placeholder">
                   <span>▶</span>
@@ -6419,7 +6437,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
             </div>
             <div className="video-thumbnail-tools">
               <button type="button" onClick={() => uploadVideoInputRef.current?.click()}>動画を選ぶ</button>
-              <button type="button" onClick={clearUploadedVideo} disabled={!uploadedVideoUrl}>アップロード動画を削除</button>
+              <button type="button" onClick={clearUploadedVideo} disabled={!draftVideoPreviewUrl}>アップロード動画を削除</button>
             </div>
             <input ref={thumbnailInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: "none" }} onChange={(event) => { importThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
             <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style={{ display: "none" }} onChange={(event) => { importVideoThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />

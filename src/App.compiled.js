@@ -3971,7 +3971,19 @@ function App() {
   };
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
-  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
+  const videoFavoritePrompts = extractVideoPromptItems(videos).map(normalizeVideoPrompt).filter(video => video.favorite).map(video => ({
+    id: video.id,
+    title: video.title,
+    category: video.model || "動画プロンプト",
+    description: video.memo || video.prompt || video.url,
+    prompt: video.prompt || video.memo || video.url,
+    imageUrl: video.thumbnail || "",
+    coverImages: video.thumbnail ? [video.thumbnail] : [],
+    tags: video.tags || [],
+    favorite: true,
+    isVideoPrompt: true
+  }));
+  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock), ...videoFavoritePrompts].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
   const copyText = async (text, id) => {
@@ -8559,6 +8571,8 @@ function VideoLibrary({
   const slots = searchActive ? filteredVideos : Array.from({
     length: videoSlotCount
   }, (_, index) => normalizedVideos[index] || null);
+  const draftVideoPreviewUrl = videoDisplaySrc(uploadedVideoUrl || draft.url);
+  const hasDraftVideoPreview = Boolean(draftVideoPreviewUrl && isPlayableVideoUrl(draftVideoPreviewUrl));
   if (selectedId) {
     return /*#__PURE__*/React.createElement("section", {
       className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`,
@@ -8712,8 +8726,8 @@ function VideoLibrary({
         setIsVideoUploadDragging(false);
         importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
       }
-    }, uploadedVideoUrl ? /*#__PURE__*/React.createElement("video", {
-      src: uploadedVideoUrl,
+    }, hasDraftVideoPreview ? /*#__PURE__*/React.createElement("video", {
+      src: draftVideoPreviewUrl,
       controls: true,
       playsInline: true
     }) : /*#__PURE__*/React.createElement("div", {
@@ -8726,7 +8740,7 @@ function VideoLibrary({
     }, "動画を選ぶ"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: clearUploadedVideo,
-      disabled: !uploadedVideoUrl
+      disabled: !draftVideoPreviewUrl
     }, "アップロード動画を削除")), /*#__PURE__*/React.createElement("input", {
       ref: thumbnailInputRef,
       type: "file",
