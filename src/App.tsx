@@ -5058,9 +5058,6 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
     <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose} className="prompt-edit-modal">
       <FormGrid>
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
-        <select value={draft.categoryId} onChange={(e) => setDraft({ ...draft, categoryId: e.target.value })}>
-          {categories.map((category: MockupCategory) => <option value={category.id} key={category.id}>{category.title}</option>)}
-        </select>
         <textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="説明" />
         <textarea className="tall" value={draft.prompt} onChange={(e) => setDraft({ ...draft, prompt: e.target.value })} placeholder="プロンプト本文" />
         <textarea className="tall" value={draft.japaneseTranslation || ""} onChange={(e) => setDraft({ ...draft, japaneseTranslation: e.target.value })} placeholder="和訳本文" />

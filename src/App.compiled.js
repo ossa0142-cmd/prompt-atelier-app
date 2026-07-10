@@ -7073,16 +7073,7 @@ function LibraryPromptModal({
       title: e.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("select", {
-    value: draft.categoryId,
-    onChange: e => setDraft({
-      ...draft,
-      categoryId: e.target.value
-    })
-  }, categories.map(category => /*#__PURE__*/React.createElement("option", {
-    value: category.id,
-    key: category.id
-  }, category.title))), /*#__PURE__*/React.createElement("textarea", {
+  }), /*#__PURE__*/React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,

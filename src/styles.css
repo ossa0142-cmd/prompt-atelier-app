@@ -7851,3 +7851,18 @@ summary {
   background: var(--card-bg);
   padding-bottom: 14px;
 }
+
+/* v75: keep add/edit prompt dialogs clear of the fixed top navigation. */
+.modal-backdrop {
+  z-index: 9999;
+  place-items: start center;
+  align-items: start;
+  padding: clamp(88px, 9vh, 120px) 20px 36px;
+}
+
+.modal.prompt-edit-modal {
+  width: min(920px, calc(100vw - 40px));
+  max-height: calc(100vh - clamp(136px, 15vh, 176px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
