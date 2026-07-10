@@ -7808,3 +7808,24 @@ summary {
     display: grid;
   }
 }
+
+.project-memo-empty-card {
+  display: flex;
+  align-items: center;
+  min-height: 92px;
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  color: var(--text-sub);
+  font-size: 16px;
+  font-weight: 850;
+  line-height: 1.6;
+  padding: 20px 24px;
+  text-align: left;
+}
+
+.project-memo-empty-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 78%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}

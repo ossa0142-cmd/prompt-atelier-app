@@ -6965,7 +6965,11 @@ function Projects({ projects, setProjects, projectMemos, setProjectMemos, prompt
                 <button className="danger" onClick={() => deleteMemo(memo.id)}>削除</button>
               </div>
             </article>
-          )) : <Empty text="プロジェクト用のメモを追加できます。" />}
+          )) : (
+            <button className="project-memo-empty-card" type="button" onClick={() => canAddMemo && setEditingMemo(blankProjectMemo())}>
+              メモを追加できます
+            </button>
+          )}
         </div>
       </section>
 

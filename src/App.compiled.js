@@ -9461,9 +9461,11 @@ function Projects({
   }, "コピー"), /*#__PURE__*/React.createElement("button", {
     className: "danger",
     onClick: () => deleteMemo(memo.id)
-  }, "削除")))) : /*#__PURE__*/React.createElement(Empty, {
-    text: "プロジェクト用のメモを追加できます。"
-  }))), editing && /*#__PURE__*/React.createElement(ProjectModal, {
+  }, "削除")))) : /*#__PURE__*/React.createElement("button", {
+    className: "project-memo-empty-card",
+    type: "button",
+    onClick: () => canAddMemo && setEditingMemo(blankProjectMemo())
+  }, "メモを追加できます"))), editing && /*#__PURE__*/React.createElement(ProjectModal, {
     item: editing,
     prompts: prompts,
     settings: settings,
