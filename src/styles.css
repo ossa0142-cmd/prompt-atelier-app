@@ -7580,6 +7580,25 @@ summary {
   margin: 10px 0 0;
 }
 
+.folder-limit-note {
+  margin: -8px 0 18px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.folder-select-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.folder-select-row button {
+  white-space: nowrap;
+}
+
 @media (max-width: 620px) {
   .folder-view-toolbar {
     align-items: stretch;
@@ -7593,6 +7612,10 @@ summary {
 
   .folder-view-tabs button {
     flex: 1;
+  }
+
+  .folder-select-row {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -543,6 +543,7 @@ const videoModels = ["Runway", "Kling", "Veo", "Hailuo", "Pika", "Luma", "その
 const blankVideoPrompt = () => ({
   id: "",
   title: "",
+  folder: DEFAULT_FOLDER_NAME,
   url: "",
   model: "Runway",
   thumbnail: "",
@@ -1028,6 +1029,7 @@ const sampleProjects = [{
 const blankPrompt = (textOnly = false) => ({
   id: "",
   title: "",
+  folder: DEFAULT_FOLDER_NAME,
   category: "ステッカーモックアップ",
   description: "",
   prompt: "",
@@ -7154,7 +7156,7 @@ function groupedByFolder(items, folderNames = []) {
   return groups;
 }
 function createFolderName(existing, label) {
-  const raw = window.prompt(`の新しいファイル名を入力してください`);
+  const raw = window.prompt(`${label}の新しいファイル名を入力してください`);
   const name = String(raw || "").trim();
   if (!name) return "";
   if (existing.includes(name)) {
@@ -7194,14 +7196,19 @@ function PromptBook({
   const imagePromptSlots = Array.from({
     length: imageSlotCount
   }, (_, index) => imagePrompts[index] || null);
-  const promptFolderGroups = groupedByFolder(filtered, promptFolders);
-  const addPromptFolder = () => {
-    const name = createFolderName(promptFolders, "プロンプト帳");
-    if (!name) return;
+  const availablePromptFolders = Array.from(new Set([DEFAULT_FOLDER_NAME, ...promptFolders, ...prompts.map(item => folderNameOf(item))]));
+  const promptFolderGroups = groupedByFolder(filtered, availablePromptFolders);
+  const createPromptFolder = (activate = true) => {
+    const name = createFolderName(availablePromptFolders, "プロンプト帳");
+    if (!name) return "";
     const next = [...promptFolders, name];
     setPromptFolders(next);
     saveFolderList("promptAtelierPromptFolders", next);
-    setViewMode("folders");
+    if (activate) setViewMode("folders");
+    return name;
+  };
+  const addPromptFolder = () => {
+    createPromptFolder(true);
   };
   const visibleStockFrameCount = Math.min(100, Math.max(5, stockFrameCount, textPrompts.length));
   const textStockSlots = Array.from({
@@ -7217,6 +7224,7 @@ function PromptBook({
     const next = {
       ...item,
       id: item.id || uid(),
+      folder: folderNameOf(item),
       coverImages: item.isTextStock ? [] : getCoverImages(item),
       imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
       japaneseTranslation: item.japaneseTranslation || "",
@@ -7288,7 +7296,9 @@ function PromptBook({
   }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
     className: "folder-create-button",
     onClick: addPromptFolder
-  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("select", {
+  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement("p", {
+    className: "folder-limit-note"
+  }, "プロンプト帳：ファイル最大10件。1ファイル内は画像付き20件・テキストのみ20件まで。画像は1プロンプト3枚まで。"), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("select", {
     value: tag,
     onChange: e => setTag(e.target.value)
   }, /*#__PURE__*/React.createElement("option", null, "すべて"), tags.map(item => /*#__PURE__*/React.createElement("option", {
@@ -7357,7 +7367,10 @@ function PromptBook({
   }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
     className: "add-prompt-card",
     key: `my-empty-prompt-${index}`,
-    onClick: () => setEditing(blankPrompt())
+    onClick: () => setEditing({
+      ...blankPrompt(),
+      folder: availablePromptFolders[0] || DEFAULT_FOLDER_NAME
+    })
   }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト")) : null))), /*#__PURE__*/React.createElement("section", {
     className: "prompt-area text-prompt-area"
   }, /*#__PURE__*/React.createElement("div", {
@@ -7381,6 +7394,8 @@ function PromptBook({
     className: "limit-message"
   }, "保存上限（100件）に達しました"))), editing && /*#__PURE__*/React.createElement(PromptModal, {
     item: editing,
+    folderOptions: availablePromptFolders,
+    onCreateFolder: () => createPromptFolder(false),
     onClose: () => setEditing(null),
     onSave: save
   }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
@@ -8336,7 +8351,18 @@ function VideoLibrary({
   const [hoverVideoId, setHoverVideoId] = React.useState("");
   const [stockFrameCount, setStockFrameCount] = React.useState(5);
   const [memoStock, setMemoStock] = React.useState(null);
+  const [videoViewMode, setVideoViewMode] = React.useState("list");
+  const [videoFolders, setVideoFolders] = React.useState(() => readFolderList("promptAtelierVideoFolders"));
   const videoItems = extractVideoPromptItems(videos);
+  const availableVideoFolders = Array.from(new Set([DEFAULT_FOLDER_NAME, ...videoFolders, ...videoItems.map(item => folderNameOf(item))]));
+  const addVideoFolder = () => {
+    const name = createFolderName(availableVideoFolders, "動画プロンプト帳");
+    if (!name) return;
+    const next = [...videoFolders, name];
+    setVideoFolders(next);
+    saveFolderList("promptAtelierVideoFolders", next);
+    setVideoViewMode("folders");
+  };
   const videoDisplay = homeSettings?.pageDisplaySettings?.videoPrompts || defaultPageDisplaySettings.videoPrompts;
   React.useEffect(() => {
     uploadedVideoUrlRef.current = uploadedVideoUrl;
@@ -8364,7 +8390,10 @@ function VideoLibrary({
     });
   };
   const openNewVideo = () => {
-    setDraft(blankVideoPrompt());
+    setDraft({
+      ...blankVideoPrompt(),
+      folder: availableVideoFolders[0] || DEFAULT_FOLDER_NAME
+    });
     setTagDraft("");
     setSelectedId("new");
     setUploadedVideoUrl(current => {
@@ -8379,6 +8408,7 @@ function VideoLibrary({
       ...draft,
       id: draft.id || uid(),
       title: draft.title.trim() || "動画プロンプト",
+      folder: folderNameOf(draft),
       url: draft.url.trim(),
       model: draft.model || "その他",
       prompt: draft.prompt || "",
@@ -8821,6 +8851,23 @@ function VideoLibrary({
       onClick: () => setScreen("home")
     }))
   }), /*#__PURE__*/React.createElement("div", {
+    className: "folder-view-toolbar"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "folder-view-tabs",
+    role: "group",
+    "aria-label": "動画プロンプト帳の表示切り替え"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: videoViewMode === "list" ? "active-soft" : "",
+    onClick: () => setVideoViewMode("list")
+  }, "一覧"), /*#__PURE__*/React.createElement("button", {
+    className: videoViewMode === "folders" ? "active-soft" : "",
+    onClick: () => setVideoViewMode("folders")
+  }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
+    className: "folder-create-button",
+    onClick: addVideoFolder
+  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement("p", {
+    className: "folder-limit-note"
+  }, "動画プロンプト帳：ファイル最大5件。1ファイル内は動画付き20件・テキストのみ20件まで。1動画プロンプトにつき動画1本・サムネイル1枚まで保存できます。"), /*#__PURE__*/React.createElement("div", {
     className: "video-filter-bar"
   }, /*#__PURE__*/React.createElement("select", {
     value: modelFilter,
@@ -9550,13 +9597,24 @@ function PromptCard({
 }
 function PromptModal({
   item,
+  folderOptions = [DEFAULT_FOLDER_NAME],
+  onCreateFolder,
   onClose,
   onSave
 }) {
+  const safeFolderOptions = Array.from(new Set([DEFAULT_FOLDER_NAME, ...(folderOptions || [])]));
   const [draft, setDraft] = React.useState({
     ...item,
+    folder: folderNameOf(item),
     tagInput: tagText(item.tags)
   });
+  const addFolderFromModal = () => {
+    const name = onCreateFolder?.();
+    if (name) setDraft({
+      ...draft,
+      folder: name
+    });
+  };
   const setCoverImages = coverImages => setDraft({
     ...draft,
     coverImages,
@@ -9573,15 +9631,21 @@ function PromptModal({
       title: e.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("select", {
-    value: draft.category,
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "folder-select-row"
+  }, /*#__PURE__*/React.createElement("select", {
+    value: folderNameOf(draft),
     onChange: e => setDraft({
       ...draft,
-      category: e.target.value
+      folder: e.target.value
     })
-  }, categories.map(cat => /*#__PURE__*/React.createElement("option", {
-    key: cat
-  }, cat))), /*#__PURE__*/React.createElement("textarea", {
+  }, safeFolderOptions.map(folder => /*#__PURE__*/React.createElement("option", {
+    key: folder,
+    value: folder
+  }, folder))), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: addFolderFromModal
+  }, "＋ 新規ファイル")), /*#__PURE__*/React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,
