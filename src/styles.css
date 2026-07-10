@@ -5381,6 +5381,7 @@ p {
 
 .home-prompt-card {
   position: relative;
+  cursor: pointer;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
   border-radius: 28px;
@@ -7893,5 +7894,6 @@ summary {
 
 
 .video-favorite-home-card video {
+  pointer-events: none;
   background: color-mix(in srgb, var(--accent) 8%, var(--paper));
 }

@@ -2496,8 +2496,8 @@ function App() {
   const favorites = [
     ...favoriteProjectMemos.map((memo) => ({ ...memo, favoriteType: "projectMemo" })),
     ...favoriteVideoPrompts.map((video) => ({ ...video, favoriteType: "videoPrompt", imageUrl: video.thumbnail || "", category: video.model || "動画" })),
-    ...myPrompts,
-    ...mockupPrompts.filter((prompt) => !prompt.isTextStock),
+    ...myPrompts.map((prompt) => ({ ...prompt, favoriteType: "promptBook" })),
+    ...mockupPrompts.filter((prompt) => !prompt.isTextStock).map((prompt) => ({ ...prompt, favoriteType: "mockupPrompt" })),
   ].filter((prompt: any) => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
@@ -2929,7 +2929,7 @@ function Home({ setScreen, recent, favorites, projects, projectMemos, myPrompts,
           <SectionTitle title="お気に入り" />
           <div className="home-prompt-row">
             {favorites.length ? favorites.map((prompt: MyPrompt) => (
-              <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} />
+              <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} setScreen={setScreen} />
             )) : <Empty text="お気に入りにしたプロンプトがここに表示されます。" />}
           </div>
         </section>
@@ -4183,19 +4183,36 @@ function FeatureIcon({ name }: { name: string }) {
   );
 }
 
-function HomePromptCard({ prompt, onCopy }: any) {
+function HomePromptCard({ prompt, onCopy, setScreen }: any) {
   const isProjectMemo = prompt.favoriteType === "projectMemo";
   const isVideoPrompt = prompt.favoriteType === "videoPrompt";
   const copyValue = isProjectMemo ? prompt.body : prompt.prompt;
   const videoSrc = isVideoPrompt ? videoDisplaySrc(prompt.url || "") : "";
+  const openFavorite = () => {
+    if (isProjectMemo) setScreen("projects");
+    else if (isVideoPrompt) setScreen("videos");
+    else if (prompt.favoriteType === "mockupPrompt") setScreen("library");
+    else setScreen("prompts");
+  };
   return (
-    <article className={`home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""} ${isVideoPrompt ? "video-favorite-home-card" : ""}`.trim()}>
+    <article
+      className={`home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""} ${isVideoPrompt ? "video-favorite-home-card" : ""}`.trim()}
+      role="button"
+      tabIndex={0}
+      onClick={openFavorite}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openFavorite();
+        }
+      }}
+    >
       {isProjectMemo ? (
         <div className="home-memo-cover">
           <span>MEMO</span>
         </div>
-      ) : isVideoPrompt && videoSrc && !prompt.imageUrl ? (
-        <video src={videoSrc} muted loop playsInline preload="metadata" onMouseEnter={(event) => event.currentTarget.play().catch(() => {})} onMouseLeave={(event) => { event.currentTarget.pause(); event.currentTarget.currentTime = 0; }} />
+      ) : isVideoPrompt && videoSrc ? (
+        <video src={videoSrc} autoPlay muted loop playsInline preload="metadata" />
       ) : (
         <img src={imageDisplaySrc(prompt.imageUrl) || art(isVideoPrompt ? "動画" : "プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       )}
@@ -4207,7 +4224,7 @@ function HomePromptCard({ prompt, onCopy }: any) {
           <div className="tiny-tags">
             {!isProjectMemo && (prompt.tags || []).slice(0, 2).map((tag: string) => <span key={tag}>#{tag}</span>)}
           </div>
-          <button className="copy-chip" onClick={() => onCopy(copyValue, prompt.id)}>コピー</button>
+          <button className="copy-chip" onClick={(event) => { event.stopPropagation(); onCopy(copyValue, prompt.id); }}>コピー</button>
         </div>
       </div>
     </article>

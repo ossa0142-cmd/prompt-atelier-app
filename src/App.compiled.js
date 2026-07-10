@@ -3774,9 +3774,7 @@ function writeSampleSeedDebug(stats) {
     console.info("[sampleSeed] import result", stats);
     window.__promptAtelierSampleSeedDebug = stats;
     sessionStorage.setItem("promptAtelierSampleSeedDebug", JSON.stringify(stats));
-  } catch {
-    // Debug only. Never block the app for this.
-  }
+  } catch {}
 }
 function mergeSampleCollection(existing, incoming, deletedIds, stats, key = "unknown") {
   if (!Array.isArray(incoming)) return existing ?? incoming;
@@ -3995,7 +3993,13 @@ function App() {
     favoriteType: "videoPrompt",
     imageUrl: video.thumbnail || "",
     category: video.model || "動画"
-  })), ...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
+  })), ...myPrompts.map(prompt => ({
+    ...prompt,
+    favoriteType: "promptBook"
+  })), ...mockupPrompts.filter(prompt => !prompt.isTextStock).map(prompt => ({
+    ...prompt,
+    favoriteType: "mockupPrompt"
+  }))].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
   const copyText = async (text, id) => {
@@ -4099,7 +4103,7 @@ function App() {
     sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
     setShowInstallPrompt(false);
   };
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`,
     "data-density": homeSettings.displayDensity || "normal",
     "data-card-radius": homeSettings.cardStyle.radius,
@@ -4110,23 +4114,23 @@ function App() {
     "data-font-preset": homeSettings.fontPreset || "simple",
     "data-icon-set": homeSettings.iconSet || "line",
     style: appStyle
-  }, /*#__PURE__*/React.createElement("header", {
+  }, React.createElement("header", {
     className: "app-header"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "brand",
     onClick: () => setScreen("home"),
     "aria-label": "ホームへ"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "brand-mark"
-  }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "AIイラストクリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["videos", "動画プロンプト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+  }, "PA"), React.createElement("span", null, React.createElement("strong", null, "Prompt Atelier"), React.createElement("small", null, "AIイラストクリエイター向け"))), React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["videos", "動画プロンプト"], ["customize", "カスタマイズ"]].map(([id, label]) => React.createElement("button", {
     key: id,
     className: screen === id ? "active" : "",
     onClick: () => setScreen(id)
-  }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && !isStandaloneApp && /*#__PURE__*/React.createElement(PwaInstallCard, {
+  }, label)))), React.createElement("main", null, showInstallPrompt && !isStandaloneApp && React.createElement(PwaInstallCard, {
     canInstall: Boolean(installPrompt),
     onInstall: installPwa,
     onDismiss: dismissInstallPrompt
-  }), screen === "home" && /*#__PURE__*/React.createElement(Home, {
+  }), screen === "home" && React.createElement(Home, {
     setScreen: setScreen,
     recent: recentPrompts,
     favorites: favorites,
@@ -4140,7 +4144,7 @@ function App() {
     setSettings: setRawHomeSettings,
     workTools: workTools,
     atelierImages: atelierImages
-  }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
+  }), screen === "customize" && React.createElement(HomeCustomize, {
     settings: homeSettings,
     setSettings: setRawHomeSettings,
     setScreen: setScreen,
@@ -4154,24 +4158,24 @@ function App() {
     canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
     isStandaloneApp: isStandaloneApp,
     onInstallPwa: installPwa
-  }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
+  }), screen === "library" && React.createElement(Library, {
     copyText: copyText,
     setScreen: setScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
     setBoardPrompts: setMockupPrompts
-  }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
+  }), screen === "prompts" && React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
     copyText: copyText,
     setScreen: setScreen,
     homeSettings: homeSettings
-  }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
+  }), screen === "mj" && React.createElement(Midjourney, {
     settings: mjSettings,
     setSettings: setMjSettings,
     copyText: copyText,
     setScreen: setScreen
-  }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
+  }), screen === "projects" && React.createElement(Projects, {
     projects: projects,
     setProjects: setProjects,
     projectMemos: projectMemos,
@@ -4181,26 +4185,26 @@ function App() {
     homeSettings: homeSettings,
     copyText: copyText,
     setScreen: setScreen
-  }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
+  }), screen === "journal" && React.createElement(JournalPage, {
     journal: journal,
     setJournal: setJournal,
     setScreen: setScreen
-  }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
+  }), screen === "gallery" && React.createElement(GalleryPage, {
     images: visibleGalleryImages,
     setImages: setGalleryImages,
     setJournal: setJournal,
     setScreen: setScreen,
     homeSettings: homeSettings
-  }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
+  }), screen === "videos" && React.createElement(VideoLibrary, {
     videos: videos,
     setVideos: setVideos,
     videoStocks: videoStocks,
     setVideoStocks: setVideoStocks,
     setScreen: setScreen,
     homeSettings: homeSettings
-  })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
+  })), isImageMigrating && React.createElement("div", {
     className: "image-migration-overlay"
-  }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, "画像データを最適化しています…")), toast && React.createElement("div", {
     className: "toast"
   }, toast));
 }
@@ -4209,45 +4213,45 @@ function PwaInstallCard({
   onInstall,
   onDismiss
 }) {
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: "pwa-install-card",
     role: "dialog",
     "aria-label": "Prompt Atelierをアプリとして追加"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "pwa-install-icon"
-  }, "PA"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelierをアプリとして追加"), /*#__PURE__*/React.createElement("p", null, "ChromeでDockに追加すると、アプリのように起動できます。保存済みデータはこのブラウザ内に残ります。"), !canInstall && /*#__PURE__*/React.createElement("small", {
+  }, "PA"), React.createElement("div", null, React.createElement("strong", null, "Prompt Atelierをアプリとして追加"), React.createElement("p", null, "ChromeでDockに追加すると、アプリのように起動できます。保存済みデータはこのブラウザ内に残ります。"), !canInstall && React.createElement("small", {
     className: "pwa-install-help"
-  }, "Chrome推奨です。ポップアップが出ない場合は、Chrome右上の「︙」メニューを開き、「キャスト、保存、共有」から「ページをアプリとしてインストール」または「ショートカットを作成」を選んでください。")), /*#__PURE__*/React.createElement("div", {
+  }, "Chrome推奨です。ポップアップが出ない場合は、Chrome右上の「︙」メニューを開き、「キャスト、保存、共有」から「ページをアプリとしてインストール」または「ショートカットを作成」を選んでください。")), React.createElement("div", {
     className: "pwa-install-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "primary",
     onClick: onInstall
-  }, canInstall ? "アプリとして追加" : "追加方法を見る"), /*#__PURE__*/React.createElement("button", {
+  }, canInstall ? "アプリとして追加" : "追加方法を見る"), React.createElement("button", {
     onClick: onDismiss
   }, "あとで")));
 }
 function PwaInstallInstructionsModal({
   onClose
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "modal-backdrop",
     role: "dialog",
     "aria-modal": "true"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "modal pwa-instructions-modal"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "modal-head"
-  }, /*#__PURE__*/React.createElement("h3", null, "ChromeでDockに追加する方法"), /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("h3", null, "ChromeでDockに追加する方法"), React.createElement("button", {
     onClick: onClose
-  }, "閉じる")), /*#__PURE__*/React.createElement("p", {
+  }, "閉じる")), React.createElement("p", {
     className: "pwa-instruction-alert"
-  }, "この環境では自動追加画面を表示できません。Chromeのメニューから追加してください。"), /*#__PURE__*/React.createElement("ol", {
+  }, "この環境では自動追加画面を表示できません。Chromeのメニューから追加してください。"), React.createElement("ol", {
     className: "pwa-instruction-steps"
-  }, /*#__PURE__*/React.createElement("li", null, "ChromeでPrompt Atelierを開きます"), /*#__PURE__*/React.createElement("li", null, "右上の「︙」メニューを開きます"), /*#__PURE__*/React.createElement("li", null, "「キャスト、保存、共有」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ページをアプリとしてインストール」または「ショートカットを作成」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ショートカットを作成」の場合は、「ウィンドウとして開く」にチェックを入れます"), /*#__PURE__*/React.createElement("li", null, "作成後、Dockに追加して使えます")), /*#__PURE__*/React.createElement("p", {
+  }, React.createElement("li", null, "ChromeでPrompt Atelierを開きます"), React.createElement("li", null, "右上の「︙」メニューを開きます"), React.createElement("li", null, "「キャスト、保存、共有」を選びます"), React.createElement("li", null, "「ページをアプリとしてインストール」または「ショートカットを作成」を選びます"), React.createElement("li", null, "「ショートカットを作成」の場合は、「ウィンドウとして開く」にチェックを入れます"), React.createElement("li", null, "作成後、Dockに追加して使えます")), React.createElement("p", {
     className: "pwa-instruction-note"
-  }, "Chromeのバージョンによっては、「キャスト、保存、共有」が「保存して共有」や「その他のツール」と表示される場合があります。"), /*#__PURE__*/React.createElement("div", {
+  }, "Chromeのバージョンによっては、「キャスト、保存、共有」が「保存して共有」や「その他のツール」と表示される場合があります。"), React.createElement("div", {
     className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "primary",
     onClick: onClose
   }, "わかりました"))));
@@ -4258,20 +4262,20 @@ function PwaCustomizeCard({
   onInstall,
   onShowInstructions
 }) {
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: "customize-card pwa-customize-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "アプリとして使う"), /*#__PURE__*/React.createElement("p", null, "ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。"), isStandaloneApp ? /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "アプリとして使う"), React.createElement("p", null, "ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。"), isStandaloneApp ? React.createElement("div", {
     className: "pwa-status-pill"
-  }, "アプリモードで起動中です") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, "アプリモードで起動中です") : React.createElement(React.Fragment, null, React.createElement("div", {
     className: "pwa-customize-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "primary",
     onClick: onInstall
-  }, "アプリとして追加"), /*#__PURE__*/React.createElement("button", {
+  }, "アプリとして追加"), React.createElement("button", {
     onClick: onShowInstructions
-  }, "追加方法を見る")), /*#__PURE__*/React.createElement("small", {
+  }, "追加方法を見る")), React.createElement("small", {
     className: "pwa-install-help"
-  }, "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"), !canInstallPwa && /*#__PURE__*/React.createElement("small", {
+  }, "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"), !canInstallPwa && React.createElement("small", {
     className: "pwa-install-help"
   }, "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。")));
 }
@@ -4315,25 +4319,25 @@ function HomeDateDisplay({
   const className = `${mini ? "home-mini-date" : "home-date-display"} ${style} size-${size} color-${color}`;
   const dateTime = `${year}-${paddedMonth}-${paddedDay}`;
   if (style === "minimal") {
-    return /*#__PURE__*/React.createElement("time", {
+    return React.createElement("time", {
       className: className,
       dateTime: dateTime
     }, month, "/", day, "（", weekday, "）");
   }
   if (["digital", "retro", "neon", "doodle", "stamp"].includes(style)) {
-    return /*#__PURE__*/React.createElement("time", {
+    return React.createElement("time", {
       className: className,
       dateTime: dateTime,
       "aria-label": `${year}年${month}月${day}日 ${weekday}曜日`
-    }, style === "stamp" && /*#__PURE__*/React.createElement("span", {
+    }, style === "stamp" && React.createElement("span", {
       className: "stamp-heart-outline",
       "aria-hidden": "true"
-    }, "♡"), /*#__PURE__*/React.createElement("strong", null, monthName, ".", paddedDay), /*#__PURE__*/React.createElement("small", null, year, " / ", weekday));
+    }, "♡"), React.createElement("strong", null, monthName, ".", paddedDay), React.createElement("small", null, year, " / ", weekday));
   }
-  return /*#__PURE__*/React.createElement("time", {
+  return React.createElement("time", {
     className: className,
     dateTime: dateTime
-  }, /*#__PURE__*/React.createElement("span", null, year), /*#__PURE__*/React.createElement("strong", null, month, "月", day, "日"), /*#__PURE__*/React.createElement("small", null, weekday, "曜日"));
+  }, React.createElement("span", null, year), React.createElement("strong", null, month, "月", day, "日"), React.createElement("small", null, weekday, "曜日"));
 }
 function Home({
   setScreen,
@@ -4401,106 +4405,107 @@ function Home({
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
       if (!visibleDashboardItems.length) return null;
-      return /*#__PURE__*/React.createElement("section", {
+      return React.createElement("section", {
         className: "dashboard-panel home-module",
         key: sectionId
-      }, /*#__PURE__*/React.createElement("div", {
+      }, React.createElement("div", {
         className: "dashboard-grid"
-      }, visibleDashboardItems.map(item => /*#__PURE__*/React.createElement("button", {
+      }, visibleDashboardItems.map(item => React.createElement("button", {
         className: "stat-card",
         key: `${item.title}-${item.icon}`,
         onClick: () => setScreen(item.screen)
-      }, /*#__PURE__*/React.createElement("span", {
+      }, React.createElement("span", {
         className: "stat-icon",
         "data-icon": item.icon
-      }, /*#__PURE__*/React.createElement(FeatureIcon, {
+      }, React.createElement(FeatureIcon, {
         name: item.icon
-      })), /*#__PURE__*/React.createElement("span", {
+      })), React.createElement("span", {
         className: "stat-title"
-      }, item.title), /*#__PURE__*/React.createElement("strong", null, item.value), item.note && /*#__PURE__*/React.createElement("small", null, item.note)))));
+      }, item.title), React.createElement("strong", null, item.value), item.note && React.createElement("small", null, item.note)))));
     }
     if (sectionId === "quickActions") {
-      return /*#__PURE__*/React.createElement("section", {
+      return React.createElement("section", {
         className: `work-tools-card home-module ${settings.workToolIconStyle || "pastel"}`,
         key: sectionId
-      }, /*#__PURE__*/React.createElement("h2", null, "作業ツール"), /*#__PURE__*/React.createElement("div", {
+      }, React.createElement("h2", null, "作業ツール"), React.createElement("div", {
         className: "work-tools-launcher"
-      }, normalizedTools.map(tool => /*#__PURE__*/React.createElement("a", {
+      }, normalizedTools.map(tool => React.createElement("a", {
         className: "work-tool-launcher-item",
         href: tool.url,
         target: "_blank",
         rel: "noopener noreferrer",
         key: tool.id,
         "aria-label": `${tool.name}を開く`
-      }, /*#__PURE__*/React.createElement("span", null, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
+      }, React.createElement("span", null, tool.iconImage ? React.createElement("img", {
         src: imageThumbnail(tool.iconImage),
         alt: ""
-      }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("strong", null, tool.name)))));
+      }) : React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), React.createElement("strong", null, tool.name)))));
     }
     if (sectionId === "featureCards") {
       const visibleEntries = entries.filter(([id]) => isVisible(id));
       if (!visibleEntries.length) return null;
-      return /*#__PURE__*/React.createElement("section", {
+      return React.createElement("section", {
         className: "home-feature-grid",
         key: sectionId
-      }, visibleEntries.map(([id, title, body, icon]) => /*#__PURE__*/React.createElement("button", {
+      }, visibleEntries.map(([id, title, body, icon]) => React.createElement("button", {
         className: "home-feature-card",
         key: id,
         onClick: () => setScreen(id)
-      }, /*#__PURE__*/React.createElement("span", {
+      }, React.createElement("span", {
         className: "feature-corner-spark"
-      }, "✦"), /*#__PURE__*/React.createElement("span", {
+      }, "✦"), React.createElement("span", {
         className: "feature-washi"
-      }), /*#__PURE__*/React.createElement("span", {
+      }), React.createElement("span", {
         className: "feature-icon",
         "data-icon": icon
-      }, /*#__PURE__*/React.createElement(FeatureIcon, {
+      }, React.createElement(FeatureIcon, {
         name: icon
-      })), /*#__PURE__*/React.createElement("span", {
+      })), React.createElement("span", {
         className: "feature-title"
-      }, title), /*#__PURE__*/React.createElement("small", null, body))));
+      }, title), React.createElement("small", null, body))));
     }
     if (sectionId === "favorites") {
-      return /*#__PURE__*/React.createElement("section", {
+      return React.createElement("section", {
         className: "home-favorites-section",
         key: sectionId
-      }, /*#__PURE__*/React.createElement(SectionTitle, {
+      }, React.createElement(SectionTitle, {
         title: "お気に入り"
-      }), /*#__PURE__*/React.createElement("div", {
+      }), React.createElement("div", {
         className: "home-prompt-row"
-      }, favorites.length ? favorites.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
+      }, favorites.length ? favorites.map(prompt => React.createElement(HomePromptCard, {
         key: prompt.id,
         prompt: prompt,
-        onCopy: copyText
-      })) : /*#__PURE__*/React.createElement(Empty, {
+        onCopy: copyText,
+        setScreen: setScreen
+      })) : React.createElement(Empty, {
         text: "お気に入りにしたプロンプトがここに表示されます。"
       })));
     }
     if (sectionId === "atelier") {
-      return /*#__PURE__*/React.createElement("section", {
+      return React.createElement("section", {
         className: "atelier-corner home-module",
         key: sectionId
-      }, /*#__PURE__*/React.createElement("div", {
+      }, React.createElement("div", {
         className: "atelier-head"
-      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, "アトリエコーナー")), /*#__PURE__*/React.createElement("div", {
+      }, React.createElement("div", null, React.createElement("h2", null, "アトリエコーナー")), React.createElement("div", {
         className: "atelier-actions"
-      }, /*#__PURE__*/React.createElement("button", {
+      }, React.createElement("button", {
         onClick: () => setScreen("journal")
-      }, "ジャーナルページへ"), /*#__PURE__*/React.createElement("button", {
+      }, "ジャーナルページへ"), React.createElement("button", {
         className: "primary",
         onClick: () => setScreen("gallery")
-      }, "ギャラリーへ"))), atelierImages.length ? /*#__PURE__*/React.createElement("div", {
+      }, "ギャラリーへ"))), atelierImages.length ? React.createElement("div", {
         className: "atelier-marquee",
         "aria-label": "アトリエ画像"
-      }, /*#__PURE__*/React.createElement("div", {
+      }, React.createElement("div", {
         className: `atelier-marquee-track ${atelierImages.length === 1 ? "is-single" : "is-moving"}`
-      }, atelierImages.map((image, index) => /*#__PURE__*/React.createElement("figure", {
+      }, atelierImages.map((image, index) => React.createElement("figure", {
         className: "atelier-marquee-card",
         key: `${image.id}-${index}`
-      }, /*#__PURE__*/React.createElement("img", {
+      }, React.createElement("img", {
         src: imageDisplaySrc(image),
         alt: ""
-      }))))) : /*#__PURE__*/React.createElement("div", {
+      }))))) : React.createElement("div", {
         className: "atelier-empty"
       }, "画像を追加すると、ここにアトリエが表示されます。"));
     }
@@ -4508,21 +4513,21 @@ function Home({
   };
   const bannerSrc = homeBannerSrc(settings);
   const bannerPosition = homeBannerPosition(settings);
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: "page home-page"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "home-topbar"
-  }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
+  }, React.createElement("span", null, "Prompt Atelier Home"), React.createElement(HomeDateDisplay, {
     style: settings.homeClockStyle || "pill",
     size: settings.homeClockSize || "medium",
     color: settings.homeClockColor || "theme"
-  })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+  })), settings.bannerVisible && React.createElement("div", {
     className: `home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`
-  }, bannerSrc ? /*#__PURE__*/React.createElement("img", {
+  }, bannerSrc ? React.createElement("img", {
     src: bannerSrc,
     alt: "",
     style: bannerImageStyle(bannerPosition)
-  }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)), /*#__PURE__*/React.createElement(HomeCharacter, {
+  }) : React.createElement(React.Fragment, null, React.createElement("span", null, "✦"), React.createElement("i", null), React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)), React.createElement(HomeCharacter, {
     settings: settings.homeCharacter,
     projects: projects,
     prompts: myPrompts,
@@ -4577,7 +4582,7 @@ function characterMessage(settings, projects, prompts) {
 function CharacterSpeechBubble({
   message
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "character-speech-bubble"
   }, message);
 }
@@ -4639,7 +4644,7 @@ function HomeCharacter({
       customY: Math.round(drag.y)
     });
   };
-  return /*#__PURE__*/React.createElement("aside", {
+  return React.createElement("aside", {
     className: `home-character ${isDragging || settings.position === "custom" ? "custom" : settings.position} character-size-${size} is-draggable${isDragging ? " is-dragging" : ""}`,
     "aria-label": "アトリエキャラクター",
     style: isDragging || settings.position === "custom" ? {
@@ -4650,9 +4655,9 @@ function HomeCharacter({
     onPointerMove: updateFromPointer,
     onPointerUp: finishDrag,
     onPointerCancel: finishDrag
-  }, settings.speechEnabled && /*#__PURE__*/React.createElement(CharacterSpeechBubble, {
+  }, settings.speechEnabled && React.createElement(CharacterSpeechBubble, {
     message: message
-  }), /*#__PURE__*/React.createElement("img", {
+  }), React.createElement("img", {
     src: imageSrc(settings.image) || imageThumbnail(settings.image),
     alt: "アトリエキャラクター",
     draggable: false
@@ -4685,9 +4690,9 @@ function HomeCharacterSettingsPanel({
       window.alert("画像を追加できませんでした。png / jpg / webp を選んでください。");
     }
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: "customize-card character-settings-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ホームキャラクター設定"), /*#__PURE__*/React.createElement("p", null, "透過PNGなどのキャラクター画像を、ホーム画面にアトリエ案内役として表示できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "ホームキャラクター設定"), React.createElement("p", null, "透過PNGなどのキャラクター画像を、ホーム画面にアトリエ案内役として表示できます。"), React.createElement("div", {
     className: "character-upload-area",
     tabIndex: 0,
     onClick: () => fileInputRef.current?.click(),
@@ -4704,10 +4709,10 @@ function HomeCharacterSettingsPanel({
       event.stopPropagation();
       importFiles(files);
     }
-  }, character.image ? /*#__PURE__*/React.createElement("img", {
+  }, character.image ? React.createElement("img", {
     src: imageThumbnail(character.image),
     alt: ""
-  }) : /*#__PURE__*/React.createElement("span", null, "＋ キャラクター画像を追加"), /*#__PURE__*/React.createElement("small", null, "PNG / WebP / JPG対応。透過PNG推奨です。"), /*#__PURE__*/React.createElement("input", {
+  }) : React.createElement("span", null, "＋ キャラクター画像を追加"), React.createElement("small", null, "PNG / WebP / JPG対応。透過PNG推奨です。"), React.createElement("input", {
     ref: fileInputRef,
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
@@ -4718,65 +4723,65 @@ function HomeCharacterSettingsPanel({
       if (event.currentTarget.files) importFiles(event.currentTarget.files);
       event.currentTarget.value = "";
     }
-  })), character.image && /*#__PURE__*/React.createElement("button", {
+  })), character.image && React.createElement("button", {
     onClick: () => updateCharacter({
       image: ""
     })
-  }, "画像を削除"), /*#__PURE__*/React.createElement("label", null, "表示位置", /*#__PURE__*/React.createElement("select", {
+  }, "画像を削除"), React.createElement("label", null, "表示位置", React.createElement("select", {
     value: character.position,
     onChange: event => updateCharacter({
       position: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "right-bottom"
-  }, "右下"), /*#__PURE__*/React.createElement("option", {
+  }, "右下"), React.createElement("option", {
     value: "right-center"
-  }, "右側中央"), /*#__PURE__*/React.createElement("option", {
+  }, "右側中央"), React.createElement("option", {
     value: "left-bottom"
-  }, "左下"), /*#__PURE__*/React.createElement("option", {
+  }, "左下"), React.createElement("option", {
     value: "hidden"
-  }, "非表示"))), /*#__PURE__*/React.createElement("label", null, "表示サイズ", /*#__PURE__*/React.createElement("select", {
+  }, "非表示"))), React.createElement("label", null, "表示サイズ", React.createElement("select", {
     value: character.size || "medium",
     onChange: event => updateCharacter({
       size: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "small"
-  }, "小"), /*#__PURE__*/React.createElement("option", {
+  }, "小"), React.createElement("option", {
     value: "medium"
-  }, "中"), /*#__PURE__*/React.createElement("option", {
+  }, "中"), React.createElement("option", {
     value: "large"
-  }, "大"))), /*#__PURE__*/React.createElement("label", {
+  }, "大"))), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "吹き出し表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "吹き出し表示"), React.createElement("input", {
     type: "checkbox",
     checked: character.speechEnabled,
     onChange: event => updateCharacter({
       speechEnabled: event.target.checked
     })
-  })), /*#__PURE__*/React.createElement("label", null, "吹き出しメッセージタイプ", /*#__PURE__*/React.createElement("select", {
+  })), React.createElement("label", null, "吹き出しメッセージタイプ", React.createElement("select", {
     value: character.messageMode,
     onChange: event => updateCharacter({
       messageMode: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "auto"
-  }, "自動"), /*#__PURE__*/React.createElement("option", {
+  }, "自動"), React.createElement("option", {
     value: "fixed"
-  }, "固定メッセージ"), /*#__PURE__*/React.createElement("option", {
+  }, "固定メッセージ"), React.createElement("option", {
     value: "project"
-  }, "プロジェクト優先"))), character.messageMode === "project" && /*#__PURE__*/React.createElement("label", null, "表示するプロジェクト", /*#__PURE__*/React.createElement("select", {
+  }, "プロジェクト優先"))), character.messageMode === "project" && React.createElement("label", null, "表示するプロジェクト", React.createElement("select", {
     value: character.selectedProjectId || "",
     onChange: event => updateCharacter({
       selectedProjectId: event.target.value
     }),
     disabled: !projectChoices.length
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: ""
-  }, "未選択"), projectChoices.map(project => /*#__PURE__*/React.createElement("option", {
+  }, "未選択"), projectChoices.map(project => React.createElement("option", {
     key: project.id,
     value: project.id
-  }, project.name, project.dueDate ? ` / 期限：${project.dueDate}` : ""))), !projectChoices.length && /*#__PURE__*/React.createElement("small", null, "登録済みプロジェクトがありません")), character.messageMode === "fixed" && /*#__PURE__*/React.createElement("textarea", {
+  }, project.name, project.dueDate ? ` / 期限：${project.dueDate}` : ""))), !projectChoices.length && React.createElement("small", null, "登録済みプロジェクトがありません")), character.messageMode === "fixed" && React.createElement("textarea", {
     value: character.fixedMessage,
     onChange: event => updateCharacter({
       fixedMessage: event.target.value
@@ -4797,50 +4802,50 @@ function WorkToolEditor({
     ...draft,
     [key]: value
   });
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "quick-link-editor"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "quick-link-editor-head"
-  }, /*#__PURE__*/React.createElement("strong", null, tool.id ? "作業ツールを編集" : "作業ツールを追加"), /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("strong", null, tool.id ? "作業ツールを編集" : "作業ツールを追加"), React.createElement("button", {
     onClick: onClose
-  }, "閉じる")), /*#__PURE__*/React.createElement("input", {
+  }, "閉じる")), React.createElement("input", {
     value: draft.name,
     onChange: event => update("name", event.target.value),
     placeholder: "表示名"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     value: draft.url,
     onChange: event => update("url", event.target.value),
     placeholder: "URL"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     value: draft.iconText,
     onChange: event => update("iconText", event.target.value),
     placeholder: "アイコン文字（例：MJ / P / GPT）"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     value: draft.iconImage,
     onChange: event => update("iconImage", event.target.value),
     placeholder: "アイコン画像URL"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     type: "file",
     accept: "image/*",
     onChange: event => readImage(event, iconImage => setDraft({
       ...draft,
       iconImage
     }), "icon")
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     value: draft.memo || "",
     onChange: event => update("memo", event.target.value),
     placeholder: "メモ（任意）"
-  }), /*#__PURE__*/React.createElement("label", {
+  }), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "ホームに表示する"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "ホームに表示する"), React.createElement("input", {
     type: "checkbox",
     checked: draft.visible !== false,
     onChange: event => update("visible", event.target.checked)
-  })), /*#__PURE__*/React.createElement("div", {
+  })), React.createElement("div", {
     className: "quick-link-editor-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     onClick: onClose
-  }, "キャンセル"), /*#__PURE__*/React.createElement("button", {
+  }, "キャンセル"), React.createElement("button", {
     className: "primary",
     onClick: () => onSave(draft)
   }, "保存する")));
@@ -5094,151 +5099,151 @@ function HomeCustomize({
     }
     setShowPwaInstructions(true);
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: "page customize-page"
-  }, /*#__PURE__*/React.createElement(PageHead, {
+  }, React.createElement(PageHead, {
     title: "ホームカスタマイズ",
-    action: /*#__PURE__*/React.createElement(PageBackButton, {
+    action: React.createElement(PageBackButton, {
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
     })
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "customize-layout"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "customize-settings"
-  }, /*#__PURE__*/React.createElement("details", {
+  }, React.createElement("details", {
     className: "customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "データ管理・アプリ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "データ管理・アプリ"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement(PwaCustomizeCard, {
+  }, React.createElement(PwaCustomizeCard, {
     canInstallPwa: canInstallPwa,
     isStandaloneApp: isStandaloneApp,
     onInstall: handleCustomizeInstallPwa,
     onShowInstructions: () => setShowPwaInstructions(true)
-  }))), /*#__PURE__*/React.createElement("details", {
+  }))), React.createElement("details", {
     className: "customize-card customize-accordion",
     open: true
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "テーマ・基本デザイン"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "テーマ・基本デザイン"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("h3", null, "テーマ"), /*#__PURE__*/React.createElement("p", null, "ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "テーマ"), React.createElement("p", null, "ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。"), React.createElement("div", {
     className: "theme-grid"
-  }, homeThemes.map(theme => /*#__PURE__*/React.createElement("button", {
+  }, homeThemes.map(theme => React.createElement("button", {
     key: theme.id,
     className: `theme-card ${settings.themeId === theme.id ? "selected" : ""}`,
     onClick: () => updateSettings({
       themeId: theme.id
     })
-  }, /*#__PURE__*/React.createElement("span", null, theme.name), /*#__PURE__*/React.createElement("small", null, theme.colors.map(color => /*#__PURE__*/React.createElement("i", {
+  }, React.createElement("span", null, theme.name), React.createElement("small", null, theme.colors.map(color => React.createElement("i", {
     key: color,
     style: {
       background: color
     }
-  })))))))), /*#__PURE__*/React.createElement("details", {
+  })))))))), React.createElement("details", {
     className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "バナー設定"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "バナー設定"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("h3", null, "バナー"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する横長画像を設定できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "バナー"), React.createElement("p", null, "ホーム上部に表示する横長画像を設定できます。"), React.createElement("div", {
     className: "banner-size-guide"
-  }, /*#__PURE__*/React.createElement("strong", null, "バナー画像の推奨サイズ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "大バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 1200px / 2:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "中バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 800px / 3:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "小バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 400px / 6:1"))), /*#__PURE__*/React.createElement("p", null, "Macの高精細画面でもくっきり見せるため、横幅2400px前後の画像がおすすめです。")), /*#__PURE__*/React.createElement("label", {
+  }, React.createElement("strong", null, "バナー画像の推奨サイズ"), React.createElement("div", null, React.createElement("span", null, React.createElement("b", null, "大バナー"), React.createElement("small", null, "2400 × 1200px / 2:1")), React.createElement("span", null, React.createElement("b", null, "中バナー"), React.createElement("small", null, "2400 × 800px / 3:1")), React.createElement("span", null, React.createElement("b", null, "小バナー"), React.createElement("small", null, "2400 × 400px / 6:1"))), React.createElement("p", null, "Macの高精細画面でもくっきり見せるため、横幅2400px前後の画像がおすすめです。")), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "バナー表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "バナー表示"), React.createElement("input", {
     type: "checkbox",
     checked: settings.bannerVisible,
     onChange: event => updateSettings({
       bannerVisible: event.target.checked
     })
-  })), /*#__PURE__*/React.createElement("input", {
+  })), React.createElement("input", {
     value: settings.bannerImageUrl,
     onChange: event => updateSettings({
       bannerImageUrl: event.target.value,
       bannerImage: event.target.value
     }),
     placeholder: "バナー画像URL"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
     onChange: event => readBannerImage(event, bannerImage => updateSettings({
       bannerImage
     }))
-  }), /*#__PURE__*/React.createElement("small", {
+  }), React.createElement("small", {
     className: "banner-quality-note"
-  }, "高画質設定を反映するには、バナー画像を再アップロードしてください。"), /*#__PURE__*/React.createElement("div", {
+  }, "高画質設定を反映するには、バナー画像を再アップロードしてください。"), React.createElement("div", {
     className: "inline-buttons"
-  }, ["small", "medium", "large"].map(size => /*#__PURE__*/React.createElement("button", {
+  }, ["small", "medium", "large"].map(size => React.createElement("button", {
     key: size,
     className: settings.bannerSize === size ? "active-soft" : "",
     onClick: () => selectBannerSize(size)
-  }, size === "small" ? "小" : size === "medium" ? "中" : "大")), /*#__PURE__*/React.createElement("button", {
+  }, size === "small" ? "小" : size === "medium" ? "中" : "大")), React.createElement("button", {
     onClick: () => updateSettings({
       bannerImage: "",
       bannerImageUrl: ""
     })
-  }, "画像を削除")), /*#__PURE__*/React.createElement("div", {
+  }, "画像を削除")), React.createElement("div", {
     className: "banner-fit-controls"
-  }, /*#__PURE__*/React.createElement("strong", null, "バナー表示方法"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("strong", null, "バナー表示方法"), React.createElement("div", {
     className: "inline-buttons"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: (settings.bannerFit || "contain") === "contain" ? "active-soft" : "",
     onClick: () => updateSettings({
       bannerFit: "contain"
     })
-  }, "全体を表示"), /*#__PURE__*/React.createElement("button", {
+  }, "全体を表示"), React.createElement("button", {
     className: settings.bannerFit === "cover" ? "active-soft" : "",
     onClick: () => updateSettings({
       bannerFit: "cover"
     })
-  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。")))), /*#__PURE__*/React.createElement("details", {
+  }, "枠いっぱいに表示")), React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。")))), React.createElement("details", {
     className: "customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ホーム表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "ホーム表示"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
+  }, React.createElement(HomeCharacterSettingsPanel, {
     settings: settings,
     updateSettings: updateSettings,
     projects: projects
-  }))), /*#__PURE__*/React.createElement("details", {
+  }))), React.createElement("details", {
     className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "作業ツール"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "作業ツール"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール設定"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "作業ツール設定"), React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), React.createElement("div", {
     className: "icon-style-choices"
-  }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"], ["vivid", "ビビッド"], ["cute", "キュート"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"], ["vivid", "ビビッド"], ["cute", "キュート"]].map(([id, label]) => React.createElement("button", {
     key: id,
     className: settings.workToolIconStyle === id ? "active-soft" : "",
     onClick: () => updateSettings({
       workToolIconStyle: id
     })
-  }, label))), /*#__PURE__*/React.createElement("div", {
+  }, label))), React.createElement("div", {
     className: `work-tool-edit-list ${settings.workToolIconStyle || "pastel"}`
-  }, normalizedTools.map((tool, index) => /*#__PURE__*/React.createElement("article", {
+  }, normalizedTools.map((tool, index) => React.createElement("article", {
     className: "work-tool-edit-row",
     key: tool.id
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "work-tool-edit-icon"
-  }, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
+  }, tool.iconImage ? React.createElement("img", {
     src: imageThumbnail(tool.iconImage),
     alt: ""
-  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, tool.name), /*#__PURE__*/React.createElement("small", null, tool.url)), /*#__PURE__*/React.createElement("label", {
+  }) : React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), React.createElement("div", null, React.createElement("strong", null, tool.name), React.createElement("small", null, tool.url)), React.createElement("label", {
     className: "work-tool-visible-toggle"
-  }, /*#__PURE__*/React.createElement("span", null, "表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "表示"), React.createElement("input", {
     type: "checkbox",
     checked: tool.visible !== false,
     onChange: event => toggleWorkToolVisible(tool.id, event.target.checked)
-  })), /*#__PURE__*/React.createElement("div", {
+  })), React.createElement("div", {
     className: "work-tool-edit-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     onClick: () => setEditingTool(tool)
-  }, "編集"), /*#__PURE__*/React.createElement("button", {
+  }, "編集"), React.createElement("button", {
     onClick: () => moveWorkTool(tool.id, -1),
     disabled: index === 0
-  }, "左へ"), /*#__PURE__*/React.createElement("button", {
+  }, "左へ"), React.createElement("button", {
     onClick: () => moveWorkTool(tool.id, 1),
     disabled: index === normalizedTools.length - 1
-  }, "右へ"), /*#__PURE__*/React.createElement("button", {
+  }, "右へ"), React.createElement("button", {
     className: "danger",
     onClick: () => deleteWorkTool(tool.id)
-  }, "削除"))))), normalizedTools.length < 10 ? /*#__PURE__*/React.createElement("button", {
+  }, "削除"))))), normalizedTools.length < 10 ? React.createElement("button", {
     className: "add-work-tool-button",
     onClick: () => setEditingTool({
       id: "",
@@ -5249,418 +5254,418 @@ function HomeCustomize({
       memo: "",
       visible: true
     })
-  }, "＋ 作業ツールを追加") : /*#__PURE__*/React.createElement("p", {
+  }, "＋ 作業ツールを追加") : React.createElement("p", {
     className: "limit-message"
-  }, "作業ツールは最大10件まで登録できます"), editingTool && /*#__PURE__*/React.createElement(WorkToolEditor, {
+  }, "作業ツールは最大10件まで登録できます"), editingTool && React.createElement(WorkToolEditor, {
     tool: editingTool,
     onClose: () => setEditingTool(null),
     onSave: saveWorkTool
-  })))), /*#__PURE__*/React.createElement("details", {
+  })))), React.createElement("details", {
     className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "カード表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "カード表示"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "カード密度"), /*#__PURE__*/React.createElement("p", null, "ホームや各一覧ページのカード間隔を調整できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "カード密度"), React.createElement("p", null, "ホームや各一覧ページのカード間隔を調整できます。"), React.createElement("div", {
     className: "density-choice-grid"
-  }, densityOptions.map(item => /*#__PURE__*/React.createElement("button", {
+  }, densityOptions.map(item => React.createElement("button", {
     key: item.id,
     className: settings.displayDensity === item.id ? "active-soft" : "",
     onClick: () => updateSettings({
       displayDensity: item.id
     })
-  }, item.id !== "hidden" && /*#__PURE__*/React.createElement("span", {
+  }, item.id !== "hidden" && React.createElement("span", {
     className: `clock-option-preview ${item.id}`
-  }, item.id === "stamp" && /*#__PURE__*/React.createElement("span", {
+  }, item.id === "stamp" && React.createElement("span", {
     className: "stamp-heart-outline",
     "aria-hidden": "true"
-  }, "♡"), /*#__PURE__*/React.createElement("b", null, "APR.26")), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+  }, "♡"), React.createElement("b", null, "APR.26")), React.createElement("strong", null, item.label), React.createElement("small", null, item.description))))), React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "カード質感設定"), /*#__PURE__*/React.createElement("p", null, "カードの角丸・影・透明感・枠線を調整できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "カード質感設定"), React.createElement("p", null, "カードの角丸・影・透明感・枠線を調整できます。"), React.createElement("div", {
     className: "style-control-grid"
-  }, /*#__PURE__*/React.createElement("label", null, "角丸", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("label", null, "角丸", React.createElement("select", {
     value: settings.cardStyle.radius,
     onChange: event => updateCardStyle({
       radius: event.target.value
     })
-  }, cardStyleOptions.radius.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, cardStyleOptions.radius.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "影", /*#__PURE__*/React.createElement("select", {
+  }, label)))), React.createElement("label", null, "影", React.createElement("select", {
     value: settings.cardStyle.shadow,
     onChange: event => updateCardStyle({
       shadow: event.target.value
     })
-  }, cardStyleOptions.shadow.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, cardStyleOptions.shadow.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "透明感", /*#__PURE__*/React.createElement("select", {
+  }, label)))), React.createElement("label", null, "透明感", React.createElement("select", {
     value: settings.cardStyle.transparency,
     onChange: event => updateCardStyle({
       transparency: event.target.value
     })
-  }, cardStyleOptions.transparency.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, cardStyleOptions.transparency.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "枠線", /*#__PURE__*/React.createElement("select", {
+  }, label)))), React.createElement("label", null, "枠線", React.createElement("select", {
     value: settings.cardStyle.border,
     onChange: event => updateCardStyle({
       border: event.target.value
     })
-  }, cardStyleOptions.border.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, cardStyleOptions.border.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))))))), /*#__PURE__*/React.createElement("details", {
+  }, label)))))))), React.createElement("details", {
     className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "背景"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "背景"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("h3", null, "背景カスタム"), /*#__PURE__*/React.createElement("p", null, "ツール全体の背景の雰囲気を調整できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "背景カスタム"), React.createElement("p", null, "ツール全体の背景の雰囲気を調整できます。"), React.createElement("div", {
     className: "style-control-grid"
-  }, /*#__PURE__*/React.createElement("label", null, "背景タイプ", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("label", null, "背景タイプ", React.createElement("select", {
     value: settings.backgroundStyle.type,
     onChange: event => updateBackgroundStyle({
       type: event.target.value
     })
-  }, backgroundStyleOptions.type.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, backgroundStyleOptions.type.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景カラー", /*#__PURE__*/React.createElement("input", {
+  }, label)))), React.createElement("label", null, "背景カラー", React.createElement("input", {
     type: "color",
     value: settings.backgroundStyle.color,
     onChange: event => updateBackgroundStyle({
       color: event.target.value,
       type: "solid"
     })
-  })), /*#__PURE__*/React.createElement("label", null, "グラデーション", /*#__PURE__*/React.createElement("select", {
+  })), React.createElement("label", null, "グラデーション", React.createElement("select", {
     value: settings.backgroundStyle.gradient,
     onChange: event => updateBackgroundStyle({
       gradient: event.target.value,
       type: "gradient"
     })
-  }, backgroundStyleOptions.gradient.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, backgroundStyleOptions.gradient.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景パターン", /*#__PURE__*/React.createElement("select", {
+  }, label)))), React.createElement("label", null, "背景パターン", React.createElement("select", {
     value: settings.backgroundStyle.pattern,
     onChange: event => updateBackgroundStyle({
       pattern: event.target.value,
       type: "pattern"
     })
-  }, backgroundStyleOptions.pattern.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, backgroundStyleOptions.pattern.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label))))), /*#__PURE__*/React.createElement("div", {
+  }, label))))), React.createElement("div", {
     className: "preset-color-row"
-  }, backgroundColorOptions.map(([color, label]) => /*#__PURE__*/React.createElement("button", {
+  }, backgroundColorOptions.map(([color, label]) => React.createElement("button", {
     key: color,
     type: "button",
     onClick: () => updateBackgroundStyle({
       color,
       type: "solid"
     })
-  }, /*#__PURE__*/React.createElement("i", {
+  }, React.createElement("i", {
     style: {
       background: color
     }
-  }), /*#__PURE__*/React.createElement("span", null, label)))), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("span", null, label)))), React.createElement("div", {
     className: "background-image-controls"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
     onChange: event => {
       importCustomBackground(event.currentTarget.files?.[0]);
       event.currentTarget.value = "";
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "style-control-grid"
-  }, /*#__PURE__*/React.createElement("label", null, "画像表示", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("label", null, "画像表示", React.createElement("select", {
     value: settings.backgroundStyle.imageFit,
     onChange: event => updateBackgroundStyle({
       imageFit: event.target.value
     })
-  }, backgroundStyleOptions.imageFit.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, backgroundStyleOptions.imageFit.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "画像位置", /*#__PURE__*/React.createElement("select", {
+  }, label)))), React.createElement("label", null, "画像位置", React.createElement("select", {
     value: settings.backgroundStyle.imagePosition,
     onChange: event => updateBackgroundStyle({
       imagePosition: event.target.value
     })
-  }, backgroundStyleOptions.imagePosition.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, backgroundStyleOptions.imagePosition.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "ぼかし", /*#__PURE__*/React.createElement("select", {
+  }, label)))), React.createElement("label", null, "ぼかし", React.createElement("select", {
     value: settings.backgroundStyle.imageBlur,
     onChange: event => updateBackgroundStyle({
       imageBlur: event.target.value
     })
-  }, backgroundStyleOptions.imageBlur.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, backgroundStyleOptions.imageBlur.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景の濃さ", /*#__PURE__*/React.createElement("select", {
+  }, label)))), React.createElement("label", null, "背景の濃さ", React.createElement("select", {
     value: settings.backgroundStyle.imageOpacity,
     onChange: event => updateBackgroundStyle({
       imageOpacity: event.target.value
     })
-  }, backgroundStyleOptions.imageOpacity.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
+  }, backgroundStyleOptions.imageOpacity.map(([id, label]) => React.createElement("option", {
     key: id,
     value: id
-  }, label))))), /*#__PURE__*/React.createElement("div", {
+  }, label))))), React.createElement("div", {
     className: "inline-buttons"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     type: "button",
     onClick: () => updateBackgroundStyle({
       image: "",
       type: "theme"
     })
-  }, "背景画像を削除"))), /*#__PURE__*/React.createElement("label", {
+  }, "背景画像を削除"))), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "背景装飾を表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "背景装飾を表示"), React.createElement("input", {
     type: "checkbox",
     checked: settings.backgroundStyle.showDecorations !== false,
     onChange: event => updateBackgroundStyle({
       showDecorations: event.target.checked
     })
-  })))), /*#__PURE__*/React.createElement("details", {
+  })))), React.createElement("details", {
     className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "フォント・アイコン"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "フォント・アイコン"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "フォント雰囲気"), /*#__PURE__*/React.createElement("p", null, "見出しや本文の雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "フォント雰囲気"), React.createElement("p", null, "見出しや本文の雰囲気を変更できます。"), React.createElement("div", {
     className: "preset-card-grid"
-  }, fontPresetOptions.map(item => /*#__PURE__*/React.createElement("button", {
+  }, fontPresetOptions.map(item => React.createElement("button", {
     key: item.id,
     className: settings.fontPreset === item.id ? "active-soft" : "",
     onClick: () => updateSettings({
       fontPreset: item.id
     })
-  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("strong", null, item.label), React.createElement("small", null, item.description))))), React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "アイコンセット"), /*#__PURE__*/React.createElement("p", null, "メニューやカードに使うアイコンの雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "アイコンセット"), React.createElement("p", null, "メニューやカードに使うアイコンの雰囲気を変更できます。"), React.createElement("div", {
     className: "preset-card-grid"
-  }, iconSetOptions.map(item => /*#__PURE__*/React.createElement("button", {
+  }, iconSetOptions.map(item => React.createElement("button", {
     key: item.id,
     className: settings.iconSet === item.id ? "active-soft" : "",
     onClick: () => updateSettings({
       iconSet: item.id
     })
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: `icon-set-sample icon-set-sample-${item.id}`
-  }, "✦"), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))))), /*#__PURE__*/React.createElement("details", {
+  }, "✦"), React.createElement("strong", null, item.label), React.createElement("small", null, item.description))))))), React.createElement("details", {
     className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ページ別表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "ページ別表示"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("section", {
     className: "customize-card page-display-settings customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ページごとの表示設定"), /*#__PURE__*/React.createElement("p", null, "ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "ページごとの表示設定"), React.createElement("p", null, "ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。"), React.createElement("div", {
     className: "page-display-grid"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "ギャラリー"), /*#__PURE__*/React.createElement("label", null, "余白", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("strong", null, "ギャラリー"), React.createElement("label", null, "余白", React.createElement("select", {
     value: pageSettings.gallery.gap,
     onChange: event => updatePageDisplay("gallery", {
       gap: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "narrow"
-  }, "狭め"), /*#__PURE__*/React.createElement("option", {
+  }, "狭め"), React.createElement("option", {
     value: "normal"
-  }, "標準"), /*#__PURE__*/React.createElement("option", {
+  }, "標準"), React.createElement("option", {
     value: "wide"
-  }, "広め"))), /*#__PURE__*/React.createElement("label", null, "画像比率", /*#__PURE__*/React.createElement("select", {
+  }, "広め"))), React.createElement("label", null, "画像比率", React.createElement("select", {
     value: pageSettings.gallery.ratio,
     onChange: event => updatePageDisplay("gallery", {
       ratio: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "square"
-  }, "正方形"), /*#__PURE__*/React.createElement("option", {
+  }, "正方形"), React.createElement("option", {
     value: "portrait"
-  }, "縦長"), /*#__PURE__*/React.createElement("option", {
+  }, "縦長"), React.createElement("option", {
     value: "landscape"
-  }, "横長"), /*#__PURE__*/React.createElement("option", {
+  }, "横長"), React.createElement("option", {
     value: "original"
-  }, "元画像に近く"))), /*#__PURE__*/React.createElement("label", null, "列数", /*#__PURE__*/React.createElement("select", {
+  }, "元画像に近く"))), React.createElement("label", null, "列数", React.createElement("select", {
     value: pageSettings.gallery.columns,
     onChange: event => updatePageDisplay("gallery", {
       columns: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "auto"
-  }, "自動"), /*#__PURE__*/React.createElement("option", {
+  }, "自動"), React.createElement("option", {
     value: "2"
-  }, "2列"), /*#__PURE__*/React.createElement("option", {
+  }, "2列"), React.createElement("option", {
     value: "3"
-  }, "3列"), /*#__PURE__*/React.createElement("option", {
+  }, "3列"), React.createElement("option", {
     value: "4"
-  }, "4列"), /*#__PURE__*/React.createElement("option", {
+  }, "4列"), React.createElement("option", {
     value: "5"
-  }, "5列"))), /*#__PURE__*/React.createElement("label", {
+  }, "5列"))), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "お気に入りハート"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "お気に入りハート"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.gallery.showHeart,
     onChange: event => updatePageDisplay("gallery", {
       showHeart: event.target.checked
     })
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), React.createElement("div", {
     className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "プロンプト帳"), /*#__PURE__*/React.createElement("label", null, "表示形式", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("strong", null, "プロンプト帳"), React.createElement("label", null, "表示形式", React.createElement("select", {
     value: pageSettings.prompts.viewMode,
     onChange: event => updatePageDisplay("prompts", {
       viewMode: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "card"
-  }, "カード"), /*#__PURE__*/React.createElement("option", {
+  }, "カード"), React.createElement("option", {
     value: "list"
-  }, "リスト寄り"))), /*#__PURE__*/React.createElement("label", null, "画像サイズ", /*#__PURE__*/React.createElement("select", {
+  }, "リスト寄り"))), React.createElement("label", null, "画像サイズ", React.createElement("select", {
     value: pageSettings.prompts.imageSize,
     onChange: event => updatePageDisplay("prompts", {
       imageSize: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "small"
-  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+  }, "小さめ"), React.createElement("option", {
     value: "normal"
-  }, "標準"), /*#__PURE__*/React.createElement("option", {
+  }, "標準"), React.createElement("option", {
     value: "large"
-  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+  }, "大きめ"))), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "タグを表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "タグを表示"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.prompts.showTags,
     onChange: event => updatePageDisplay("prompts", {
       showTags: event.target.checked
     })
-  })), /*#__PURE__*/React.createElement("label", {
+  })), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "メモを表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "メモを表示"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.prompts.showMemo,
     onChange: event => updatePageDisplay("prompts", {
       showMemo: event.target.checked
     })
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), React.createElement("div", {
     className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "動画プロンプト帳"), /*#__PURE__*/React.createElement("label", null, "表示形式", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("strong", null, "動画プロンプト帳"), React.createElement("label", null, "表示形式", React.createElement("select", {
     value: pageSettings.videoPrompts.viewMode,
     onChange: event => updatePageDisplay("videoPrompts", {
       viewMode: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "card"
-  }, "カード"), /*#__PURE__*/React.createElement("option", {
+  }, "カード"), React.createElement("option", {
     value: "list"
-  }, "リスト寄り"))), /*#__PURE__*/React.createElement("label", null, "サムネイルサイズ", /*#__PURE__*/React.createElement("select", {
+  }, "リスト寄り"))), React.createElement("label", null, "サムネイルサイズ", React.createElement("select", {
     value: pageSettings.videoPrompts.thumbnailSize,
     onChange: event => updatePageDisplay("videoPrompts", {
       thumbnailSize: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "small"
-  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+  }, "小さめ"), React.createElement("option", {
     value: "normal"
-  }, "標準"), /*#__PURE__*/React.createElement("option", {
+  }, "標準"), React.createElement("option", {
     value: "large"
-  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+  }, "大きめ"))), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "タグを表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "タグを表示"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.videoPrompts.showTags,
     onChange: event => updatePageDisplay("videoPrompts", {
       showTags: event.target.checked
     })
-  })), /*#__PURE__*/React.createElement("label", {
+  })), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "メモを表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "メモを表示"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.videoPrompts.showMemo,
     onChange: event => updatePageDisplay("videoPrompts", {
       showMemo: event.target.checked
     })
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), React.createElement("div", {
     className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "プロジェクト"), /*#__PURE__*/React.createElement("label", null, "並び順", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("strong", null, "プロジェクト"), React.createElement("label", null, "並び順", React.createElement("select", {
     value: pageSettings.projects.sortBy,
     onChange: event => updatePageDisplay("projects", {
       sortBy: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "deadline"
-  }, "期限順"), /*#__PURE__*/React.createElement("option", {
+  }, "期限順"), React.createElement("option", {
     value: "created"
-  }, "作成順"), /*#__PURE__*/React.createElement("option", {
+  }, "作成順"), React.createElement("option", {
     value: "manual"
-  }, "保存順"))), /*#__PURE__*/React.createElement("label", {
+  }, "保存順"))), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "完了済みを表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "完了済みを表示"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.projects.showCompleted,
     onChange: event => updatePageDisplay("projects", {
       showCompleted: event.target.checked
     })
-  })), /*#__PURE__*/React.createElement("label", {
+  })), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "期限アラームを表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "期限アラームを表示"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.projects.showAlarms,
     onChange: event => updatePageDisplay("projects", {
       showAlarms: event.target.checked
     })
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), React.createElement("div", {
     className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "モックアップ"), /*#__PURE__*/React.createElement("label", null, "カテゴリカードサイズ", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("strong", null, "モックアップ"), React.createElement("label", null, "カテゴリカードサイズ", React.createElement("select", {
     value: pageSettings.mockups.categoryCardSize,
     onChange: event => updatePageDisplay("mockups", {
       categoryCardSize: event.target.value
     })
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "small"
-  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
+  }, "小さめ"), React.createElement("option", {
     value: "normal"
-  }, "標準"), /*#__PURE__*/React.createElement("option", {
+  }, "標準"), React.createElement("option", {
     value: "large"
-  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
+  }, "大きめ"))), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "説明文を表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "説明文を表示"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.mockups.showDescription,
     onChange: event => updatePageDisplay("mockups", {
       showDescription: event.target.checked
     })
-  })), /*#__PURE__*/React.createElement("label", {
+  })), React.createElement("label", {
     className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "件数を表示"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "件数を表示"), React.createElement("input", {
     type: "checkbox",
     checked: pageSettings.mockups.showCount,
     onChange: event => updatePageDisplay("mockups", {
       showCount: event.target.checked
     })
-  }))))))), /*#__PURE__*/React.createElement("details", {
+  }))))))), React.createElement("details", {
     className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ホーム表示パーツ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "ホーム表示パーツ"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "表示項目"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "表示項目"), React.createElement("p", null, "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"), React.createElement("div", {
     className: "toggle-list"
-  }, [...homeFeatures, ...homeSections].map(item => /*#__PURE__*/React.createElement("label", {
+  }, [...homeFeatures, ...homeSections].map(item => React.createElement("label", {
     className: "switch-row",
     key: item.id
-  }, /*#__PURE__*/React.createElement("span", null, item.label), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, item.label), React.createElement("input", {
     type: "checkbox",
     checked: settings.visible[item.id] !== false,
     onChange: event => updateVisible(item.id, event.target.checked)
-  }))))), /*#__PURE__*/React.createElement("section", {
+  }))))), React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ホーム件数カード設定"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する件数カードを選択できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "ホーム件数カード設定"), React.createElement("p", null, "ホーム上部に表示する件数カードを選択できます。"), React.createElement("div", {
     className: "toggle-list"
-  }, homeStatsCardOptions.map(item => /*#__PURE__*/React.createElement("label", {
+  }, homeStatsCardOptions.map(item => React.createElement("label", {
     className: "switch-row",
     key: item.id
-  }, /*#__PURE__*/React.createElement("span", null, item.label), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, item.label), React.createElement("input", {
     type: "checkbox",
     checked: (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false,
     onChange: event => updateSettings({
@@ -5669,68 +5674,68 @@ function HomeCustomize({
         [item.id]: event.target.checked
       }
     })
-  }))))), /*#__PURE__*/React.createElement("section", {
+  }))))), React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ホーム日付表示"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する年・月日・曜日の見た目を選べます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "ホーム日付表示"), React.createElement("p", null, "ホーム上部に表示する年・月日・曜日の見た目を選べます。"), React.createElement("div", {
     className: "preset-card-grid clock-style-grid"
-  }, homeClockStyleOptions.map(item => /*#__PURE__*/React.createElement("button", {
+  }, homeClockStyleOptions.map(item => React.createElement("button", {
     key: item.id,
     className: (settings.homeClockStyle || "pill") === item.id ? "active-soft" : "",
     onClick: () => updateSettings({
       homeClockStyle: item.id
     })
-  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description)))), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("strong", null, item.label), React.createElement("small", null, item.description)))), React.createElement("div", {
     className: "clock-control-row"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "サイズ"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, React.createElement("strong", null, "サイズ"), React.createElement("div", {
     className: "inline-buttons"
-  }, homeClockSizeOptions.map(item => /*#__PURE__*/React.createElement("button", {
+  }, homeClockSizeOptions.map(item => React.createElement("button", {
     key: item.id,
     className: (settings.homeClockSize || "medium") === item.id ? "active-soft" : "",
     onClick: () => updateSettings({
       homeClockSize: item.id
     })
-  }, item.label)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "色味"), /*#__PURE__*/React.createElement("div", {
+  }, item.label)))), React.createElement("div", null, React.createElement("strong", null, "色味"), React.createElement("div", {
     className: "inline-buttons clock-color-buttons"
-  }, homeClockColorOptions.map(item => /*#__PURE__*/React.createElement("button", {
+  }, homeClockColorOptions.map(item => React.createElement("button", {
     key: item.id,
     className: `clock-color-choice clock-color-${item.id} ${(settings.homeClockColor || "theme") === item.id ? "active-soft" : ""}`,
     onClick: () => updateSettings({
       homeClockColor: item.id
     })
-  }, item.label)))))), /*#__PURE__*/React.createElement("section", {
+  }, item.label)))))), React.createElement("section", {
     className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, "並び順"), React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), React.createElement("div", {
     className: "order-list"
   }, settings.order.map(id => {
     const section = homeSections.find(item => item.id === id);
-    return /*#__PURE__*/React.createElement("div", {
+    return React.createElement("div", {
       className: "order-row",
       key: id
-    }, /*#__PURE__*/React.createElement("span", null, section?.label), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    }, React.createElement("span", null, section?.label), React.createElement("div", null, React.createElement("button", {
       onClick: () => moveSection(id, -1)
-    }, "上へ"), /*#__PURE__*/React.createElement("button", {
+    }, "上へ"), React.createElement("button", {
       onClick: () => moveSection(id, 1)
     }, "下へ")));
-  }))))), /*#__PURE__*/React.createElement("details", {
+  }))))), React.createElement("details", {
     className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "バックアップ・サンプル"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("summary", null, React.createElement("span", null, "バックアップ・サンプル"), React.createElement("b", null, "⌄")), React.createElement("div", {
     className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("section", {
     className: "customize-card backup-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "バックアップ"), /*#__PURE__*/React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), /*#__PURE__*/React.createElement("p", {
+  }, React.createElement("h3", null, "バックアップ"), React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), React.createElement("p", {
     className: "backup-storage-note"
-  }, "Prompt Atelierのデータは、このブラウザ内に保存されます。Dockのショートカットを削除しても通常は残りますが、ブラウザのサイトデータ削除や別ブラウザ利用では引き継がれない場合があります。大切なデータは定期的にバックアップを書き出してください。"), /*#__PURE__*/React.createElement("div", {
+  }, "Prompt Atelierのデータは、このブラウザ内に保存されます。Dockのショートカットを削除しても通常は残りますが、ブラウザのサイトデータ削除や別ブラウザ利用では引き継がれない場合があります。大切なデータは定期的にバックアップを書き出してください。"), React.createElement("div", {
     className: "backup-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "primary",
     onClick: exportPromptAtelierBackup
-  }, "バックアップを書き出す"), /*#__PURE__*/React.createElement("button", {
+  }, "バックアップを書き出す"), React.createElement("button", {
     onClick: () => backupInputRef.current?.click()
-  }, "バックアップを読み込む")), /*#__PURE__*/React.createElement("div", {
+  }, "バックアップを読み込む")), React.createElement("div", {
     className: "developer-tools"
-  }, /*#__PURE__*/React.createElement("strong", null, "配布用サンプルデータ"), /*#__PURE__*/React.createElement("p", null, "現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。"), /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("strong", null, "配布用サンプルデータ"), React.createElement("p", null, "現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。"), React.createElement("button", {
     onClick: exportPromptAtelierSampleSeed
-  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("input", {
+  }, "現在のデータをサンプルとして書き出す")), React.createElement("input", {
     ref: backupInputRef,
     type: "file",
     accept: "application/json,.json",
@@ -5741,14 +5746,14 @@ function HomeCustomize({
       importBackup(event.currentTarget.files?.[0]);
       event.currentTarget.value = "";
     }
-  })))), /*#__PURE__*/React.createElement("section", {
+  })))), React.createElement("section", {
     className: "customize-card danger-zone"
-  }, /*#__PURE__*/React.createElement("h3", null, "初期化"), /*#__PURE__*/React.createElement("p", null, "テーマ、バナー、表示項目、並び順を初期設定に戻します。"), /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("h3", null, "初期化"), React.createElement("p", null, "テーマ、バナー、表示項目、並び順を初期設定に戻します。"), React.createElement("button", {
     className: "danger",
     onClick: reset
-  }, "初期設定に戻す"))), /*#__PURE__*/React.createElement("aside", {
+  }, "初期設定に戻す"))), React.createElement("aside", {
     className: "customize-preview"
-  }, /*#__PURE__*/React.createElement("span", null, "ホームプレビュー"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("span", null, "ホームプレビュー"), React.createElement("div", {
     className: `preview-shell home-mini-preview density-${settings.displayDensity || "normal"} ${previewClassName}`,
     "data-density": settings.displayDensity || "normal",
     "data-card-radius": settings.cardStyle.radius,
@@ -5759,32 +5764,32 @@ function HomeCustomize({
     "data-font-preset": settings.fontPreset || "simple",
     "data-icon-set": settings.iconSet || "line",
     style: previewStyle
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "home-mini-topbar"
-  }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
+  }, React.createElement("strong", null, "Prompt Atelier"), React.createElement(HomeDateDisplay, {
     style: settings.homeClockStyle || "pill",
     size: settings.homeClockSize || "medium",
     color: settings.homeClockColor || "theme",
     mini: true
-  })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
+  })), settings.bannerVisible && React.createElement("div", {
     className: `preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
     onPointerDown: startBannerDrag,
     onPointerMove: moveBannerDrag,
     onPointerUp: endBannerDrag,
     onPointerCancel: endBannerDrag,
     onLostPointerCapture: endBannerDrag
-  }, bannerSrc ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
+  }, bannerSrc ? React.createElement(React.Fragment, null, React.createElement("img", {
     src: bannerSrc,
     alt: "",
     draggable: false,
     style: bannerImageStyle(bannerPosition)
-  }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
+  }), bannerCanDrag && React.createElement("span", {
     className: "banner-drag-hint"
-  }, "画像をドラッグして表示位置を調整")) : /*#__PURE__*/React.createElement("div", {
+  }, "画像をドラッグして表示位置を調整")) : React.createElement("div", {
     className: "home-mini-banner-placeholder"
-  }, /*#__PURE__*/React.createElement("span", null, "今日の制作ボード"), /*#__PURE__*/React.createElement("strong", null, "Creative Board"))), bannerImageValue && /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("span", null, "今日の制作ボード"), React.createElement("strong", null, "Creative Board"))), bannerImageValue && React.createElement("div", {
     className: "preview-banner-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     type: "button",
     className: "banner-reset-position",
     onPointerDown: event => event.stopPropagation(),
@@ -5792,52 +5797,52 @@ function HomeCustomize({
       event.stopPropagation();
       updateBannerPosition(50, 50, true);
     }
-  }, "中央に戻す")), settings.visible.dashboard !== false && previewDashboardItems.length > 0 && /*#__PURE__*/React.createElement("section", {
+  }, "中央に戻す")), settings.visible.dashboard !== false && previewDashboardItems.length > 0 && React.createElement("section", {
     className: "home-mini-stats",
     "aria-label": "ミニ件数カード"
-  }, previewDashboardItems.map(item => /*#__PURE__*/React.createElement("article", {
+  }, previewDashboardItems.map(item => React.createElement("article", {
     className: "home-mini-stat",
     key: item.id
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "stat-icon",
     "data-icon": item.icon
-  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+  }, React.createElement(FeatureIcon, {
     name: item.icon
-  })), /*#__PURE__*/React.createElement("small", null, item.title), /*#__PURE__*/React.createElement("strong", null, item.value)))), settings.visible.quickActions !== false && previewTools.length > 0 && /*#__PURE__*/React.createElement("section", {
+  })), React.createElement("small", null, item.title), React.createElement("strong", null, item.value)))), settings.visible.quickActions !== false && previewTools.length > 0 && React.createElement("section", {
     className: `home-mini-tools ${settings.workToolIconStyle || "pastel"}`,
     "aria-label": "ミニ作業ツール"
-  }, previewTools.map(tool => /*#__PURE__*/React.createElement("article", {
+  }, previewTools.map(tool => React.createElement("article", {
     className: "home-mini-tool",
     key: tool.id
-  }, /*#__PURE__*/React.createElement("span", null, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("span", null, tool.iconImage ? React.createElement("img", {
     src: imageThumbnail(tool.iconImage),
     alt: ""
-  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("small", null, tool.name)))), settings.visible.featureCards !== false && previewFeatureEntries.length > 0 && /*#__PURE__*/React.createElement("section", {
+  }) : React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), React.createElement("small", null, tool.name)))), settings.visible.featureCards !== false && previewFeatureEntries.length > 0 && React.createElement("section", {
     className: "home-mini-features",
     "aria-label": "ミニメイン機能カード"
-  }, previewFeatureEntries.map(([id, label, icon]) => /*#__PURE__*/React.createElement("article", {
+  }, previewFeatureEntries.map(([id, label, icon]) => React.createElement("article", {
     className: "home-mini-feature",
     key: id
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "stat-icon",
     "data-icon": icon
-  }, /*#__PURE__*/React.createElement(FeatureIcon, {
+  }, React.createElement(FeatureIcon, {
     name: icon
-  })), /*#__PURE__*/React.createElement("strong", null, label)))), settings.visible.dashboard !== false && (projects || []).length > 0 && /*#__PURE__*/React.createElement("section", {
+  })), React.createElement("strong", null, label)))), settings.visible.dashboard !== false && (projects || []).length > 0 && React.createElement("section", {
     className: "home-mini-main-card"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("div", null, React.createElement("span", {
     className: "mini-pill"
-  }, "Project"), /*#__PURE__*/React.createElement("h4", null, (projects[0]?.name || "Project").slice(0, 18)), /*#__PURE__*/React.createElement("strong", {
+  }, "Project"), React.createElement("h4", null, (projects[0]?.name || "Project").slice(0, 18)), React.createElement("strong", {
     className: "preview-number-text"
-  }, projects.length, " Projects")), /*#__PURE__*/React.createElement("p", null, "Today"))), /*#__PURE__*/React.createElement("button", {
+  }, projects.length, " Projects")), React.createElement("p", null, "Today"))), React.createElement("button", {
     className: "primary preview-save-home",
     onClick: () => {
       setSettings(persistHomeSettings());
       setScreen("home");
     }
-  }, "保存してホームへ"))), showPwaInstructions && /*#__PURE__*/React.createElement(PwaInstallInstructionsModal, {
+  }, "保存してホームへ"))), showPwaInstructions && React.createElement(PwaInstallInstructionsModal, {
     onClose: () => setShowPwaInstructions(false)
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
+  }), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -5847,157 +5852,169 @@ function FeatureIcon({
   name
 }) {
   if (name === "mockup") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return React.createElement("svg", {
       viewBox: "0 0 64 64",
       "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("rect", {
+    }, React.createElement("rect", {
       x: "13",
       y: "16",
       width: "38",
       height: "32",
       rx: "7"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M19 39l8-8 7 7 5-5 8 8"
-    }), /*#__PURE__*/React.createElement("circle", {
+    }), React.createElement("circle", {
       cx: "42",
       cy: "25",
       r: "3.5"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M10 13l3-5 3 5 5 3-5 3-3 5-3-5-5-3 5-3z",
       className: "icon-fill"
     }));
   }
   if (name === "notebook") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return React.createElement("svg", {
       viewBox: "0 0 64 64",
       "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("path", {
+    }, React.createElement("path", {
       d: "M18 12h27a6 6 0 016 6v31a5 5 0 01-5 5H18a5 5 0 01-5-5V17a5 5 0 015-5z"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M22 12v42"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M29 24h13M29 32h10"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M44 12v15l-5-3-5 3V12",
       className: "icon-fill"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M10 22h7M10 32h7M10 42h7"
     }));
   }
   if (name === "magic") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return React.createElement("svg", {
       viewBox: "0 0 64 64",
       "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("path", {
+    }, React.createElement("path", {
       d: "M18 48l28-28"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M39 17l8 8"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M18 18l3-6 3 6 6 3-6 3-3 6-3-6-6-3 6-3z",
       className: "icon-fill"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M31 47h21M34 54h13"
     }));
   }
   if (name === "video") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return React.createElement("svg", {
       viewBox: "0 0 64 64",
       "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("rect", {
+    }, React.createElement("rect", {
       x: "10",
       y: "16",
       width: "44",
       height: "32",
       rx: "8"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M27 25l13 7-13 7V25z",
       className: "icon-fill"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M16 16v32M48 16v32"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M16 24h-5M16 32h-5M16 40h-5M58 24h-5M58 32h-5M58 40h-5"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M45 9l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
     }));
   }
   if (name === "alarm") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return React.createElement("svg", {
       viewBox: "0 0 64 64",
       "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("circle", {
+    }, React.createElement("circle", {
       cx: "32",
       cy: "34",
       r: "18"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M22 10l-9 8M42 10l9 8M32 22v13l9 5M24 54l-4 5M40 54l4 5"
-    }), /*#__PURE__*/React.createElement("path", {
+    }), React.createElement("path", {
       d: "M25 5h14",
       className: "icon-fill"
     }));
   }
-  return /*#__PURE__*/React.createElement("svg", {
+  return React.createElement("svg", {
     viewBox: "0 0 64 64",
     "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("path", {
+  }, React.createElement("path", {
     d: "M11 22h17l5-6h20v31a6 6 0 01-6 6H17a6 6 0 01-6-6V22z"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M11 28h42"
-  }), /*#__PURE__*/React.createElement("rect", {
+  }), React.createElement("rect", {
     x: "20",
     y: "34",
     width: "24",
     height: "12",
     rx: "4",
     className: "icon-fill"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M24 40h16"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M49 14l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
   }));
 }
 function HomePromptCard({
   prompt,
-  onCopy
+  onCopy,
+  setScreen
 }) {
   const isProjectMemo = prompt.favoriteType === "projectMemo";
   const isVideoPrompt = prompt.favoriteType === "videoPrompt";
   const copyValue = isProjectMemo ? prompt.body : prompt.prompt;
   const videoSrc = isVideoPrompt ? videoDisplaySrc(prompt.url || "") : "";
-  return /*#__PURE__*/React.createElement("article", {
-    className: `home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""} ${isVideoPrompt ? "video-favorite-home-card" : ""}`.trim()
-  }, isProjectMemo ? /*#__PURE__*/React.createElement("div", {
+  const openFavorite = () => {
+    if (isProjectMemo) setScreen("projects");else if (isVideoPrompt) setScreen("videos");else if (prompt.favoriteType === "mockupPrompt") setScreen("library");else setScreen("prompts");
+  };
+  return React.createElement("article", {
+    className: `home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""} ${isVideoPrompt ? "video-favorite-home-card" : ""}`.trim(),
+    role: "button",
+    tabIndex: 0,
+    onClick: openFavorite,
+    onKeyDown: event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openFavorite();
+      }
+    }
+  }, isProjectMemo ? React.createElement("div", {
     className: "home-memo-cover"
-  }, /*#__PURE__*/React.createElement("span", null, "MEMO")) : isVideoPrompt && videoSrc && !prompt.imageUrl ? /*#__PURE__*/React.createElement("video", {
+  }, React.createElement("span", null, "MEMO")) : isVideoPrompt && videoSrc ? React.createElement("video", {
     src: videoSrc,
+    autoPlay: true,
     muted: true,
     loop: true,
     playsInline: true,
-    preload: "metadata",
-    onMouseEnter: event => event.currentTarget.play().catch(() => {}),
-    onMouseLeave: event => {
-      event.currentTarget.pause();
-      event.currentTarget.currentTime = 0;
-    }
-  }) : /*#__PURE__*/React.createElement("img", {
+    preload: "metadata"
+  }) : React.createElement("img", {
     src: imageDisplaySrc(prompt.imageUrl) || art(isVideoPrompt ? "動画" : "プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "home-prompt-body"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, React.createElement("span", {
     className: "mini-pill"
-  }, isProjectMemo ? "プロジェクトメモ" : isVideoPrompt ? "動画プロンプト" : prompt.category), /*#__PURE__*/React.createElement("h3", null, prompt.title), isProjectMemo && /*#__PURE__*/React.createElement("p", {
+  }, isProjectMemo ? "プロジェクトメモ" : isVideoPrompt ? "動画プロンプト" : prompt.category), React.createElement("h3", null, prompt.title), isProjectMemo && React.createElement("p", {
     className: "home-memo-excerpt"
-  }, prompt.body), /*#__PURE__*/React.createElement("div", {
+  }, prompt.body), React.createElement("div", {
     className: "home-card-bottom"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "tiny-tags"
-  }, !isProjectMemo && (prompt.tags || []).slice(0, 2).map(tag => /*#__PURE__*/React.createElement("span", {
+  }, !isProjectMemo && (prompt.tags || []).slice(0, 2).map(tag => React.createElement("span", {
     key: tag
-  }, "#", tag))), /*#__PURE__*/React.createElement("button", {
+  }, "#", tag))), React.createElement("button", {
     className: "copy-chip",
-    onClick: () => onCopy(copyValue, prompt.id)
+    onClick: event => {
+      event.stopPropagation();
+      onCopy(copyValue, prompt.id);
+    }
   }, "コピー"))));
 }
 function Library({
@@ -6294,16 +6311,16 @@ function Library({
     }
     setArmedCategoryId("");
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: `page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`
-  }, !currentCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
+  }, !currentCategory ? React.createElement(React.Fragment, null, React.createElement(PageHead, {
     title: "モックアップライブラリ",
-    action: /*#__PURE__*/React.createElement("div", {
+    action: React.createElement("div", {
       className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+    }, React.createElement(PageBackButton, {
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), /*#__PURE__*/React.createElement("button", {
+    }), React.createElement("button", {
       className: "primary",
       onClick: () => setEditingCategory({
         id: "",
@@ -6312,18 +6329,18 @@ function Library({
         coverImage: ""
       })
     }, "＋ カテゴリを追加"))
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "library-intro"
-  }, /*#__PURE__*/React.createElement("p", null, "販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("p", null, "販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。")), React.createElement("div", {
     className: "library-category-grid"
-  }, filteredCategories.map(category => /*#__PURE__*/React.createElement("article", {
+  }, filteredCategories.map(category => React.createElement("article", {
     className: `library-category-card ${draggedCategoryId === category.id || armedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
     key: category.id,
     "data-category-id": category.id
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "category-reorder-controls",
     onClick: event => event.stopPropagation()
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     type: "button",
     className: "category-drag-handle",
     "aria-label": `${category.title}を並び替え`,
@@ -6332,48 +6349,48 @@ function Library({
     onKeyDown: event => handleCategoryKeyDown(event, category.id),
     onPointerDown: event => startCategoryPointerDrag(event, category.id),
     disabled: isCategorySearching
-  }, "⋮⋮")), /*#__PURE__*/React.createElement(MenuButton, {
+  }, "⋮⋮")), React.createElement(MenuButton, {
     onEdit: () => setEditingCategory(category),
     onDuplicate: () => duplicateCategory(category),
     onImage: () => setEditingCategory(category),
     onDelete: () => deleteCategory(category.id)
-  }), /*#__PURE__*/React.createElement("button", {
+  }), React.createElement("button", {
     className: "category-open",
     onClick: () => {
       setSelectedCategory(category);
       setQuery("");
     }
-  }, /*#__PURE__*/React.createElement(CoverImageCarousel, {
+  }, React.createElement(CoverImageCarousel, {
     item: category,
     className: "category-cover-carousel",
     placeholderLabel: "カテゴリ"
-  }), /*#__PURE__*/React.createElement("span", null, category.title), mockupDisplay.showDescription !== false && /*#__PURE__*/React.createElement("small", null, category.description), mockupDisplay.showCount !== false && /*#__PURE__*/React.createElement("em", {
+  }), React.createElement("span", null, category.title), mockupDisplay.showDescription !== false && React.createElement("small", null, category.description), mockupDisplay.showCount !== false && React.createElement("em", {
     className: "category-count-label"
-  }, boardPrompts.filter(prompt => prompt.categoryId === category.id).length, "件"))))), /*#__PURE__*/React.createElement(PageBackButton, {
+  }, boardPrompts.filter(prompt => prompt.categoryId === category.id).length, "件"))))), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
-  })) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageBackButton, {
+  })) : React.createElement(React.Fragment, null, React.createElement(PageBackButton, {
     label: "ライブラリへ戻る",
     onClick: () => {
       setSelectedCategory(null);
       setQuery("");
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "library-detail-head"
-  }, /*#__PURE__*/React.createElement(CoverImageCarousel, {
+  }, React.createElement(CoverImageCarousel, {
     item: currentCategory,
     className: "library-detail-cover",
     placeholderLabel: "カテゴリ"
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, currentCategory.title), /*#__PURE__*/React.createElement("p", null, currentCategory.description)), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("div", null, React.createElement("h2", null, currentCategory.title), React.createElement("p", null, currentCategory.description)), React.createElement("span", {
     className: "prompt-count-pill"
-  }, "画像 ", imagePrompts.length, " / 20・ストック ", textStockCount, " / 100")), /*#__PURE__*/React.createElement("section", {
+  }, "画像 ", imagePrompts.length, " / 20・ストック ", textStockCount, " / 100")), React.createElement("section", {
     className: "prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "画像付きプロンプト"), /*#__PURE__*/React.createElement("p", null, "最大20個まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, React.createElement("h3", null, "画像付きプロンプト"), React.createElement("p", null, "最大20個まで保存できます。"))), React.createElement("div", {
     className: "library-prompt-grid"
-  }, imagePromptSlots.map((prompt, index) => prompt ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
+  }, imagePromptSlots.map((prompt, index) => prompt ? React.createElement(LibraryImagePromptCard, {
     key: prompt.id,
     prompt: prompt,
     inlineEdit: inlineEdit,
@@ -6386,17 +6403,17 @@ function Library({
     showMemo: () => setMemoPrompt(prompt),
     showTags: true,
     showMemoButton: true
-  }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
+  }) : canAddImagePrompt ? React.createElement("button", {
     className: "add-prompt-card",
     key: `empty-prompt-${index}`,
     onClick: () => setEditingPrompt(createBlankLibraryPrompt())
-  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト")) : null))), /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("span", null, "＋"), React.createElement("strong", null, "新しいプロンプト")) : null))), React.createElement("section", {
     className: "prompt-area text-prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトストック"), /*#__PURE__*/React.createElement("p", null, "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, React.createElement("h3", null, "プロンプトストック"), React.createElement("p", null, "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), React.createElement("div", {
     className: "text-prompt-list"
-  }, textStockSlots.map((prompt, index) => /*#__PURE__*/React.createElement(TextStockFrame, {
+  }, textStockSlots.map((prompt, index) => React.createElement(TextStockFrame, {
     key: prompt?.id || `stock-frame-${index}`,
     prompt: prompt,
     blankPrompt: createBlankLibraryPrompt(true),
@@ -6404,28 +6421,28 @@ function Library({
     onUpdate: updatePrompt,
     copyText: copyText,
     showMemo: () => prompt && setMemoPrompt(prompt)
-  }))), canAddTextStock && textStockCount >= stockFrameCount && /*#__PURE__*/React.createElement("button", {
+  }))), canAddTextStock && textStockCount >= stockFrameCount && React.createElement("button", {
     className: "add-stock-button",
     onClick: addTextStockFrame
-  }, "＋ プロンプトを追加"), !canAddTextStock && /*#__PURE__*/React.createElement("p", {
+  }, "＋ プロンプトを追加"), !canAddTextStock && React.createElement("p", {
     className: "limit-message"
-  }, "保存上限（100件）に達しました")), /*#__PURE__*/React.createElement(PageBackButton, {
+  }, "保存上限（100件）に達しました")), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ライブラリへ戻る",
     onClick: () => {
       setSelectedCategory(null);
       setQuery("");
     }
-  })), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
+  })), editingCategory && React.createElement(MockupCategoryModal, {
     item: editingCategory,
     onClose: () => setEditingCategory(null),
     onSave: saveCategory
-  }), editingPrompt && /*#__PURE__*/React.createElement(LibraryPromptModal, {
+  }), editingPrompt && React.createElement(LibraryPromptModal, {
     item: editingPrompt,
     categories: orderedCategories,
     onClose: () => setEditingPrompt(null),
     onSave: savePrompt
-  }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
+  }), memoPrompt && React.createElement(MemoModal, {
     prompt: memoPrompt,
     onClose: () => setMemoPrompt(null),
     onSave: memo => {
@@ -6455,35 +6472,35 @@ function CoverImageCarousel({
     return () => window.clearInterval(timer);
   }, [isHovering, images.length]);
   const currentImage = images[index] || images[0];
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: `cover-image-carousel ${className}`,
     onMouseEnter: () => setIsHovering(true),
     onMouseLeave: () => setIsHovering(false)
-  }, currentImage ? /*#__PURE__*/React.createElement("img", {
+  }, currentImage ? React.createElement("img", {
     src: imageDisplaySrc(currentImage),
     alt: ""
-  }) : /*#__PURE__*/React.createElement("div", {
+  }) : React.createElement("div", {
     className: "image-placeholder",
     "aria-label": `${placeholderLabel}未設定`
-  }, /*#__PURE__*/React.createElement("svg", {
+  }, React.createElement("svg", {
     viewBox: "0 0 64 64",
     "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("rect", {
+  }, React.createElement("rect", {
     x: "12",
     y: "16",
     width: "40",
     height: "32",
     rx: "7"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M18 41l10-10 8 8 5-5 7 7"
-  }), /*#__PURE__*/React.createElement("circle", {
+  }), React.createElement("circle", {
     cx: "42",
     cy: "25",
     r: "4"
-  }))), images.length > 1 && /*#__PURE__*/React.createElement("div", {
+  }))), images.length > 1 && React.createElement("div", {
     className: "cover-image-dots",
     "aria-hidden": "true"
-  }, images.map((_, dotIndex) => /*#__PURE__*/React.createElement("span", {
+  }, images.map((_, dotIndex) => React.createElement("span", {
     className: dotIndex === index ? "active" : "",
     key: dotIndex
   }))));
@@ -6527,7 +6544,7 @@ function CoverImageUploader({
     setUrlDraft("");
     setMessage("");
   };
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "cover-image-uploader",
     onClick: event => event.stopPropagation(),
     onDragOver: event => event.preventDefault(),
@@ -6543,36 +6560,36 @@ function CoverImageUploader({
       event.stopPropagation();
       addImages(files);
     }
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "cover-image-strip"
-  }, images.map((image, index) => /*#__PURE__*/React.createElement("div", {
+  }, images.map((image, index) => React.createElement("div", {
     className: "cover-image-thumb",
     key: `${imageDisplaySrc(image)}-${index}`
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageDisplaySrc(image),
     alt: ""
-  }), /*#__PURE__*/React.createElement("button", {
+  }), React.createElement("button", {
     type: "button",
     onClick: () => applyImages(images.filter((_, imageIndex) => imageIndex !== index))
-  }, "削除"))), images.length < 3 && /*#__PURE__*/React.createElement("label", {
+  }, "削除"))), images.length < 3 && React.createElement("label", {
     className: "cover-image-add"
-  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("small", null, "画像を追加"), /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("span", null, "＋"), React.createElement("small", null, "画像を追加"), React.createElement("input", {
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
     multiple: true,
     onChange: event => addImages(event.target.files || [])
-  }))), /*#__PURE__*/React.createElement("p", {
+  }))), React.createElement("p", {
     className: "cover-image-help"
-  }, "見出し画像は最大3枚まで設定できます"), /*#__PURE__*/React.createElement("div", {
+  }, "見出し画像は最大3枚まで設定できます"), React.createElement("div", {
     className: "cover-image-url-row"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     value: urlDraft,
     onChange: event => setUrlDraft(event.target.value),
     placeholder: "画像URLを追加"
-  }), /*#__PURE__*/React.createElement("button", {
+  }), React.createElement("button", {
     type: "button",
     onClick: addUrl
-  }, "追加")), message && /*#__PURE__*/React.createElement("p", {
+  }, "追加")), message && React.createElement("p", {
     className: "cover-image-message"
   }, message));
 }
@@ -6593,9 +6610,9 @@ function LibraryImagePromptCard({
     coverImages,
     imageUrl: coverImages[0] || ""
   });
-  return /*#__PURE__*/React.createElement("article", {
+  return React.createElement("article", {
     className: "library-prompt-card"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "prompt-favorite-button image-prompt-heart",
     "aria-label": prompt.favorite ? "お気に入りを解除" : "お気に入りに追加",
     onClick: event => {
@@ -6604,7 +6621,7 @@ function LibraryImagePromptCard({
         favorite: !prompt.favorite
       });
     }
-  }, prompt.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement(PromptMenuButton, {
+  }, prompt.favorite ? "♥" : "♡"), React.createElement(PromptMenuButton, {
     onEdit: editPrompt,
     onDuplicate: () => duplicatePrompt(prompt),
     onClearImage: () => updatePrompt(prompt.id, {
@@ -6612,16 +6629,16 @@ function LibraryImagePromptCard({
       coverImages: []
     }),
     onDelete: deletePrompt
-  }), /*#__PURE__*/React.createElement(CoverImageCarousel, {
+  }), React.createElement(CoverImageCarousel, {
     item: prompt,
     placeholderLabel: "プロンプト画像"
-  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
+  }), React.createElement(CoverImageUploader, {
     item: prompt,
     category: "prompt",
     onChange: updateCoverImages
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "prompt-card-content"
-  }, /*#__PURE__*/React.createElement(InlineEditable, {
+  }, React.createElement(InlineEditable, {
     className: "inline-title",
     value: prompt.title,
     placeholder: "タイトル",
@@ -6636,7 +6653,7 @@ function LibraryImagePromptCard({
       });
       setInlineEdit(null);
     }
-  }), /*#__PURE__*/React.createElement(InlineEditable, {
+  }), React.createElement(InlineEditable, {
     className: "inline-prompt",
     multiline: true,
     value: prompt.prompt,
@@ -6652,17 +6669,17 @@ function LibraryImagePromptCard({
       });
       setInlineEdit(null);
     }
-  }), showTags && Array.isArray(prompt.tags) && prompt.tags.length > 0 && /*#__PURE__*/React.createElement(TagRow, {
+  }), showTags && Array.isArray(prompt.tags) && prompt.tags.length > 0 && React.createElement(TagRow, {
     tags: prompt.tags.slice(0, 4)
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "prompt-card-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "primary",
     onClick: event => {
       event.stopPropagation();
       copyText(prompt.prompt, prompt.id);
     }
-  }, "📋 プロンプトをコピー"), showMemoButton && /*#__PURE__*/React.createElement("button", {
+  }, "📋 プロンプトをコピー"), showMemoButton && React.createElement("button", {
     onClick: event => {
       event.stopPropagation();
       showMemo();
@@ -6718,40 +6735,40 @@ function TextStockFrame({
       favorite: nextFavorite
     });
   };
-  return /*#__PURE__*/React.createElement("article", {
+  return React.createElement("article", {
     className: "text-stock-frame"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "prompt-favorite-button text-stock-heart",
     "aria-label": prompt?.favorite ? "お気に入りを解除" : "お気に入りに追加",
     onClick: toggleFavorite,
     disabled: !isSaved && !title.trim() && !promptText.trim()
-  }, prompt?.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("input", {
+  }, prompt?.favorite ? "♥" : "♡"), React.createElement("input", {
     value: title,
     onChange: event => setTitle(event.target.value),
     onBlur: () => save({
       title
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: promptText,
     onChange: event => setPromptText(event.target.value),
     onBlur: () => save({
       prompt: promptText
     }),
     placeholder: "プロンプト本文"
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "text-stock-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "primary",
     onClick: copyStockPrompt,
     disabled: !promptText.trim()
-  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+  }, "📋 プロンプトをコピー"), React.createElement("button", {
     onClick: event => {
       event.stopPropagation();
       showMemo();
     },
     disabled: !isSaved
-  }, "メモ"), isSaved && onDelete && /*#__PURE__*/React.createElement("button", {
+  }, "メモ"), isSaved && onDelete && React.createElement("button", {
     className: "danger text-stock-delete",
     onClick: event => {
       event.stopPropagation();
@@ -6762,25 +6779,25 @@ function TextStockFrame({
 function PromptThumbnail({
   imageUrl
 }) {
-  if (imageUrl) return /*#__PURE__*/React.createElement("img", {
+  if (imageUrl) return React.createElement("img", {
     src: imageDisplaySrc(imageUrl),
     alt: ""
   });
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "image-placeholder",
     "aria-label": "画像未設定"
-  }, /*#__PURE__*/React.createElement("svg", {
+  }, React.createElement("svg", {
     viewBox: "0 0 64 64",
     "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("rect", {
+  }, React.createElement("rect", {
     x: "12",
     y: "16",
     width: "40",
     height: "32",
     rx: "7"
-  }), /*#__PURE__*/React.createElement("path", {
+  }), React.createElement("path", {
     d: "M18 41l10-10 8 8 5-5 7 7"
-  }), /*#__PURE__*/React.createElement("circle", {
+  }), React.createElement("circle", {
     cx: "42",
     cy: "25",
     r: "4"
@@ -6802,7 +6819,7 @@ function EditableThumbnail({
     setDraft(image.src);
   };
   if (isEditing) {
-    return /*#__PURE__*/React.createElement("div", {
+    return React.createElement("div", {
       className: "thumbnail-editor",
       onClick: event => event.stopPropagation(),
       onDragOver: event => event.preventDefault(),
@@ -6818,32 +6835,32 @@ function EditableThumbnail({
         event.stopPropagation();
         importFiles(files);
       }
-    }, /*#__PURE__*/React.createElement("input", {
+    }, React.createElement("input", {
       value: draft,
       onChange: event => setDraft(event.target.value),
       placeholder: "サムネイル画像URL",
       autoFocus: true
-    }), /*#__PURE__*/React.createElement("label", {
+    }), React.createElement("label", {
       className: "mini-upload"
-    }, "画像を選ぶ", /*#__PURE__*/React.createElement("input", {
+    }, "画像を選ぶ", React.createElement("input", {
       type: "file",
       accept: "image/png,image/jpeg,image/webp",
       onChange: event => readImage(event, imageUrl => setDraft(imageUrl), "prompt")
-    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    })), React.createElement("div", null, React.createElement("button", {
       className: "primary",
       onClick: () => onSave(draft)
-    }, "保存"), /*#__PURE__*/React.createElement("button", {
+    }, "保存"), React.createElement("button", {
       onClick: onCancel
     }, "閉じる")));
   }
-  return /*#__PURE__*/React.createElement("button", {
+  return React.createElement("button", {
     className: "thumbnail-button",
     onClick: event => {
       event.stopPropagation();
       onEdit();
     },
     "aria-label": "画像を変更"
-  }, /*#__PURE__*/React.createElement(PromptThumbnail, {
+  }, React.createElement(PromptThumbnail, {
     imageUrl: prompt.imageUrl
   }));
 }
@@ -6873,10 +6890,10 @@ function InlineEditable({
       placeholder,
       className: `inline-input ${className || ""}`
     };
-    return multiline ? /*#__PURE__*/React.createElement("textarea", commonProps) : /*#__PURE__*/React.createElement("input", commonProps);
+    return multiline ? React.createElement("textarea", commonProps) : React.createElement("input", commonProps);
   }
   const Tag = className === "inline-title" ? "h3" : "p";
-  return /*#__PURE__*/React.createElement(Tag, {
+  return React.createElement(Tag, {
     className: `inline-editable ${className || ""}`,
     onClick: event => {
       event.stopPropagation();
@@ -6890,16 +6907,16 @@ function TranslationModal({
   copyText
 }) {
   const translation = prompt.japaneseTranslation || "このプロンプトにはまだ和訳がありません。編集画面から和訳を追加できます。";
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: "日本語訳",
     onClose: onClose
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "translation-box"
-  }, /*#__PURE__*/React.createElement("h3", null, prompt.title, " の和訳"), /*#__PURE__*/React.createElement("p", null, translation)), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("h3", null, prompt.title, " の和訳"), React.createElement("p", null, translation)), React.createElement("div", {
     className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     onClick: onClose
-  }, "閉じる"), /*#__PURE__*/React.createElement("button", {
+  }, "閉じる"), React.createElement("button", {
     className: "primary",
     onClick: () => copyText(translation)
   }, "和訳をコピー")));
@@ -6920,32 +6937,32 @@ function MemoModal({
     }
     onClose();
   };
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: "メモ",
     onClose: requestClose,
     hideClose: true
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "translation-box"
-  }, /*#__PURE__*/React.createElement("h3", null, prompt.title, " のメモ"), /*#__PURE__*/React.createElement("textarea", {
+  }, React.createElement("h3", null, prompt.title, " のメモ"), React.createElement("textarea", {
     className: "memo-textarea",
     value: memo,
     onChange: event => setMemo(event.target.value),
     placeholder: "このプロンプトで気づいたこと、使いどころ、商品化メモなど"
-  })), showConfirm && /*#__PURE__*/React.createElement("div", {
+  })), showConfirm && React.createElement("div", {
     className: "unsaved-confirm"
-  }, /*#__PURE__*/React.createElement("strong", null, "保存せず閉じますか？"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("strong", null, "保存せず閉じますか？"), React.createElement("div", null, React.createElement("button", {
     onClick: () => setShowConfirm(false)
-  }, "キャンセル"), /*#__PURE__*/React.createElement("button", {
+  }, "キャンセル"), React.createElement("button", {
     className: "danger",
     onClick: onClose
-  }, "保存せず閉じる"), /*#__PURE__*/React.createElement("button", {
+  }, "保存せず閉じる"), React.createElement("button", {
     className: "primary",
     onClick: () => onSave(memo)
-  }, "保存して閉じる"))), /*#__PURE__*/React.createElement("div", {
+  }, "保存して閉じる"))), React.createElement("div", {
     className: "memo-modal-footer"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     onClick: requestClose
-  }, "閉じる"), /*#__PURE__*/React.createElement("button", {
+  }, "閉じる"), React.createElement("button", {
     className: "primary",
     onClick: () => onSave(memo)
   }, "メモを保存")));
@@ -6961,18 +6978,18 @@ function MenuButton({
     event.stopPropagation();
     action();
   };
-  return /*#__PURE__*/React.createElement("details", {
+  return React.createElement("details", {
     className: "card-menu",
     onClick: event => event.stopPropagation()
-  }, /*#__PURE__*/React.createElement("summary", {
+  }, React.createElement("summary", {
     "aria-label": "メニュー"
-  }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+  }, "…"), React.createElement("div", null, React.createElement("button", {
     onClick: event => runMenuAction(event, onEdit)
-  }, "編集"), /*#__PURE__*/React.createElement("button", {
+  }, "編集"), React.createElement("button", {
     onClick: event => runMenuAction(event, onDuplicate)
-  }, "複製"), /*#__PURE__*/React.createElement("button", {
+  }, "複製"), React.createElement("button", {
     onClick: event => runMenuAction(event, onImage)
-  }, "画像変更"), /*#__PURE__*/React.createElement("button", {
+  }, "画像変更"), React.createElement("button", {
     className: "danger",
     onClick: event => runMenuAction(event, onDelete)
   }, "削除")));
@@ -6988,18 +7005,18 @@ function PromptMenuButton({
     event.stopPropagation();
     action();
   };
-  return /*#__PURE__*/React.createElement("details", {
+  return React.createElement("details", {
     className: "card-menu",
     onClick: event => event.stopPropagation()
-  }, /*#__PURE__*/React.createElement("summary", {
+  }, React.createElement("summary", {
     "aria-label": "メニュー"
-  }, "…"), /*#__PURE__*/React.createElement("div", null, onEdit && /*#__PURE__*/React.createElement("button", {
+  }, "…"), React.createElement("div", null, onEdit && React.createElement("button", {
     onClick: event => runMenuAction(event, onEdit)
-  }, "編集"), /*#__PURE__*/React.createElement("button", {
+  }, "編集"), React.createElement("button", {
     onClick: event => runMenuAction(event, onDuplicate)
-  }, "複製"), /*#__PURE__*/React.createElement("button", {
+  }, "複製"), React.createElement("button", {
     onClick: event => runMenuAction(event, onClearImage)
-  }, "画像を削除"), /*#__PURE__*/React.createElement("button", {
+  }, "画像を削除"), React.createElement("button", {
     className: "danger",
     onClick: event => runMenuAction(event, onDelete)
   }, "削除")));
@@ -7043,28 +7060,28 @@ function MockupCategoryModal({
     coverImages,
     coverImage: coverImages[0] || ""
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: item.id ? "カテゴリを編集" : "カテゴリを追加",
     onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement(FormGrid, null, React.createElement("input", {
     value: draft.title,
     onChange: e => setDraft({
       ...draft,
       title: e.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,
       description: e.target.value
     }),
     placeholder: "説明文"
-  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
+  }), React.createElement(CoverImageUploader, {
     item: draft,
     category: "mockup",
     onChange: setCoverImages
-  })), /*#__PURE__*/React.createElement(ModalActions, {
+  })), React.createElement(ModalActions, {
     onClose: onClose,
     onSave: () => onSave(draft)
   }));
@@ -7085,25 +7102,25 @@ function LibraryPromptModal({
     coverImages,
     imageUrl: coverImages[0] || ""
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
     onClose: onClose,
     className: "prompt-edit-modal"
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement(FormGrid, null, React.createElement("input", {
     value: draft.title,
     onChange: e => setDraft({
       ...draft,
       title: e.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,
       description: e.target.value
     }),
     placeholder: "説明"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     className: "tall",
     value: draft.prompt,
     onChange: e => setDraft({
@@ -7111,7 +7128,7 @@ function LibraryPromptModal({
       prompt: e.target.value
     }),
     placeholder: "プロンプト本文"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     className: "tall",
     value: draft.japaneseTranslation || "",
     onChange: e => setDraft({
@@ -7119,18 +7136,18 @@ function LibraryPromptModal({
       japaneseTranslation: e.target.value
     }),
     placeholder: "和訳本文"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: draft.memo || "",
     onChange: e => setDraft({
       ...draft,
       memo: e.target.value
     }),
     placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
+  }), React.createElement(CoverImageUploader, {
     item: draft,
     category: "mockup",
     onChange: setCoverImages
-  })), /*#__PURE__*/React.createElement(ModalActions, {
+  })), React.createElement(ModalActions, {
     onClose: onClose,
     onSave: () => onSave(draft)
   }));
@@ -7288,56 +7305,56 @@ function PromptBook({
     if (!canAddTextStock) return;
     setStockFrameCount(count => Math.min(100, count + 1));
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: `page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`
-  }, /*#__PURE__*/React.createElement(PageHead, {
+  }, React.createElement(PageHead, {
     title: "プロンプト帳",
-    action: /*#__PURE__*/React.createElement("div", {
+    action: React.createElement("div", {
       className: "actions"
-    }, /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", {
       className: "prompt-count-pill"
-    }, "画像 ", imagePromptCount, " / 20・ストック ", textStockCount, " / 100"), /*#__PURE__*/React.createElement(PageBackButton, {
+    }, "画像 ", imagePromptCount, " / 20・ストック ", textStockCount, " / 100"), React.createElement(PageBackButton, {
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
     }))
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "folder-view-toolbar"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "folder-view-tabs",
     role: "group",
     "aria-label": "プロンプト帳の表示切り替え"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: viewMode === "list" ? "active-soft" : "",
     onClick: () => setViewMode("list")
-  }, "一覧"), /*#__PURE__*/React.createElement("button", {
+  }, "一覧"), React.createElement("button", {
     className: viewMode === "folders" ? "active-soft" : "",
     onClick: () => setViewMode("folders")
-  }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
+  }, "ファイル別")), React.createElement("button", {
     className: "folder-create-button",
     onClick: addPromptFolder
-  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement("p", {
+  }, "＋ 新しいファイル")), React.createElement("p", {
     className: "folder-limit-note"
-  }, "プロンプト帳：ファイル最大10件。1ファイル内は画像付き20件・テキストのみ20件まで。画像は1プロンプト3枚まで。"), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("select", {
+  }, "プロンプト帳：ファイル最大10件。1ファイル内は画像付き20件・テキストのみ20件まで。画像は1プロンプト3枚まで。"), React.createElement(Filters, null, React.createElement("select", {
     value: tag,
     onChange: e => setTag(e.target.value)
-  }, /*#__PURE__*/React.createElement("option", null, "すべて"), tags.map(item => /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", null, "すべて"), tags.map(item => React.createElement("option", {
     key: item
-  }, item))), /*#__PURE__*/React.createElement("label", {
+  }, item))), React.createElement("label", {
     className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: favoritesOnly,
     onChange: e => setFavoritesOnly(e.target.checked)
-  }), " お気に入りのみ")), viewMode === "folders" ? /*#__PURE__*/React.createElement("div", {
+  }), " お気に入りのみ")), viewMode === "folders" ? React.createElement("div", {
     className: "folder-board"
-  }, promptFolderGroups.map(group => /*#__PURE__*/React.createElement("section", {
+  }, promptFolderGroups.map(group => React.createElement("section", {
     className: "folder-panel",
     key: group.name
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "folder-cover"
-  }, /*#__PURE__*/React.createElement("span", null, "ファイル"), /*#__PURE__*/React.createElement("strong", null, group.name), /*#__PURE__*/React.createElement("small", null, group.items.length, "件")), group.items.length ? /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("span", null, "ファイル"), React.createElement("strong", null, group.name), React.createElement("small", null, group.items.length, "件")), group.items.length ? React.createElement("div", {
     className: "library-prompt-grid"
-  }, group.items.map(prompt => !prompt.isTextStock ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
+  }, group.items.map(prompt => !prompt.isTextStock ? React.createElement(LibraryImagePromptCard, {
     key: prompt.id,
     prompt: prompt,
     inlineEdit: inlineEdit,
@@ -7351,7 +7368,7 @@ function PromptBook({
     showMemo: () => setMemoPrompt(prompt),
     showTags: promptDisplay.showTags !== false,
     showMemoButton: promptDisplay.showMemo !== false
-  }) : /*#__PURE__*/React.createElement(TextStockFrame, {
+  }) : React.createElement(TextStockFrame, {
     key: prompt.id,
     prompt: prompt,
     blankPrompt: blankPrompt(true),
@@ -7361,15 +7378,15 @@ function PromptBook({
     copyText: copyText,
     showTranslation: () => setTranslationPrompt(prompt),
     showMemo: () => setMemoPrompt(prompt)
-  }))) : /*#__PURE__*/React.createElement("p", {
+  }))) : React.createElement("p", {
     className: "folder-empty-text"
-  }, "このファイルにはまだ項目がありません。")))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
+  }, "このファイルにはまだ項目がありません。")))) : React.createElement(React.Fragment, null, React.createElement("section", {
     className: "prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "画像付きプロンプト"), /*#__PURE__*/React.createElement("p", null, "お気に入り・よく使うプロンプトを、最大20個まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, React.createElement("h3", null, "画像付きプロンプト"), React.createElement("p", null, "お気に入り・よく使うプロンプトを、最大20個まで保存できます。"))), React.createElement("div", {
     className: "library-prompt-grid"
-  }, imagePromptSlots.map((prompt, index) => prompt ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
+  }, imagePromptSlots.map((prompt, index) => prompt ? React.createElement(LibraryImagePromptCard, {
     key: prompt.id,
     prompt: prompt,
     inlineEdit: inlineEdit,
@@ -7383,20 +7400,20 @@ function PromptBook({
     showMemo: () => setMemoPrompt(prompt),
     showTags: promptDisplay.showTags !== false,
     showMemoButton: promptDisplay.showMemo !== false
-  }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
+  }) : canAddImagePrompt ? React.createElement("button", {
     className: "add-prompt-card",
     key: `my-empty-prompt-${index}`,
     onClick: () => setEditing({
       ...blankPrompt(),
       folder: availablePromptFolders[0] || DEFAULT_FOLDER_NAME
     })
-  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト")) : null))), /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("span", null, "＋"), React.createElement("strong", null, "新しいプロンプト")) : null))), React.createElement("section", {
     className: "prompt-area text-prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトストック"), /*#__PURE__*/React.createElement("p", null, "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, React.createElement("h3", null, "プロンプトストック"), React.createElement("p", null, "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), React.createElement("div", {
     className: "text-prompt-list"
-  }, textStockSlots.map((prompt, index) => /*#__PURE__*/React.createElement(TextStockFrame, {
+  }, textStockSlots.map((prompt, index) => React.createElement(TextStockFrame, {
     key: prompt?.id || `my-stock-frame-${index}`,
     prompt: prompt,
     blankPrompt: blankPrompt(true),
@@ -7406,22 +7423,22 @@ function PromptBook({
     copyText: copyText,
     showTranslation: () => prompt && setTranslationPrompt(prompt),
     showMemo: () => prompt && setMemoPrompt(prompt)
-  }))), canAddTextStock && /*#__PURE__*/React.createElement("button", {
+  }))), canAddTextStock && React.createElement("button", {
     className: "add-stock-button",
     onClick: addTextStockFrame
-  }, "＋ プロンプトを追加"), !canAddTextStock && /*#__PURE__*/React.createElement("p", {
+  }, "＋ プロンプトを追加"), !canAddTextStock && React.createElement("p", {
     className: "limit-message"
-  }, "保存上限（100件）に達しました"))), editing && /*#__PURE__*/React.createElement(PromptModal, {
+  }, "保存上限（100件）に達しました"))), editing && React.createElement(PromptModal, {
     item: editing,
     folderOptions: availablePromptFolders,
     onCreateFolder: () => createPromptFolder(false),
     onClose: () => setEditing(null),
     onSave: save
-  }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
+  }), translationPrompt && React.createElement(TranslationModal, {
     prompt: translationPrompt,
     onClose: () => setTranslationPrompt(null),
     copyText: copyText
-  }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
+  }), memoPrompt && React.createElement(MemoModal, {
     prompt: {
       ...memoPrompt,
       memo: memoPrompt.memo || memoPrompt.note
@@ -7434,7 +7451,7 @@ function PromptBook({
       });
       setMemoPrompt(null);
     }
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
+  }), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -7613,96 +7630,96 @@ function Midjourney({
     }, 80);
     window.setTimeout(() => setHighlightedId(""), 1800);
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: "page mj-board-page"
-  }, /*#__PURE__*/React.createElement(PageHead, {
+  }, React.createElement(PageHead, {
     title: "Midjourneyパラメータ制作ボード",
-    action: /*#__PURE__*/React.createElement("div", {
+    action: React.createElement("div", {
       className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+    }, React.createElement(PageBackButton, {
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), /*#__PURE__*/React.createElement("button", {
+    }), React.createElement("button", {
       className: "primary",
       onClick: save,
       disabled: !canSave
     }, "完成プロンプトを保存"))
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "mj-workspace"
-  }, /*#__PURE__*/React.createElement("aside", {
+  }, React.createElement("aside", {
     className: "mj-builder-panel"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, React.createElement("section", {
     className: "mj-input-panel"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "mj-field-head"
-  }, /*#__PURE__*/React.createElement("h3", null, "プロンプト")), /*#__PURE__*/React.createElement("textarea", {
+  }, React.createElement("h3", null, "プロンプト")), React.createElement("textarea", {
     className: "mj-base-input",
     value: displayedPrompt,
     onChange: event => updatePromptField(event.target.value),
     placeholder: activeLanguage === "en" ? "例：cute pastel clipart, white background, no shadow" : "ここに日本語訳を入力してください"
-  }), /*#__PURE__*/React.createElement("h3", null, "パラメータ"), /*#__PURE__*/React.createElement("p", {
+  }), React.createElement("h3", null, "パラメータ"), React.createElement("p", {
     className: "mj-help-text"
-  }, "✨ 右側の抽出済みパラメータをクリックすると、ここへ追加できます。"), /*#__PURE__*/React.createElement("textarea", {
+  }, "✨ 右側の抽出済みパラメータをクリックすると、ここへ追加できます。"), React.createElement("textarea", {
     className: "mj-final-input",
     value: fullPrompt,
     onChange: event => setFullPrompt(event.target.value),
     placeholder: "例：--ar 1:1 --stylize 50 --chaos 10 --raw"
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "mj-save-grid"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     value: title,
     onChange: event => setTitle(event.target.value),
     placeholder: "保存タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: imageUrl,
     onChange: event => setImageUrl(event.target.value),
     placeholder: "サンプル画像URL（最大5件・改行またはカンマ区切り）"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: memo,
     onChange: event => setMemo(event.target.value),
     placeholder: "メモ"
-  })), /*#__PURE__*/React.createElement("div", {
+  })), React.createElement("div", {
     className: "mj-composer-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "primary",
     onClick: copyFullPrompt,
     disabled: !completePrompt.trim()
-  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+  }, "📋 プロンプトをコピー"), React.createElement("button", {
     onClick: copyParams,
     disabled: !fullPrompt.trim()
-  }, "📋 パラメータをコピー"), /*#__PURE__*/React.createElement("button", {
+  }, "📋 パラメータをコピー"), React.createElement("button", {
     onClick: save,
     disabled: !canSave
-  }, "完成プロンプトを保存"), editingId && /*#__PURE__*/React.createElement("button", {
+  }, "完成プロンプトを保存"), editingId && React.createElement("button", {
     onClick: clearComposer
-  }, "新規作成に戻る"), copied && /*#__PURE__*/React.createElement("span", null, "コピーしました")), saveLimitReached && /*#__PURE__*/React.createElement("p", {
+  }, "新規作成に戻る"), copied && React.createElement("span", null, "コピーしました")), saveLimitReached && React.createElement("p", {
     className: "limit-message"
-  }, "保存上限（50件）に達しました"))), /*#__PURE__*/React.createElement("section", {
+  }, "保存上限（50件）に達しました"))), React.createElement("section", {
     className: "mj-saved-shelf"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "mj-shelf-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "保存済みMJプロンプト"), /*#__PURE__*/React.createElement("p", null, "保存したMJプロンプトと登録画像を一覧で確認できます。")), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, React.createElement("h3", null, "保存済みMJプロンプト"), React.createElement("p", null, "保存したMJプロンプトと登録画像を一覧で確認できます。")), React.createElement("div", {
     className: "mj-image-search"
-  }, /*#__PURE__*/React.createElement("strong", null, "画像から探す"), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("strong", null, "画像から探す"), React.createElement("div", {
     className: "mj-image-search-grid"
-  }, imageSearchItems.length ? imageSearchItems.map(item => /*#__PURE__*/React.createElement("button", {
+  }, imageSearchItems.length ? imageSearchItems.map(item => React.createElement("button", {
     key: `${item.cardId}-${item.index}-${imageSrc(item.image)}`,
     onClick: () => jumpToCard(item.cardId)
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageDisplaySrc(item.image),
     alt: ""
-  }))) : /*#__PURE__*/React.createElement("small", null, "画像を登録すると、ここから探せます。")))), /*#__PURE__*/React.createElement("div", {
+  }))) : React.createElement("small", null, "画像を登録すると、ここから探せます。")))), React.createElement("div", {
     className: "mj-card-grid"
   }, shelfSlots.map((raw, index) => {
     if (!raw) {
-      return settings.length < 50 ? /*#__PURE__*/React.createElement("button", {
+      return settings.length < 50 ? React.createElement("button", {
         className: "mj-empty-card",
         key: `mj-empty-${index}`,
         onClick: addEmptySavedSetting
-      }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいMJプロンプト")) : null;
+      }, React.createElement("span", null, "＋"), React.createElement("strong", null, "新しいMJプロンプト")) : null;
     }
     const item = normalizeMjSetting(raw);
-    return /*#__PURE__*/React.createElement(MJEditableCard, {
+    return React.createElement(MJEditableCard, {
       key: item.id,
       item: item,
       highlighted: highlightedId === item.id,
@@ -7719,12 +7736,12 @@ function Midjourney({
         index: imageIndex
       })
     });
-  }), settings.length >= 50 && /*#__PURE__*/React.createElement("p", {
+  }), settings.length >= 50 && React.createElement("p", {
     className: "limit-message"
-  }, "保存上限（50件）に達しました")))), imageModal && /*#__PURE__*/React.createElement(ImagePreviewModal, {
+  }, "保存上限（50件）に達しました")))), imageModal && React.createElement(ImagePreviewModal, {
     modal: imageModal,
     setModal: setImageModal
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
+  }), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -7842,10 +7859,10 @@ function MJEditableCard({
       title: nextTitle
     });
   };
-  return /*#__PURE__*/React.createElement("article", {
+  return React.createElement("article", {
     id: `mj-card-${item.id}`,
     className: `mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     ref: fileInputRef,
     style: {
       display: "none"
@@ -7860,7 +7877,7 @@ function MJEditableCard({
       if (event.currentTarget.files) addImageFiles(event.currentTarget.files);
       event.currentTarget.value = "";
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: `mj-image-edit-zone ${isDragging ? "dragging" : ""}`,
     role: "button",
     tabIndex: 0,
@@ -7911,35 +7928,35 @@ function MJEditableCard({
       event.stopPropagation();
       addImageFiles(files);
     }
-  }, images.length ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, images.length ? React.createElement(React.Fragment, null, React.createElement("div", {
     className: "mj-card-image image-only-button"
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageDisplaySrc(images[slideIndex] || images[0]),
     alt: ""
-  }), images.length > 1 && /*#__PURE__*/React.createElement("span", {
+  }), images.length > 1 && React.createElement("span", {
     className: "image-dots"
-  }, images.map((_, dotIndex) => /*#__PURE__*/React.createElement("i", {
+  }, images.map((_, dotIndex) => React.createElement("i", {
     key: dotIndex,
     className: dotIndex === slideIndex ? "active" : ""
-  }))))) : /*#__PURE__*/React.createElement(PromptThumbnail, {
+  }))))) : React.createElement(PromptThumbnail, {
     imageUrl: ""
-  }), /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("span", {
     className: "drop-hint"
-  }, "ここへドロップ"), /*#__PURE__*/React.createElement("button", {
+  }, "ここへドロップ"), React.createElement("button", {
     type: "button",
     className: "image-edit-toggle",
     onClick: openFilePicker
-  }, "画像を追加")), images.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "画像を追加")), images.length > 0 && React.createElement("div", {
     className: "image-url-list image-delete-list"
-  }, images.map((image, index) => /*#__PURE__*/React.createElement("button", {
+  }, images.map((image, index) => React.createElement("button", {
     type: "button",
     key: `${imageSrc(image)}-${index}`,
     onClick: () => removeImage(index)
-  }, "画像", index + 1, "を削除"))), imageMessage && /*#__PURE__*/React.createElement("small", {
+  }, "画像", index + 1, "を削除"))), imageMessage && React.createElement("small", {
     className: "image-message"
-  }, imageMessage), /*#__PURE__*/React.createElement("div", {
+  }, imageMessage), React.createElement("div", {
     className: "mj-card-body"
-  }, isEditingTitle ? /*#__PURE__*/React.createElement("input", {
+  }, isEditingTitle ? React.createElement("input", {
     className: "mj-title-edit-input",
     value: titleDraft,
     autoFocus: true,
@@ -7952,22 +7969,22 @@ function MJEditableCard({
         setIsEditingTitle(false);
       }
     }
-  }) : /*#__PURE__*/React.createElement("button", {
+  }) : React.createElement("button", {
     type: "button",
     className: "mj-derived-title",
     onClick: () => setIsEditingTitle(true)
-  }, item.title || promptCardHeading(promptText)), /*#__PURE__*/React.createElement("small", {
+  }, item.title || promptCardHeading(promptText)), React.createElement("small", {
     className: "mj-date"
-  }, "保存日：", formatSavedAt(item.createdAt)), /*#__PURE__*/React.createElement("label", {
+  }, "保存日：", formatSavedAt(item.createdAt)), React.createElement("label", {
     className: "mj-edit-field"
-  }, /*#__PURE__*/React.createElement("span", null, "プロンプト"), /*#__PURE__*/React.createElement("textarea", {
+  }, React.createElement("span", null, "プロンプト"), React.createElement("textarea", {
     className: "mj-card-textarea prompt",
     value: promptText,
     onChange: event => updatePrompt(event.target.value),
     placeholder: "MJプロンプトを入力すると、パラメータを自動抽出します"
-  })), /*#__PURE__*/React.createElement("label", {
+  })), React.createElement("label", {
     className: "mj-edit-field"
-  }, /*#__PURE__*/React.createElement("span", null, "メモ"), /*#__PURE__*/React.createElement("textarea", {
+  }, React.createElement("span", null, "メモ"), React.createElement("textarea", {
     className: "mj-card-textarea memo",
     value: item.memo || "",
     onChange: event => onUpdate({
@@ -7976,24 +7993,24 @@ function MJEditableCard({
       description: event.target.value
     }),
     placeholder: "メモ"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+  })), React.createElement("div", null, React.createElement("span", {
     className: "mj-param-label"
-  }, "抽出済みパラメータ"), /*#__PURE__*/React.createElement("div", {
+  }, "抽出済みパラメータ"), React.createElement("div", {
     className: "mj-param-pills compact"
-  }, params.length ? params.map(param => /*#__PURE__*/React.createElement("button", {
+  }, params.length ? params.map(param => React.createElement("button", {
     type: "button",
     key: param,
     onClick: () => onParamClick(param)
-  }, param)) : /*#__PURE__*/React.createElement("small", null, "パラメータなし"))), /*#__PURE__*/React.createElement("div", {
+  }, param)) : React.createElement("small", null, "パラメータなし"))), React.createElement("div", {
     className: "mj-card-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     type: "button",
     className: "primary",
     onClick: onCopyPrompt
-  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+  }, "📋 プロンプトをコピー"), React.createElement("button", {
     type: "button",
     onClick: onCopyParams
-  }, "📋 パラメータをコピー"), /*#__PURE__*/React.createElement("button", {
+  }, "📋 パラメータをコピー"), React.createElement("button", {
     type: "button",
     className: "danger",
     onClick: onDelete
@@ -8011,21 +8028,21 @@ function ImagePreviewModal({
     images,
     index: (index + direction + images.length) % images.length
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: "画像プレビュー",
     onClose: () => setModal(null)
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "image-preview-modal"
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageSrc(images[index]),
     alt: ""
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "modal-actions"
-  }, images.length > 1 && /*#__PURE__*/React.createElement("button", {
+  }, images.length > 1 && React.createElement("button", {
     onClick: () => move(-1)
-  }, "前へ"), images.length > 1 && /*#__PURE__*/React.createElement("button", {
+  }, "前へ"), images.length > 1 && React.createElement("button", {
     onClick: () => move(1)
-  }, "次へ"), /*#__PURE__*/React.createElement("button", {
+  }, "次へ"), React.createElement("button", {
     className: "primary",
     onClick: () => setModal(null)
   }, "閉じる"))));
@@ -8176,7 +8193,7 @@ function GalleryPage({
     }));
     setScreen("journal");
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: `page gallery-page gallery-gap-${galleryDisplay.gap || "normal"} gallery-ratio-${galleryDisplay.ratio || "square"} gallery-columns-${galleryDisplay.columns || "auto"}`,
     tabIndex: 0,
     onDragOver: event => event.preventDefault(),
@@ -8192,35 +8209,35 @@ function GalleryPage({
       event.stopPropagation();
       addFiles(files);
     }
-  }, /*#__PURE__*/React.createElement(PageHead, {
+  }, React.createElement(PageHead, {
     title: "ギャラリー",
-    action: /*#__PURE__*/React.createElement("div", {
+    action: React.createElement("div", {
       className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+    }, React.createElement(PageBackButton, {
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), /*#__PURE__*/React.createElement("button", {
+    }), React.createElement("button", {
       onClick: () => setScreen("journal")
-    }, "ジャーナルへ"), /*#__PURE__*/React.createElement("button", {
+    }, "ジャーナルへ"), React.createElement("button", {
       className: "primary",
       onClick: () => fileInputRef.current?.click()
     }, "＋ 画像を追加"))
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "folder-view-toolbar"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "folder-view-tabs",
     role: "group",
     "aria-label": "ギャラリーの表示切り替え"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: viewMode === "list" ? "active-soft" : "",
     onClick: () => setViewMode("list")
-  }, "一覧"), /*#__PURE__*/React.createElement("button", {
+  }, "一覧"), React.createElement("button", {
     className: viewMode === "folders" ? "active-soft" : "",
     onClick: () => setViewMode("folders")
-  }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
+  }, "ファイル別")), React.createElement("button", {
     className: "folder-create-button",
     onClick: addGalleryFolder
-  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement("input", {
+  }, "＋ 新しいファイル")), React.createElement("input", {
     ref: fileInputRef,
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
@@ -8232,93 +8249,93 @@ function GalleryPage({
       if (event.currentTarget.files) addFiles(event.currentTarget.files);
       event.currentTarget.value = "";
     }
-  }), viewMode === "folders" ? /*#__PURE__*/React.createElement("div", {
+  }), viewMode === "folders" ? React.createElement("div", {
     className: "folder-board gallery-folder-board"
-  }, galleryFolderGroups.map(group => /*#__PURE__*/React.createElement("section", {
+  }, galleryFolderGroups.map(group => React.createElement("section", {
     className: "folder-panel",
     key: group.name
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "folder-cover"
-  }, /*#__PURE__*/React.createElement("span", null, "ファイル"), /*#__PURE__*/React.createElement("strong", null, group.name), /*#__PURE__*/React.createElement("small", null, group.items.length, "枚")), group.items.length ? /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("span", null, "ファイル"), React.createElement("strong", null, group.name), React.createElement("small", null, group.items.length, "枚")), group.items.length ? React.createElement("div", {
     className: "gallery-grid"
-  }, group.items.map(image => /*#__PURE__*/React.createElement("article", {
+  }, group.items.map(image => React.createElement("article", {
     className: "gallery-card",
     key: image.id
-  }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
+  }, galleryDisplay.showHeart !== false && React.createElement("button", {
     className: "gallery-favorite-button",
     "aria-label": "お気に入り",
     onClick: () => updateImage(image.id, {
       favorite: !image.favorite
     })
-  }, image.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("button", {
+  }, image.favorite ? "♥" : "♡"), React.createElement("button", {
     className: "gallery-image-button",
     onClick: () => setPreviewId(image.id)
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageDisplaySrc(image),
     alt: ""
-  }))))) : /*#__PURE__*/React.createElement("p", {
+  }))))) : React.createElement("p", {
     className: "folder-empty-text"
-  }, "このファイルにはまだ画像がありません。")))) : images.length ? /*#__PURE__*/React.createElement("div", {
+  }, "このファイルにはまだ画像がありません。")))) : images.length ? React.createElement("div", {
     className: "gallery-grid"
-  }, visibleImages.map(image => /*#__PURE__*/React.createElement("article", {
+  }, visibleImages.map(image => React.createElement("article", {
     className: "gallery-card",
     key: image.id
-  }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
+  }, galleryDisplay.showHeart !== false && React.createElement("button", {
     className: "gallery-favorite-button",
     "aria-label": "お気に入り",
     onClick: () => updateImage(image.id, {
       favorite: !image.favorite
     })
-  }, image.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("button", {
+  }, image.favorite ? "♥" : "♡"), React.createElement("button", {
     className: "gallery-image-button",
     onClick: () => setPreviewId(image.id)
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageDisplaySrc(image),
     alt: ""
-  }))))) : /*#__PURE__*/React.createElement(Empty, {
+  }))))) : React.createElement(Empty, {
     text: "画像を追加すると、ここにギャラリーが表示されます。"
-  }), images.length > visibleCount && /*#__PURE__*/React.createElement("div", {
+  }), images.length > visibleCount && React.createElement("div", {
     ref: loadMoreRef,
     className: "lazy-load-sentinel"
-  }, "画像を読み込んでいます…"), preview && /*#__PURE__*/React.createElement(Modal, {
+  }, "画像を読み込んでいます…"), preview && React.createElement(Modal, {
     title: preview.title || "画像詳細",
     onClose: () => setPreviewId("")
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "gallery-detail-modal"
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageSrc(preview),
     alt: ""
-  }), /*#__PURE__*/React.createElement("label", null, "タイトル", /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("label", null, "タイトル", React.createElement("input", {
     value: preview.title,
     onChange: event => updateImage(preview.id, {
       title: event.target.value
     }),
     placeholder: "タイトル"
-  })), /*#__PURE__*/React.createElement("label", null, "メモ", /*#__PURE__*/React.createElement("textarea", {
+  })), React.createElement("label", null, "メモ", React.createElement("textarea", {
     value: preview.memo,
     onChange: event => updateImage(preview.id, {
       memo: event.target.value
     }),
     placeholder: "メモ"
-  })), /*#__PURE__*/React.createElement("small", null, "追加日：", formatSavedAt(preview.createdAt)), /*#__PURE__*/React.createElement("label", {
+  })), React.createElement("small", null, "追加日：", formatSavedAt(preview.createdAt)), React.createElement("label", {
     className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: preview.favorite,
     onChange: event => updateImage(preview.id, {
       favorite: event.target.checked
     })
-  }), " お気に入り"), /*#__PURE__*/React.createElement("div", {
+  }), " お気に入り"), React.createElement("div", {
     className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     onClick: () => pasteToJournal(preview)
-  }, "ジャーナルに貼る"), /*#__PURE__*/React.createElement("button", {
+  }, "ジャーナルに貼る"), React.createElement("button", {
     className: "danger",
     onClick: () => deleteImage(preview.id)
-  }, "削除"), /*#__PURE__*/React.createElement("button", {
+  }, "削除"), React.createElement("button", {
     className: "primary",
     onClick: () => setPreviewId("")
-  }, "閉じる")))), /*#__PURE__*/React.createElement(PageBackButton, {
+  }, "閉じる")))), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -8339,10 +8356,10 @@ function clipboardVideoFiles(event) {
   return Array.from(event.clipboardData?.items || []).filter(item => item.kind === "file").map(item => item.getAsFile()).filter(file => Boolean(file) && isSupportedVideoFile(file));
 }
 function VideoPlaceholder() {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "video-placeholder",
     "aria-label": "動画サムネイル未設定"
-  }, /*#__PURE__*/React.createElement("span", null, "▶"));
+  }, React.createElement("span", null, "▶"));
 }
 function VideoLibrary({
   videos,
@@ -8644,7 +8661,7 @@ function VideoLibrary({
     length: videoSlotCount
   }, (_, index) => normalizedVideos[index] || null);
   if (selectedId) {
-    return /*#__PURE__*/React.createElement("section", {
+    return React.createElement("section", {
       className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`,
       tabIndex: 0,
       onPaste: event => {
@@ -8655,39 +8672,39 @@ function VideoLibrary({
         event.stopPropagation();
         if (videoFiles.length) importUploadedVideo(videoFiles[0]);else importThumbnail(files[0]);
       }
-    }, /*#__PURE__*/React.createElement(PageHead, {
+    }, React.createElement(PageHead, {
       title: draft.id ? "動画プロンプトを編集" : "新しい動画プロンプト",
-      action: /*#__PURE__*/React.createElement(PageBackButton, {
+      action: React.createElement(PageBackButton, {
         label: "動画プロンプト帳へ戻る",
         onClick: resetDraft
       })
-    }), /*#__PURE__*/React.createElement("div", {
+    }), React.createElement("div", {
       className: "video-detail-editor"
-    }, /*#__PURE__*/React.createElement("div", {
+    }, React.createElement("div", {
       className: "video-detail-form"
-    }, /*#__PURE__*/React.createElement("label", null, "タイトル", /*#__PURE__*/React.createElement("input", {
+    }, React.createElement("label", null, "タイトル", React.createElement("input", {
       value: draft.title,
       onChange: event => updateDraft({
         title: event.target.value
       }),
       placeholder: "タイトル"
-    })), /*#__PURE__*/React.createElement("label", null, "動画URL", /*#__PURE__*/React.createElement("input", {
+    })), React.createElement("label", null, "動画URL", React.createElement("input", {
       value: draft.url,
       onChange: event => updateDraft({
         url: event.target.value
       }),
       placeholder: "YouTube / Google Drive / Runway などのURL"
-    })), /*#__PURE__*/React.createElement("label", null, "ファイル", /*#__PURE__*/React.createElement("div", {
+    })), React.createElement("label", null, "ファイル", React.createElement("div", {
       className: "folder-select-row"
-    }, /*#__PURE__*/React.createElement("select", {
+    }, React.createElement("select", {
       value: folderNameOf(draft),
       onChange: event => updateDraft({
         folder: event.target.value
       })
-    }, availableVideoFolders.map(folder => /*#__PURE__*/React.createElement("option", {
+    }, availableVideoFolders.map(folder => React.createElement("option", {
       key: folder,
       value: folder
-    }, folder))), /*#__PURE__*/React.createElement("button", {
+    }, folder))), React.createElement("button", {
       type: "button",
       onClick: () => {
         const name = createVideoFolder(false);
@@ -8695,34 +8712,34 @@ function VideoLibrary({
           folder: name
         });
       }
-    }, "＋ 新規ファイル"))), /*#__PURE__*/React.createElement("label", null, "動画プロンプト", /*#__PURE__*/React.createElement("textarea", {
+    }, "＋ 新規ファイル"))), React.createElement("label", null, "動画プロンプト", React.createElement("textarea", {
       className: "video-prompt-input",
       value: draft.prompt,
       onChange: event => updateDraft({
         prompt: event.target.value
       }),
       placeholder: "動画生成プロンプト"
-    })), /*#__PURE__*/React.createElement("label", null, "メモ", /*#__PURE__*/React.createElement("textarea", {
+    })), React.createElement("label", null, "メモ", React.createElement("textarea", {
       value: draft.memo,
       onChange: event => updateDraft({
         memo: event.target.value
       }),
       placeholder: "メモ"
-    })), /*#__PURE__*/React.createElement("label", null, "タグ", /*#__PURE__*/React.createElement("input", {
+    })), React.createElement("label", null, "タグ", React.createElement("input", {
       value: tagDraft,
       onChange: event => setTagDraft(event.target.value),
       placeholder: "cinematic, camera move, product demo"
-    })), /*#__PURE__*/React.createElement("label", {
+    })), React.createElement("label", {
       className: "check"
-    }, /*#__PURE__*/React.createElement("input", {
+    }, React.createElement("input", {
       type: "checkbox",
       checked: Boolean(draft.favorite),
       onChange: event => updateDraft({
         favorite: event.target.checked
       })
-    }), " お気に入り")), /*#__PURE__*/React.createElement("aside", {
+    }), " お気に入り")), React.createElement("aside", {
       className: "video-thumbnail-panel"
-    }, /*#__PURE__*/React.createElement("div", {
+    }, React.createElement("div", {
       className: `video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`,
       onClick: () => thumbnailInputRef.current?.click(),
       onDragEnter: event => {
@@ -8746,14 +8763,14 @@ function VideoLibrary({
         setIsThumbnailDragging(false);
         importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
       }
-    }, draft.thumbnail ? /*#__PURE__*/React.createElement("img", {
+    }, draft.thumbnail ? React.createElement("img", {
       src: imageDisplaySrc(draft.thumbnail),
       alt: ""
-    }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null), /*#__PURE__*/React.createElement("small", null, "クリック・ドロップ・貼り付けでサムネイル追加")), /*#__PURE__*/React.createElement("div", {
+    }) : React.createElement(VideoPlaceholder, null), React.createElement("small", null, "クリック・ドロップ・貼り付けでサムネイル追加")), React.createElement("div", {
       className: "video-thumbnail-mode",
       role: "group",
       "aria-label": "カード表面の表示"
-    }, /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("input", {
+    }, React.createElement("label", null, React.createElement("input", {
       type: "radio",
       name: "thumbnailMode",
       checked: (draft.thumbnailMode || "thumbnail") === "thumbnail",
@@ -8761,7 +8778,7 @@ function VideoLibrary({
       onChange: () => updateDraft({
         thumbnailMode: "thumbnail"
       })
-    }), " サムネを使う"), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("input", {
+    }), " サムネを使う"), React.createElement("label", null, React.createElement("input", {
       type: "radio",
       name: "thumbnailMode",
       checked: draft.thumbnailMode === "video",
@@ -8769,20 +8786,20 @@ function VideoLibrary({
       onChange: () => updateDraft({
         thumbnailMode: "video"
       })
-    }), " 動画だけ表示")), /*#__PURE__*/React.createElement("div", {
+    }), " 動画だけ表示")), React.createElement("div", {
       className: "video-thumbnail-tools"
-    }, /*#__PURE__*/React.createElement("button", {
+    }, React.createElement("button", {
       type: "button",
       onClick: () => thumbnailInputRef.current?.click()
-    }, "画像を選ぶ"), /*#__PURE__*/React.createElement("button", {
+    }, "画像を選ぶ"), React.createElement("button", {
       type: "button",
       onClick: () => videoInputRef.current?.click()
-    }, "動画からサムネイル生成"), /*#__PURE__*/React.createElement("button", {
+    }, "動画からサムネイル生成"), React.createElement("button", {
       type: "button",
       onClick: () => updateDraft({
         thumbnail: ""
       })
-    }, "削除")), /*#__PURE__*/React.createElement("div", {
+    }, "削除")), React.createElement("div", {
       className: `video-upload-preview ${isVideoUploadDragging ? "dragging" : ""}`,
       onClick: () => uploadVideoInputRef.current?.click(),
       onDragEnter: event => {
@@ -8806,22 +8823,22 @@ function VideoLibrary({
         setIsVideoUploadDragging(false);
         importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
       }
-    }, uploadedVideoUrl || videoDisplaySrc(draft.url || "") ? /*#__PURE__*/React.createElement("video", {
+    }, uploadedVideoUrl || videoDisplaySrc(draft.url || "") ? React.createElement("video", {
       src: uploadedVideoUrl || videoDisplaySrc(draft.url || ""),
       controls: true,
       playsInline: true
-    }) : /*#__PURE__*/React.createElement("div", {
+    }) : React.createElement("div", {
       className: "video-upload-placeholder"
-    }, /*#__PURE__*/React.createElement("span", null, "▶"), /*#__PURE__*/React.createElement("strong", null, "動画をアップロード"), /*#__PURE__*/React.createElement("small", null, "mp4 / webm / mov に対応。保存後もカード表面で再生できます。"))), /*#__PURE__*/React.createElement("div", {
+    }, React.createElement("span", null, "▶"), React.createElement("strong", null, "動画をアップロード"), React.createElement("small", null, "mp4 / webm / mov に対応。保存後もカード表面で再生できます。"))), React.createElement("div", {
       className: "video-thumbnail-tools"
-    }, /*#__PURE__*/React.createElement("button", {
+    }, React.createElement("button", {
       type: "button",
       onClick: () => uploadVideoInputRef.current?.click()
-    }, "動画を選ぶ"), /*#__PURE__*/React.createElement("button", {
+    }, "動画を選ぶ"), React.createElement("button", {
       type: "button",
       onClick: clearUploadedVideo,
       disabled: !uploadedVideoUrl && !videoDisplaySrc(draft.url || "")
-    }, "アップロード動画を削除")), /*#__PURE__*/React.createElement("input", {
+    }, "アップロード動画を削除")), React.createElement("input", {
       ref: thumbnailInputRef,
       type: "file",
       accept: "image/png,image/jpeg,image/webp",
@@ -8832,7 +8849,7 @@ function VideoLibrary({
         importThumbnail(event.currentTarget.files?.[0]);
         event.currentTarget.value = "";
       }
-    }), /*#__PURE__*/React.createElement("input", {
+    }), React.createElement("input", {
       ref: videoInputRef,
       type: "file",
       accept: "video/mp4,video/webm,video/ogg,video/quicktime,video/*",
@@ -8843,7 +8860,7 @@ function VideoLibrary({
         importVideoThumbnail(event.currentTarget.files?.[0]);
         event.currentTarget.value = "";
       }
-    }), /*#__PURE__*/React.createElement("input", {
+    }), React.createElement("input", {
       ref: uploadVideoInputRef,
       type: "file",
       accept: "video/mp4,video/webm,video/quicktime,video/*",
@@ -8854,82 +8871,82 @@ function VideoLibrary({
         importUploadedVideo(event.currentTarget.files?.[0]);
         event.currentTarget.value = "";
       }
-    }))), /*#__PURE__*/React.createElement("div", {
+    }))), React.createElement("div", {
       className: "video-detail-actions"
-    }, /*#__PURE__*/React.createElement("button", {
+    }, React.createElement("button", {
       onClick: copyPrompt,
       disabled: !draft.prompt.trim()
-    }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
+    }, "📋 プロンプトをコピー"), React.createElement("button", {
       onClick: () => openVideo(draft.url),
       disabled: !draft.url.trim()
-    }, "動画URLを開く"), /*#__PURE__*/React.createElement("button", {
+    }, "動画URLを開く"), React.createElement("button", {
       className: "primary",
       onClick: saveVideo
-    }, "保存する"), draft.id && /*#__PURE__*/React.createElement("button", {
+    }, "保存する"), draft.id && React.createElement("button", {
       className: "danger",
       onClick: () => deleteVideo(draft.id)
-    }, "削除"), /*#__PURE__*/React.createElement(PageBackButton, {
+    }, "削除"), React.createElement(PageBackButton, {
       label: "動画プロンプト帳へ戻る",
       onClick: resetDraft
     })));
   }
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`
-  }, /*#__PURE__*/React.createElement(PageHead, {
+  }, React.createElement(PageHead, {
     title: "動画プロンプト帳",
-    action: /*#__PURE__*/React.createElement("div", {
+    action: React.createElement("div", {
       className: "actions"
-    }, /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", {
       className: "prompt-count-pill"
-    }, "動画 ", normalizedVideos.length, " / 20・ストック ", stockCount, " / 100"), /*#__PURE__*/React.createElement(PageBackButton, {
+    }, "動画 ", normalizedVideos.length, " / 20・ストック ", stockCount, " / 100"), React.createElement(PageBackButton, {
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
     }))
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "folder-view-toolbar"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "folder-view-tabs",
     role: "group",
     "aria-label": "動画プロンプト帳の表示切り替え"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: videoViewMode === "list" ? "active-soft" : "",
     onClick: () => setVideoViewMode("list")
-  }, "一覧"), /*#__PURE__*/React.createElement("button", {
+  }, "一覧"), React.createElement("button", {
     className: videoViewMode === "folders" ? "active-soft" : "",
     onClick: () => setVideoViewMode("folders")
-  }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
+  }, "ファイル別")), React.createElement("button", {
     className: "folder-create-button",
     onClick: addVideoFolder
-  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement("p", {
+  }, "＋ 新しいファイル")), React.createElement("p", {
     className: "folder-limit-note"
-  }, "動画プロンプト帳：ファイル最大5件。1ファイル内は動画付き20件・テキストのみ20件まで。1動画プロンプトにつき動画1本・サムネイル1枚まで保存できます。"), /*#__PURE__*/React.createElement("div", {
+  }, "動画プロンプト帳：ファイル最大5件。1ファイル内は動画付き20件・テキストのみ20件まで。1動画プロンプトにつき動画1本・サムネイル1枚まで保存できます。"), React.createElement("div", {
     className: "video-filter-bar"
-  }, /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("select", {
     value: modelFilter,
     onChange: event => setModelFilter(event.target.value)
-  }, /*#__PURE__*/React.createElement("option", null, "すべて"), videoModels.map(model => /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", null, "すべて"), videoModels.map(model => React.createElement("option", {
     key: model
-  }, model))), /*#__PURE__*/React.createElement("label", {
+  }, model))), React.createElement("label", {
     className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: favoriteOnly,
     onChange: event => setFavoriteOnly(event.target.checked)
-  }), " お気に入りのみ")), /*#__PURE__*/React.createElement("section", {
+  }), " お気に入りのみ")), React.createElement("section", {
     className: "prompt-area video-prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "動画プロンプト"), /*#__PURE__*/React.createElement("p", null, "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, React.createElement("h3", null, "動画プロンプト"), React.createElement("p", null, "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。"))), React.createElement("div", {
     className: "library-prompt-grid video-grid"
   }, slots.map((item, index) => {
     const previewUrl = item ? videoDisplaySrc(tempVideoUrls[item.id] || item.url) : "";
     const useThumbnail = item ? (item.thumbnailMode || "thumbnail") !== "video" && Boolean(item.thumbnail) : false;
     const showVideoPreview = Boolean(item && previewUrl && isPlayableVideoUrl(previewUrl) && (hoverVideoId === item.id || !useThumbnail));
-    return item ? /*#__PURE__*/React.createElement("article", {
+    return item ? React.createElement("article", {
       className: "library-prompt-card video-card video-prompt-card",
       key: item.id,
       onClick: () => editVideo(item)
-    }, /*#__PURE__*/React.createElement("button", {
+    }, React.createElement("button", {
       className: "video-favorite-button",
       "aria-label": "お気に入り",
       onClick: event => {
@@ -8939,17 +8956,17 @@ function VideoLibrary({
           favorite: !video.favorite
         } : video));
       }
-    }, item.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("details", {
+    }, item.favorite ? "♥" : "♡"), React.createElement("details", {
       className: "card-menu video-card-menu",
       onClick: event => event.stopPropagation()
-    }, /*#__PURE__*/React.createElement("summary", {
+    }, React.createElement("summary", {
       "aria-label": "メニュー"
-    }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    }, "…"), React.createElement("div", null, React.createElement("button", {
       onClick: event => {
         event.preventDefault();
         editVideo(item);
       }
-    }, "編集"), /*#__PURE__*/React.createElement("button", {
+    }, "編集"), React.createElement("button", {
       onClick: event => {
         event.preventDefault();
         setVideos(items => [{
@@ -8960,13 +8977,13 @@ function VideoLibrary({
           updatedAt: new Date().toISOString()
         }, ...extractVideoPromptItems(items)].slice(0, 20));
       }
-    }, "複製"), /*#__PURE__*/React.createElement("button", {
+    }, "複製"), React.createElement("button", {
       className: "danger",
       onClick: event => {
         event.preventDefault();
         deleteVideo(item.id);
       }
-    }, "削除"))), /*#__PURE__*/React.createElement("button", {
+    }, "削除"))), React.createElement("button", {
       className: "video-thumb-button",
       onClick: event => {
         event.stopPropagation();
@@ -8974,53 +8991,53 @@ function VideoLibrary({
       },
       onMouseEnter: () => setHoverVideoId(item.id),
       onMouseLeave: () => setHoverVideoId("")
-    }, showVideoPreview ? /*#__PURE__*/React.createElement("video", {
+    }, showVideoPreview ? React.createElement("video", {
       src: previewUrl,
       autoPlay: true,
       muted: true,
       loop: true,
       playsInline: true
-    }) : useThumbnail ? /*#__PURE__*/React.createElement("img", {
+    }) : useThumbnail ? React.createElement("img", {
       src: imageDisplaySrc(item.thumbnail),
       alt: ""
-    }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null)), /*#__PURE__*/React.createElement("div", {
+    }) : React.createElement(VideoPlaceholder, null)), React.createElement("div", {
       className: "prompt-card-content video-card-body"
-    }, /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("p", null, item.prompt || item.memo || item.url), /*#__PURE__*/React.createElement("div", {
+    }, React.createElement("h3", null, item.title), React.createElement("p", null, item.prompt || item.memo || item.url), React.createElement("div", {
       className: "video-meta-row"
-    }, /*#__PURE__*/React.createElement("span", {
+    }, React.createElement("span", {
       className: "mini-pill"
-    }, item.model || "その他"), videoDisplay.showTags !== false && !!(item.tags || []).length && /*#__PURE__*/React.createElement("div", {
+    }, item.model || "その他"), videoDisplay.showTags !== false && !!(item.tags || []).length && React.createElement("div", {
       className: "video-tags"
-    }, item.tags.slice(0, 2).map(tag => /*#__PURE__*/React.createElement("span", {
+    }, item.tags.slice(0, 2).map(tag => React.createElement("span", {
       key: tag
-    }, "#", tag)))), /*#__PURE__*/React.createElement("div", {
+    }, "#", tag)))), React.createElement("div", {
       className: "prompt-card-actions video-card-actions"
-    }, /*#__PURE__*/React.createElement("button", {
+    }, React.createElement("button", {
       className: "primary",
       onClick: event => copyVideoPrompt(item, event),
       disabled: !item.prompt.trim()
-    }, "📋 プロンプトをコピー"), videoDisplay.showMemo !== false && /*#__PURE__*/React.createElement("button", {
+    }, "📋 プロンプトをコピー"), videoDisplay.showMemo !== false && React.createElement("button", {
       onClick: event => {
         event.stopPropagation();
         editVideo(item);
       }
-    }, "メモ")))) : /*#__PURE__*/React.createElement("button", {
+    }, "メモ")))) : React.createElement("button", {
       className: "add-prompt-card video-add-card",
       key: `empty-${index}`,
       onClick: openNewVideo,
       disabled: videoItems.length >= 20
-    }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しい動画プロンプト"));
-  })), !searchActive && videoItems.length >= 20 && /*#__PURE__*/React.createElement("p", {
+    }, React.createElement("span", null, "＋"), React.createElement("strong", null, "新しい動画プロンプト"));
+  })), !searchActive && videoItems.length >= 20 && React.createElement("p", {
     className: "limit-message"
-  }, "動画プロンプトは最大20件まで保存できます"), searchActive && !filteredVideos.length && /*#__PURE__*/React.createElement(Empty, {
+  }, "動画プロンプトは最大20件まで保存できます"), searchActive && !filteredVideos.length && React.createElement(Empty, {
     text: "条件に合う動画プロンプトがありません。"
-  })), /*#__PURE__*/React.createElement("section", {
+  })), React.createElement("section", {
     className: "prompt-area text-prompt-area video-stock-area"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトストック"), /*#__PURE__*/React.createElement("p", null, "動画を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", null, React.createElement("h3", null, "プロンプトストック"), React.createElement("p", null, "動画を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), React.createElement("div", {
     className: "text-prompt-list"
-  }, stockSlots.map((stock, index) => /*#__PURE__*/React.createElement(TextStockFrame, {
+  }, stockSlots.map((stock, index) => React.createElement(TextStockFrame, {
     key: stock?.id || `video-stock-frame-${index}`,
     prompt: stock,
     blankPrompt: blankVideoPromptStock(),
@@ -9029,14 +9046,14 @@ function VideoLibrary({
     onDelete: deleteVideoStock,
     copyText: copyVideoStockText,
     showMemo: () => stock && setMemoStock(stock)
-  }))), canAddStock && !stockQuery && /*#__PURE__*/React.createElement("button", {
+  }))), canAddStock && !stockQuery && React.createElement("button", {
     className: "add-stock-button",
     onClick: addVideoStockFrame
-  }, "＋ プロンプトを追加"), !canAddStock && /*#__PURE__*/React.createElement("p", {
+  }, "＋ プロンプトを追加"), !canAddStock && React.createElement("p", {
     className: "limit-message"
-  }, "保存上限（100件）に達しました"), stockQuery && !filteredStocks.length && /*#__PURE__*/React.createElement(Empty, {
+  }, "保存上限（100件）に達しました"), stockQuery && !filteredStocks.length && React.createElement(Empty, {
     text: "条件に合うプロンプトストックがありません。"
-  })), memoStock && /*#__PURE__*/React.createElement(MemoModal, {
+  })), memoStock && React.createElement(MemoModal, {
     prompt: {
       ...memoStock,
       id: memoStock.id,
@@ -9049,7 +9066,7 @@ function VideoLibrary({
       });
       setMemoStock(null);
     }
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
+  }), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -9195,22 +9212,22 @@ function JournalPage({
       y: event.clientY - rect.top - 60
     });
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: "page journal-page"
-  }, /*#__PURE__*/React.createElement(PageHead, {
+  }, React.createElement(PageHead, {
     title: "ジャーナル",
-    action: /*#__PURE__*/React.createElement("div", {
+    action: React.createElement("div", {
       className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+    }, React.createElement(PageBackButton, {
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), /*#__PURE__*/React.createElement("button", {
+    }), React.createElement("button", {
       onClick: () => setScreen("gallery")
-    }, "ギャラリーへ"), /*#__PURE__*/React.createElement("button", {
+    }, "ギャラリーへ"), React.createElement("button", {
       className: "primary",
       onClick: () => fileInputRef.current?.click()
     }, "＋ 画像を追加"))
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     ref: fileInputRef,
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
@@ -9222,7 +9239,7 @@ function JournalPage({
       if (event.currentTarget.files) addFiles(event.currentTarget.files);
       event.currentTarget.value = "";
     }
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     ref: backgroundInputRef,
     type: "file",
     accept: "image/png,image/jpeg,image/webp",
@@ -9234,52 +9251,52 @@ function JournalPage({
       if (event.currentTarget.files) addBackgroundFiles(event.currentTarget.files);
       event.currentTarget.value = "";
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "journal-layout"
-  }, /*#__PURE__*/React.createElement("aside", {
+  }, React.createElement("aside", {
     className: "journal-tools"
-  }, /*#__PURE__*/React.createElement("label", null, "背景", /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("label", null, "背景", React.createElement("select", {
     value: journal.background,
     onChange: event => setJournal(current => ({
       ...current,
       background: event.target.value
     }))
-  }, /*#__PURE__*/React.createElement("option", {
+  }, React.createElement("option", {
     value: "paper"
-  }, "無地アイボリー"), /*#__PURE__*/React.createElement("option", {
+  }, "無地アイボリー"), React.createElement("option", {
     value: "grid"
-  }, "方眼紙"), /*#__PURE__*/React.createElement("option", {
+  }, "方眼紙"), React.createElement("option", {
     value: "dot-grid"
-  }, "ドット方眼"), /*#__PURE__*/React.createElement("option", {
+  }, "ドット方眼"), React.createElement("option", {
     value: "kraft"
-  }, "クラフト紙"), /*#__PURE__*/React.createElement("option", {
+  }, "クラフト紙"), React.createElement("option", {
     value: "old-paper"
-  }, "古紙"), /*#__PURE__*/React.createElement("option", {
+  }, "古紙"), React.createElement("option", {
     value: "pink"
-  }, "淡いピンク"), /*#__PURE__*/React.createElement("option", {
+  }, "淡いピンク"), React.createElement("option", {
     value: "blue"
-  }, "淡いブルー"), /*#__PURE__*/React.createElement("option", {
+  }, "淡いブルー"), React.createElement("option", {
     value: "green"
-  }, "淡いグリーン"), /*#__PURE__*/React.createElement("option", {
+  }, "淡いグリーン"), React.createElement("option", {
     value: "linen"
-  }, "リネン風"), /*#__PURE__*/React.createElement("option", {
+  }, "リネン風"), React.createElement("option", {
     value: "washi"
-  }, "マスキングテープ風"), /*#__PURE__*/React.createElement("option", {
+  }, "マスキングテープ風"), React.createElement("option", {
     value: "scrapbook"
-  }, "スクラップブック風"), /*#__PURE__*/React.createElement("option", {
+  }, "スクラップブック風"), React.createElement("option", {
     value: "lined"
-  }, "罫線ノート"), /*#__PURE__*/React.createElement("option", {
+  }, "罫線ノート"), React.createElement("option", {
     value: "check"
-  }, "チェック柄"), /*#__PURE__*/React.createElement("option", {
+  }, "チェック柄"), React.createElement("option", {
     value: "floral"
-  }, "薄い花柄"), /*#__PURE__*/React.createElement("option", {
+  }, "薄い花柄"), React.createElement("option", {
     value: "watercolor"
-  }, "水彩にじみ"), /*#__PURE__*/React.createElement("option", {
+  }, "水彩にじみ"), React.createElement("option", {
     value: "dark"
-  }, "ダーク紙"), customBackgrounds.map(background => /*#__PURE__*/React.createElement("option", {
+  }, "ダーク紙"), customBackgrounds.map(background => React.createElement("option", {
     key: background.id,
     value: `custom-${background.id}`
-  }, background.title || "お気に入り背景")))), /*#__PURE__*/React.createElement("div", {
+  }, background.title || "お気に入り背景")))), React.createElement("div", {
     className: `journal-background-drop ${isBackgroundDragging ? "dragging" : ""}`,
     onDragOver: event => event.preventDefault(),
     onDragEnter: event => {
@@ -9292,41 +9309,41 @@ function JournalPage({
       setIsBackgroundDragging(false);
       addBackgroundFiles(event.dataTransfer.files);
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     type: "button",
     onClick: () => backgroundInputRef.current?.click()
-  }, "＋ 背景を追加"), /*#__PURE__*/React.createElement("small", null, "画像をドロップして背景にできます"), /*#__PURE__*/React.createElement("small", null, "推奨アスペクト比：3:2")), selectedCustomBackground && /*#__PURE__*/React.createElement("div", {
+  }, "＋ 背景を追加"), React.createElement("small", null, "画像をドロップして背景にできます"), React.createElement("small", null, "推奨アスペクト比：3:2")), selectedCustomBackground && React.createElement("div", {
     className: "journal-background-editor"
-  }, /*#__PURE__*/React.createElement("label", null, "背景名", /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("label", null, "背景名", React.createElement("input", {
     value: selectedCustomBackground.title,
     onChange: event => updateBackground(selectedCustomBackground.id, {
       title: event.target.value
     })
-  })), /*#__PURE__*/React.createElement("button", {
+  })), React.createElement("button", {
     className: "danger",
     onClick: () => deleteBackground(selectedCustomBackground.id)
-  }, "背景を削除")), /*#__PURE__*/React.createElement("strong", null, "画像ストック"), /*#__PURE__*/React.createElement("div", {
+  }, "背景を削除")), React.createElement("strong", null, "画像ストック"), React.createElement("div", {
     className: "journal-stock"
-  }, visibleStockImages.map(image => /*#__PURE__*/React.createElement("div", {
+  }, visibleStockImages.map(image => React.createElement("div", {
     className: "journal-stock-item",
     key: image.id
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "journal-stock-add",
     onClick: () => addJournalItem(image),
     "aria-label": `${image.title || "画像"}をジャーナルに追加`
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageDisplaySrc(image),
     alt: ""
-  })), /*#__PURE__*/React.createElement("button", {
+  })), React.createElement("button", {
     className: "journal-stock-delete",
     "aria-label": `${image.title || "画像"}を削除`,
     onClick: event => {
       event.stopPropagation();
       deleteStockImage(image);
     }
-  }, "×")))), selected && /*#__PURE__*/React.createElement("div", {
+  }, "×")))), selected && React.createElement("div", {
     className: "journal-edit-panel"
-  }, /*#__PURE__*/React.createElement("label", null, "サイズ", /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("label", null, "サイズ", React.createElement("input", {
     type: "range",
     min: "80",
     max: "360",
@@ -9334,7 +9351,7 @@ function JournalPage({
     onChange: event => updateItem(selected.id, {
       width: Number(event.target.value)
     })
-  })), /*#__PURE__*/React.createElement("label", null, "回転", /*#__PURE__*/React.createElement("input", {
+  })), React.createElement("label", null, "回転", React.createElement("input", {
     type: "range",
     min: "-35",
     max: "35",
@@ -9342,15 +9359,15 @@ function JournalPage({
     onChange: event => updateItem(selected.id, {
       rotate: Number(event.target.value)
     })
-  })), /*#__PURE__*/React.createElement("label", {
+  })), React.createElement("label", {
     className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: isStickerEffectOn(selected),
     onChange: event => updateItem(selected.id, {
       stickerEffect: event.target.checked
     })
-  }), " シール風"), /*#__PURE__*/React.createElement("button", {
+  }), " シール風"), React.createElement("button", {
     className: "danger",
     onClick: () => setJournal(current => {
       rememberDeletedSampleIdsFromItems(current.items.find(item => item.id === selected.id));
@@ -9359,11 +9376,11 @@ function JournalPage({
         items: current.items.filter(item => item.id !== selected.id)
       };
     })
-  }, "選択画像を削除"))), /*#__PURE__*/React.createElement("div", {
+  }, "選択画像を削除"))), React.createElement("div", {
     className: "journal-canvas"
-  }, !journal.items.length && /*#__PURE__*/React.createElement("p", {
+  }, !journal.items.length && React.createElement("p", {
     className: "journal-board-note"
-  }, "画像ストックから追加すると、シール帳のように並べられます。"), /*#__PURE__*/React.createElement("div", {
+  }, "画像ストックから追加すると、シール帳のように並べられます。"), React.createElement("div", {
     ref: boardRef,
     className: `journal-board ${journal.background}`,
     tabIndex: 0,
@@ -9386,7 +9403,7 @@ function JournalPage({
       event.stopPropagation();
       addFiles(files);
     }
-  }, journal.items.map(item => /*#__PURE__*/React.createElement("div", {
+  }, journal.items.map(item => React.createElement("div", {
     className: `journal-sticker ${selectedId === item.id ? "selected" : ""}`,
     key: item.id,
     style: {
@@ -9400,12 +9417,12 @@ function JournalPage({
       setSelectedId(item.id);
       setDraggingId(item.id);
     }
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     className: isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image",
     src: imageDisplaySrc(item),
     alt: "",
     draggable: false
-  })))))), /*#__PURE__*/React.createElement(PageBackButton, {
+  })))))), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -9463,103 +9480,103 @@ function Projects({
   const deleteMemo = id => {
     setProjectMemos(items => items.filter(memo => memo.id !== id));
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return React.createElement("section", {
     className: `page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`
-  }, /*#__PURE__*/React.createElement(PageHead, {
+  }, React.createElement(PageHead, {
     title: "プロジェクト管理",
-    action: /*#__PURE__*/React.createElement("div", {
+    action: React.createElement("div", {
       className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+    }, React.createElement(PageBackButton, {
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), canAddProject ? /*#__PURE__*/React.createElement("button", {
+    }), canAddProject ? React.createElement("button", {
       className: "primary",
       onClick: () => setEditing(blankProject())
-    }, "追加する") : /*#__PURE__*/React.createElement("span", {
+    }, "追加する") : React.createElement("span", {
       className: "limit-message"
     }, "プロジェクトは最大30件まで登録できます"))
-  }), !canAddProject && /*#__PURE__*/React.createElement("p", {
+  }), !canAddProject && React.createElement("p", {
     className: "limit-note"
-  }, "プロジェクトは最大30件まで登録できます"), /*#__PURE__*/React.createElement("div", {
+  }, "プロジェクトは最大30件まで登録できます"), React.createElement("div", {
     className: "project-grid"
   }, filtered.map(project => {
     const linkedPrompts = prompts.filter(p => project.promptIds.includes(p.id));
     const linkedMj = settings.filter(m => project.mjIds.includes(m.id));
-    return /*#__PURE__*/React.createElement("article", {
+    return React.createElement("article", {
       className: "project-card",
       key: project.id
-    }, /*#__PURE__*/React.createElement("div", {
+    }, React.createElement("div", {
       className: "project-top"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, project.name), /*#__PURE__*/React.createElement("p", null, project.description)), /*#__PURE__*/React.createElement("div", {
+    }, React.createElement("div", null, React.createElement("h3", null, project.name), React.createElement("p", null, project.description)), React.createElement("div", {
       className: "actions"
-    }, /*#__PURE__*/React.createElement("button", {
+    }, React.createElement("button", {
       onClick: () => setEditing(project)
-    }, "編集"), /*#__PURE__*/React.createElement("button", {
+    }, "編集"), React.createElement("button", {
       className: "danger",
       onClick: () => setProjects(items => {
         rememberDeletedSampleIdsFromItems(items.find(p => p.id === project.id));
         return items.filter(p => p.id !== project.id);
       })
-    }, "削除"))), /*#__PURE__*/React.createElement(TagRow, {
+    }, "削除"))), React.createElement(TagRow, {
       tags: project.tags
-    }), projectDisplay.showAlarms !== false && project.dueDate && /*#__PURE__*/React.createElement("p", {
+    }), projectDisplay.showAlarms !== false && project.dueDate && React.createElement("p", {
       className: "project-due-line"
-    }, projectDueText(project.dueDate)), project.note && /*#__PURE__*/React.createElement("p", {
+    }, projectDueText(project.dueDate)), project.note && React.createElement("p", {
       className: "note"
-    }, project.note), /*#__PURE__*/React.createElement("h4", null, "関連プロンプト"), /*#__PURE__*/React.createElement("div", {
+    }, project.note), React.createElement("h4", null, "関連プロンプト"), React.createElement("div", {
       className: "mini-list"
-    }, linkedPrompts.length ? linkedPrompts.map(p => /*#__PURE__*/React.createElement("button", {
+    }, linkedPrompts.length ? linkedPrompts.map(p => React.createElement("button", {
       key: p.id,
       onClick: () => copyText(p.prompt, p.id)
-    }, p.title)) : /*#__PURE__*/React.createElement("small", null, "未設定")), /*#__PURE__*/React.createElement("h4", null, "関連ミッドジャーニー設定"), /*#__PURE__*/React.createElement("div", {
+    }, p.title)) : React.createElement("small", null, "未設定")), React.createElement("h4", null, "関連ミッドジャーニー設定"), React.createElement("div", {
       className: "mini-list"
-    }, linkedMj.length ? linkedMj.map(m => /*#__PURE__*/React.createElement("button", {
+    }, linkedMj.length ? linkedMj.map(m => React.createElement("button", {
       key: m.id,
       onClick: () => copyText(mjCommand(m))
-    }, m.title)) : /*#__PURE__*/React.createElement("small", null, "未設定")));
-  })), /*#__PURE__*/React.createElement("section", {
+    }, m.title)) : React.createElement("small", null, "未設定")));
+  })), React.createElement("section", {
     className: "project-memo-section"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "project-memo-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "メモ"), /*#__PURE__*/React.createElement("p", null, "タイトルと本文だけのシンプルなメモを、最大30個まで保存できます。")), canAddMemo ? /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("div", null, React.createElement("h3", null, "メモ"), React.createElement("p", null, "タイトルと本文だけのシンプルなメモを、最大30個まで保存できます。")), canAddMemo ? React.createElement("button", {
     className: "primary",
     onClick: () => setEditingMemo(blankProjectMemo())
-  }, "メモを追加") : /*#__PURE__*/React.createElement("span", {
+  }, "メモを追加") : React.createElement("span", {
     className: "limit-message"
-  }, "メモは最大30個まで登録できます")), /*#__PURE__*/React.createElement("div", {
+  }, "メモは最大30個まで登録できます")), React.createElement("div", {
     className: "project-memo-grid"
-  }, sortedMemos.length ? sortedMemos.map(memo => /*#__PURE__*/React.createElement("article", {
+  }, sortedMemos.length ? sortedMemos.map(memo => React.createElement("article", {
     className: "project-memo-card",
     key: memo.id
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "project-memo-heart",
     "aria-label": "お気に入り",
     onClick: () => toggleMemoFavorite(memo.id)
-  }, memo.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("h4", null, memo.title), /*#__PURE__*/React.createElement("p", null, memo.body), /*#__PURE__*/React.createElement("div", {
+  }, memo.favorite ? "♥" : "♡"), React.createElement("h4", null, memo.title), React.createElement("p", null, memo.body), React.createElement("div", {
     className: "project-memo-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     onClick: () => setEditingMemo(memo)
-  }, "編集"), /*#__PURE__*/React.createElement("button", {
+  }, "編集"), React.createElement("button", {
     onClick: () => copyText(memo.body, memo.id),
     disabled: !memo.body.trim()
-  }, "コピー"), /*#__PURE__*/React.createElement("button", {
+  }, "コピー"), React.createElement("button", {
     className: "danger",
     onClick: () => deleteMemo(memo.id)
-  }, "削除")))) : /*#__PURE__*/React.createElement("button", {
+  }, "削除")))) : React.createElement("button", {
     className: "project-memo-empty-card",
     type: "button",
     onClick: () => canAddMemo && setEditingMemo(blankProjectMemo())
-  }, "メモを追加できます"))), editing && /*#__PURE__*/React.createElement(ProjectModal, {
+  }, "メモを追加できます"))), editing && React.createElement(ProjectModal, {
     item: editing,
     prompts: prompts,
     settings: settings,
     onClose: () => setEditing(null),
     onSave: save
-  }), editingMemo && /*#__PURE__*/React.createElement(ProjectMemoModal, {
+  }), editingMemo && React.createElement(ProjectMemoModal, {
     item: editingMemo,
     onClose: () => setEditingMemo(null),
     onSave: saveMemo
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
+  }), React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
@@ -9573,19 +9590,19 @@ function ProjectMemoModal({
   const [draft, setDraft] = React.useState({
     ...item
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: item.id ? "メモを編集" : "メモを追加",
     onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, {
+  }, React.createElement(FormGrid, {
     className: "project-memo-form"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     value: draft.title,
     onChange: event => setDraft({
       ...draft,
       title: event.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     className: "project-memo-body-input",
     value: draft.body,
     onChange: event => setDraft({
@@ -9593,16 +9610,16 @@ function ProjectMemoModal({
       body: event.target.value
     }),
     placeholder: "本文を入力できます。長文も保存できます。"
-  }), /*#__PURE__*/React.createElement("label", {
+  }), React.createElement("label", {
     className: "check project-remind-check"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: Boolean(draft.favorite),
     onChange: event => setDraft({
       ...draft,
       favorite: event.target.checked
     })
-  }), "お気に入りに表示する")), /*#__PURE__*/React.createElement(ModalActions, {
+  }), "お気に入りに表示する")), React.createElement(ModalActions, {
     onClose: onClose,
     onSave: () => onSave(draft)
   }));
@@ -9612,20 +9629,20 @@ function PromptCard({
   onCopy,
   extra
 }) {
-  return /*#__PURE__*/React.createElement("article", {
+  return React.createElement("article", {
     className: "prompt-card"
-  }, /*#__PURE__*/React.createElement("img", {
+  }, React.createElement("img", {
     src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+  }), React.createElement("div", null, React.createElement("span", {
     className: "pill"
-  }, prompt.category), /*#__PURE__*/React.createElement("h3", null, prompt.title), /*#__PURE__*/React.createElement("p", null, prompt.description || prompt.note), /*#__PURE__*/React.createElement(TagRow, {
+  }, prompt.category), React.createElement("h3", null, prompt.title), React.createElement("p", null, prompt.description || prompt.note), React.createElement(TagRow, {
     tags: prompt.tags
-  }), /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "プロンプト本文"), /*#__PURE__*/React.createElement("p", {
+  }), React.createElement("details", null, React.createElement("summary", null, "プロンプト本文"), React.createElement("p", {
     className: "prompt-text"
-  }, prompt.prompt))), /*#__PURE__*/React.createElement("div", {
+  }, prompt.prompt))), React.createElement("div", {
     className: "actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     className: "primary",
     onClick: () => onCopy(prompt.prompt, prompt.id)
   }, "コピー"), extra));
@@ -9655,39 +9672,39 @@ function PromptModal({
     coverImages,
     imageUrl: coverImages[0] || ""
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
     onClose: onClose,
     className: "prompt-edit-modal"
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement(FormGrid, null, React.createElement("input", {
     value: draft.title,
     onChange: e => setDraft({
       ...draft,
       title: e.target.value
     }),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "folder-select-row"
-  }, /*#__PURE__*/React.createElement("select", {
+  }, React.createElement("select", {
     value: folderNameOf(draft),
     onChange: e => setDraft({
       ...draft,
       folder: e.target.value
     })
-  }, safeFolderOptions.map(folder => /*#__PURE__*/React.createElement("option", {
+  }, safeFolderOptions.map(folder => React.createElement("option", {
     key: folder,
     value: folder
-  }, folder))), /*#__PURE__*/React.createElement("button", {
+  }, folder))), React.createElement("button", {
     type: "button",
     onClick: addFolderFromModal
-  }, "＋ 新規ファイル")), /*#__PURE__*/React.createElement("textarea", {
+  }, "＋ 新規ファイル")), React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,
       description: e.target.value
     }),
     placeholder: "説明"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     className: "tall",
     value: draft.prompt,
     onChange: e => setDraft({
@@ -9695,34 +9712,34 @@ function PromptModal({
       prompt: e.target.value
     }),
     placeholder: "プロンプト本文"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: draft.note,
     onChange: e => setDraft({
       ...draft,
       note: e.target.value
     }),
     placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     value: draft.tagInput,
     onChange: e => setDraft({
       ...draft,
       tagInput: e.target.value
     }),
     placeholder: "タグ（カンマ区切り）"
-  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
+  }), React.createElement(CoverImageUploader, {
     item: draft,
     category: "prompt",
     onChange: setCoverImages
-  }), /*#__PURE__*/React.createElement("label", {
+  }), React.createElement("label", {
     className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: draft.favorite,
     onChange: e => setDraft({
       ...draft,
       favorite: e.target.checked
     })
-  }), " お気に入り")), /*#__PURE__*/React.createElement(ModalActions, {
+  }), " お気に入り")), React.createElement(ModalActions, {
     onClose: onClose,
     onSave: () => onSave({
       ...draft,
@@ -9742,56 +9759,56 @@ function MjModal({
     ...draft,
     [key]: value
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: item.id ? "ミッドジャーニー設定を編集" : "ミッドジャーニー設定を追加",
     onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement(FormGrid, null, React.createElement("input", {
     value: draft.title,
     onChange: e => set("title", e.target.value),
     placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: draft.description,
     onChange: e => set("description", e.target.value),
     placeholder: "説明"
-  }), /*#__PURE__*/React.createElement("div", {
+  }), React.createElement("div", {
     className: "inline-fields"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     value: draft.ar,
     onChange: e => set("ar", e.target.value),
     placeholder: "--ar 1:1"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     value: draft.stylize,
     onChange: e => set("stylize", e.target.value),
     placeholder: "--stylize"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     value: draft.chaos,
     onChange: e => set("chaos", e.target.value),
     placeholder: "--chaos"
-  })), /*#__PURE__*/React.createElement("div", {
+  })), React.createElement("div", {
     className: "inline-fields"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     value: draft.profile,
     onChange: e => set("profile", e.target.value),
     placeholder: "--profile"
-  }), /*#__PURE__*/React.createElement("input", {
+  }), React.createElement("input", {
     value: draft.seed,
     onChange: e => set("seed", e.target.value),
     placeholder: "--seed"
-  }), /*#__PURE__*/React.createElement("label", {
+  }), React.createElement("label", {
     className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: draft.raw,
     onChange: e => set("raw", e.target.checked)
-  }), " --raw")), /*#__PURE__*/React.createElement("input", {
+  }), " --raw")), React.createElement("input", {
     value: draft.extra,
     onChange: e => set("extra", e.target.value),
     placeholder: "その他自由入力、ベース文など"
-  }), /*#__PURE__*/React.createElement("textarea", {
+  }), React.createElement("textarea", {
     value: draft.note,
     onChange: e => set("note", e.target.value),
     placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement("code", null, mjCommand(draft))), /*#__PURE__*/React.createElement(ModalActions, {
+  }), React.createElement("code", null, mjCommand(draft))), React.createElement(ModalActions, {
     onClose: onClose,
     onSave: () => onSave(draft)
   }));
@@ -9816,66 +9833,66 @@ function ProjectModal({
       [key]: exists ? draft[key].filter(item => item !== id) : [...draft[key], id]
     });
   };
-  return /*#__PURE__*/React.createElement(Modal, {
+  return React.createElement(Modal, {
     title: item.id ? "プロジェクトを編集" : "プロジェクトを追加",
     onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, {
+  }, React.createElement(FormGrid, {
     className: "project-edit-form"
-  }, /*#__PURE__*/React.createElement(ProjectField, {
+  }, React.createElement(ProjectField, {
     label: "プロジェクト名"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     value: draft.name,
     onChange: e => setDraft({
       ...draft,
       name: e.target.value
     }),
     placeholder: "例：Christmas Sticker Set"
-  })), /*#__PURE__*/React.createElement(ProjectField, {
+  })), React.createElement(ProjectField, {
     label: "概要"
-  }, /*#__PURE__*/React.createElement("textarea", {
+  }, React.createElement("textarea", {
     value: draft.description,
     onChange: e => setDraft({
       ...draft,
       description: e.target.value
     }),
     placeholder: "制作する素材セットの内容を書きます"
-  })), /*#__PURE__*/React.createElement(ProjectField, {
+  })), React.createElement(ProjectField, {
     label: "目標・ゴール"
-  }, /*#__PURE__*/React.createElement("textarea", {
+  }, React.createElement("textarea", {
     value: draft.note,
     onChange: e => setDraft({
       ...draft,
       note: e.target.value
     }),
     placeholder: "点数、販売開始日、やることなど"
-  })), /*#__PURE__*/React.createElement(ProjectField, {
+  })), React.createElement(ProjectField, {
     label: "タグ"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     value: draft.tagInput,
     onChange: e => setDraft({
       ...draft,
       tagInput: e.target.value
     }),
     placeholder: "季節商品, ステッカー, Etsy"
-  })), /*#__PURE__*/React.createElement(ProjectField, {
+  })), React.createElement(ProjectField, {
     label: "達成予定日"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "date",
     value: draft.dueDate || "",
     onChange: e => setDraft({
       ...draft,
       dueDate: e.target.value
     })
-  })), /*#__PURE__*/React.createElement("label", {
+  })), React.createElement("label", {
     className: "check project-remind-check"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: Boolean(draft.remindOnHome),
     onChange: e => setDraft({
       ...draft,
       remindOnHome: e.target.checked
     })
-  }), "ホーム画面でリマインドする"), /*#__PURE__*/React.createElement(SelectList, {
+  }), "ホーム画面でリマインドする"), React.createElement(SelectList, {
     title: "関連プロンプト",
     description: "お気に入りを優先して10件表示します。必要な場合は「もっと見る」で追加表示できます。",
     items: promptChoices,
@@ -9883,7 +9900,7 @@ function ProjectModal({
     getLabel: choice => choice.title || "無題のプロンプト",
     getText: choice => `${choice.title} ${choice.description} ${choice.prompt} ${choice.note} ${(choice.tags || []).join(" ")}`,
     onToggle: id => toggle("promptIds", id)
-  }), /*#__PURE__*/React.createElement(SelectList, {
+  }), React.createElement(SelectList, {
     title: "関連Midjourney設定",
     description: "保存日の新しいものを優先して10件表示します。",
     items: mjChoices,
@@ -9891,7 +9908,7 @@ function ProjectModal({
     getLabel: choice => choice.title || promptTitleFromText(choice.prompt || choice.fullPrompt || choice.basePrompt || choice.extra || ""),
     getText: choice => `${choice.title || ""} ${choice.prompt || choice.fullPrompt || choice.basePrompt || ""} ${choice.parameters || choice.extra || ""} ${choice.memo || choice.note || ""}`,
     onToggle: id => toggle("mjIds", id)
-  })), /*#__PURE__*/React.createElement(ModalActions, {
+  })), React.createElement(ModalActions, {
     onClose: onClose,
     onSave: () => onSave({
       ...draft,
@@ -9903,9 +9920,9 @@ function ProjectField({
   label,
   children
 }) {
-  return /*#__PURE__*/React.createElement("label", {
+  return React.createElement("label", {
     className: "project-field"
-  }, /*#__PURE__*/React.createElement("span", null, label), children);
+  }, React.createElement("span", null, label), children);
 }
 function SelectList({
   title,
@@ -9918,18 +9935,18 @@ function SelectList({
 }) {
   const [expanded, setExpanded] = React.useState(false);
   const shown = expanded ? items : items.slice(0, 10);
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "select-list"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "select-list-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, title), description && /*#__PURE__*/React.createElement("small", null, description))), items.length ? shown.map(item => /*#__PURE__*/React.createElement("label", {
+  }, React.createElement("div", null, React.createElement("strong", null, title), description && React.createElement("small", null, description))), items.length ? shown.map(item => React.createElement("label", {
     key: item.id,
     className: "check select-row"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, React.createElement("input", {
     type: "checkbox",
     checked: selected.includes(item.id),
     onChange: () => onToggle(item.id)
-  }), " ", getLabel(item))) : /*#__PURE__*/React.createElement("small", null, "先に項目を追加してください。"), items.length > 10 && !expanded && /*#__PURE__*/React.createElement("button", {
+  }), " ", getLabel(item))) : React.createElement("small", null, "先に項目を追加してください。"), items.length > 10 && !expanded && React.createElement("button", {
     className: "ghost more-button",
     type: "button",
     onClick: () => setExpanded(true)
@@ -9945,16 +9962,16 @@ function PageHead({
   title,
   action
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "page-head"
-  }, /*#__PURE__*/React.createElement("h2", null, title), action);
+  }, React.createElement("h2", null, title), action);
 }
 function PageBackButton({
   label = "前のページに戻る",
   onClick,
   className = ""
 }) {
-  return /*#__PURE__*/React.createElement("button", {
+  return React.createElement("button", {
     type: "button",
     className: `page-back-button ${className}`.trim(),
     onClick: onClick
@@ -9963,30 +9980,30 @@ function PageBackButton({
 function SectionTitle({
   title
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "section-title"
-  }, /*#__PURE__*/React.createElement("h2", null, title));
+  }, React.createElement("h2", null, title));
 }
 function Filters({
   children
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "filters"
   }, children);
 }
 function TagRow({
   tags
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "tags"
-  }, tags.map(tag => /*#__PURE__*/React.createElement("span", {
+  }, tags.map(tag => React.createElement("span", {
     key: tag
   }, "#", tag)));
 }
 function Empty({
   text
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "empty"
   }, text);
 }
@@ -9994,7 +10011,7 @@ function FormGrid({
   children,
   className = ""
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: `form-grid ${className}`.trim()
   }, children);
 }
@@ -10005,15 +10022,15 @@ function Modal({
   hideClose,
   className = ""
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "modal-backdrop",
     role: "dialog",
     "aria-modal": "true"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: `modal ${className}`.trim()
-  }, /*#__PURE__*/React.createElement("div", {
+  }, React.createElement("div", {
     className: "modal-head"
-  }, /*#__PURE__*/React.createElement("h2", null, title), !hideClose && /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("h2", null, title), !hideClose && React.createElement("button", {
     onClick: onClose
   }, "閉じる")), children));
 }
@@ -10021,13 +10038,13 @@ function ModalActions({
   onClose,
   onSave
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return React.createElement("div", {
     className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, React.createElement("button", {
     onClick: onClose
-  }, "キャンセル"), /*#__PURE__*/React.createElement("button", {
+  }, "キャンセル"), React.createElement("button", {
     className: "primary",
     onClick: onSave
   }, "保存する"));
 }
-ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
