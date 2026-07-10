@@ -4535,6 +4535,7 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
                   inlineEdit={inlineEdit}
                   setInlineEdit={setInlineEdit}
                   updatePrompt={updatePrompt}
+                  editPrompt={() => setEditingPrompt(prompt)}
                   duplicatePrompt={duplicatePrompt}
                   deletePrompt={() => deleteBoardPrompt(prompt.id)}
                   copyText={copyText}
@@ -4713,7 +4714,7 @@ function CoverImageUploader({ item, onChange, category = "prompt" }: any) {
   );
 }
 
-function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, duplicatePrompt, deletePrompt, copyText, showMemo, showTags = true, showMemoButton = true }: any) {
+function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePrompt, editPrompt, duplicatePrompt, deletePrompt, copyText, showMemo, showTags = true, showMemoButton = true }: any) {
   const updateCoverImages = (coverImages: any[]) => updatePrompt(prompt.id, { coverImages, imageUrl: coverImages[0] || "" });
   return (
     <article className="library-prompt-card">
@@ -4728,6 +4729,7 @@ function LibraryImagePromptCard({ prompt, inlineEdit, setInlineEdit, updatePromp
         {prompt.favorite ? "♥" : "♡"}
       </button>
       <PromptMenuButton
+        onEdit={editPrompt}
         onDuplicate={() => duplicatePrompt(prompt)}
         onClearImage={() => updatePrompt(prompt.id, { imageUrl: "", coverImages: [] })}
         onDelete={deletePrompt}
@@ -4987,7 +4989,7 @@ function MenuButton({ onEdit, onDuplicate, onImage, onDelete }: any) {
   );
 }
 
-function PromptMenuButton({ onDuplicate, onClearImage, onDelete }: any) {
+function PromptMenuButton({ onEdit, onDuplicate, onClearImage, onDelete }: any) {
   const runMenuAction = (event: any, action: () => void) => {
     event.preventDefault();
     event.stopPropagation();
@@ -4997,6 +4999,7 @@ function PromptMenuButton({ onDuplicate, onClearImage, onDelete }: any) {
     <details className="card-menu" onClick={(event) => event.stopPropagation()}>
       <summary aria-label="メニュー">…</summary>
       <div>
+        {onEdit && <button onClick={(event) => runMenuAction(event, onEdit)}>編集</button>}
         <button onClick={(event) => runMenuAction(event, onDuplicate)}>複製</button>
         <button onClick={(event) => runMenuAction(event, onClearImage)}>画像を削除</button>
         <button className="danger" onClick={(event) => runMenuAction(event, onDelete)}>削除</button>
@@ -5052,7 +5055,7 @@ function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item });
   const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, imageUrl: coverImages[0] || "" });
   return (
-    <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
+    <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose} className="prompt-edit-modal">
       <FormGrid>
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
         <select value={draft.categoryId} onChange={(e) => setDraft({ ...draft, categoryId: e.target.value })}>
@@ -5233,6 +5236,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
                       inlineEdit={inlineEdit}
                       setInlineEdit={setInlineEdit}
                       updatePrompt={updatePrompt}
+                      editPrompt={() => setEditing(prompt)}
                       duplicatePrompt={duplicatePrompt}
                       deletePrompt={() => deletePrompt(prompt.id)}
                       copyText={copyText}
@@ -5276,6 +5280,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
               inlineEdit={inlineEdit}
               setInlineEdit={setInlineEdit}
               updatePrompt={updatePrompt}
+              editPrompt={() => setEditing(prompt)}
               duplicatePrompt={duplicatePrompt}
               deletePrompt={() => deletePrompt(prompt.id)}
               copyText={copyText}
@@ -7023,7 +7028,7 @@ function PromptModal({ item, onClose, onSave }: any) {
   const [draft, setDraft] = React.useState({ ...item, tagInput: tagText(item.tags) });
   const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, imageUrl: coverImages[0] || "" });
   return (
-    <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose}>
+    <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose} className="prompt-edit-modal">
       <FormGrid>
         <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="タイトル" />
         <select value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>{categories.map((cat) => <option key={cat}>{cat}</option>)}</select>
@@ -7187,10 +7192,10 @@ function FormGrid({ children, className = "" }: any) {
   return <div className={`form-grid ${className}`.trim()}>{children}</div>;
 }
 
-function Modal({ title, children, onClose, hideClose }: any) {
+function Modal({ title, children, onClose, hideClose, className = "" }: any) {
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
-      <div className="modal">
+      <div className={`modal ${className}`.trim()}>
         <div className="modal-head">
           <h2>{title}</h2>
           {!hideClose && <button onClick={onClose}>閉じる</button>}

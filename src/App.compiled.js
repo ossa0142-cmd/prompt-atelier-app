@@ -6358,6 +6358,7 @@ function Library({
     inlineEdit: inlineEdit,
     setInlineEdit: setInlineEdit,
     updatePrompt: updatePrompt,
+    editPrompt: () => setEditingPrompt(prompt),
     duplicatePrompt: duplicatePrompt,
     deletePrompt: () => deleteBoardPrompt(prompt.id),
     copyText: copyText,
@@ -6559,6 +6560,7 @@ function LibraryImagePromptCard({
   inlineEdit,
   setInlineEdit,
   updatePrompt,
+  editPrompt,
   duplicatePrompt,
   deletePrompt,
   copyText,
@@ -6582,6 +6584,7 @@ function LibraryImagePromptCard({
       });
     }
   }, prompt.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement(PromptMenuButton, {
+    onEdit: editPrompt,
     onDuplicate: () => duplicatePrompt(prompt),
     onClearImage: () => updatePrompt(prompt.id, {
       imageUrl: "",
@@ -6954,6 +6957,7 @@ function MenuButton({
   }, "削除")));
 }
 function PromptMenuButton({
+  onEdit,
   onDuplicate,
   onClearImage,
   onDelete
@@ -6968,7 +6972,9 @@ function PromptMenuButton({
     onClick: event => event.stopPropagation()
   }, /*#__PURE__*/React.createElement("summary", {
     "aria-label": "メニュー"
-  }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+  }, "…"), /*#__PURE__*/React.createElement("div", null, onEdit && /*#__PURE__*/React.createElement("button", {
+    onClick: event => runMenuAction(event, onEdit)
+  }, "編集"), /*#__PURE__*/React.createElement("button", {
     onClick: event => runMenuAction(event, onDuplicate)
   }, "複製"), /*#__PURE__*/React.createElement("button", {
     onClick: event => runMenuAction(event, onClearImage)
@@ -7058,7 +7064,8 @@ function LibraryPromptModal({
   });
   return /*#__PURE__*/React.createElement(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
-    onClose: onClose
+    onClose: onClose,
+    className: "prompt-edit-modal"
   }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
     value: draft.title,
     onChange: e => setDraft({
@@ -7314,6 +7321,7 @@ function PromptBook({
     inlineEdit: inlineEdit,
     setInlineEdit: setInlineEdit,
     updatePrompt: updatePrompt,
+    editPrompt: () => setEditing(prompt),
     duplicatePrompt: duplicatePrompt,
     deletePrompt: () => deletePrompt(prompt.id),
     copyText: copyText,
@@ -7345,6 +7353,7 @@ function PromptBook({
     inlineEdit: inlineEdit,
     setInlineEdit: setInlineEdit,
     updatePrompt: updatePrompt,
+    editPrompt: () => setEditing(prompt),
     duplicatePrompt: duplicatePrompt,
     deletePrompt: () => deletePrompt(prompt.id),
     copyText: copyText,
@@ -9562,7 +9571,8 @@ function PromptModal({
   });
   return /*#__PURE__*/React.createElement(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
-    onClose: onClose
+    onClose: onClose,
+    className: "prompt-edit-modal"
   }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
     value: draft.title,
     onChange: e => setDraft({
@@ -9900,14 +9910,15 @@ function Modal({
   title,
   children,
   onClose,
-  hideClose
+  hideClose,
+  className = ""
 }) {
   return /*#__PURE__*/React.createElement("div", {
     className: "modal-backdrop",
     role: "dialog",
     "aria-modal": "true"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "modal"
+    className: `modal ${className}`.trim()
   }, /*#__PURE__*/React.createElement("div", {
     className: "modal-head"
   }, /*#__PURE__*/React.createElement("h2", null, title), !hideClose && /*#__PURE__*/React.createElement("button", {

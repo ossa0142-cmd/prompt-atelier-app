@@ -7829,3 +7829,25 @@ summary {
   border-color: color-mix(in srgb, var(--accent) 78%, var(--border));
   background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
 }
+
+/* v74: keep prompt edit dialogs above the page chrome and fully visible. */
+.modal-backdrop {
+  z-index: 120;
+  align-items: start;
+  place-items: start center;
+  padding: 40px 20px 32px;
+}
+
+.modal.prompt-edit-modal {
+  width: min(920px, calc(100vw - 40px));
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
+}
+
+.modal.prompt-edit-modal .modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--card-bg);
+  padding-bottom: 14px;
+}
