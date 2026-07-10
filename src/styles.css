@@ -7672,35 +7672,139 @@ summary {
   opacity: 0.56;
 }
 
-
-/* Home favorite video preview: play only while hovering to keep the top page light. */
-.home-video-prompt-card video {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1.08;
-  object-fit: cover;
-  background: #111;
+/* Project memo notes */
+.project-memo-section {
+  display: grid;
+  gap: 18px;
+  margin-top: 28px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius-lg, 28px);
+  background: color-mix(in srgb, var(--card-bg) 86%, transparent);
+  box-shadow: var(--card-shadow-soft, 0 18px 48px rgba(73, 58, 45, 0.08));
+  padding: 22px;
 }
 
-.home-video-prompt-card::after {
-  content: "▶";
+.project-memo-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.project-memo-head h3 {
+  margin: 0 0 6px;
+  color: var(--text-main);
+  font-size: 24px;
+}
+
+.project-memo-head p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.project-memo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.project-memo-card {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  min-height: 190px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+  padding: 18px;
+}
+
+.project-memo-card h4 {
+  max-width: calc(100% - 46px);
+  margin: 0;
+  color: var(--text-main);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.project-memo-card p {
+  display: -webkit-box;
+  min-height: 72px;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-sub);
+  line-height: 1.7;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.project-memo-heart {
   position: absolute;
   top: 14px;
-  left: 14px;
-  z-index: 2;
+  right: 14px;
   display: grid;
   width: 38px;
   height: 38px;
   place-items: center;
+  border: 1px solid color-mix(in srgb, var(--border) 62%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
   color: var(--accent);
-  font-size: 15px;
-  font-weight: 900;
-  box-shadow: 0 10px 24px rgba(73, 58, 45, 0.12);
-  pointer-events: none;
+  font-size: 20px;
+  padding: 0;
 }
 
-.home-video-prompt-card:hover::after {
-  opacity: 0;
+.project-memo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-self: end;
+}
+
+.project-memo-form {
+  gap: 16px;
+}
+
+.project-memo-body-input {
+  min-height: 260px;
+  line-height: 1.75;
+}
+
+.home-memo-cover {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1.18;
+  place-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--accent) 18%, transparent) 0 34px, transparent 35px),
+    radial-gradient(circle at 80% 30%, color-mix(in srgb, var(--decorative-shape) 36%, transparent) 0 30px, transparent 31px),
+    linear-gradient(145deg, color-mix(in srgb, var(--sand) 78%, var(--card-bg)), color-mix(in srgb, var(--shell) 62%, var(--card-bg)));
+}
+
+.home-memo-cover span {
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+  color: var(--text-sub);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 18px 26px;
+}
+
+.home-memo-excerpt {
+  display: -webkit-box;
+  min-height: 48px;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-sub);
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (max-width: 720px) {
+  .project-memo-head {
+    display: grid;
+  }
 }

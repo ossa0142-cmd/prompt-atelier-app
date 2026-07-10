@@ -1064,6 +1064,13 @@ const blankProject = () => ({
   dueDate: "",
   remindOnHome: false
 });
+const blankProjectMemo = () => ({
+  id: "",
+  title: "",
+  body: "",
+  favorite: false,
+  createdAt: new Date().toISOString()
+});
 const uid = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const splitTags = value => value.split(",").map(tag => tag.trim()).filter(Boolean);
 const tagText = tags => tags.join(", ");
@@ -2615,7 +2622,7 @@ const EMBEDDED_SAMPLE_SEED_DATA = {
 };
 const DELETED_SAMPLE_IDS_KEY = "promptAtelier_deletedSampleIds";
 const LEGACY_DELETED_SAMPLE_IDS_KEY = "promptAtelierDeletedSampleIds";
-const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
+const SAMPLE_EXPORT_KEYS = ["prompt-atelier-mockup-categories-v2", "prompt-atelier-library-prompts-v5", "prompt-atelier-prompts-ja-v2", "promptAtelierVideoPrompts", "promptAtelierVideoPromptStocks", "promptAtelierMidjourneySettings", "prompt-atelier-projects-ja-v2", "prompt-atelier-project-memos-v1", "promptAtelierJournal", "promptAtelierGallery", "promptAtelierHomeSettings", "promptAtelierWorkTools"];
 const SAMPLE_DATA_STORAGE_MAP = {
   libraryItems: "prompt-atelier-mockup-categories-v2",
   mockupCategories: "prompt-atelier-mockup-categories-v2",
@@ -2627,6 +2634,7 @@ const SAMPLE_DATA_STORAGE_MAP = {
   videoPromptStocks: "promptAtelierVideoPromptStocks",
   midjourneySettings: "promptAtelierMidjourneySettings",
   projects: "prompt-atelier-projects-ja-v2",
+  projectMemos: "prompt-atelier-project-memos-v1",
   galleryItems: "promptAtelierGallery",
   journalItems: "promptAtelierJournal",
   journalBackgrounds: "promptAtelierJournal",
@@ -3648,6 +3656,7 @@ function createSampleSeedData() {
   const videoStocksValue = parseStorageValueForSample("promptAtelierVideoPromptStocks") || [];
   const midjourneyValue = parseStorageValueForSample("promptAtelierMidjourneySettings") || [];
   const projectsValue = parseStorageValueForSample("prompt-atelier-projects-ja-v2") || [];
+  const projectMemosValue = parseStorageValueForSample("prompt-atelier-project-memos-v1") || [];
   const galleryValue = parseStorageValueForSample("promptAtelierGallery") || [];
   const journalValue = parseStorageValueForSample("promptAtelierJournal") || {};
   const homeSettingsValue = parseStorageValueForSample("promptAtelierHomeSettings") || {};
@@ -3668,6 +3677,7 @@ function createSampleSeedData() {
     videoPromptStocks: sampleArray(videoStocksValue, "sample-video-stock"),
     midjourneySettings: sampleArray(midjourneyValue, "sample-mj-setting"),
     projects: sampleArray(projectsValue, "sample-project"),
+    projectMemos: sampleArray(projectMemosValue, "sample-project-memo"),
     galleryItems: sampleArray(galleryValue, "sample-gallery"),
     journalItems: sampleArray(journalValue?.items || [], "sample-journal-item"),
     journalBackgrounds: sampleArray(journalValue?.customBackgrounds || [], "sample-journal-bg"),
@@ -3842,6 +3852,7 @@ function sampleSeedDataToStorage(seedData) {
   append("promptAtelierVideoPromptStocks", Array.isArray(seedData.videoPromptStocks) ? seedData.videoPromptStocks : []);
   append("promptAtelierMidjourneySettings", Array.isArray(seedData.midjourneySettings) ? seedData.midjourneySettings : []);
   append("prompt-atelier-projects-ja-v2", Array.isArray(seedData.projects) ? seedData.projects : []);
+  append("prompt-atelier-project-memos-v1", Array.isArray(seedData.projectMemos) ? seedData.projectMemos : []);
   append("promptAtelierGallery", Array.isArray(seedData.galleryItems) ? seedData.galleryItems : []);
   if (Array.isArray(seedData.journalItems) || Array.isArray(seedData.journalBackgrounds)) {
     const customBackgrounds = Array.isArray(seedData.journalBackgrounds) ? seedData.journalBackgrounds : [];
@@ -3950,6 +3961,7 @@ function App() {
   const [mockupPrompts, setMockupPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const [mjSettings, setMjSettings] = useStoredState("promptAtelierMidjourneySettings", sampleMj);
   const [projects, setProjects] = useStoredState("prompt-atelier-projects-ja-v2", sampleProjects);
+  const [projectMemos, setProjectMemos] = useStoredState("prompt-atelier-project-memos-v1", []);
   const [recentIds, setRecentIds] = useStoredState("prompt-atelier-recent-ja-v2", ["my-1", "lib-sticker-1"]);
   const [rawHomeSettings, setRawHomeSettings] = useStoredState("promptAtelierHomeSettings", defaultHomeSettings);
   const [workTools, setWorkTools] = useStoredState("promptAtelierWorkTools", defaultWorkTools);
@@ -3971,21 +3983,11 @@ function App() {
   };
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
-  const videoFavoritePrompts = extractVideoPromptItems(videos).map(normalizeVideoPrompt).filter(video => video.favorite).map(video => ({
-    id: video.id,
-    title: video.title,
-    category: video.model || "動画プロンプト",
-    description: video.memo || video.prompt || video.url,
-    prompt: video.prompt || video.memo || video.url,
-    imageUrl: video.thumbnail || "",
-    coverImages: video.thumbnail ? [video.thumbnail] : [],
-    tags: video.tags || [],
-    favorite: true,
-    isVideoPrompt: true,
-    videoUrl: video.url || "",
-    thumbnailMode: video.thumbnailMode || "thumbnail"
-  }));
-  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock), ...videoFavoritePrompts].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
+  const favoriteProjectMemos = projectMemos.filter(memo => memo.favorite);
+  const favorites = [...favoriteProjectMemos.map(memo => ({
+    ...memo,
+    favoriteType: "projectMemo"
+  })), ...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
   const copyText = async (text, id) => {
@@ -4121,6 +4123,7 @@ function App() {
     recent: recentPrompts,
     favorites: favorites,
     projects: projects,
+    projectMemos: projectMemos,
     myPrompts: myPrompts,
     mjSettings: mjSettings,
     mockupPrompts: mockupPrompts,
@@ -4136,6 +4139,7 @@ function App() {
     workTools: workTools,
     setWorkTools: setWorkTools,
     projects: projects,
+    projectMemos: projectMemos,
     myPrompts: myPrompts,
     mjSettings: mjSettings,
     mockupPrompts: mockupPrompts,
@@ -4162,6 +4166,8 @@ function App() {
   }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
     projects: projects,
     setProjects: setProjects,
+    projectMemos: projectMemos,
+    setProjectMemos: setProjectMemos,
     prompts: myPrompts,
     settings: mjSettings,
     homeSettings: homeSettings,
@@ -4326,6 +4332,7 @@ function Home({
   recent,
   favorites,
   projects,
+  projectMemos,
   myPrompts,
   mjSettings,
   mockupPrompts,
@@ -5946,37 +5953,30 @@ function HomePromptCard({
   prompt,
   onCopy
 }) {
-  const [isHovering, setIsHovering] = React.useState(false);
-  const videoSrc = prompt.isVideoPrompt ? videoDisplaySrc(prompt.videoUrl || "") : "";
-  const canPlayVideo = Boolean(videoSrc && isPlayableVideoUrl(videoSrc));
-  const hasPromptImage = Boolean(imageDisplaySrc(prompt.imageUrl));
-  const showVideo = canPlayVideo && (isHovering || !hasPromptImage);
+  const isProjectMemo = prompt.favoriteType === "projectMemo";
+  const copyValue = isProjectMemo ? prompt.body : prompt.prompt;
   return /*#__PURE__*/React.createElement("article", {
-    className: `home-prompt-card ${prompt.isVideoPrompt ? "home-video-prompt-card" : ""}`,
-    onMouseEnter: () => setIsHovering(true),
-    onMouseLeave: () => setIsHovering(false)
-  }, showVideo ? /*#__PURE__*/React.createElement("video", {
-    src: videoSrc,
-    autoPlay: true,
-    muted: true,
-    loop: true,
-    playsInline: true
-  }) : /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(prompt.imageUrl) || (prompt.isVideoPrompt ? art("動画", "#fff4fb", "#f8dbe9") : art("プロンプト", "#f5eadc", "#e7e7df")),
+    className: `home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""}`.trim()
+  }, isProjectMemo ? /*#__PURE__*/React.createElement("div", {
+    className: "home-memo-cover"
+  }, /*#__PURE__*/React.createElement("span", null, "MEMO")) : /*#__PURE__*/React.createElement("img", {
+    src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", {
     className: "home-prompt-body"
   }, /*#__PURE__*/React.createElement("span", {
     className: "mini-pill"
-  }, prompt.category), /*#__PURE__*/React.createElement("h3", null, prompt.title), /*#__PURE__*/React.createElement("div", {
+  }, isProjectMemo ? "プロジェクトメモ" : prompt.category), /*#__PURE__*/React.createElement("h3", null, prompt.title), isProjectMemo && /*#__PURE__*/React.createElement("p", {
+    className: "home-memo-excerpt"
+  }, prompt.body), /*#__PURE__*/React.createElement("div", {
     className: "home-card-bottom"
   }, /*#__PURE__*/React.createElement("div", {
     className: "tiny-tags"
-  }, (prompt.tags || []).slice(0, 2).map(tag => /*#__PURE__*/React.createElement("span", {
+  }, !isProjectMemo && (prompt.tags || []).slice(0, 2).map(tag => /*#__PURE__*/React.createElement("span", {
     key: tag
   }, "#", tag))), /*#__PURE__*/React.createElement("button", {
     className: "copy-chip",
-    onClick: () => onCopy(prompt.prompt, prompt.id)
+    onClick: () => onCopy(copyValue, prompt.id)
   }, "コピー"))));
 }
 function Library({
@@ -8586,8 +8586,6 @@ function VideoLibrary({
   const slots = searchActive ? filteredVideos : Array.from({
     length: videoSlotCount
   }, (_, index) => normalizedVideos[index] || null);
-  const draftVideoPreviewUrl = videoDisplaySrc(uploadedVideoUrl || draft.url);
-  const hasDraftVideoPreview = Boolean(draftVideoPreviewUrl && isPlayableVideoUrl(draftVideoPreviewUrl));
   if (selectedId) {
     return /*#__PURE__*/React.createElement("section", {
       className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`,
@@ -8741,8 +8739,8 @@ function VideoLibrary({
         setIsVideoUploadDragging(false);
         importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
       }
-    }, hasDraftVideoPreview ? /*#__PURE__*/React.createElement("video", {
-      src: draftVideoPreviewUrl,
+    }, uploadedVideoUrl ? /*#__PURE__*/React.createElement("video", {
+      src: uploadedVideoUrl,
       controls: true,
       playsInline: true
     }) : /*#__PURE__*/React.createElement("div", {
@@ -8755,7 +8753,7 @@ function VideoLibrary({
     }, "動画を選ぶ"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: clearUploadedVideo,
-      disabled: !draftVideoPreviewUrl
+      disabled: !uploadedVideoUrl
     }, "アップロード動画を削除")), /*#__PURE__*/React.createElement("input", {
       ref: thumbnailInputRef,
       type: "file",
@@ -9332,6 +9330,8 @@ function JournalPage({
 function Projects({
   projects,
   setProjects,
+  projectMemos,
+  setProjectMemos,
   prompts,
   settings,
   homeSettings,
@@ -9339,11 +9339,14 @@ function Projects({
   setScreen
 }) {
   const [editing, setEditing] = React.useState(null);
+  const [editingMemo, setEditingMemo] = React.useState(null);
   const canAddProject = projects.length < 30;
+  const canAddMemo = projectMemos.length < 30;
   const projectDisplay = homeSettings?.pageDisplaySettings?.projects || defaultPageDisplaySettings.projects;
   const projectMatchesDisplay = item => projectDisplay.showCompleted !== false || !item.completed && item.status !== "completed";
   const filteredBase = projects.filter(item => projectMatchesDisplay(item));
   const filtered = projectDisplay.sortBy === "manual" ? filteredBase : projectDisplay.sortBy === "created" ? [...filteredBase].sort((a, b) => String(b.createdAt || b.updatedAt || "").localeCompare(String(a.createdAt || a.updatedAt || ""))) : sortProjectsForDisplay(filteredBase);
+  const sortedMemos = [...projectMemos].sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
   const save = item => {
     const next = {
       ...item,
@@ -9352,6 +9355,29 @@ function Projects({
     };
     setProjects(items => item.id ? items.map(p => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
+  };
+  const saveMemo = memo => {
+    const now = new Date().toISOString();
+    const next = {
+      ...memo,
+      id: memo.id || uid(),
+      title: memo.title.trim() || "無題のメモ",
+      body: memo.body || "",
+      createdAt: memo.createdAt || now,
+      updatedAt: now
+    };
+    setProjectMemos(items => memo.id ? items.map(item => item.id === memo.id ? next : item) : [next, ...items].slice(0, 30));
+    setEditingMemo(null);
+  };
+  const toggleMemoFavorite = id => {
+    setProjectMemos(items => items.map(memo => memo.id === id ? {
+      ...memo,
+      favorite: !memo.favorite,
+      updatedAt: new Date().toISOString()
+    } : memo));
+  };
+  const deleteMemo = id => {
+    setProjectMemos(items => items.filter(memo => memo.id !== id));
   };
   return /*#__PURE__*/React.createElement("section", {
     className: `page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`
@@ -9407,16 +9433,92 @@ function Projects({
       key: m.id,
       onClick: () => copyText(mjCommand(m))
     }, m.title)) : /*#__PURE__*/React.createElement("small", null, "未設定")));
-  })), editing && /*#__PURE__*/React.createElement(ProjectModal, {
+  })), /*#__PURE__*/React.createElement("section", {
+    className: "project-memo-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "project-memo-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "メモ"), /*#__PURE__*/React.createElement("p", null, "タイトルと本文だけのシンプルなメモを、最大30個まで保存できます。")), canAddMemo ? /*#__PURE__*/React.createElement("button", {
+    className: "primary",
+    onClick: () => setEditingMemo(blankProjectMemo())
+  }, "メモを追加") : /*#__PURE__*/React.createElement("span", {
+    className: "limit-message"
+  }, "メモは最大30個まで登録できます")), /*#__PURE__*/React.createElement("div", {
+    className: "project-memo-grid"
+  }, sortedMemos.length ? sortedMemos.map(memo => /*#__PURE__*/React.createElement("article", {
+    className: "project-memo-card",
+    key: memo.id
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "project-memo-heart",
+    "aria-label": "お気に入り",
+    onClick: () => toggleMemoFavorite(memo.id)
+  }, memo.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("h4", null, memo.title), /*#__PURE__*/React.createElement("p", null, memo.body), /*#__PURE__*/React.createElement("div", {
+    className: "project-memo-actions"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditingMemo(memo)
+  }, "編集"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => copyText(memo.body, memo.id),
+    disabled: !memo.body.trim()
+  }, "コピー"), /*#__PURE__*/React.createElement("button", {
+    className: "danger",
+    onClick: () => deleteMemo(memo.id)
+  }, "削除")))) : /*#__PURE__*/React.createElement(Empty, {
+    text: "プロジェクト用のメモを追加できます。"
+  }))), editing && /*#__PURE__*/React.createElement(ProjectModal, {
     item: editing,
     prompts: prompts,
     settings: settings,
     onClose: () => setEditing(null),
     onSave: save
+  }), editingMemo && /*#__PURE__*/React.createElement(ProjectMemoModal, {
+    item: editingMemo,
+    onClose: () => setEditingMemo(null),
+    onSave: saveMemo
   }), /*#__PURE__*/React.createElement(PageBackButton, {
     className: "page-bottom-back",
     label: "ホームへ戻る",
     onClick: () => setScreen("home")
+  }));
+}
+function ProjectMemoModal({
+  item,
+  onClose,
+  onSave
+}) {
+  const [draft, setDraft] = React.useState({
+    ...item
+  });
+  return /*#__PURE__*/React.createElement(Modal, {
+    title: item.id ? "メモを編集" : "メモを追加",
+    onClose: onClose
+  }, /*#__PURE__*/React.createElement(FormGrid, {
+    className: "project-memo-form"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: draft.title,
+    onChange: event => setDraft({
+      ...draft,
+      title: event.target.value
+    }),
+    placeholder: "タイトル"
+  }), /*#__PURE__*/React.createElement("textarea", {
+    className: "project-memo-body-input",
+    value: draft.body,
+    onChange: event => setDraft({
+      ...draft,
+      body: event.target.value
+    }),
+    placeholder: "本文を入力できます。長文も保存できます。"
+  }), /*#__PURE__*/React.createElement("label", {
+    className: "check project-remind-check"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: Boolean(draft.favorite),
+    onChange: event => setDraft({
+      ...draft,
+      favorite: event.target.checked
+    })
+  }), "お気に入りに表示する")), /*#__PURE__*/React.createElement(ModalActions, {
+    onClose: onClose,
+    onSave: () => onSave(draft)
   }));
 }
 function PromptCard({
