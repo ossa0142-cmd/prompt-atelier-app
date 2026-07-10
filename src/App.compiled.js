@@ -8355,13 +8355,17 @@ function VideoLibrary({
   const [videoFolders, setVideoFolders] = React.useState(() => readFolderList("promptAtelierVideoFolders"));
   const videoItems = extractVideoPromptItems(videos);
   const availableVideoFolders = Array.from(new Set([DEFAULT_FOLDER_NAME, ...videoFolders, ...videoItems.map(item => folderNameOf(item))]));
-  const addVideoFolder = () => {
+  const createVideoFolder = (activate = true) => {
     const name = createFolderName(availableVideoFolders, "動画プロンプト帳");
-    if (!name) return;
+    if (!name) return "";
     const next = [...videoFolders, name];
     setVideoFolders(next);
     saveFolderList("promptAtelierVideoFolders", next);
-    setVideoViewMode("folders");
+    if (activate) setVideoViewMode("folders");
+    return name;
+  };
+  const addVideoFolder = () => {
+    createVideoFolder(true);
   };
   const videoDisplay = homeSettings?.pageDisplaySettings?.videoPrompts || defaultPageDisplaySettings.videoPrompts;
   React.useEffect(() => {
@@ -8652,15 +8656,25 @@ function VideoLibrary({
         url: event.target.value
       }),
       placeholder: "YouTube / Google Drive / Runway などのURL"
-    })), /*#__PURE__*/React.createElement("label", null, "使用モデル", /*#__PURE__*/React.createElement("select", {
-      value: draft.model,
+    })), /*#__PURE__*/React.createElement("label", null, "ファイル", /*#__PURE__*/React.createElement("div", {
+      className: "folder-select-row"
+    }, /*#__PURE__*/React.createElement("select", {
+      value: folderNameOf(draft),
       onChange: event => updateDraft({
-        model: event.target.value
+        folder: event.target.value
       })
-    }, videoModels.map(model => /*#__PURE__*/React.createElement("option", {
-      key: model,
-      value: model
-    }, model)))), /*#__PURE__*/React.createElement("label", null, "動画プロンプト", /*#__PURE__*/React.createElement("textarea", {
+    }, availableVideoFolders.map(folder => /*#__PURE__*/React.createElement("option", {
+      key: folder,
+      value: folder
+    }, folder))), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => {
+        const name = createVideoFolder(false);
+        if (name) updateDraft({
+          folder: name
+        });
+      }
+    }, "＋ 新規ファイル"))), /*#__PURE__*/React.createElement("label", null, "動画プロンプト", /*#__PURE__*/React.createElement("textarea", {
       className: "video-prompt-input",
       value: draft.prompt,
       onChange: event => updateDraft({

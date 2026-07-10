@@ -6161,14 +6161,16 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
   const [videoFolders, setVideoFolders] = React.useState<string[]>(() => readFolderList("promptAtelierVideoFolders"));
   const videoItems = extractVideoPromptItems(videos);
   const availableVideoFolders = Array.from(new Set([DEFAULT_FOLDER_NAME, ...videoFolders, ...videoItems.map((item: VideoItem) => folderNameOf(item))]));
-  const addVideoFolder = () => {
+  const createVideoFolder = (activate = true) => {
     const name = createFolderName(availableVideoFolders, "動画プロンプト帳");
-    if (!name) return;
+    if (!name) return "";
     const next = [...videoFolders, name];
     setVideoFolders(next);
     saveFolderList("promptAtelierVideoFolders", next);
-    setVideoViewMode("folders");
+    if (activate) setVideoViewMode("folders");
+    return name;
   };
+  const addVideoFolder = () => { createVideoFolder(true); };
   const videoDisplay = homeSettings?.pageDisplaySettings?.videoPrompts || defaultPageDisplaySettings.videoPrompts;
   React.useEffect(() => {
     uploadedVideoUrlRef.current = uploadedVideoUrl;
@@ -6424,7 +6426,17 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
           <div className="video-detail-form">
             <label>タイトル<input value={draft.title} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="タイトル" /></label>
             <label>動画URL<input value={draft.url} onChange={(event) => updateDraft({ url: event.target.value })} placeholder="YouTube / Google Drive / Runway などのURL" /></label>
-            <label>使用モデル<select value={draft.model} onChange={(event) => updateDraft({ model: event.target.value })}>{videoModels.map((model) => <option key={model} value={model}>{model}</option>)}</select></label>
+            <label>ファイル
+              <div className="folder-select-row">
+                <select value={folderNameOf(draft)} onChange={(event) => updateDraft({ folder: event.target.value })}>
+                  {availableVideoFolders.map((folder: string) => <option key={folder} value={folder}>{folder}</option>)}
+                </select>
+                <button type="button" onClick={() => {
+                  const name = createVideoFolder(false);
+                  if (name) updateDraft({ folder: name });
+                }}>＋ 新規ファイル</button>
+              </div>
+            </label>
             <label>動画プロンプト<textarea className="video-prompt-input" value={draft.prompt} onChange={(event) => updateDraft({ prompt: event.target.value })} placeholder="動画生成プロンプト" /></label>
             <label>メモ<textarea value={draft.memo} onChange={(event) => updateDraft({ memo: event.target.value })} placeholder="メモ" /></label>
             <label>タグ<input value={tagDraft} onChange={(event) => setTagDraft(event.target.value)} placeholder="cinematic, camera move, product demo" /></label>
