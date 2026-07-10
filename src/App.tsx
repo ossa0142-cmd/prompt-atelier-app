@@ -4283,7 +4283,7 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
       category: "ステッカーモックアップ" as Category,
       coverImages: item.isTextStock ? [] : getCoverImages(item),
       imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
-      japaneseTranslation: item.japaneseTranslation || item.prompt,
+      japaneseTranslation: item.japaneseTranslation || "",
       memo: item.memo || "",
       tags: item.tags || [],
       isTextStock: Boolean(item.isTextStock),
@@ -5052,7 +5052,8 @@ function MockupCategoryModal({ item, onClose, onSave }: any) {
 }
 
 function LibraryPromptModal({ item, categories, onClose, onSave }: any) {
-  const [draft, setDraft] = React.useState({ ...item });
+  const initialTranslation = item.japaneseTranslation === item.prompt ? "" : (item.japaneseTranslation || "");
+  const [draft, setDraft] = React.useState({ ...item, japaneseTranslation: initialTranslation });
   const setCoverImages = (coverImages: any[]) => setDraft({ ...draft, coverImages, imageUrl: coverImages[0] || "" });
   return (
     <Modal title={item.id ? "プロンプトを編集" : "プロンプトを追加"} onClose={onClose} className="prompt-edit-modal">
@@ -5167,7 +5168,7 @@ function PromptBook({ prompts, setPrompts, copyText, setScreen, homeSettings }: 
       id: item.id || uid(),
       coverImages: item.isTextStock ? [] : getCoverImages(item),
       imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
-      japaneseTranslation: item.japaneseTranslation || item.prompt,
+      japaneseTranslation: item.japaneseTranslation || "",
       memo: item.memo || item.note || "",
       note: item.note || item.memo || "",
       tags: item.tags || [],

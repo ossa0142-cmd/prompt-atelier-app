@@ -6077,7 +6077,7 @@ function Library({
       category: "ステッカーモックアップ",
       coverImages: item.isTextStock ? [] : getCoverImages(item),
       imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
-      japaneseTranslation: item.japaneseTranslation || item.prompt,
+      japaneseTranslation: item.japaneseTranslation || "",
       memo: item.memo || "",
       tags: item.tags || [],
       isTextStock: Boolean(item.isTextStock)
@@ -7054,8 +7054,10 @@ function LibraryPromptModal({
   onClose,
   onSave
 }) {
+  const initialTranslation = item.japaneseTranslation === item.prompt ? "" : item.japaneseTranslation || "";
   const [draft, setDraft] = React.useState({
-    ...item
+    ...item,
+    japaneseTranslation: initialTranslation
   });
   const setCoverImages = coverImages => setDraft({
     ...draft,
@@ -7217,7 +7219,7 @@ function PromptBook({
       id: item.id || uid(),
       coverImages: item.isTextStock ? [] : getCoverImages(item),
       imageUrl: item.isTextStock ? "" : primaryCoverImage(item) || item.imageUrl || "",
-      japaneseTranslation: item.japaneseTranslation || item.prompt,
+      japaneseTranslation: item.japaneseTranslation || "",
       memo: item.memo || item.note || "",
       note: item.note || item.memo || "",
       tags: item.tags || [],
