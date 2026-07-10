@@ -567,29 +567,23 @@ const defaultJournal: JournalState = {
 
 const sampleVideos: VideoItem[] = [
   {
-    id: "video-sample-1",
-    title: "淡いステッカー紹介動画",
-    url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    model: "Runway",
-    thumbnail: "",
-    prompt: "soft pastel clipart sticker sheet reveal, gentle camera push in, cozy stationery desk, clean white background, smooth motion",
-    memo: "Etsyのサムネイル動画やSNS用に使いやすい構成。",
-    tags: ["sticker", "pastel", "reveal"],
-    favorite: true,
-    createdAt: "2026-07-02T00:00:00.000Z",
-  },
-  {
-    id: "video-sample-2",
-    title: "招待状モックアップ動画",
-    url: "",
-    model: "Kling",
-    thumbnail: "",
-    prompt: "wedding invitation card mockup on linen fabric, slow top-down camera movement, elegant natural light, warm ivory tone",
-    memo: "招待状パックの販売ページ用。",
-    tags: ["invitation", "mockup", "wedding"],
-    favorite: false,
-    createdAt: "2026-07-02T00:00:00.000Z",
-  },
+      id: "1783693588632-c7768f892d57d",
+      title: "女性",
+      folder: "未分類",
+      url: "/samples/videos/pa-video-woman-seed7.mp4",
+      model: "Runway",
+      thumbnail: "",
+      thumbnailMode: "video",
+      prompt: "a cute young woman, soft watercolor illustration style, delicate airy brush strokes, hand-painted texture, smooth fair skin with soft blush, big glossy eyes, subtle natural makeup, long straight light blonde hair with soft bangs, soft golden tones, slightly translucent and airy texture, clean and neat hairstyle, no hat, no head accessories, wearing a simple camisole top, lightweight summer fabric, minimal and clean design, soft and breathable look, no pose specification, natural relaxed standing posture, no hand gestures, calm and neutral expression, minimal accessories: small delicate earrings, thin bracelet, simple rings, soft pastel color palette (peach, coral, cream, light green), clean light pink or beige background, minimal composition, lots of negative space, no shadows, flat soft lighting, no depth shadows, evenly lit, dreamy and elegant, Korean illustration style, high detail face, smooth soft texture, ultra high resolution, extremely detailed, crisp quality, 8k, best quality",
+      memo: "",
+      tags: [],
+      favorite: true,
+      createdAt: "2026-07-10T14:26:28.632Z",
+      updatedAt: "2026-07-10T14:26:28.632Z",
+      isSample: true,
+      createdFromSeedExport: true,
+      sampleId: "sample-video-card-001"
+  }
 ];
 const videoModels = ["Runway", "Kling", "Veo", "Hailuo", "Pika", "Luma", "その他"];
 const blankVideoPrompt = (): VideoItem => ({
@@ -676,8 +670,8 @@ const defaultBannerPositions: BannerPositions = {
 
 const defaultHomeSettings: HomeSettings = {
   themeId: "cute",
-  bannerImage: "",
-  bannerImageUrl: "",
+  bannerImage: "/samples/banners/pa-banner-seed7.png",
+  bannerImageUrl: "/samples/banners/pa-banner-seed7.png",
   bannerVisible: true,
   bannerSize: "medium",
   bannerFit: "contain",
@@ -685,9 +679,9 @@ const defaultHomeSettings: HomeSettings = {
   bannerPositionY: 50,
   bannerPositions: defaultBannerPositions,
   workToolIconStyle: "pastel",
-  homeClockStyle: "pill",
-  homeClockSize: "medium",
-  homeClockColor: "theme",
+  homeClockStyle: "doodle",
+  homeClockSize: "large",
+  homeClockColor: "pink",
   displayDensity: "normal",
   pageDisplaySettings: defaultPageDisplaySettings,
   cardStyle: defaultCardStyle,
@@ -908,6 +902,7 @@ const libraryPrompts: LibraryPrompt[] = [
     prompt: "透明でつやのある縁が見えるアクリルキーホルダーのモックアップ。ゴールドの金具、かわいいチャームの商品写真、淡いニュートラル背景、やわらかな反射、ハンドメイドショップ風。",
     tags: ["キーホルダー", "アクリル", "チャーム"],
     imageUrl: art("キーホルダー", "#f6e6ec", "#e8edf5"),
+    favorite: true,
   },
 ];
 
