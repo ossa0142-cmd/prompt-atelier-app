@@ -2467,6 +2467,7 @@ async function loadSampleSeedIfNeeded() {
 
 function App() {
   const [screen, setScreen] = React.useState<Screen>("home");
+  const [libraryFocusCategoryId, setLibraryFocusCategoryId] = React.useState("");
   const [myPrompts, setMyPrompts] = useStoredState<MyPrompt[]>("prompt-atelier-prompts-ja-v2", samplePrompts);
   const [mockupPrompts, setMockupPrompts] = useStoredState<LibraryBoardPrompt[]>("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const [mjSettings, setMjSettings] = useStoredState<MjSetting[]>("promptAtelierMidjourneySettings", sampleMj);
@@ -2659,6 +2660,7 @@ function App() {
         {screen === "home" && (
           <Home
             setScreen={setScreen}
+            setLibraryFocusCategoryId={setLibraryFocusCategoryId}
             recent={recentPrompts}
             favorites={favorites}
             projects={projects}
@@ -2690,7 +2692,7 @@ function App() {
             onInstallPwa={installPwa}
           />
         )}
-        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} />}
+        {screen === "library" && <Library copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} boardPrompts={mockupPrompts} setBoardPrompts={setMockupPrompts} focusCategoryId={libraryFocusCategoryId} onFocusCategoryHandled={() => setLibraryFocusCategoryId("")} />}
         {screen === "prompts" && <PromptBook prompts={myPrompts} setPrompts={setMyPrompts} copyText={copyText} setScreen={setScreen} homeSettings={homeSettings} />}
         {screen === "mj" && <Midjourney settings={mjSettings} setSettings={setMjSettings} copyText={copyText} setScreen={setScreen} />}
         {screen === "projects" && (
@@ -2834,7 +2836,7 @@ function HomeDateDisplay({ style = "pill", size = "medium", color = "theme", min
   );
 }
 
-function Home({ setScreen, recent, favorites, projects, projectMemos, myPrompts, mjSettings, mockupPrompts, copyText, settings, setSettings, workTools, atelierImages }: any) {
+function Home({ setScreen, setLibraryFocusCategoryId, recent, favorites, projects, projectMemos, myPrompts, mjSettings, mockupPrompts, copyText, settings, setSettings, workTools, atelierImages }: any) {
   const isVisible = (id: string) => settings.visible[id] !== false;
   const entries = [
     ["library", "モックアップライブラリ", "販売画像に使える定番プロンプト", "mockup"],
@@ -2929,7 +2931,7 @@ function Home({ setScreen, recent, favorites, projects, projectMemos, myPrompts,
           <SectionTitle title="お気に入り" />
           <div className="home-prompt-row">
             {favorites.length ? favorites.map((prompt: MyPrompt) => (
-              <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} setScreen={setScreen} />
+              <HomePromptCard key={prompt.id} prompt={prompt} onCopy={copyText} setScreen={setScreen} setLibraryFocusCategoryId={setLibraryFocusCategoryId} />
             )) : <Empty text="お気に入りにしたプロンプトがここに表示されます。" />}
           </div>
         </section>
@@ -4183,7 +4185,7 @@ function FeatureIcon({ name }: { name: string }) {
   );
 }
 
-function HomePromptCard({ prompt, onCopy, setScreen }: any) {
+function HomePromptCard({ prompt, onCopy, setScreen, setLibraryFocusCategoryId }: any) {
   const isProjectMemo = prompt.favoriteType === "projectMemo";
   const isVideoPrompt = prompt.favoriteType === "videoPrompt";
   const copyValue = isProjectMemo ? prompt.body : prompt.prompt;
@@ -4191,7 +4193,10 @@ function HomePromptCard({ prompt, onCopy, setScreen }: any) {
   const openFavorite = () => {
     if (isProjectMemo) setScreen("projects");
     else if (isVideoPrompt) setScreen("videos");
-    else if (prompt.favoriteType === "mockupPrompt") setScreen("library");
+    else if (prompt.favoriteType === "mockupPrompt") {
+      if (prompt.categoryId) setLibraryFocusCategoryId(prompt.categoryId);
+      setScreen("library");
+    }
     else setScreen("prompts");
   };
   return (
@@ -4231,7 +4236,7 @@ function HomePromptCard({ prompt, onCopy, setScreen }: any) {
   );
 }
 
-function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts }: any) {
+function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardPrompts, focusCategoryId, onFocusCategoryHandled }: any) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<MockupCategory | null>(null);
   const [editingCategory, setEditingCategory] = React.useState<MockupCategory | null>(null);
@@ -4248,6 +4253,15 @@ function Library({ copyText, setScreen, homeSettings, boardPrompts, setBoardProm
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find((category) => category.id === selectedCategory.id) || selectedCategory : null;
+  React.useEffect(() => {
+    if (!focusCategoryId) return;
+    const focusCategory = orderedCategories.find((category) => category.id === focusCategoryId);
+    if (focusCategory) {
+      setSelectedCategory(focusCategory);
+      setQuery("");
+    }
+    onFocusCategoryHandled?.();
+  }, [focusCategoryId, orderedCategories, onFocusCategoryHandled]);
   const isCategorySearching = false;
   const filteredCategories = orderedCategories;
   const filteredPrompts = boardPrompts.filter((item) => {

@@ -3957,6 +3957,7 @@ async function loadSampleSeedIfNeeded() {
 }
 function App() {
   const [screen, setScreen] = React.useState("home");
+  const [libraryFocusCategoryId, setLibraryFocusCategoryId] = React.useState("");
   const [myPrompts, setMyPrompts] = useStoredState("prompt-atelier-prompts-ja-v2", samplePrompts);
   const [mockupPrompts, setMockupPrompts] = useStoredState("prompt-atelier-library-prompts-v5", defaultLibraryBoardPrompts);
   const [mjSettings, setMjSettings] = useStoredState("promptAtelierMidjourneySettings", sampleMj);
@@ -4132,6 +4133,7 @@ function App() {
     onDismiss: dismissInstallPrompt
   }), screen === "home" && React.createElement(Home, {
     setScreen: setScreen,
+    setLibraryFocusCategoryId: setLibraryFocusCategoryId,
     recent: recentPrompts,
     favorites: favorites,
     projects: projects,
@@ -4163,7 +4165,9 @@ function App() {
     setScreen: setScreen,
     homeSettings: homeSettings,
     boardPrompts: mockupPrompts,
-    setBoardPrompts: setMockupPrompts
+    setBoardPrompts: setMockupPrompts,
+    focusCategoryId: libraryFocusCategoryId,
+    onFocusCategoryHandled: () => setLibraryFocusCategoryId("")
   }), screen === "prompts" && React.createElement(PromptBook, {
     prompts: myPrompts,
     setPrompts: setMyPrompts,
@@ -4341,6 +4345,7 @@ function HomeDateDisplay({
 }
 function Home({
   setScreen,
+  setLibraryFocusCategoryId,
   recent,
   favorites,
   projects,
@@ -4476,7 +4481,8 @@ function Home({
         key: prompt.id,
         prompt: prompt,
         onCopy: copyText,
-        setScreen: setScreen
+        setScreen: setScreen,
+        setLibraryFocusCategoryId: setLibraryFocusCategoryId
       })) : React.createElement(Empty, {
         text: "お気に入りにしたプロンプトがここに表示されます。"
       })));
@@ -5965,14 +5971,18 @@ function FeatureIcon({
 function HomePromptCard({
   prompt,
   onCopy,
-  setScreen
+  setScreen,
+  setLibraryFocusCategoryId
 }) {
   const isProjectMemo = prompt.favoriteType === "projectMemo";
   const isVideoPrompt = prompt.favoriteType === "videoPrompt";
   const copyValue = isProjectMemo ? prompt.body : prompt.prompt;
   const videoSrc = isVideoPrompt ? videoDisplaySrc(prompt.url || "") : "";
   const openFavorite = () => {
-    if (isProjectMemo) setScreen("projects");else if (isVideoPrompt) setScreen("videos");else if (prompt.favoriteType === "mockupPrompt") setScreen("library");else setScreen("prompts");
+    if (isProjectMemo) setScreen("projects");else if (isVideoPrompt) setScreen("videos");else if (prompt.favoriteType === "mockupPrompt") {
+      if (prompt.categoryId) setLibraryFocusCategoryId(prompt.categoryId);
+      setScreen("library");
+    } else setScreen("prompts");
   };
   return React.createElement("article", {
     className: `home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""} ${isVideoPrompt ? "video-favorite-home-card" : ""}`.trim(),
@@ -6022,7 +6032,9 @@ function Library({
   setScreen,
   homeSettings,
   boardPrompts,
-  setBoardPrompts
+  setBoardPrompts,
+  focusCategoryId,
+  onFocusCategoryHandled
 }) {
   const [query, setQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState(null);
@@ -6040,6 +6052,15 @@ function Library({
   const mockupDisplay = homeSettings?.pageDisplaySettings?.mockups || defaultPageDisplaySettings.mockups;
   const orderedCategories = React.useMemo(() => normalizeMockupCategoryOrder(boardCategories), [boardCategories]);
   const currentCategory = selectedCategory ? orderedCategories.find(category => category.id === selectedCategory.id) || selectedCategory : null;
+  React.useEffect(() => {
+    if (!focusCategoryId) return;
+    const focusCategory = orderedCategories.find(category => category.id === focusCategoryId);
+    if (focusCategory) {
+      setSelectedCategory(focusCategory);
+      setQuery("");
+    }
+    onFocusCategoryHandled?.();
+  }, [focusCategoryId, orderedCategories, onFocusCategoryHandled]);
   const isCategorySearching = false;
   const filteredCategories = orderedCategories;
   const filteredPrompts = boardPrompts.filter(item => {
