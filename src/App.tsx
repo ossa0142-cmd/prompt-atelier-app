@@ -507,7 +507,56 @@ const defaultWorkTools: WorkTool[] = [
   { id: "tool-chatgpt", name: "ChatGPT", url: "https://chatgpt.com/", iconText: "GPT", iconImage: "", memo: "文章づくり", visible: true },
 ];
 
-const sampleAtelierImages: AtelierImage[] = [];
+const sampleAtelierImages: AtelierImage[] = [
+  {
+    id: "sample-gallery-sporty-red",
+    src: "/samples/gallery/pa-gallery-sporty-red.png",
+    thumbnail: "/samples/gallery/pa-gallery-sporty-red.png",
+    originalName: "pa-gallery-sporty-red.png",
+    title: "スポーティーレッド",
+    memo: "",
+    createdAt: "2026-07-10T00:00:00.000Z",
+    source: "gallery",
+    favorite: false,
+    folder: "未分類",
+  },
+  {
+    id: "sample-gallery-glasses-girl",
+    src: "/samples/gallery/pa-gallery-glasses-girl.png",
+    thumbnail: "/samples/gallery/pa-gallery-glasses-girl.png",
+    originalName: "pa-gallery-glasses-girl.png",
+    title: "メガネガール",
+    memo: "",
+    createdAt: "2026-07-10T00:00:00.000Z",
+    source: "gallery",
+    favorite: false,
+    folder: "未分類",
+  },
+  {
+    id: "sample-gallery-gaming-girl",
+    src: "/samples/gallery/pa-gallery-gaming-girl.png",
+    thumbnail: "/samples/gallery/pa-gallery-gaming-girl.png",
+    originalName: "pa-gallery-gaming-girl.png",
+    title: "ゲーミングガール",
+    memo: "",
+    createdAt: "2026-07-10T00:00:00.000Z",
+    source: "gallery",
+    favorite: false,
+    folder: "未分類",
+  },
+  {
+    id: "sample-gallery-seated-girl",
+    src: "/samples/gallery/pa-gallery-seated-girl.png",
+    thumbnail: "/samples/gallery/pa-gallery-seated-girl.png",
+    originalName: "pa-gallery-seated-girl.png",
+    title: "リラックスガール",
+    memo: "",
+    createdAt: "2026-07-10T00:00:00.000Z",
+    source: "gallery",
+    favorite: false,
+    folder: "未分類",
+  },
+];
 
 const defaultJournal: JournalState = {
   background: "paper",
@@ -5976,14 +6025,19 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }:
   const preview = images.find((image: AtelierImage) => image.id === previewId) || null;
   const galleryDisplay = homeSettings?.pageDisplaySettings?.gallery || defaultPageDisplaySettings.gallery;
   const visibleImages = images.slice(0, visibleCount);
+  const availableGalleryFolders = Array.from(new Set([DEFAULT_FOLDER_NAME, ...galleryFolders, ...images.map((item: AtelierImage) => folderNameOf(item))]));
   const galleryFolderGroups = groupedByFolder(images, galleryFolders);
-  const addGalleryFolder = () => {
+  const createGalleryFolder = (activateFolderView = false) => {
     const name = createFolderName(galleryFolders, "ギャラリー");
-    if (!name) return;
+    if (!name) return "";
     const next = [...galleryFolders, name];
     setGalleryFolders(next);
     saveFolderList("promptAtelierGalleryFolders", next);
-    setViewMode("folders");
+    if (activateFolderView) setViewMode("folders");
+    return name;
+  };
+  const addGalleryFolder = () => {
+    createGalleryFolder(true);
   };
   React.useEffect(() => {
     setVisibleCount(20);
@@ -6015,6 +6069,7 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }:
       originalName: files[index].name,
       source: "gallery",
       favorite: false,
+      folder: DEFAULT_FOLDER_NAME,
     }));
     setImages((items: AtelierImage[]) => [...nextImages, ...items]);
     scheduleStorageWarningCheck();
@@ -6130,6 +6185,15 @@ function GalleryPage({ images, setImages, setJournal, setScreen, homeSettings }:
           <div className="gallery-detail-modal">
             <img src={imageSrc(preview)} alt="" />
             <label>タイトル<input value={preview.title} onChange={(event) => updateImage(preview.id, { title: event.target.value })} placeholder="タイトル" /></label>
+            <div className="folder-select-row gallery-detail-folder-row">
+              <select value={folderNameOf(preview)} onChange={(event) => updateImage(preview.id, { folder: event.target.value })}>
+                {availableGalleryFolders.map((folder: string) => <option key={folder} value={folder}>{folder}</option>)}
+              </select>
+              <button type="button" onClick={() => {
+                const name = createGalleryFolder(false);
+                if (name) updateImage(preview.id, { folder: name });
+              }}>＋ 新規ファイル</button>
+            </div>
             <label>メモ<textarea value={preview.memo} onChange={(event) => updateImage(preview.id, { memo: event.target.value })} placeholder="メモ" /></label>
             <small>追加日：{formatSavedAt(preview.createdAt)}</small>
             <label className="check"><input type="checkbox" checked={preview.favorite} onChange={(event) => updateImage(preview.id, { favorite: event.target.checked })} /> お気に入り</label>
