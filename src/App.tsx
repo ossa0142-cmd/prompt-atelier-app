@@ -2492,8 +2492,10 @@ function App() {
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map((id) => allPrompts.find((p) => p.id === id)).filter(Boolean).slice(0, 4) as LibraryPrompt[];
   const favoriteProjectMemos = projectMemos.filter((memo) => memo.favorite);
+  const favoriteVideoPrompts = extractVideoPromptItems(videos).map(normalizeVideoPrompt).filter((video) => video.favorite);
   const favorites = [
     ...favoriteProjectMemos.map((memo) => ({ ...memo, favoriteType: "projectMemo" })),
+    ...favoriteVideoPrompts.map((video) => ({ ...video, favoriteType: "videoPrompt", imageUrl: video.thumbnail || "", category: video.model || "動画" })),
     ...myPrompts,
     ...mockupPrompts.filter((prompt) => !prompt.isTextStock),
   ].filter((prompt: any) => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
@@ -4183,18 +4185,22 @@ function FeatureIcon({ name }: { name: string }) {
 
 function HomePromptCard({ prompt, onCopy }: any) {
   const isProjectMemo = prompt.favoriteType === "projectMemo";
+  const isVideoPrompt = prompt.favoriteType === "videoPrompt";
   const copyValue = isProjectMemo ? prompt.body : prompt.prompt;
+  const videoSrc = isVideoPrompt ? videoDisplaySrc(prompt.url || "") : "";
   return (
-    <article className={`home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""}`.trim()}>
+    <article className={`home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""} ${isVideoPrompt ? "video-favorite-home-card" : ""}`.trim()}>
       {isProjectMemo ? (
         <div className="home-memo-cover">
           <span>MEMO</span>
         </div>
+      ) : isVideoPrompt && videoSrc && !prompt.imageUrl ? (
+        <video src={videoSrc} muted loop playsInline preload="metadata" onMouseEnter={(event) => event.currentTarget.play().catch(() => {})} onMouseLeave={(event) => { event.currentTarget.pause(); event.currentTarget.currentTime = 0; }} />
       ) : (
-        <img src={imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df")} alt="" />
+        <img src={imageDisplaySrc(prompt.imageUrl) || art(isVideoPrompt ? "動画" : "プロンプト", "#f5eadc", "#e7e7df")} alt="" />
       )}
       <div className="home-prompt-body">
-        <span className="mini-pill">{isProjectMemo ? "プロジェクトメモ" : prompt.category}</span>
+        <span className="mini-pill">{isProjectMemo ? "プロジェクトメモ" : isVideoPrompt ? "動画プロンプト" : prompt.category}</span>
         <h3>{prompt.title}</h3>
         {isProjectMemo && <p className="home-memo-excerpt">{prompt.body}</p>}
         <div className="home-card-bottom">
@@ -6234,20 +6240,21 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
     });
     if (uploadedVideoUrl) {
       setTempVideoUrls((items) => ({ ...items, [next.id]: uploadedVideoUrl }));
-      setUploadedVideoUrl("");
       if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
     }
+    setUploadedVideoUrl(videoDisplaySrc(next.url));
     setDraft(next);
     setSelectedId(next.id);
     setTagDraft(tagText(next.tags));
   };
   const editVideo = (item: VideoItem) => {
-    setDraft({ ...blankVideoPrompt(), ...item });
+    const next = { ...blankVideoPrompt(), ...item };
+    setDraft(next);
     setTagDraft(tagText(item.tags || []));
     setSelectedId(item.id);
     setUploadedVideoUrl((current) => {
-      if (current) URL.revokeObjectURL(current);
-      return "";
+      if (current && current.startsWith("blob:")) URL.revokeObjectURL(current);
+      return videoDisplaySrc(next.url || "");
     });
   };
   const deleteVideo = (id: string) => {
@@ -6317,7 +6324,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
       return "";
     });
     if (draft.url.startsWith("indexeddb:") || draft.url.startsWith("data:video/") || draft.url.startsWith("blob:")) {
-      updateDraft({ url: "" });
+      updateDraft({ url: "", thumbnailMode: draft.thumbnail ? "thumbnail" : "video" });
     }
     if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
   };
@@ -6481,8 +6488,8 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
                 importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
               }}
             >
-              {uploadedVideoUrl ? (
-                <video src={uploadedVideoUrl} controls playsInline />
+              {(uploadedVideoUrl || videoDisplaySrc(draft.url || "")) ? (
+                <video src={uploadedVideoUrl || videoDisplaySrc(draft.url || "")} controls playsInline />
               ) : (
                 <div className="video-upload-placeholder">
                   <span>▶</span>
@@ -6493,7 +6500,7 @@ function VideoLibrary({ videos, setVideos, videoStocks, setVideoStocks, setScree
             </div>
             <div className="video-thumbnail-tools">
               <button type="button" onClick={() => uploadVideoInputRef.current?.click()}>動画を選ぶ</button>
-              <button type="button" onClick={clearUploadedVideo} disabled={!uploadedVideoUrl}>アップロード動画を削除</button>
+              <button type="button" onClick={clearUploadedVideo} disabled={!uploadedVideoUrl && !videoDisplaySrc(draft.url || "")}>アップロード動画を削除</button>
             </div>
             <input ref={thumbnailInputRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: "none" }} onChange={(event) => { importThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
             <input ref={videoInputRef} type="file" accept="video/mp4,video/webm,video/ogg,video/quicktime,video/*" style={{ display: "none" }} onChange={(event) => { importVideoThumbnail(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />

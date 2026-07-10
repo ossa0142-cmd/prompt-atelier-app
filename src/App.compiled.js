@@ -3986,9 +3986,15 @@ function App() {
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
   const favoriteProjectMemos = projectMemos.filter(memo => memo.favorite);
+  const favoriteVideoPrompts = extractVideoPromptItems(videos).map(normalizeVideoPrompt).filter(video => video.favorite);
   const favorites = [...favoriteProjectMemos.map(memo => ({
     ...memo,
     favoriteType: "projectMemo"
+  })), ...favoriteVideoPrompts.map(video => ({
+    ...video,
+    favoriteType: "videoPrompt",
+    imageUrl: video.thumbnail || "",
+    category: video.model || "動画"
   })), ...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
@@ -5956,19 +5962,32 @@ function HomePromptCard({
   onCopy
 }) {
   const isProjectMemo = prompt.favoriteType === "projectMemo";
+  const isVideoPrompt = prompt.favoriteType === "videoPrompt";
   const copyValue = isProjectMemo ? prompt.body : prompt.prompt;
+  const videoSrc = isVideoPrompt ? videoDisplaySrc(prompt.url || "") : "";
   return /*#__PURE__*/React.createElement("article", {
-    className: `home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""}`.trim()
+    className: `home-prompt-card ${isProjectMemo ? "project-memo-favorite-card" : ""} ${isVideoPrompt ? "video-favorite-home-card" : ""}`.trim()
   }, isProjectMemo ? /*#__PURE__*/React.createElement("div", {
     className: "home-memo-cover"
-  }, /*#__PURE__*/React.createElement("span", null, "MEMO")) : /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
+  }, /*#__PURE__*/React.createElement("span", null, "MEMO")) : isVideoPrompt && videoSrc && !prompt.imageUrl ? /*#__PURE__*/React.createElement("video", {
+    src: videoSrc,
+    muted: true,
+    loop: true,
+    playsInline: true,
+    preload: "metadata",
+    onMouseEnter: event => event.currentTarget.play().catch(() => {}),
+    onMouseLeave: event => {
+      event.currentTarget.pause();
+      event.currentTarget.currentTime = 0;
+    }
+  }) : /*#__PURE__*/React.createElement("img", {
+    src: imageDisplaySrc(prompt.imageUrl) || art(isVideoPrompt ? "動画" : "プロンプト", "#f5eadc", "#e7e7df"),
     alt: ""
   }), /*#__PURE__*/React.createElement("div", {
     className: "home-prompt-body"
   }, /*#__PURE__*/React.createElement("span", {
     className: "mini-pill"
-  }, isProjectMemo ? "プロジェクトメモ" : prompt.category), /*#__PURE__*/React.createElement("h3", null, prompt.title), isProjectMemo && /*#__PURE__*/React.createElement("p", {
+  }, isProjectMemo ? "プロジェクトメモ" : isVideoPrompt ? "動画プロンプト" : prompt.category), /*#__PURE__*/React.createElement("h3", null, prompt.title), isProjectMemo && /*#__PURE__*/React.createElement("p", {
     className: "home-memo-excerpt"
   }, prompt.body), /*#__PURE__*/React.createElement("div", {
     className: "home-card-bottom"
@@ -8439,23 +8458,24 @@ function VideoLibrary({
         ...items,
         [next.id]: uploadedVideoUrl
       }));
-      setUploadedVideoUrl("");
       if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
     }
+    setUploadedVideoUrl(videoDisplaySrc(next.url));
     setDraft(next);
     setSelectedId(next.id);
     setTagDraft(tagText(next.tags));
   };
   const editVideo = item => {
-    setDraft({
+    const next = {
       ...blankVideoPrompt(),
       ...item
-    });
+    };
+    setDraft(next);
     setTagDraft(tagText(item.tags || []));
     setSelectedId(item.id);
     setUploadedVideoUrl(current => {
-      if (current) URL.revokeObjectURL(current);
-      return "";
+      if (current && current.startsWith("blob:")) URL.revokeObjectURL(current);
+      return videoDisplaySrc(next.url || "");
     });
   };
   const deleteVideo = id => {
@@ -8531,7 +8551,8 @@ function VideoLibrary({
     });
     if (draft.url.startsWith("indexeddb:") || draft.url.startsWith("data:video/") || draft.url.startsWith("blob:")) {
       updateDraft({
-        url: ""
+        url: "",
+        thumbnailMode: draft.thumbnail ? "thumbnail" : "video"
       });
     }
     if (uploadVideoInputRef.current) uploadVideoInputRef.current.value = "";
@@ -8785,8 +8806,8 @@ function VideoLibrary({
         setIsVideoUploadDragging(false);
         importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
       }
-    }, uploadedVideoUrl ? /*#__PURE__*/React.createElement("video", {
-      src: uploadedVideoUrl,
+    }, uploadedVideoUrl || videoDisplaySrc(draft.url || "") ? /*#__PURE__*/React.createElement("video", {
+      src: uploadedVideoUrl || videoDisplaySrc(draft.url || ""),
       controls: true,
       playsInline: true
     }) : /*#__PURE__*/React.createElement("div", {
@@ -8799,7 +8820,7 @@ function VideoLibrary({
     }, "動画を選ぶ"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: clearUploadedVideo,
-      disabled: !uploadedVideoUrl
+      disabled: !uploadedVideoUrl && !videoDisplaySrc(draft.url || "")
     }, "アップロード動画を削除")), /*#__PURE__*/React.createElement("input", {
       ref: thumbnailInputRef,
       type: "file",

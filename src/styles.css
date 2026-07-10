@@ -5402,7 +5402,8 @@ p {
   mix-blend-mode: multiply;
 }
 
-.home-prompt-card img {
+.home-prompt-card img,
+.home-prompt-card video {
   display: block;
   width: 100%;
   aspect-ratio: 1.18;
@@ -7888,4 +7889,9 @@ summary {
   max-height: calc(100vh - clamp(136px, 15vh, 176px));
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+
+.video-favorite-home-card video {
+  background: color-mix(in srgb, var(--accent) 8%, var(--paper));
 }
