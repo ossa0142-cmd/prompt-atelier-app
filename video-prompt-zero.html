@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prompt Atelier 動画プロンプトを0件にする</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+      background: #fff5fb;
+      color: #2f2730;
+    }
+    .card {
+      width: min(720px, calc(100vw - 32px));
+      padding: 32px;
+      border: 1px solid rgba(255, 92, 170, 0.35);
+      border-radius: 28px;
+      background: rgba(255,255,255,0.86);
+      box-shadow: 0 24px 70px rgba(180, 105, 145, 0.18);
+    }
+    h1 { margin: 0 0 12px; font-size: 28px; }
+    p { line-height: 1.8; font-weight: 700; color: #756676; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 16px 26px;
+      font-weight: 900;
+      font-size: 18px;
+      color: white;
+      background: #ff4aa2;
+      cursor: pointer;
+    }
+    .secondary { margin-left: 12px; background: #b99ac8; }
+    .result { margin-top: 18px; font-size: 14px; color: #8a7183; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>動画プロンプトだけを0件にします</h1>
+    <p>このページは、Prompt Atelier の動画プロンプト帳だけを空にします。ホーム設定、ギャラリー、モックアップ、プロンプト帳、MJ設定、編集ボタン、カスタマイズ設定には触りません。</p>
+    <button id="apply">動画プロンプトを0件にする</button>
+    <button id="home" class="secondary">ホームへ戻る</button>
+    <div id="result" class="result"></div>
+  </main>
+  <script>
+    const keys = [
+      "promptAtelierVideoPrompts",
+      "promptAtelierVideoPromptStocks",
+      "promptAtelierVideos",
+      "promptAtelierVideoPromptBook",
+      "videoPrompts"
+    ];
+
+    function applyVideoZero() {
+      const before = keys.map((key) => {
+        const value = localStorage.getItem(key);
+        let count = "未設定";
+        try {
+          const parsed = value ? JSON.parse(value) : null;
+          count = Array.isArray(parsed) ? parsed.length : value === null ? "未設定" : "配列以外";
+        } catch (error) {
+          count = "読込不可";
+        }
+        return `${key}: ${count}`;
+      });
+
+      for (const key of keys) {
+        localStorage.setItem(key, "[]");
+      }
+
+      document.getElementById("result").innerHTML =
+        "完了しました。<br>変更前: <br>" + before.join("<br>") + "<br><br>3秒後にホームへ戻ります。";
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 3000);
+    }
+
+    document.getElementById("apply").addEventListener("click", applyVideoZero);
+    document.getElementById("home").addEventListener("click", () => {
+      window.location.href = "/";
+    });
+  </script>
+</body>
+</html>
