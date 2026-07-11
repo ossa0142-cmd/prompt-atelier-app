@@ -1,3 +1,4 @@
+var _reactJsxRuntime = require("react/jsx-runtime");
 const categories = ["ステッカーモックアップ", "招待状モックアップ", "ポストカードモックアップ", "グリーティングカードモックアップ", "Etsyサムネイル", "アートプリントモックアップ", "アクリルキーホルダーモックアップ"];
 const homeSections = [{
   id: "dashboard",
@@ -509,7 +510,63 @@ const defaultWorkTools = [{
   memo: "文章づくり",
   visible: true
 }];
-const sampleAtelierImages = [];
+const sampleAtelierImages = [{
+  "id": "sample-gallery-sporty-red",
+  "sampleId": "sample-gallery-sporty-red",
+  "isSample": true,
+  "createdFromSeedExport": true,
+  "src": "/samples/gallery/pa-gallery-sporty-red.png",
+  "thumbnail": "/samples/gallery/pa-gallery-sporty-red.png",
+  "originalName": "pa-gallery-sporty-red.png",
+  "title": "スポーティーレッド",
+  "memo": "",
+  "folder": "未分類",
+  "favorite": false,
+  "source": "gallery",
+  "createdAt": "2026-07-10T00:00:00.000Z"
+}, {
+  "id": "sample-gallery-glasses-girl",
+  "sampleId": "sample-gallery-glasses-girl",
+  "isSample": true,
+  "createdFromSeedExport": true,
+  "src": "/samples/gallery/pa-gallery-glasses-girl.png",
+  "thumbnail": "/samples/gallery/pa-gallery-glasses-girl.png",
+  "originalName": "pa-gallery-glasses-girl.png",
+  "title": "メガネガール",
+  "memo": "",
+  "folder": "未分類",
+  "favorite": false,
+  "source": "gallery",
+  "createdAt": "2026-07-10T00:01:00.000Z"
+}, {
+  "id": "sample-gallery-gaming-girl",
+  "sampleId": "sample-gallery-gaming-girl",
+  "isSample": true,
+  "createdFromSeedExport": true,
+  "src": "/samples/gallery/pa-gallery-gaming-girl.png",
+  "thumbnail": "/samples/gallery/pa-gallery-gaming-girl.png",
+  "originalName": "pa-gallery-gaming-girl.png",
+  "title": "ゲーミングガール",
+  "memo": "",
+  "folder": "未分類",
+  "favorite": false,
+  "source": "gallery",
+  "createdAt": "2026-07-10T00:02:00.000Z"
+}, {
+  "id": "sample-gallery-seated-girl",
+  "sampleId": "sample-gallery-seated-girl",
+  "isSample": true,
+  "createdFromSeedExport": true,
+  "src": "/samples/gallery/pa-gallery-seated-girl.png",
+  "thumbnail": "/samples/gallery/pa-gallery-seated-girl.png",
+  "originalName": "pa-gallery-seated-girl.png",
+  "title": "リラックスガール",
+  "memo": "",
+  "folder": "未分類",
+  "favorite": false,
+  "source": "gallery",
+  "createdAt": "2026-07-10T00:03:00.000Z"
+}];
 const defaultJournal = {
   background: "paper",
   stockImages: [],
@@ -1070,7 +1127,7 @@ const tagText = tags => tags.join(", ");
 const lowerIncludes = (source, query) => source.toLowerCase().includes(query.toLowerCase());
 const IMAGE_WARNING_KEY = "promptAtelierImageStorageWarningLevel";
 const IMAGE_MIGRATION_KEY = "promptAtelierImageMigrationIndexedDbV1";
-const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json?v=20260709-production-sample-seed-v64", "./src/data/sampleSeed.json?v=20260709-production-sample-seed-v64"];
+const SAMPLE_SEED_PATHS = ["/src/data/sampleSeed.json?v=20260711-gallery-four-v85", "./src/data/sampleSeed.json?v=20260711-gallery-four-v85"];
 const EMBEDDED_SAMPLE_SEED_DATA = {
   "libraryItems": [{
     "id": "sticker",
@@ -3971,19 +4028,7 @@ function App() {
   };
   const allPrompts = [...myPrompts, ...mockupPrompts];
   const recentPrompts = recentIds.map(id => allPrompts.find(p => p.id === id)).filter(Boolean).slice(0, 4);
-  const videoFavoritePrompts = extractVideoPromptItems(videos).map(normalizeVideoPrompt).filter(video => video.favorite).map(video => ({
-    id: video.id,
-    title: video.title,
-    category: video.model || "動画プロンプト",
-    description: video.memo || video.prompt || video.url,
-    prompt: video.prompt || video.memo || video.url,
-    imageUrl: video.thumbnail || "",
-    coverImages: video.thumbnail ? [video.thumbnail] : [],
-    tags: video.tags || [],
-    favorite: true,
-    isVideoPrompt: true
-  }));
-  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock), ...videoFavoritePrompts].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
+  const favorites = [...myPrompts, ...mockupPrompts.filter(prompt => !prompt.isTextStock)].filter(prompt => prompt.favorite && prompt.id !== "my-1").slice(0, 4);
   const visibleGalleryImages = galleryImages.filter(isGalleryOnlyImage);
   const atelierImages = collectAtelierImages(visibleGalleryImages);
   const copyText = async (text, id) => {
@@ -4087,7 +4132,7 @@ function App() {
     sessionStorage.setItem("promptAtelierPwaInstallDismissed", "true");
     setShowInstallPrompt(false);
   };
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
     className: `app-shell ${themeClassName(activeTheme.id)} density-${homeSettings.displayDensity || "normal"} ${customizeClassName(homeSettings)}`,
     "data-density": homeSettings.displayDensity || "normal",
     "data-card-radius": homeSettings.cardStyle.radius,
@@ -4097,144 +4142,197 @@ function App() {
     "data-background-type": homeSettings.backgroundStyle.type,
     "data-font-preset": homeSettings.fontPreset || "simple",
     "data-icon-set": homeSettings.iconSet || "line",
-    style: appStyle
-  }, /*#__PURE__*/React.createElement("header", {
-    className: "app-header"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "brand",
-    onClick: () => setScreen("home"),
-    "aria-label": "ホームへ"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "brand-mark"
-  }, "PA"), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement("small", null, "AIイラストクリエイター向け"))), /*#__PURE__*/React.createElement("nav", null, [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["videos", "動画プロンプト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
-    key: id,
-    className: screen === id ? "active" : "",
-    onClick: () => setScreen(id)
-  }, label)))), /*#__PURE__*/React.createElement("main", null, showInstallPrompt && !isStandaloneApp && /*#__PURE__*/React.createElement(PwaInstallCard, {
-    canInstall: Boolean(installPrompt),
-    onInstall: installPwa,
-    onDismiss: dismissInstallPrompt
-  }), screen === "home" && /*#__PURE__*/React.createElement(Home, {
-    setScreen: setScreen,
-    recent: recentPrompts,
-    favorites: favorites,
-    projects: projects,
-    myPrompts: myPrompts,
-    mjSettings: mjSettings,
-    mockupPrompts: mockupPrompts,
-    copyText: copyText,
-    settings: homeSettings,
-    setSettings: setRawHomeSettings,
-    workTools: workTools,
-    atelierImages: atelierImages
-  }), screen === "customize" && /*#__PURE__*/React.createElement(HomeCustomize, {
-    settings: homeSettings,
-    setSettings: setRawHomeSettings,
-    setScreen: setScreen,
-    workTools: workTools,
-    setWorkTools: setWorkTools,
-    projects: projects,
-    myPrompts: myPrompts,
-    mjSettings: mjSettings,
-    mockupPrompts: mockupPrompts,
-    canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
-    isStandaloneApp: isStandaloneApp,
-    onInstallPwa: installPwa
-  }), screen === "library" && /*#__PURE__*/React.createElement(Library, {
-    copyText: copyText,
-    setScreen: setScreen,
-    homeSettings: homeSettings,
-    boardPrompts: mockupPrompts,
-    setBoardPrompts: setMockupPrompts
-  }), screen === "prompts" && /*#__PURE__*/React.createElement(PromptBook, {
-    prompts: myPrompts,
-    setPrompts: setMyPrompts,
-    copyText: copyText,
-    setScreen: setScreen,
-    homeSettings: homeSettings
-  }), screen === "mj" && /*#__PURE__*/React.createElement(Midjourney, {
-    settings: mjSettings,
-    setSettings: setMjSettings,
-    copyText: copyText,
-    setScreen: setScreen
-  }), screen === "projects" && /*#__PURE__*/React.createElement(Projects, {
-    projects: projects,
-    setProjects: setProjects,
-    prompts: myPrompts,
-    settings: mjSettings,
-    homeSettings: homeSettings,
-    copyText: copyText,
-    setScreen: setScreen
-  }), screen === "journal" && /*#__PURE__*/React.createElement(JournalPage, {
-    journal: journal,
-    setJournal: setJournal,
-    setScreen: setScreen
-  }), screen === "gallery" && /*#__PURE__*/React.createElement(GalleryPage, {
-    images: visibleGalleryImages,
-    setImages: setGalleryImages,
-    setJournal: setJournal,
-    setScreen: setScreen,
-    homeSettings: homeSettings
-  }), screen === "videos" && /*#__PURE__*/React.createElement(VideoLibrary, {
-    videos: videos,
-    setVideos: setVideos,
-    videoStocks: videoStocks,
-    setVideoStocks: setVideoStocks,
-    setScreen: setScreen,
-    homeSettings: homeSettings
-  })), isImageMigrating && /*#__PURE__*/React.createElement("div", {
-    className: "image-migration-overlay"
-  }, /*#__PURE__*/React.createElement("div", null, "画像データを最適化しています…")), toast && /*#__PURE__*/React.createElement("div", {
-    className: "toast"
-  }, toast));
+    style: appStyle,
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs("header", {
+      className: "app-header",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+        className: "brand",
+        onClick: () => setScreen("home"),
+        "aria-label": "ホームへ",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+          className: "brand-mark",
+          children: "PA"
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+            children: "Prompt Atelier"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+            children: "AIイラストクリエイター向け"
+          })]
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("nav", {
+        children: [["home", "ホーム"], ["library", "ライブラリ"], ["prompts", "マイプロンプト"], ["mj", "ミッドジャーニー設定"], ["projects", "プロジェクト"], ["videos", "動画プロンプト"], ["customize", "カスタマイズ"]].map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: screen === id ? "active" : "",
+          onClick: () => setScreen(id),
+          children: label
+        }, id))
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("main", {
+      children: [showInstallPrompt && !isStandaloneApp && /*#__PURE__*/_reactJsxRuntime.jsx(PwaInstallCard, {
+        canInstall: Boolean(installPrompt),
+        onInstall: installPwa,
+        onDismiss: dismissInstallPrompt
+      }), screen === "home" && /*#__PURE__*/_reactJsxRuntime.jsx(Home, {
+        setScreen: setScreen,
+        recent: recentPrompts,
+        favorites: favorites,
+        projects: projects,
+        myPrompts: myPrompts,
+        mjSettings: mjSettings,
+        mockupPrompts: mockupPrompts,
+        copyText: copyText,
+        settings: homeSettings,
+        setSettings: setRawHomeSettings,
+        workTools: workTools,
+        atelierImages: atelierImages
+      }), screen === "customize" && /*#__PURE__*/_reactJsxRuntime.jsx(HomeCustomize, {
+        settings: homeSettings,
+        setSettings: setRawHomeSettings,
+        setScreen: setScreen,
+        workTools: workTools,
+        setWorkTools: setWorkTools,
+        projects: projects,
+        myPrompts: myPrompts,
+        mjSettings: mjSettings,
+        mockupPrompts: mockupPrompts,
+        canInstallPwa: Boolean(installPrompt || window.__promptAtelierInstallPrompt),
+        isStandaloneApp: isStandaloneApp,
+        onInstallPwa: installPwa
+      }), screen === "library" && /*#__PURE__*/_reactJsxRuntime.jsx(Library, {
+        copyText: copyText,
+        setScreen: setScreen,
+        homeSettings: homeSettings,
+        boardPrompts: mockupPrompts,
+        setBoardPrompts: setMockupPrompts
+      }), screen === "prompts" && /*#__PURE__*/_reactJsxRuntime.jsx(PromptBook, {
+        prompts: myPrompts,
+        setPrompts: setMyPrompts,
+        copyText: copyText,
+        setScreen: setScreen,
+        homeSettings: homeSettings
+      }), screen === "mj" && /*#__PURE__*/_reactJsxRuntime.jsx(Midjourney, {
+        settings: mjSettings,
+        setSettings: setMjSettings,
+        copyText: copyText,
+        setScreen: setScreen
+      }), screen === "projects" && /*#__PURE__*/_reactJsxRuntime.jsx(Projects, {
+        projects: projects,
+        setProjects: setProjects,
+        prompts: myPrompts,
+        settings: mjSettings,
+        homeSettings: homeSettings,
+        copyText: copyText,
+        setScreen: setScreen
+      }), screen === "journal" && /*#__PURE__*/_reactJsxRuntime.jsx(JournalPage, {
+        journal: journal,
+        setJournal: setJournal,
+        setScreen: setScreen
+      }), screen === "gallery" && /*#__PURE__*/_reactJsxRuntime.jsx(GalleryPage, {
+        images: visibleGalleryImages,
+        setImages: setGalleryImages,
+        setJournal: setJournal,
+        setScreen: setScreen,
+        homeSettings: homeSettings
+      }), screen === "videos" && /*#__PURE__*/_reactJsxRuntime.jsx(VideoLibrary, {
+        videos: videos,
+        setVideos: setVideos,
+        videoStocks: videoStocks,
+        setVideoStocks: setVideoStocks,
+        setScreen: setScreen,
+        homeSettings: homeSettings
+      })]
+    }), isImageMigrating && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "image-migration-overlay",
+      children: /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+        children: "画像データを最適化しています…"
+      })
+    }), toast && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "toast",
+      children: toast
+    })]
+  });
 }
 function PwaInstallCard({
   canInstall,
   onInstall,
   onDismiss
 }) {
-  return /*#__PURE__*/React.createElement("section", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
     className: "pwa-install-card",
     role: "dialog",
-    "aria-label": "Prompt Atelierをアプリとして追加"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "pwa-install-icon"
-  }, "PA"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelierをアプリとして追加"), /*#__PURE__*/React.createElement("p", null, "ChromeでDockに追加すると、アプリのように起動できます。保存済みデータはこのブラウザ内に残ります。"), !canInstall && /*#__PURE__*/React.createElement("small", {
-    className: "pwa-install-help"
-  }, "Chrome推奨です。ポップアップが出ない場合は、Chrome右上の「︙」メニューを開き、「キャスト、保存、共有」から「ページをアプリとしてインストール」または「ショートカットを作成」を選んでください。")), /*#__PURE__*/React.createElement("div", {
-    className: "pwa-install-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: onInstall
-  }, canInstall ? "アプリとして追加" : "追加方法を見る"), /*#__PURE__*/React.createElement("button", {
-    onClick: onDismiss
-  }, "あとで")));
+    "aria-label": "Prompt Atelierをアプリとして追加",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "pwa-install-icon",
+      children: "PA"
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+        children: "Prompt Atelierをアプリとして追加"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+        children: "ChromeでDockに追加すると、アプリのように起動できます。保存済みデータはこのブラウザ内に残ります。"
+      }), !canInstall && /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+        className: "pwa-install-help",
+        children: "Chrome推奨です。ポップアップが出ない場合は、Chrome右上の「︙」メニューを開き、「キャスト、保存、共有」から「ページをアプリとしてインストール」または「ショートカットを作成」を選んでください。"
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "pwa-install-actions",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "primary",
+        onClick: onInstall,
+        children: canInstall ? "アプリとして追加" : "追加方法を見る"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: onDismiss,
+        children: "あとで"
+      })]
+    })]
+  });
 }
 function PwaInstallInstructionsModal({
   onClose
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
     className: "modal-backdrop",
     role: "dialog",
-    "aria-modal": "true"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "modal pwa-instructions-modal"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "modal-head"
-  }, /*#__PURE__*/React.createElement("h3", null, "ChromeでDockに追加する方法"), /*#__PURE__*/React.createElement("button", {
-    onClick: onClose
-  }, "閉じる")), /*#__PURE__*/React.createElement("p", {
-    className: "pwa-instruction-alert"
-  }, "この環境では自動追加画面を表示できません。Chromeのメニューから追加してください。"), /*#__PURE__*/React.createElement("ol", {
-    className: "pwa-instruction-steps"
-  }, /*#__PURE__*/React.createElement("li", null, "ChromeでPrompt Atelierを開きます"), /*#__PURE__*/React.createElement("li", null, "右上の「︙」メニューを開きます"), /*#__PURE__*/React.createElement("li", null, "「キャスト、保存、共有」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ページをアプリとしてインストール」または「ショートカットを作成」を選びます"), /*#__PURE__*/React.createElement("li", null, "「ショートカットを作成」の場合は、「ウィンドウとして開く」にチェックを入れます"), /*#__PURE__*/React.createElement("li", null, "作成後、Dockに追加して使えます")), /*#__PURE__*/React.createElement("p", {
-    className: "pwa-instruction-note"
-  }, "Chromeのバージョンによっては、「キャスト、保存、共有」が「保存して共有」や「その他のツール」と表示される場合があります。"), /*#__PURE__*/React.createElement("div", {
-    className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: onClose
-  }, "わかりました"))));
+    "aria-modal": "true",
+    children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "modal pwa-instructions-modal",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "modal-head",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+          children: "ChromeでDockに追加する方法"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: onClose,
+          children: "閉じる"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+        className: "pwa-instruction-alert",
+        children: "この環境では自動追加画面を表示できません。Chromeのメニューから追加してください。"
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("ol", {
+        className: "pwa-instruction-steps",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("li", {
+          children: "ChromeでPrompt Atelierを開きます"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("li", {
+          children: "右上の「︙」メニューを開きます"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("li", {
+          children: "「キャスト、保存、共有」を選びます"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("li", {
+          children: "「ページをアプリとしてインストール」または「ショートカットを作成」を選びます"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("li", {
+          children: "「ショートカットを作成」の場合は、「ウィンドウとして開く」にチェックを入れます"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("li", {
+          children: "作成後、Dockに追加して使えます"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+        className: "pwa-instruction-note",
+        children: "Chromeのバージョンによっては、「キャスト、保存、共有」が「保存して共有」や「その他のツール」と表示される場合があります。"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+        className: "modal-actions",
+        children: /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: onClose,
+          children: "わかりました"
+        })
+      })]
+    })
+  });
 }
 function PwaCustomizeCard({
   canInstallPwa,
@@ -4242,22 +4340,35 @@ function PwaCustomizeCard({
   onInstall,
   onShowInstructions
 }) {
-  return /*#__PURE__*/React.createElement("section", {
-    className: "customize-card pwa-customize-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "アプリとして使う"), /*#__PURE__*/React.createElement("p", null, "ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。"), isStandaloneApp ? /*#__PURE__*/React.createElement("div", {
-    className: "pwa-status-pill"
-  }, "アプリモードで起動中です") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "pwa-customize-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: onInstall
-  }, "アプリとして追加"), /*#__PURE__*/React.createElement("button", {
-    onClick: onShowInstructions
-  }, "追加方法を見る")), /*#__PURE__*/React.createElement("small", {
-    className: "pwa-install-help"
-  }, "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"), !canInstallPwa && /*#__PURE__*/React.createElement("small", {
-    className: "pwa-install-help"
-  }, "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。")));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: "customize-card pwa-customize-card",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+      children: "アプリとして使う"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+      children: "ChromeでPrompt Atelierをアプリとして追加すると、Dockからすぐに起動できます。"
+    }), isStandaloneApp ? /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "pwa-status-pill",
+      children: "アプリモードで起動中です"
+    }) : /*#__PURE__*/_reactJsxRuntime.jsxs(_reactJsxRuntime.Fragment, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "pwa-customize-actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: onInstall,
+          children: "アプリとして追加"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: onShowInstructions,
+          children: "追加方法を見る"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+        className: "pwa-install-help",
+        children: "Chrome推奨です。環境によっては確認画面が表示されない場合があります。"
+      }), !canInstallPwa && /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+        className: "pwa-install-help",
+        children: "自動追加画面が出ない場合も、このカードの「追加方法を見る」から手順を確認できます。"
+      })]
+    })]
+  });
 }
 function getHomeDateParts() {
   const now = new Date();
@@ -4299,25 +4410,39 @@ function HomeDateDisplay({
   const className = `${mini ? "home-mini-date" : "home-date-display"} ${style} size-${size} color-${color}`;
   const dateTime = `${year}-${paddedMonth}-${paddedDay}`;
   if (style === "minimal") {
-    return /*#__PURE__*/React.createElement("time", {
-      className: className,
-      dateTime: dateTime
-    }, month, "/", day, "（", weekday, "）");
-  }
-  if (["digital", "retro", "neon", "doodle", "stamp"].includes(style)) {
-    return /*#__PURE__*/React.createElement("time", {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("time", {
       className: className,
       dateTime: dateTime,
-      "aria-label": `${year}年${month}月${day}日 ${weekday}曜日`
-    }, style === "stamp" && /*#__PURE__*/React.createElement("span", {
-      className: "stamp-heart-outline",
-      "aria-hidden": "true"
-    }, "♡"), /*#__PURE__*/React.createElement("strong", null, monthName, ".", paddedDay), /*#__PURE__*/React.createElement("small", null, year, " / ", weekday));
+      children: [month, "/", day, "（", weekday, "）"]
+    });
   }
-  return /*#__PURE__*/React.createElement("time", {
+  if (["digital", "retro", "neon", "doodle", "stamp"].includes(style)) {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("time", {
+      className: className,
+      dateTime: dateTime,
+      "aria-label": `${year}年${month}月${day}日 ${weekday}曜日`,
+      children: [style === "stamp" && /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        className: "stamp-heart-outline",
+        "aria-hidden": "true",
+        children: "♡"
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("strong", {
+        children: [monthName, ".", paddedDay]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("small", {
+        children: [year, " / ", weekday]
+      })]
+    });
+  }
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("time", {
     className: className,
-    dateTime: dateTime
-  }, /*#__PURE__*/React.createElement("span", null, year), /*#__PURE__*/React.createElement("strong", null, month, "月", day, "日"), /*#__PURE__*/React.createElement("small", null, weekday, "曜日"));
+    dateTime: dateTime,
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+      children: year
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("strong", {
+      children: [month, "月", day, "日"]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("small", {
+      children: [weekday, "曜日"]
+    })]
+  });
 }
 function Home({
   setScreen,
@@ -4384,139 +4509,180 @@ function Home({
     if (!isVisible(sectionId)) return null;
     if (sectionId === "dashboard") {
       if (!visibleDashboardItems.length) return null;
-      return /*#__PURE__*/React.createElement("section", {
+      return /*#__PURE__*/_reactJsxRuntime.jsx("section", {
         className: "dashboard-panel home-module",
-        key: sectionId
-      }, /*#__PURE__*/React.createElement("div", {
-        className: "dashboard-grid"
-      }, visibleDashboardItems.map(item => /*#__PURE__*/React.createElement("button", {
-        className: "stat-card",
-        key: `${item.title}-${item.icon}`,
-        onClick: () => setScreen(item.screen)
-      }, /*#__PURE__*/React.createElement("span", {
-        className: "stat-icon",
-        "data-icon": item.icon
-      }, /*#__PURE__*/React.createElement(FeatureIcon, {
-        name: item.icon
-      })), /*#__PURE__*/React.createElement("span", {
-        className: "stat-title"
-      }, item.title), /*#__PURE__*/React.createElement("strong", null, item.value), item.note && /*#__PURE__*/React.createElement("small", null, item.note)))));
+        children: /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "dashboard-grid",
+          children: visibleDashboardItems.map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+            className: "stat-card",
+            onClick: () => setScreen(item.screen),
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              className: "stat-icon",
+              "data-icon": item.icon,
+              children: /*#__PURE__*/_reactJsxRuntime.jsx(FeatureIcon, {
+                name: item.icon
+              })
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              className: "stat-title",
+              children: item.title
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+              children: item.value
+            }), item.note && /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+              children: item.note
+            })]
+          }, `${item.title}-${item.icon}`))
+        })
+      }, sectionId);
     }
     if (sectionId === "quickActions") {
-      return /*#__PURE__*/React.createElement("section", {
+      return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
         className: `work-tools-card home-module ${settings.workToolIconStyle || "pastel"}`,
-        key: sectionId
-      }, /*#__PURE__*/React.createElement("h2", null, "作業ツール"), /*#__PURE__*/React.createElement("div", {
-        className: "work-tools-launcher"
-      }, normalizedTools.map(tool => /*#__PURE__*/React.createElement("a", {
-        className: "work-tool-launcher-item",
-        href: tool.url,
-        target: "_blank",
-        rel: "noopener noreferrer",
-        key: tool.id,
-        "aria-label": `${tool.name}を開く`
-      }, /*#__PURE__*/React.createElement("span", null, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
-        src: imageThumbnail(tool.iconImage),
-        alt: ""
-      }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("strong", null, tool.name)))));
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("h2", {
+          children: "作業ツール"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "work-tools-launcher",
+          children: normalizedTools.map(tool => /*#__PURE__*/_reactJsxRuntime.jsxs("a", {
+            className: "work-tool-launcher-item",
+            href: tool.url,
+            target: "_blank",
+            rel: "noopener noreferrer",
+            "aria-label": `${tool.name}を開く`,
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: tool.iconImage ? /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                src: imageThumbnail(tool.iconImage),
+                alt: ""
+              }) : /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+                children: tool.iconText || tool.name.slice(0, 2)
+              })
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+              children: tool.name
+            })]
+          }, tool.id))
+        })]
+      }, sectionId);
     }
     if (sectionId === "featureCards") {
       const visibleEntries = entries.filter(([id]) => isVisible(id));
       if (!visibleEntries.length) return null;
-      return /*#__PURE__*/React.createElement("section", {
+      return /*#__PURE__*/_reactJsxRuntime.jsx("section", {
         className: "home-feature-grid",
-        key: sectionId
-      }, visibleEntries.map(([id, title, body, icon]) => /*#__PURE__*/React.createElement("button", {
-        className: "home-feature-card",
-        key: id,
-        onClick: () => setScreen(id)
-      }, /*#__PURE__*/React.createElement("span", {
-        className: "feature-corner-spark"
-      }, "✦"), /*#__PURE__*/React.createElement("span", {
-        className: "feature-washi"
-      }), /*#__PURE__*/React.createElement("span", {
-        className: "feature-icon",
-        "data-icon": icon
-      }, /*#__PURE__*/React.createElement(FeatureIcon, {
-        name: icon
-      })), /*#__PURE__*/React.createElement("span", {
-        className: "feature-title"
-      }, title), /*#__PURE__*/React.createElement("small", null, body))));
+        children: visibleEntries.map(([id, title, body, icon]) => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+          className: "home-feature-card",
+          onClick: () => setScreen(id),
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+            className: "feature-corner-spark",
+            children: "✦"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+            className: "feature-washi"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+            className: "feature-icon",
+            "data-icon": icon,
+            children: /*#__PURE__*/_reactJsxRuntime.jsx(FeatureIcon, {
+              name: icon
+            })
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+            className: "feature-title",
+            children: title
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+            children: body
+          })]
+        }, id))
+      }, sectionId);
     }
     if (sectionId === "favorites") {
-      return /*#__PURE__*/React.createElement("section", {
+      return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
         className: "home-favorites-section",
-        key: sectionId
-      }, /*#__PURE__*/React.createElement(SectionTitle, {
-        title: "お気に入り"
-      }), /*#__PURE__*/React.createElement("div", {
-        className: "home-prompt-row"
-      }, favorites.length ? favorites.map(prompt => /*#__PURE__*/React.createElement(HomePromptCard, {
-        key: prompt.id,
-        prompt: prompt,
-        onCopy: copyText
-      })) : /*#__PURE__*/React.createElement(Empty, {
-        text: "お気に入りにしたプロンプトがここに表示されます。"
-      })));
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx(SectionTitle, {
+          title: "お気に入り"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "home-prompt-row",
+          children: favorites.length ? favorites.map(prompt => /*#__PURE__*/_reactJsxRuntime.jsx(HomePromptCard, {
+            prompt: prompt,
+            onCopy: copyText
+          }, prompt.id)) : /*#__PURE__*/_reactJsxRuntime.jsx(Empty, {
+            text: "お気に入りにしたプロンプトがここに表示されます。"
+          })
+        })]
+      }, sectionId);
     }
     if (sectionId === "atelier") {
-      return /*#__PURE__*/React.createElement("section", {
+      return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
         className: "atelier-corner home-module",
-        key: sectionId
-      }, /*#__PURE__*/React.createElement("div", {
-        className: "atelier-head"
-      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, "アトリエコーナー")), /*#__PURE__*/React.createElement("div", {
-        className: "atelier-actions"
-      }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => setScreen("journal")
-      }, "ジャーナルページへ"), /*#__PURE__*/React.createElement("button", {
-        className: "primary",
-        onClick: () => setScreen("gallery")
-      }, "ギャラリーへ"))), atelierImages.length ? /*#__PURE__*/React.createElement("div", {
-        className: "atelier-marquee",
-        "aria-label": "アトリエ画像"
-      }, /*#__PURE__*/React.createElement("div", {
-        className: `atelier-marquee-track ${atelierImages.length === 1 ? "is-single" : "is-moving"}`
-      }, atelierImages.map((image, index) => /*#__PURE__*/React.createElement("figure", {
-        className: "atelier-marquee-card",
-        key: `${image.id}-${index}`
-      }, /*#__PURE__*/React.createElement("img", {
-        src: imageDisplaySrc(image),
-        alt: ""
-      }))))) : /*#__PURE__*/React.createElement("div", {
-        className: "atelier-empty"
-      }, "画像を追加すると、ここにアトリエが表示されます。"));
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "atelier-head",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            children: /*#__PURE__*/_reactJsxRuntime.jsx("h2", {
+              children: "アトリエコーナー"
+            })
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "atelier-actions",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              onClick: () => setScreen("journal"),
+              children: "ジャーナルページへ"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              className: "primary",
+              onClick: () => setScreen("gallery"),
+              children: "ギャラリーへ"
+            })]
+          })]
+        }), atelierImages.length ? /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "atelier-marquee",
+          "aria-label": "アトリエ画像",
+          children: /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: `atelier-marquee-track ${atelierImages.length === 1 ? "is-single" : "is-moving"}`,
+            children: atelierImages.map((image, index) => /*#__PURE__*/_reactJsxRuntime.jsx("figure", {
+              className: "atelier-marquee-card",
+              children: /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                src: imageDisplaySrc(image),
+                alt: ""
+              })
+            }, `${image.id}-${index}`))
+          })
+        }) : /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "atelier-empty",
+          children: "画像を追加すると、ここにアトリエが表示されます。"
+        })]
+      }, sectionId);
     }
     return null;
   };
   const bannerSrc = homeBannerSrc(settings);
   const bannerPosition = homeBannerPosition(settings);
-  return /*#__PURE__*/React.createElement("section", {
-    className: "page home-page"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "home-topbar"
-  }, /*#__PURE__*/React.createElement("span", null, "Prompt Atelier Home"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
-    style: settings.homeClockStyle || "pill",
-    size: settings.homeClockSize || "medium",
-    color: settings.homeClockColor || "theme"
-  })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
-    className: `home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`
-  }, bannerSrc ? /*#__PURE__*/React.createElement("img", {
-    src: bannerSrc,
-    alt: "",
-    style: bannerImageStyle(bannerPosition)
-  }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", null, "✦"), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("b", null))), settings.order.map(sectionId => renderSection(sectionId)), /*#__PURE__*/React.createElement(HomeCharacter, {
-    settings: settings.homeCharacter,
-    projects: projects,
-    prompts: myPrompts,
-    onChange: patch => setSettings(current => normalizeHomeSettings({
-      ...current,
-      homeCharacter: {
-        ...(current?.homeCharacter || defaultHomeSettings.homeCharacter),
-        ...patch
-      }
-    }))
-  }));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: "page home-page",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "home-topbar",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        children: "Prompt Atelier Home"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(HomeDateDisplay, {
+        style: settings.homeClockStyle || "pill",
+        size: settings.homeClockSize || "medium",
+        color: settings.homeClockColor || "theme"
+      })]
+    }), settings.bannerVisible && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: `home-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"}`,
+      children: bannerSrc ? /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+        src: bannerSrc,
+        alt: "",
+        style: bannerImageStyle(bannerPosition)
+      }) : /*#__PURE__*/_reactJsxRuntime.jsxs(_reactJsxRuntime.Fragment, {
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+          children: "✦"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("i", {}), /*#__PURE__*/_reactJsxRuntime.jsx("b", {})]
+      })
+    }), settings.order.map(sectionId => renderSection(sectionId)), /*#__PURE__*/_reactJsxRuntime.jsx(HomeCharacter, {
+      settings: settings.homeCharacter,
+      projects: projects,
+      prompts: myPrompts,
+      onChange: patch => setSettings(current => normalizeHomeSettings({
+        ...current,
+        homeCharacter: {
+          ...(current?.homeCharacter || defaultHomeSettings.homeCharacter),
+          ...patch
+        }
+      }))
+    })]
+  });
 }
 function shortMemoText(value) {
   const text = (value || "").replace(/\s+/g, " ").trim();
@@ -4560,9 +4726,10 @@ function characterMessage(settings, projects, prompts) {
 function CharacterSpeechBubble({
   message
 }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "character-speech-bubble"
-  }, message);
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+    className: "character-speech-bubble",
+    children: message
+  });
 }
 function HomeCharacter({
   settings,
@@ -4622,7 +4789,7 @@ function HomeCharacter({
       customY: Math.round(drag.y)
     });
   };
-  return /*#__PURE__*/React.createElement("aside", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("aside", {
     className: `home-character ${isDragging || settings.position === "custom" ? "custom" : settings.position} character-size-${size} is-draggable${isDragging ? " is-dragging" : ""}`,
     "aria-label": "アトリエキャラクター",
     style: isDragging || settings.position === "custom" ? {
@@ -4632,14 +4799,15 @@ function HomeCharacter({
     onPointerDown: startDrag,
     onPointerMove: updateFromPointer,
     onPointerUp: finishDrag,
-    onPointerCancel: finishDrag
-  }, settings.speechEnabled && /*#__PURE__*/React.createElement(CharacterSpeechBubble, {
-    message: message
-  }), /*#__PURE__*/React.createElement("img", {
-    src: imageSrc(settings.image) || imageThumbnail(settings.image),
-    alt: "アトリエキャラクター",
-    draggable: false
-  }));
+    onPointerCancel: finishDrag,
+    children: [settings.speechEnabled && /*#__PURE__*/_reactJsxRuntime.jsx(CharacterSpeechBubble, {
+      message: message
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+      src: imageSrc(settings.image) || imageThumbnail(settings.image),
+      alt: "アトリエキャラクター",
+      draggable: false
+    })]
+  });
 }
 function HomeCharacterSettingsPanel({
   settings,
@@ -4668,104 +4836,143 @@ function HomeCharacterSettingsPanel({
       window.alert("画像を追加できませんでした。png / jpg / webp を選んでください。");
     }
   };
-  return /*#__PURE__*/React.createElement("section", {
-    className: "customize-card character-settings-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ホームキャラクター設定"), /*#__PURE__*/React.createElement("p", null, "透過PNGなどのキャラクター画像を、ホーム画面にアトリエ案内役として表示できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "character-upload-area",
-    tabIndex: 0,
-    onClick: () => fileInputRef.current?.click(),
-    onDragOver: event => event.preventDefault(),
-    onDrop: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      importFiles(event.dataTransfer.files);
-    },
-    onPaste: event => {
-      const files = clipboardImageFiles(event);
-      if (!files.length) return;
-      event.preventDefault();
-      event.stopPropagation();
-      importFiles(files);
-    }
-  }, character.image ? /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(character.image),
-    alt: ""
-  }) : /*#__PURE__*/React.createElement("span", null, "＋ キャラクター画像を追加"), /*#__PURE__*/React.createElement("small", null, "PNG / WebP / JPG対応。透過PNG推奨です。"), /*#__PURE__*/React.createElement("input", {
-    ref: fileInputRef,
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    style: {
-      display: "none"
-    },
-    onChange: event => {
-      if (event.currentTarget.files) importFiles(event.currentTarget.files);
-      event.currentTarget.value = "";
-    }
-  })), character.image && /*#__PURE__*/React.createElement("button", {
-    onClick: () => updateCharacter({
-      image: ""
-    })
-  }, "画像を削除"), /*#__PURE__*/React.createElement("label", null, "表示位置", /*#__PURE__*/React.createElement("select", {
-    value: character.position,
-    onChange: event => updateCharacter({
-      position: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "right-bottom"
-  }, "右下"), /*#__PURE__*/React.createElement("option", {
-    value: "right-center"
-  }, "右側中央"), /*#__PURE__*/React.createElement("option", {
-    value: "left-bottom"
-  }, "左下"), /*#__PURE__*/React.createElement("option", {
-    value: "hidden"
-  }, "非表示"))), /*#__PURE__*/React.createElement("label", null, "表示サイズ", /*#__PURE__*/React.createElement("select", {
-    value: character.size || "medium",
-    onChange: event => updateCharacter({
-      size: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "small"
-  }, "小"), /*#__PURE__*/React.createElement("option", {
-    value: "medium"
-  }, "中"), /*#__PURE__*/React.createElement("option", {
-    value: "large"
-  }, "大"))), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "吹き出し表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: character.speechEnabled,
-    onChange: event => updateCharacter({
-      speechEnabled: event.target.checked
-    })
-  })), /*#__PURE__*/React.createElement("label", null, "吹き出しメッセージタイプ", /*#__PURE__*/React.createElement("select", {
-    value: character.messageMode,
-    onChange: event => updateCharacter({
-      messageMode: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "auto"
-  }, "自動"), /*#__PURE__*/React.createElement("option", {
-    value: "fixed"
-  }, "固定メッセージ"), /*#__PURE__*/React.createElement("option", {
-    value: "project"
-  }, "プロジェクト優先"))), character.messageMode === "project" && /*#__PURE__*/React.createElement("label", null, "表示するプロジェクト", /*#__PURE__*/React.createElement("select", {
-    value: character.selectedProjectId || "",
-    onChange: event => updateCharacter({
-      selectedProjectId: event.target.value
-    }),
-    disabled: !projectChoices.length
-  }, /*#__PURE__*/React.createElement("option", {
-    value: ""
-  }, "未選択"), projectChoices.map(project => /*#__PURE__*/React.createElement("option", {
-    key: project.id,
-    value: project.id
-  }, project.name, project.dueDate ? ` / 期限：${project.dueDate}` : ""))), !projectChoices.length && /*#__PURE__*/React.createElement("small", null, "登録済みプロジェクトがありません")), character.messageMode === "fixed" && /*#__PURE__*/React.createElement("textarea", {
-    value: character.fixedMessage,
-    onChange: event => updateCharacter({
-      fixedMessage: event.target.value
-    }),
-    placeholder: "固定メッセージ（例：今日も制作がんばろう♡）"
-  }));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: "customize-card character-settings-card",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+      children: "ホームキャラクター設定"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+      children: "透過PNGなどのキャラクター画像を、ホーム画面にアトリエ案内役として表示できます。"
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "character-upload-area",
+      tabIndex: 0,
+      onClick: () => fileInputRef.current?.click(),
+      onDragOver: event => event.preventDefault(),
+      onDrop: event => {
+        event.preventDefault();
+        event.stopPropagation();
+        importFiles(event.dataTransfer.files);
+      },
+      onPaste: event => {
+        const files = clipboardImageFiles(event);
+        if (!files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        importFiles(files);
+      },
+      children: [character.image ? /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+        src: imageThumbnail(character.image),
+        alt: ""
+      }) : /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        children: "＋ キャラクター画像を追加"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+        children: "PNG / WebP / JPG対応。透過PNG推奨です。"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        ref: fileInputRef,
+        type: "file",
+        accept: "image/png,image/jpeg,image/webp",
+        style: {
+          display: "none"
+        },
+        onChange: event => {
+          if (event.currentTarget.files) importFiles(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }
+      })]
+    }), character.image && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+      onClick: () => updateCharacter({
+        image: ""
+      }),
+      children: "画像を削除"
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+      children: ["表示位置", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+        value: character.position,
+        onChange: event => updateCharacter({
+          position: event.target.value
+        }),
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "right-bottom",
+          children: "右下"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "right-center",
+          children: "右側中央"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "left-bottom",
+          children: "左下"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "hidden",
+          children: "非表示"
+        })]
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+      children: ["表示サイズ", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+        value: character.size || "medium",
+        onChange: event => updateCharacter({
+          size: event.target.value
+        }),
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "small",
+          children: "小"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "medium",
+          children: "中"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "large",
+          children: "大"
+        })]
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+      className: "switch-row",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        children: "吹き出し表示"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        type: "checkbox",
+        checked: character.speechEnabled,
+        onChange: event => updateCharacter({
+          speechEnabled: event.target.checked
+        })
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+      children: ["吹き出しメッセージタイプ", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+        value: character.messageMode,
+        onChange: event => updateCharacter({
+          messageMode: event.target.value
+        }),
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "auto",
+          children: "自動"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "fixed",
+          children: "固定メッセージ"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "project",
+          children: "プロジェクト優先"
+        })]
+      })]
+    }), character.messageMode === "project" && /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+      children: ["表示するプロジェクト", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+        value: character.selectedProjectId || "",
+        onChange: event => updateCharacter({
+          selectedProjectId: event.target.value
+        }),
+        disabled: !projectChoices.length,
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: "",
+          children: "未選択"
+        }), projectChoices.map(project => /*#__PURE__*/_reactJsxRuntime.jsxs("option", {
+          value: project.id,
+          children: [project.name, project.dueDate ? ` / 期限：${project.dueDate}` : ""]
+        }, project.id))]
+      }), !projectChoices.length && /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+        children: "登録済みプロジェクトがありません"
+      })]
+    }), character.messageMode === "fixed" && /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+      value: character.fixedMessage,
+      onChange: event => updateCharacter({
+        fixedMessage: event.target.value
+      }),
+      placeholder: "固定メッセージ（例：今日も制作がんばろう♡）"
+    })]
+  });
 }
 function WorkToolEditor({
   tool,
@@ -4780,53 +4987,64 @@ function WorkToolEditor({
     ...draft,
     [key]: value
   });
-  return /*#__PURE__*/React.createElement("div", {
-    className: "quick-link-editor"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "quick-link-editor-head"
-  }, /*#__PURE__*/React.createElement("strong", null, tool.id ? "作業ツールを編集" : "作業ツールを追加"), /*#__PURE__*/React.createElement("button", {
-    onClick: onClose
-  }, "閉じる")), /*#__PURE__*/React.createElement("input", {
-    value: draft.name,
-    onChange: event => update("name", event.target.value),
-    placeholder: "表示名"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.url,
-    onChange: event => update("url", event.target.value),
-    placeholder: "URL"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.iconText,
-    onChange: event => update("iconText", event.target.value),
-    placeholder: "アイコン文字（例：MJ / P / GPT）"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.iconImage,
-    onChange: event => update("iconImage", event.target.value),
-    placeholder: "アイコン画像URL"
-  }), /*#__PURE__*/React.createElement("input", {
-    type: "file",
-    accept: "image/*",
-    onChange: event => readImage(event, iconImage => setDraft({
-      ...draft,
-      iconImage
-    }), "icon")
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.memo || "",
-    onChange: event => update("memo", event.target.value),
-    placeholder: "メモ（任意）"
-  }), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "ホームに表示する"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: draft.visible !== false,
-    onChange: event => update("visible", event.target.checked)
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "quick-link-editor-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onClose
-  }, "キャンセル"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => onSave(draft)
-  }, "保存する")));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+    className: "quick-link-editor",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "quick-link-editor-head",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+        children: tool.id ? "作業ツールを編集" : "作業ツールを追加"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: onClose,
+        children: "閉じる"
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      value: draft.name,
+      onChange: event => update("name", event.target.value),
+      placeholder: "表示名"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      value: draft.url,
+      onChange: event => update("url", event.target.value),
+      placeholder: "URL"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      value: draft.iconText,
+      onChange: event => update("iconText", event.target.value),
+      placeholder: "アイコン文字（例：MJ / P / GPT）"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      value: draft.iconImage,
+      onChange: event => update("iconImage", event.target.value),
+      placeholder: "アイコン画像URL"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      type: "file",
+      accept: "image/*",
+      onChange: event => readImage(event, iconImage => setDraft({
+        ...draft,
+        iconImage
+      }), "icon")
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      value: draft.memo || "",
+      onChange: event => update("memo", event.target.value),
+      placeholder: "メモ（任意）"
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+      className: "switch-row",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        children: "ホームに表示する"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        type: "checkbox",
+        checked: draft.visible !== false,
+        onChange: event => update("visible", event.target.checked)
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "quick-link-editor-actions",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: onClose,
+        children: "キャンセル"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "primary",
+        onClick: () => onSave(draft),
+        children: "保存する"
+      })]
+    })]
+  });
 }
 function HomeCustomize({
   settings,
@@ -5077,892 +5295,1385 @@ function HomeCustomize({
     }
     setShowPwaInstructions(true);
   };
-  return /*#__PURE__*/React.createElement("section", {
-    className: "page customize-page"
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "ホームカスタマイズ",
-    action: /*#__PURE__*/React.createElement(PageBackButton, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: "page customize-page",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+      title: "ホームカスタマイズ",
+      action: /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+        label: "ホームへ戻る",
+        onClick: () => setScreen("home")
+      })
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "customize-layout",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "customize-settings",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "データ管理・アプリ"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "customize-accordion-body",
+            children: /*#__PURE__*/_reactJsxRuntime.jsx(PwaCustomizeCard, {
+              canInstallPwa: canInstallPwa,
+              isStandaloneApp: isStandaloneApp,
+              onInstall: handleCustomizeInstallPwa,
+              onShowInstructions: () => setShowPwaInstructions(true)
+            })
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          open: true,
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "テーマ・基本デザイン"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "customize-accordion-body",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "テーマ"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+              className: "theme-grid",
+              children: homeThemes.map(theme => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+                className: `theme-card ${settings.themeId === theme.id ? "selected" : ""}`,
+                onClick: () => updateSettings({
+                  themeId: theme.id
+                }),
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                  children: theme.name
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                  children: theme.colors.map(color => /*#__PURE__*/_reactJsxRuntime.jsx("i", {
+                    style: {
+                      background: color
+                    }
+                  }, color))
+                })]
+              }, theme.id))
+            })]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "バナー設定"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "customize-accordion-body",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "バナー"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "ホーム上部に表示する横長画像を設定できます。"
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "banner-size-guide",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                children: "バナー画像の推奨サイズ"
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                children: [/*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("b", {
+                    children: "大バナー"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                    children: "2400 × 1200px / 2:1"
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("b", {
+                    children: "中バナー"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                    children: "2400 × 800px / 3:1"
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("b", {
+                    children: "小バナー"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                    children: "2400 × 400px / 6:1"
+                  })]
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "Macの高精細画面でもくっきり見せるため、横幅2400px前後の画像がおすすめです。"
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+              className: "switch-row",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                children: "バナー表示"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                type: "checkbox",
+                checked: settings.bannerVisible,
+                onChange: event => updateSettings({
+                  bannerVisible: event.target.checked
+                })
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              value: settings.bannerImageUrl,
+              onChange: event => updateSettings({
+                bannerImageUrl: event.target.value,
+                bannerImage: event.target.value
+              }),
+              placeholder: "バナー画像URL"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              type: "file",
+              accept: "image/png,image/jpeg,image/webp",
+              onChange: event => readBannerImage(event, bannerImage => updateSettings({
+                bannerImage
+              }))
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+              className: "banner-quality-note",
+              children: "高画質設定を反映するには、バナー画像を再アップロードしてください。"
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "inline-buttons",
+              children: [["small", "medium", "large"].map(size => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                className: settings.bannerSize === size ? "active-soft" : "",
+                onClick: () => selectBannerSize(size),
+                children: size === "small" ? "小" : size === "medium" ? "中" : "大"
+              }, size)), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                onClick: () => updateSettings({
+                  bannerImage: "",
+                  bannerImageUrl: ""
+                }),
+                children: "画像を削除"
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "banner-fit-controls",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                children: "バナー表示方法"
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "inline-buttons",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  className: (settings.bannerFit || "contain") === "contain" ? "active-soft" : "",
+                  onClick: () => updateSettings({
+                    bannerFit: "contain"
+                  }),
+                  children: "全体を表示"
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  className: settings.bannerFit === "cover" ? "active-soft" : "",
+                  onClick: () => updateSettings({
+                    bannerFit: "cover"
+                  }),
+                  children: "枠いっぱいに表示"
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。"
+              })]
+            })]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "ホーム表示"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "customize-accordion-body",
+            children: /*#__PURE__*/_reactJsxRuntime.jsx(HomeCharacterSettingsPanel, {
+              settings: settings,
+              updateSettings: updateSettings,
+              projects: projects
+            })
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "作業ツール"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "customize-accordion-body",
+            children: /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "作業ツール設定"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "icon-style-choices",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                  children: "アイコンテイスト"
+                }), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"], ["vivid", "ビビッド"], ["cute", "キュート"]].map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  className: settings.workToolIconStyle === id ? "active-soft" : "",
+                  onClick: () => updateSettings({
+                    workToolIconStyle: id
+                  }),
+                  children: label
+                }, id))]
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: `work-tool-edit-list ${settings.workToolIconStyle || "pastel"}`,
+                children: normalizedTools.map((tool, index) => /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+                  className: "work-tool-edit-row",
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                    className: "work-tool-edit-icon",
+                    children: tool.iconImage ? /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                      src: imageThumbnail(tool.iconImage),
+                      alt: ""
+                    }) : /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+                      children: tool.iconText || tool.name.slice(0, 2)
+                    })
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                      children: tool.name
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                      children: tool.url
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "work-tool-visible-toggle",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: tool.visible !== false,
+                      onChange: event => toggleWorkToolVisible(tool.id, event.target.checked)
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                    className: "work-tool-edit-actions",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                      onClick: () => setEditingTool(tool),
+                      children: "編集"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                      onClick: () => moveWorkTool(tool.id, -1),
+                      disabled: index === 0,
+                      children: "左へ"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                      onClick: () => moveWorkTool(tool.id, 1),
+                      disabled: index === normalizedTools.length - 1,
+                      children: "右へ"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                      className: "danger",
+                      onClick: () => deleteWorkTool(tool.id),
+                      children: "削除"
+                    })]
+                  })]
+                }, tool.id))
+              }), normalizedTools.length < 10 ? /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                className: "add-work-tool-button",
+                onClick: () => setEditingTool({
+                  id: "",
+                  name: "",
+                  url: "",
+                  iconText: "",
+                  iconImage: "",
+                  memo: "",
+                  visible: true
+                }),
+                children: "＋ 作業ツールを追加"
+              }) : /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                className: "limit-message",
+                children: "作業ツールは最大10件まで登録できます"
+              }), editingTool && /*#__PURE__*/_reactJsxRuntime.jsx(WorkToolEditor, {
+                tool: editingTool,
+                onClose: () => setEditingTool(null),
+                onSave: saveWorkTool
+              })]
+            })
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "カード表示"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "customize-accordion-body",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "カード密度"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "ホームや各一覧ページのカード間隔を調整できます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: "density-choice-grid",
+                children: densityOptions.map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+                  className: settings.displayDensity === item.id ? "active-soft" : "",
+                  onClick: () => updateSettings({
+                    displayDensity: item.id
+                  }),
+                  children: [item.id !== "hidden" && /*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+                    className: `clock-option-preview ${item.id}`,
+                    children: [item.id === "stamp" && /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      className: "stamp-heart-outline",
+                      "aria-hidden": "true",
+                      children: "♡"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+                      children: "APR.26"
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: item.label
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                    children: item.description
+                  })]
+                }, item.id))
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "カード質感設定"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "カードの角丸・影・透明感・枠線を調整できます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "style-control-grid",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  children: ["角丸", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                    value: settings.cardStyle.radius,
+                    onChange: event => updateCardStyle({
+                      radius: event.target.value
+                    }),
+                    children: cardStyleOptions.radius.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                      value: id,
+                      children: label
+                    }, id))
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  children: ["影", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                    value: settings.cardStyle.shadow,
+                    onChange: event => updateCardStyle({
+                      shadow: event.target.value
+                    }),
+                    children: cardStyleOptions.shadow.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                      value: id,
+                      children: label
+                    }, id))
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  children: ["透明感", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                    value: settings.cardStyle.transparency,
+                    onChange: event => updateCardStyle({
+                      transparency: event.target.value
+                    }),
+                    children: cardStyleOptions.transparency.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                      value: id,
+                      children: label
+                    }, id))
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  children: ["枠線", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                    value: settings.cardStyle.border,
+                    onChange: event => updateCardStyle({
+                      border: event.target.value
+                    }),
+                    children: cardStyleOptions.border.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                      value: id,
+                      children: label
+                    }, id))
+                  })]
+                })]
+              })]
+            })]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "背景"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "customize-accordion-body",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "背景カスタム"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "ツール全体の背景の雰囲気を調整できます。"
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "style-control-grid",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                children: ["背景タイプ", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                  value: settings.backgroundStyle.type,
+                  onChange: event => updateBackgroundStyle({
+                    type: event.target.value
+                  }),
+                  children: backgroundStyleOptions.type.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                    value: id,
+                    children: label
+                  }, id))
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                children: ["背景カラー", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                  type: "color",
+                  value: settings.backgroundStyle.color,
+                  onChange: event => updateBackgroundStyle({
+                    color: event.target.value,
+                    type: "solid"
+                  })
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                children: ["グラデーション", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                  value: settings.backgroundStyle.gradient,
+                  onChange: event => updateBackgroundStyle({
+                    gradient: event.target.value,
+                    type: "gradient"
+                  }),
+                  children: backgroundStyleOptions.gradient.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                    value: id,
+                    children: label
+                  }, id))
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                children: ["背景パターン", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                  value: settings.backgroundStyle.pattern,
+                  onChange: event => updateBackgroundStyle({
+                    pattern: event.target.value,
+                    type: "pattern"
+                  }),
+                  children: backgroundStyleOptions.pattern.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                    value: id,
+                    children: label
+                  }, id))
+                })]
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+              className: "preset-color-row",
+              children: backgroundColorOptions.map(([color, label]) => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+                type: "button",
+                onClick: () => updateBackgroundStyle({
+                  color,
+                  type: "solid"
+                }),
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("i", {
+                  style: {
+                    background: color
+                  }
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                  children: label
+                })]
+              }, color))
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "background-image-controls",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                type: "file",
+                accept: "image/png,image/jpeg,image/webp",
+                onChange: event => {
+                  importCustomBackground(event.currentTarget.files?.[0]);
+                  event.currentTarget.value = "";
+                }
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "style-control-grid",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  children: ["画像表示", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                    value: settings.backgroundStyle.imageFit,
+                    onChange: event => updateBackgroundStyle({
+                      imageFit: event.target.value
+                    }),
+                    children: backgroundStyleOptions.imageFit.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                      value: id,
+                      children: label
+                    }, id))
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  children: ["画像位置", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                    value: settings.backgroundStyle.imagePosition,
+                    onChange: event => updateBackgroundStyle({
+                      imagePosition: event.target.value
+                    }),
+                    children: backgroundStyleOptions.imagePosition.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                      value: id,
+                      children: label
+                    }, id))
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  children: ["ぼかし", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                    value: settings.backgroundStyle.imageBlur,
+                    onChange: event => updateBackgroundStyle({
+                      imageBlur: event.target.value
+                    }),
+                    children: backgroundStyleOptions.imageBlur.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                      value: id,
+                      children: label
+                    }, id))
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  children: ["背景の濃さ", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+                    value: settings.backgroundStyle.imageOpacity,
+                    onChange: event => updateBackgroundStyle({
+                      imageOpacity: event.target.value
+                    }),
+                    children: backgroundStyleOptions.imageOpacity.map(([id, label]) => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                      value: id,
+                      children: label
+                    }, id))
+                  })]
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: "inline-buttons",
+                children: /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  type: "button",
+                  onClick: () => updateBackgroundStyle({
+                    image: "",
+                    type: "theme"
+                  }),
+                  children: "背景画像を削除"
+                })
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+              className: "switch-row",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                children: "背景装飾を表示"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                type: "checkbox",
+                checked: settings.backgroundStyle.showDecorations !== false,
+                onChange: event => updateBackgroundStyle({
+                  showDecorations: event.target.checked
+                })
+              })]
+            })]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "フォント・アイコン"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "customize-accordion-body",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "フォント雰囲気"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "見出しや本文の雰囲気を変更できます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: "preset-card-grid",
+                children: fontPresetOptions.map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+                  className: settings.fontPreset === item.id ? "active-soft" : "",
+                  onClick: () => updateSettings({
+                    fontPreset: item.id
+                  }),
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: item.label
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                    children: item.description
+                  })]
+                }, item.id))
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "アイコンセット"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "メニューやカードに使うアイコンの雰囲気を変更できます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: "preset-card-grid",
+                children: iconSetOptions.map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+                  className: settings.iconSet === item.id ? "active-soft" : "",
+                  onClick: () => updateSettings({
+                    iconSet: item.id
+                  }),
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                    className: `icon-set-sample icon-set-sample-${item.id}`,
+                    children: "✦"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: item.label
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                    children: item.description
+                  })]
+                }, item.id))
+              })]
+            })]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "ページ別表示"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "customize-accordion-body",
+            children: /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card page-display-settings customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "ページごとの表示設定"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "page-display-grid",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                  className: "page-display-panel",
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: "ギャラリー"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["余白", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.gallery.gap,
+                      onChange: event => updatePageDisplay("gallery", {
+                        gap: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "narrow",
+                        children: "狭め"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "normal",
+                        children: "標準"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "wide",
+                        children: "広め"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["画像比率", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.gallery.ratio,
+                      onChange: event => updatePageDisplay("gallery", {
+                        ratio: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "square",
+                        children: "正方形"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "portrait",
+                        children: "縦長"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "landscape",
+                        children: "横長"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "original",
+                        children: "元画像に近く"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["列数", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.gallery.columns,
+                      onChange: event => updatePageDisplay("gallery", {
+                        columns: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "auto",
+                        children: "自動"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "2",
+                        children: "2列"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "3",
+                        children: "3列"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "4",
+                        children: "4列"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "5",
+                        children: "5列"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "お気に入りハート"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.gallery.showHeart,
+                      onChange: event => updatePageDisplay("gallery", {
+                        showHeart: event.target.checked
+                      })
+                    })]
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                  className: "page-display-panel",
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: "プロンプト帳"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["表示形式", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.prompts.viewMode,
+                      onChange: event => updatePageDisplay("prompts", {
+                        viewMode: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "card",
+                        children: "カード"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "list",
+                        children: "リスト寄り"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["画像サイズ", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.prompts.imageSize,
+                      onChange: event => updatePageDisplay("prompts", {
+                        imageSize: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "small",
+                        children: "小さめ"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "normal",
+                        children: "標準"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "large",
+                        children: "大きめ"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "タグを表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.prompts.showTags,
+                      onChange: event => updatePageDisplay("prompts", {
+                        showTags: event.target.checked
+                      })
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "メモを表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.prompts.showMemo,
+                      onChange: event => updatePageDisplay("prompts", {
+                        showMemo: event.target.checked
+                      })
+                    })]
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                  className: "page-display-panel",
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: "動画プロンプト帳"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["表示形式", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.videoPrompts.viewMode,
+                      onChange: event => updatePageDisplay("videoPrompts", {
+                        viewMode: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "card",
+                        children: "カード"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "list",
+                        children: "リスト寄り"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["サムネイルサイズ", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.videoPrompts.thumbnailSize,
+                      onChange: event => updatePageDisplay("videoPrompts", {
+                        thumbnailSize: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "small",
+                        children: "小さめ"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "normal",
+                        children: "標準"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "large",
+                        children: "大きめ"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "タグを表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.videoPrompts.showTags,
+                      onChange: event => updatePageDisplay("videoPrompts", {
+                        showTags: event.target.checked
+                      })
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "メモを表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.videoPrompts.showMemo,
+                      onChange: event => updatePageDisplay("videoPrompts", {
+                        showMemo: event.target.checked
+                      })
+                    })]
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                  className: "page-display-panel",
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: "プロジェクト"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["並び順", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.projects.sortBy,
+                      onChange: event => updatePageDisplay("projects", {
+                        sortBy: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "deadline",
+                        children: "期限順"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "created",
+                        children: "作成順"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "manual",
+                        children: "保存順"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "完了済みを表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.projects.showCompleted,
+                      onChange: event => updatePageDisplay("projects", {
+                        showCompleted: event.target.checked
+                      })
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "期限アラームを表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.projects.showAlarms,
+                      onChange: event => updatePageDisplay("projects", {
+                        showAlarms: event.target.checked
+                      })
+                    })]
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                  className: "page-display-panel",
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: "モックアップ"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    children: ["カテゴリカードサイズ", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+                      value: pageSettings.mockups.categoryCardSize,
+                      onChange: event => updatePageDisplay("mockups", {
+                        categoryCardSize: event.target.value
+                      }),
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "small",
+                        children: "小さめ"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "normal",
+                        children: "標準"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                        value: "large",
+                        children: "大きめ"
+                      })]
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "説明文を表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.mockups.showDescription,
+                      onChange: event => updatePageDisplay("mockups", {
+                        showDescription: event.target.checked
+                      })
+                    })]
+                  }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                    className: "switch-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: "件数を表示"
+                    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                      type: "checkbox",
+                      checked: pageSettings.mockups.showCount,
+                      onChange: event => updatePageDisplay("mockups", {
+                        showCount: event.target.checked
+                      })
+                    })]
+                  })]
+                })]
+              })]
+            })
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "ホーム表示パーツ"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "customize-accordion-body",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "表示項目"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: "toggle-list",
+                children: [...homeFeatures, ...homeSections].map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  className: "switch-row",
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                    children: item.label
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                    type: "checkbox",
+                    checked: settings.visible[item.id] !== false,
+                    onChange: event => updateVisible(item.id, event.target.checked)
+                  })]
+                }, item.id))
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "ホーム件数カード設定"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "ホーム上部に表示する件数カードを選択できます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: "toggle-list",
+                children: homeStatsCardOptions.map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+                  className: "switch-row",
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                    children: item.label
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                    type: "checkbox",
+                    checked: (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false,
+                    onChange: event => updateSettings({
+                      homeStatsCards: {
+                        ...(settings.homeStatsCards || defaultHomeSettings.homeStatsCards),
+                        [item.id]: event.target.checked
+                      }
+                    })
+                  })]
+                }, item.id))
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "ホーム日付表示"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "ホーム上部に表示する年・月日・曜日の見た目を選べます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: "preset-card-grid clock-style-grid",
+                children: homeClockStyleOptions.map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+                  className: (settings.homeClockStyle || "pill") === item.id ? "active-soft" : "",
+                  onClick: () => updateSettings({
+                    homeClockStyle: item.id
+                  }),
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: item.label
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                    children: item.description
+                  })]
+                }, item.id))
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "clock-control-row",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: "サイズ"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                    className: "inline-buttons",
+                    children: homeClockSizeOptions.map(item => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                      className: (settings.homeClockSize || "medium") === item.id ? "active-soft" : "",
+                      onClick: () => updateSettings({
+                        homeClockSize: item.id
+                      }),
+                      children: item.label
+                    }, item.id))
+                  })]
+                }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                  children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                    children: "色味"
+                  }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                    className: "inline-buttons clock-color-buttons",
+                    children: homeClockColorOptions.map(item => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                      className: `clock-color-choice clock-color-${item.id} ${(settings.homeClockColor || "theme") === item.id ? "active-soft" : ""}`,
+                      onClick: () => updateSettings({
+                        homeClockColor: item.id
+                      }),
+                      children: item.label
+                    }, item.id))
+                  })]
+                })]
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "並び順"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "ホームの表示順を「上へ」「下へ」で調整できます。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                className: "order-list",
+                children: settings.order.map(id => {
+                  const section = homeSections.find(item => item.id === id);
+                  return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                    className: "order-row",
+                    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                      children: section?.label
+                    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                        onClick: () => moveSection(id, -1),
+                        children: "上へ"
+                      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                        onClick: () => moveSection(id, 1),
+                        children: "下へ"
+                      })]
+                    })]
+                  }, id);
+                })
+              })]
+            })]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+          className: "customize-card customize-accordion",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("summary", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "バックアップ・サンプル"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+              children: "⌄"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "customize-accordion-body",
+            children: /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+              className: "customize-card backup-card customize-nested-card",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: "バックアップ"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                className: "backup-storage-note",
+                children: "Prompt Atelierのデータは、このブラウザ内に保存されます。Dockのショートカットを削除しても通常は残りますが、ブラウザのサイトデータ削除や別ブラウザ利用では引き継がれない場合があります。大切なデータは定期的にバックアップを書き出してください。"
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "backup-actions",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  className: "primary",
+                  onClick: exportPromptAtelierBackup,
+                  children: "バックアップを書き出す"
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  onClick: () => backupInputRef.current?.click(),
+                  children: "バックアップを読み込む"
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "developer-tools",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                  children: "配布用サンプルデータ"
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                  children: "現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。"
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  onClick: exportPromptAtelierSampleSeed,
+                  children: "現在のデータをサンプルとして書き出す"
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                ref: backupInputRef,
+                type: "file",
+                accept: "application/json,.json",
+                style: {
+                  display: "none"
+                },
+                onChange: event => {
+                  importBackup(event.currentTarget.files?.[0]);
+                  event.currentTarget.value = "";
+                }
+              })]
+            })
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+          className: "customize-card danger-zone",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+            children: "初期化"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            children: "テーマ、バナー、表示項目、並び順を初期設定に戻します。"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            className: "danger",
+            onClick: reset,
+            children: "初期設定に戻す"
+          })]
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("aside", {
+        className: "customize-preview",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+          children: "ホームプレビュー"
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: `preview-shell home-mini-preview density-${settings.displayDensity || "normal"} ${previewClassName}`,
+          "data-density": settings.displayDensity || "normal",
+          "data-card-radius": settings.cardStyle.radius,
+          "data-card-shadow": settings.cardStyle.shadow,
+          "data-card-transparency": settings.cardStyle.transparency,
+          "data-card-border": settings.cardStyle.border,
+          "data-background-type": settings.backgroundStyle.type,
+          "data-font-preset": settings.fontPreset || "simple",
+          "data-icon-set": settings.iconSet || "line",
+          style: previewStyle,
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "home-mini-topbar",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+              children: "Prompt Atelier"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx(HomeDateDisplay, {
+              style: settings.homeClockStyle || "pill",
+              size: settings.homeClockSize || "medium",
+              color: settings.homeClockColor || "theme",
+              mini: true
+            })]
+          }), settings.bannerVisible && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: `preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
+            onPointerDown: startBannerDrag,
+            onPointerMove: moveBannerDrag,
+            onPointerUp: endBannerDrag,
+            onPointerCancel: endBannerDrag,
+            onLostPointerCapture: endBannerDrag,
+            children: bannerSrc ? /*#__PURE__*/_reactJsxRuntime.jsxs(_reactJsxRuntime.Fragment, {
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                src: bannerSrc,
+                alt: "",
+                draggable: false,
+                style: bannerImageStyle(bannerPosition)
+              }), bannerCanDrag && /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                className: "banner-drag-hint",
+                children: "画像をドラッグして表示位置を調整"
+              })]
+            }) : /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "home-mini-banner-placeholder",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                children: "今日の制作ボード"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                children: "Creative Board"
+              })]
+            })
+          }), bannerImageValue && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "preview-banner-actions",
+            children: /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              type: "button",
+              className: "banner-reset-position",
+              onPointerDown: event => event.stopPropagation(),
+              onClick: event => {
+                event.stopPropagation();
+                updateBannerPosition(50, 50, true);
+              },
+              children: "中央に戻す"
+            })
+          }), settings.visible.dashboard !== false && previewDashboardItems.length > 0 && /*#__PURE__*/_reactJsxRuntime.jsx("section", {
+            className: "home-mini-stats",
+            "aria-label": "ミニ件数カード",
+            children: previewDashboardItems.map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+              className: "home-mini-stat",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                className: "stat-icon",
+                "data-icon": item.icon,
+                children: /*#__PURE__*/_reactJsxRuntime.jsx(FeatureIcon, {
+                  name: item.icon
+                })
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                children: item.title
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                children: item.value
+              })]
+            }, item.id))
+          }), settings.visible.quickActions !== false && previewTools.length > 0 && /*#__PURE__*/_reactJsxRuntime.jsx("section", {
+            className: `home-mini-tools ${settings.workToolIconStyle || "pastel"}`,
+            "aria-label": "ミニ作業ツール",
+            children: previewTools.map(tool => /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+              className: "home-mini-tool",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                children: tool.iconImage ? /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                  src: imageThumbnail(tool.iconImage),
+                  alt: ""
+                }) : /*#__PURE__*/_reactJsxRuntime.jsx("b", {
+                  children: tool.iconText || tool.name.slice(0, 2)
+                })
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                children: tool.name
+              })]
+            }, tool.id))
+          }), settings.visible.featureCards !== false && previewFeatureEntries.length > 0 && /*#__PURE__*/_reactJsxRuntime.jsx("section", {
+            className: "home-mini-features",
+            "aria-label": "ミニメイン機能カード",
+            children: previewFeatureEntries.map(([id, label, icon]) => /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+              className: "home-mini-feature",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                className: "stat-icon",
+                "data-icon": icon,
+                children: /*#__PURE__*/_reactJsxRuntime.jsx(FeatureIcon, {
+                  name: icon
+                })
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                children: label
+              })]
+            }, id))
+          }), settings.visible.dashboard !== false && (projects || []).length > 0 && /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+            className: "home-mini-main-card",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                className: "mini-pill",
+                children: "Project"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("h4", {
+                children: (projects[0]?.name || "Project").slice(0, 18)
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("strong", {
+                className: "preview-number-text",
+                children: [projects.length, " Projects"]
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "Today"
+            })]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary preview-save-home",
+          onClick: () => {
+            setSettings(persistHomeSettings());
+            setScreen("home");
+          },
+          children: "保存してホームへ"
+        })]
+      })]
+    }), showPwaInstructions && /*#__PURE__*/_reactJsxRuntime.jsx(PwaInstallInstructionsModal, {
+      onClose: () => setShowPwaInstructions(false)
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+      className: "page-bottom-back",
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    })
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "customize-layout"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "customize-settings"
-  }, /*#__PURE__*/React.createElement("details", {
-    className: "customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "データ管理・アプリ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement(PwaCustomizeCard, {
-    canInstallPwa: canInstallPwa,
-    isStandaloneApp: isStandaloneApp,
-    onInstall: handleCustomizeInstallPwa,
-    onShowInstructions: () => setShowPwaInstructions(true)
-  }))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion",
-    open: true
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "テーマ・基本デザイン"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("h3", null, "テーマ"), /*#__PURE__*/React.createElement("p", null, "ホーム画面の背景、カード、ボタン、見出しの色を切り替えます。"), /*#__PURE__*/React.createElement("div", {
-    className: "theme-grid"
-  }, homeThemes.map(theme => /*#__PURE__*/React.createElement("button", {
-    key: theme.id,
-    className: `theme-card ${settings.themeId === theme.id ? "selected" : ""}`,
-    onClick: () => updateSettings({
-      themeId: theme.id
-    })
-  }, /*#__PURE__*/React.createElement("span", null, theme.name), /*#__PURE__*/React.createElement("small", null, theme.colors.map(color => /*#__PURE__*/React.createElement("i", {
-    key: color,
-    style: {
-      background: color
-    }
-  })))))))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "バナー設定"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("h3", null, "バナー"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する横長画像を設定できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "banner-size-guide"
-  }, /*#__PURE__*/React.createElement("strong", null, "バナー画像の推奨サイズ"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "大バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 1200px / 2:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "中バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 800px / 3:1")), /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("b", null, "小バナー"), /*#__PURE__*/React.createElement("small", null, "2400 × 400px / 6:1"))), /*#__PURE__*/React.createElement("p", null, "Macの高精細画面でもくっきり見せるため、横幅2400px前後の画像がおすすめです。")), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "バナー表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: settings.bannerVisible,
-    onChange: event => updateSettings({
-      bannerVisible: event.target.checked
-    })
-  })), /*#__PURE__*/React.createElement("input", {
-    value: settings.bannerImageUrl,
-    onChange: event => updateSettings({
-      bannerImageUrl: event.target.value,
-      bannerImage: event.target.value
-    }),
-    placeholder: "バナー画像URL"
-  }), /*#__PURE__*/React.createElement("input", {
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    onChange: event => readBannerImage(event, bannerImage => updateSettings({
-      bannerImage
-    }))
-  }), /*#__PURE__*/React.createElement("small", {
-    className: "banner-quality-note"
-  }, "高画質設定を反映するには、バナー画像を再アップロードしてください。"), /*#__PURE__*/React.createElement("div", {
-    className: "inline-buttons"
-  }, ["small", "medium", "large"].map(size => /*#__PURE__*/React.createElement("button", {
-    key: size,
-    className: settings.bannerSize === size ? "active-soft" : "",
-    onClick: () => selectBannerSize(size)
-  }, size === "small" ? "小" : size === "medium" ? "中" : "大")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => updateSettings({
-      bannerImage: "",
-      bannerImageUrl: ""
-    })
-  }, "画像を削除")), /*#__PURE__*/React.createElement("div", {
-    className: "banner-fit-controls"
-  }, /*#__PURE__*/React.createElement("strong", null, "バナー表示方法"), /*#__PURE__*/React.createElement("div", {
-    className: "inline-buttons"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: (settings.bannerFit || "contain") === "contain" ? "active-soft" : "",
-    onClick: () => updateSettings({
-      bannerFit: "contain"
-    })
-  }, "全体を表示"), /*#__PURE__*/React.createElement("button", {
-    className: settings.bannerFit === "cover" ? "active-soft" : "",
-    onClick: () => updateSettings({
-      bannerFit: "cover"
-    })
-  }, "枠いっぱいに表示")), /*#__PURE__*/React.createElement("p", null, "「全体を表示」は画像が切れにくく、「枠いっぱいに表示」は余白が出にくい表示です。")))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ホーム表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement(HomeCharacterSettingsPanel, {
-    settings: settings,
-    updateSettings: updateSettings,
-    projects: projects
-  }))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "作業ツール"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "作業ツール設定"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する外部サービスのショートカットを編集できます。最大10件まで登録できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "icon-style-choices"
-  }, /*#__PURE__*/React.createElement("strong", null, "アイコンテイスト"), [["simple", "シンプル"], ["pastel", "パステル"], ["frame", "フレーム"], ["cool", "クール"], ["dark", "ダーク"], ["vivid", "ビビッド"], ["cute", "キュート"]].map(([id, label]) => /*#__PURE__*/React.createElement("button", {
-    key: id,
-    className: settings.workToolIconStyle === id ? "active-soft" : "",
-    onClick: () => updateSettings({
-      workToolIconStyle: id
-    })
-  }, label))), /*#__PURE__*/React.createElement("div", {
-    className: `work-tool-edit-list ${settings.workToolIconStyle || "pastel"}`
-  }, normalizedTools.map((tool, index) => /*#__PURE__*/React.createElement("article", {
-    className: "work-tool-edit-row",
-    key: tool.id
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "work-tool-edit-icon"
-  }, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(tool.iconImage),
-    alt: ""
-  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, tool.name), /*#__PURE__*/React.createElement("small", null, tool.url)), /*#__PURE__*/React.createElement("label", {
-    className: "work-tool-visible-toggle"
-  }, /*#__PURE__*/React.createElement("span", null, "表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: tool.visible !== false,
-    onChange: event => toggleWorkToolVisible(tool.id, event.target.checked)
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "work-tool-edit-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setEditingTool(tool)
-  }, "編集"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => moveWorkTool(tool.id, -1),
-    disabled: index === 0
-  }, "左へ"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => moveWorkTool(tool.id, 1),
-    disabled: index === normalizedTools.length - 1
-  }, "右へ"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: () => deleteWorkTool(tool.id)
-  }, "削除"))))), normalizedTools.length < 10 ? /*#__PURE__*/React.createElement("button", {
-    className: "add-work-tool-button",
-    onClick: () => setEditingTool({
-      id: "",
-      name: "",
-      url: "",
-      iconText: "",
-      iconImage: "",
-      memo: "",
-      visible: true
-    })
-  }, "＋ 作業ツールを追加") : /*#__PURE__*/React.createElement("p", {
-    className: "limit-message"
-  }, "作業ツールは最大10件まで登録できます"), editingTool && /*#__PURE__*/React.createElement(WorkToolEditor, {
-    tool: editingTool,
-    onClose: () => setEditingTool(null),
-    onSave: saveWorkTool
-  })))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "カード表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "カード密度"), /*#__PURE__*/React.createElement("p", null, "ホームや各一覧ページのカード間隔を調整できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "density-choice-grid"
-  }, densityOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: settings.displayDensity === item.id ? "active-soft" : "",
-    onClick: () => updateSettings({
-      displayDensity: item.id
-    })
-  }, item.id !== "hidden" && /*#__PURE__*/React.createElement("span", {
-    className: `clock-option-preview ${item.id}`
-  }, item.id === "stamp" && /*#__PURE__*/React.createElement("span", {
-    className: "stamp-heart-outline",
-    "aria-hidden": "true"
-  }, "♡"), /*#__PURE__*/React.createElement("b", null, "APR.26")), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "カード質感設定"), /*#__PURE__*/React.createElement("p", null, "カードの角丸・影・透明感・枠線を調整できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "style-control-grid"
-  }, /*#__PURE__*/React.createElement("label", null, "角丸", /*#__PURE__*/React.createElement("select", {
-    value: settings.cardStyle.radius,
-    onChange: event => updateCardStyle({
-      radius: event.target.value
-    })
-  }, cardStyleOptions.radius.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "影", /*#__PURE__*/React.createElement("select", {
-    value: settings.cardStyle.shadow,
-    onChange: event => updateCardStyle({
-      shadow: event.target.value
-    })
-  }, cardStyleOptions.shadow.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "透明感", /*#__PURE__*/React.createElement("select", {
-    value: settings.cardStyle.transparency,
-    onChange: event => updateCardStyle({
-      transparency: event.target.value
-    })
-  }, cardStyleOptions.transparency.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "枠線", /*#__PURE__*/React.createElement("select", {
-    value: settings.cardStyle.border,
-    onChange: event => updateCardStyle({
-      border: event.target.value
-    })
-  }, cardStyleOptions.border.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))))))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "背景"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("h3", null, "背景カスタム"), /*#__PURE__*/React.createElement("p", null, "ツール全体の背景の雰囲気を調整できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "style-control-grid"
-  }, /*#__PURE__*/React.createElement("label", null, "背景タイプ", /*#__PURE__*/React.createElement("select", {
-    value: settings.backgroundStyle.type,
-    onChange: event => updateBackgroundStyle({
-      type: event.target.value
-    })
-  }, backgroundStyleOptions.type.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景カラー", /*#__PURE__*/React.createElement("input", {
-    type: "color",
-    value: settings.backgroundStyle.color,
-    onChange: event => updateBackgroundStyle({
-      color: event.target.value,
-      type: "solid"
-    })
-  })), /*#__PURE__*/React.createElement("label", null, "グラデーション", /*#__PURE__*/React.createElement("select", {
-    value: settings.backgroundStyle.gradient,
-    onChange: event => updateBackgroundStyle({
-      gradient: event.target.value,
-      type: "gradient"
-    })
-  }, backgroundStyleOptions.gradient.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景パターン", /*#__PURE__*/React.createElement("select", {
-    value: settings.backgroundStyle.pattern,
-    onChange: event => updateBackgroundStyle({
-      pattern: event.target.value,
-      type: "pattern"
-    })
-  }, backgroundStyleOptions.pattern.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label))))), /*#__PURE__*/React.createElement("div", {
-    className: "preset-color-row"
-  }, backgroundColorOptions.map(([color, label]) => /*#__PURE__*/React.createElement("button", {
-    key: color,
-    type: "button",
-    onClick: () => updateBackgroundStyle({
-      color,
-      type: "solid"
-    })
-  }, /*#__PURE__*/React.createElement("i", {
-    style: {
-      background: color
-    }
-  }), /*#__PURE__*/React.createElement("span", null, label)))), /*#__PURE__*/React.createElement("div", {
-    className: "background-image-controls"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    onChange: event => {
-      importCustomBackground(event.currentTarget.files?.[0]);
-      event.currentTarget.value = "";
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "style-control-grid"
-  }, /*#__PURE__*/React.createElement("label", null, "画像表示", /*#__PURE__*/React.createElement("select", {
-    value: settings.backgroundStyle.imageFit,
-    onChange: event => updateBackgroundStyle({
-      imageFit: event.target.value
-    })
-  }, backgroundStyleOptions.imageFit.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "画像位置", /*#__PURE__*/React.createElement("select", {
-    value: settings.backgroundStyle.imagePosition,
-    onChange: event => updateBackgroundStyle({
-      imagePosition: event.target.value
-    })
-  }, backgroundStyleOptions.imagePosition.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "ぼかし", /*#__PURE__*/React.createElement("select", {
-    value: settings.backgroundStyle.imageBlur,
-    onChange: event => updateBackgroundStyle({
-      imageBlur: event.target.value
-    })
-  }, backgroundStyleOptions.imageBlur.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label)))), /*#__PURE__*/React.createElement("label", null, "背景の濃さ", /*#__PURE__*/React.createElement("select", {
-    value: settings.backgroundStyle.imageOpacity,
-    onChange: event => updateBackgroundStyle({
-      imageOpacity: event.target.value
-    })
-  }, backgroundStyleOptions.imageOpacity.map(([id, label]) => /*#__PURE__*/React.createElement("option", {
-    key: id,
-    value: id
-  }, label))))), /*#__PURE__*/React.createElement("div", {
-    className: "inline-buttons"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => updateBackgroundStyle({
-      image: "",
-      type: "theme"
-    })
-  }, "背景画像を削除"))), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "背景装飾を表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: settings.backgroundStyle.showDecorations !== false,
-    onChange: event => updateBackgroundStyle({
-      showDecorations: event.target.checked
-    })
-  })))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "フォント・アイコン"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "フォント雰囲気"), /*#__PURE__*/React.createElement("p", null, "見出しや本文の雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "preset-card-grid"
-  }, fontPresetOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: settings.fontPreset === item.id ? "active-soft" : "",
-    onClick: () => updateSettings({
-      fontPreset: item.id
-    })
-  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "アイコンセット"), /*#__PURE__*/React.createElement("p", null, "メニューやカードに使うアイコンの雰囲気を変更できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "preset-card-grid"
-  }, iconSetOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: settings.iconSet === item.id ? "active-soft" : "",
-    onClick: () => updateSettings({
-      iconSet: item.id
-    })
-  }, /*#__PURE__*/React.createElement("span", {
-    className: `icon-set-sample icon-set-sample-${item.id}`
-  }, "✦"), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description))))))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ページ別表示"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "customize-card page-display-settings customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ページごとの表示設定"), /*#__PURE__*/React.createElement("p", null, "ギャラリー、プロンプト帳、動画プロンプト帳、プロジェクト、モックアップの見え方を調整できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "page-display-grid"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "ギャラリー"), /*#__PURE__*/React.createElement("label", null, "余白", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.gallery.gap,
-    onChange: event => updatePageDisplay("gallery", {
-      gap: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "narrow"
-  }, "狭め"), /*#__PURE__*/React.createElement("option", {
-    value: "normal"
-  }, "標準"), /*#__PURE__*/React.createElement("option", {
-    value: "wide"
-  }, "広め"))), /*#__PURE__*/React.createElement("label", null, "画像比率", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.gallery.ratio,
-    onChange: event => updatePageDisplay("gallery", {
-      ratio: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "square"
-  }, "正方形"), /*#__PURE__*/React.createElement("option", {
-    value: "portrait"
-  }, "縦長"), /*#__PURE__*/React.createElement("option", {
-    value: "landscape"
-  }, "横長"), /*#__PURE__*/React.createElement("option", {
-    value: "original"
-  }, "元画像に近く"))), /*#__PURE__*/React.createElement("label", null, "列数", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.gallery.columns,
-    onChange: event => updatePageDisplay("gallery", {
-      columns: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "auto"
-  }, "自動"), /*#__PURE__*/React.createElement("option", {
-    value: "2"
-  }, "2列"), /*#__PURE__*/React.createElement("option", {
-    value: "3"
-  }, "3列"), /*#__PURE__*/React.createElement("option", {
-    value: "4"
-  }, "4列"), /*#__PURE__*/React.createElement("option", {
-    value: "5"
-  }, "5列"))), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "お気に入りハート"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.gallery.showHeart,
-    onChange: event => updatePageDisplay("gallery", {
-      showHeart: event.target.checked
-    })
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "プロンプト帳"), /*#__PURE__*/React.createElement("label", null, "表示形式", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.prompts.viewMode,
-    onChange: event => updatePageDisplay("prompts", {
-      viewMode: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "card"
-  }, "カード"), /*#__PURE__*/React.createElement("option", {
-    value: "list"
-  }, "リスト寄り"))), /*#__PURE__*/React.createElement("label", null, "画像サイズ", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.prompts.imageSize,
-    onChange: event => updatePageDisplay("prompts", {
-      imageSize: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "small"
-  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
-    value: "normal"
-  }, "標準"), /*#__PURE__*/React.createElement("option", {
-    value: "large"
-  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "タグを表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.prompts.showTags,
-    onChange: event => updatePageDisplay("prompts", {
-      showTags: event.target.checked
-    })
-  })), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "メモを表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.prompts.showMemo,
-    onChange: event => updatePageDisplay("prompts", {
-      showMemo: event.target.checked
-    })
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "動画プロンプト帳"), /*#__PURE__*/React.createElement("label", null, "表示形式", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.videoPrompts.viewMode,
-    onChange: event => updatePageDisplay("videoPrompts", {
-      viewMode: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "card"
-  }, "カード"), /*#__PURE__*/React.createElement("option", {
-    value: "list"
-  }, "リスト寄り"))), /*#__PURE__*/React.createElement("label", null, "サムネイルサイズ", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.videoPrompts.thumbnailSize,
-    onChange: event => updatePageDisplay("videoPrompts", {
-      thumbnailSize: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "small"
-  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
-    value: "normal"
-  }, "標準"), /*#__PURE__*/React.createElement("option", {
-    value: "large"
-  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "タグを表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.videoPrompts.showTags,
-    onChange: event => updatePageDisplay("videoPrompts", {
-      showTags: event.target.checked
-    })
-  })), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "メモを表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.videoPrompts.showMemo,
-    onChange: event => updatePageDisplay("videoPrompts", {
-      showMemo: event.target.checked
-    })
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "プロジェクト"), /*#__PURE__*/React.createElement("label", null, "並び順", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.projects.sortBy,
-    onChange: event => updatePageDisplay("projects", {
-      sortBy: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "deadline"
-  }, "期限順"), /*#__PURE__*/React.createElement("option", {
-    value: "created"
-  }, "作成順"), /*#__PURE__*/React.createElement("option", {
-    value: "manual"
-  }, "保存順"))), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "完了済みを表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.projects.showCompleted,
-    onChange: event => updatePageDisplay("projects", {
-      showCompleted: event.target.checked
-    })
-  })), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "期限アラームを表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.projects.showAlarms,
-    onChange: event => updatePageDisplay("projects", {
-      showAlarms: event.target.checked
-    })
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "page-display-panel"
-  }, /*#__PURE__*/React.createElement("strong", null, "モックアップ"), /*#__PURE__*/React.createElement("label", null, "カテゴリカードサイズ", /*#__PURE__*/React.createElement("select", {
-    value: pageSettings.mockups.categoryCardSize,
-    onChange: event => updatePageDisplay("mockups", {
-      categoryCardSize: event.target.value
-    })
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "small"
-  }, "小さめ"), /*#__PURE__*/React.createElement("option", {
-    value: "normal"
-  }, "標準"), /*#__PURE__*/React.createElement("option", {
-    value: "large"
-  }, "大きめ"))), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "説明文を表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.mockups.showDescription,
-    onChange: event => updatePageDisplay("mockups", {
-      showDescription: event.target.checked
-    })
-  })), /*#__PURE__*/React.createElement("label", {
-    className: "switch-row"
-  }, /*#__PURE__*/React.createElement("span", null, "件数を表示"), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: pageSettings.mockups.showCount,
-    onChange: event => updatePageDisplay("mockups", {
-      showCount: event.target.checked
-    })
-  }))))))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "ホーム表示パーツ"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "表示項目"), /*#__PURE__*/React.createElement("p", null, "ホームに表示する項目を選べます。カスタマイズへの導線は常に残ります。"), /*#__PURE__*/React.createElement("div", {
-    className: "toggle-list"
-  }, [...homeFeatures, ...homeSections].map(item => /*#__PURE__*/React.createElement("label", {
-    className: "switch-row",
-    key: item.id
-  }, /*#__PURE__*/React.createElement("span", null, item.label), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: settings.visible[item.id] !== false,
-    onChange: event => updateVisible(item.id, event.target.checked)
-  }))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ホーム件数カード設定"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する件数カードを選択できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "toggle-list"
-  }, homeStatsCardOptions.map(item => /*#__PURE__*/React.createElement("label", {
-    className: "switch-row",
-    key: item.id
-  }, /*#__PURE__*/React.createElement("span", null, item.label), /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: (settings.homeStatsCards || defaultHomeSettings.homeStatsCards)[item.id] !== false,
-    onChange: event => updateSettings({
-      homeStatsCards: {
-        ...(settings.homeStatsCards || defaultHomeSettings.homeStatsCards),
-        [item.id]: event.target.checked
-      }
-    })
-  }))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "ホーム日付表示"), /*#__PURE__*/React.createElement("p", null, "ホーム上部に表示する年・月日・曜日の見た目を選べます。"), /*#__PURE__*/React.createElement("div", {
-    className: "preset-card-grid clock-style-grid"
-  }, homeClockStyleOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: (settings.homeClockStyle || "pill") === item.id ? "active-soft" : "",
-    onClick: () => updateSettings({
-      homeClockStyle: item.id
-    })
-  }, /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("small", null, item.description)))), /*#__PURE__*/React.createElement("div", {
-    className: "clock-control-row"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "サイズ"), /*#__PURE__*/React.createElement("div", {
-    className: "inline-buttons"
-  }, homeClockSizeOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: (settings.homeClockSize || "medium") === item.id ? "active-soft" : "",
-    onClick: () => updateSettings({
-      homeClockSize: item.id
-    })
-  }, item.label)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, "色味"), /*#__PURE__*/React.createElement("div", {
-    className: "inline-buttons clock-color-buttons"
-  }, homeClockColorOptions.map(item => /*#__PURE__*/React.createElement("button", {
-    key: item.id,
-    className: `clock-color-choice clock-color-${item.id} ${(settings.homeClockColor || "theme") === item.id ? "active-soft" : ""}`,
-    onClick: () => updateSettings({
-      homeClockColor: item.id
-    })
-  }, item.label)))))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "並び順"), /*#__PURE__*/React.createElement("p", null, "ホームの表示順を「上へ」「下へ」で調整できます。"), /*#__PURE__*/React.createElement("div", {
-    className: "order-list"
-  }, settings.order.map(id => {
-    const section = homeSections.find(item => item.id === id);
-    return /*#__PURE__*/React.createElement("div", {
-      className: "order-row",
-      key: id
-    }, /*#__PURE__*/React.createElement("span", null, section?.label), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-      onClick: () => moveSection(id, -1)
-    }, "上へ"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => moveSection(id, 1)
-    }, "下へ")));
-  }))))), /*#__PURE__*/React.createElement("details", {
-    className: "customize-card customize-accordion"
-  }, /*#__PURE__*/React.createElement("summary", null, /*#__PURE__*/React.createElement("span", null, "バックアップ・サンプル"), /*#__PURE__*/React.createElement("b", null, "⌄")), /*#__PURE__*/React.createElement("div", {
-    className: "customize-accordion-body"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "customize-card backup-card customize-nested-card"
-  }, /*#__PURE__*/React.createElement("h3", null, "バックアップ"), /*#__PURE__*/React.createElement("p", null, "大切なプロンプトや画像データを保存できます。機種変更やブラウザ変更前にバックアップしてください。"), /*#__PURE__*/React.createElement("p", {
-    className: "backup-storage-note"
-  }, "Prompt Atelierのデータは、このブラウザ内に保存されます。Dockのショートカットを削除しても通常は残りますが、ブラウザのサイトデータ削除や別ブラウザ利用では引き継がれない場合があります。大切なデータは定期的にバックアップを書き出してください。"), /*#__PURE__*/React.createElement("div", {
-    className: "backup-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: exportPromptAtelierBackup
-  }, "バックアップを書き出す"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => backupInputRef.current?.click()
-  }, "バックアップを読み込む")), /*#__PURE__*/React.createElement("div", {
-    className: "developer-tools"
-  }, /*#__PURE__*/React.createElement("strong", null, "配布用サンプルデータ"), /*#__PURE__*/React.createElement("p", null, "現在登録されているデータを、配布版に同梱するサンプルデータとして書き出します。"), /*#__PURE__*/React.createElement("button", {
-    onClick: exportPromptAtelierSampleSeed
-  }, "現在のデータをサンプルとして書き出す")), /*#__PURE__*/React.createElement("input", {
-    ref: backupInputRef,
-    type: "file",
-    accept: "application/json,.json",
-    style: {
-      display: "none"
-    },
-    onChange: event => {
-      importBackup(event.currentTarget.files?.[0]);
-      event.currentTarget.value = "";
-    }
-  })))), /*#__PURE__*/React.createElement("section", {
-    className: "customize-card danger-zone"
-  }, /*#__PURE__*/React.createElement("h3", null, "初期化"), /*#__PURE__*/React.createElement("p", null, "テーマ、バナー、表示項目、並び順を初期設定に戻します。"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: reset
-  }, "初期設定に戻す"))), /*#__PURE__*/React.createElement("aside", {
-    className: "customize-preview"
-  }, /*#__PURE__*/React.createElement("span", null, "ホームプレビュー"), /*#__PURE__*/React.createElement("div", {
-    className: `preview-shell home-mini-preview density-${settings.displayDensity || "normal"} ${previewClassName}`,
-    "data-density": settings.displayDensity || "normal",
-    "data-card-radius": settings.cardStyle.radius,
-    "data-card-shadow": settings.cardStyle.shadow,
-    "data-card-transparency": settings.cardStyle.transparency,
-    "data-card-border": settings.cardStyle.border,
-    "data-background-type": settings.backgroundStyle.type,
-    "data-font-preset": settings.fontPreset || "simple",
-    "data-icon-set": settings.iconSet || "line",
-    style: previewStyle
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "home-mini-topbar"
-  }, /*#__PURE__*/React.createElement("strong", null, "Prompt Atelier"), /*#__PURE__*/React.createElement(HomeDateDisplay, {
-    style: settings.homeClockStyle || "pill",
-    size: settings.homeClockSize || "medium",
-    color: settings.homeClockColor || "theme",
-    mini: true
-  })), settings.bannerVisible && /*#__PURE__*/React.createElement("div", {
-    className: `preview-banner home-mini-banner ${settings.bannerSize || "medium"} fit-${settings.bannerFit || "contain"} ${bannerCanDrag ? "is-draggable" : ""}`,
-    onPointerDown: startBannerDrag,
-    onPointerMove: moveBannerDrag,
-    onPointerUp: endBannerDrag,
-    onPointerCancel: endBannerDrag,
-    onLostPointerCapture: endBannerDrag
-  }, bannerSrc ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("img", {
-    src: bannerSrc,
-    alt: "",
-    draggable: false,
-    style: bannerImageStyle(bannerPosition)
-  }), bannerCanDrag && /*#__PURE__*/React.createElement("span", {
-    className: "banner-drag-hint"
-  }, "画像をドラッグして表示位置を調整")) : /*#__PURE__*/React.createElement("div", {
-    className: "home-mini-banner-placeholder"
-  }, /*#__PURE__*/React.createElement("span", null, "今日の制作ボード"), /*#__PURE__*/React.createElement("strong", null, "Creative Board"))), bannerImageValue && /*#__PURE__*/React.createElement("div", {
-    className: "preview-banner-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    className: "banner-reset-position",
-    onPointerDown: event => event.stopPropagation(),
-    onClick: event => {
-      event.stopPropagation();
-      updateBannerPosition(50, 50, true);
-    }
-  }, "中央に戻す")), settings.visible.dashboard !== false && previewDashboardItems.length > 0 && /*#__PURE__*/React.createElement("section", {
-    className: "home-mini-stats",
-    "aria-label": "ミニ件数カード"
-  }, previewDashboardItems.map(item => /*#__PURE__*/React.createElement("article", {
-    className: "home-mini-stat",
-    key: item.id
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "stat-icon",
-    "data-icon": item.icon
-  }, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: item.icon
-  })), /*#__PURE__*/React.createElement("small", null, item.title), /*#__PURE__*/React.createElement("strong", null, item.value)))), settings.visible.quickActions !== false && previewTools.length > 0 && /*#__PURE__*/React.createElement("section", {
-    className: `home-mini-tools ${settings.workToolIconStyle || "pastel"}`,
-    "aria-label": "ミニ作業ツール"
-  }, previewTools.map(tool => /*#__PURE__*/React.createElement("article", {
-    className: "home-mini-tool",
-    key: tool.id
-  }, /*#__PURE__*/React.createElement("span", null, tool.iconImage ? /*#__PURE__*/React.createElement("img", {
-    src: imageThumbnail(tool.iconImage),
-    alt: ""
-  }) : /*#__PURE__*/React.createElement("b", null, tool.iconText || tool.name.slice(0, 2))), /*#__PURE__*/React.createElement("small", null, tool.name)))), settings.visible.featureCards !== false && previewFeatureEntries.length > 0 && /*#__PURE__*/React.createElement("section", {
-    className: "home-mini-features",
-    "aria-label": "ミニメイン機能カード"
-  }, previewFeatureEntries.map(([id, label, icon]) => /*#__PURE__*/React.createElement("article", {
-    className: "home-mini-feature",
-    key: id
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "stat-icon",
-    "data-icon": icon
-  }, /*#__PURE__*/React.createElement(FeatureIcon, {
-    name: icon
-  })), /*#__PURE__*/React.createElement("strong", null, label)))), settings.visible.dashboard !== false && (projects || []).length > 0 && /*#__PURE__*/React.createElement("section", {
-    className: "home-mini-main-card"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-    className: "mini-pill"
-  }, "Project"), /*#__PURE__*/React.createElement("h4", null, (projects[0]?.name || "Project").slice(0, 18)), /*#__PURE__*/React.createElement("strong", {
-    className: "preview-number-text"
-  }, projects.length, " Projects")), /*#__PURE__*/React.createElement("p", null, "Today"))), /*#__PURE__*/React.createElement("button", {
-    className: "primary preview-save-home",
-    onClick: () => {
-      setSettings(persistHomeSettings());
-      setScreen("home");
-    }
-  }, "保存してホームへ"))), showPwaInstructions && /*#__PURE__*/React.createElement(PwaInstallInstructionsModal, {
-    onClose: () => setShowPwaInstructions(false)
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ホームへ戻る",
-    onClick: () => setScreen("home")
-  }));
+    })]
+  });
 }
 function FeatureIcon({
   name
 }) {
   if (name === "mockup") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("svg", {
       viewBox: "0 0 64 64",
-      "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("rect", {
-      x: "13",
-      y: "16",
-      width: "38",
-      height: "32",
-      rx: "7"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M19 39l8-8 7 7 5-5 8 8"
-    }), /*#__PURE__*/React.createElement("circle", {
-      cx: "42",
-      cy: "25",
-      r: "3.5"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M10 13l3-5 3 5 5 3-5 3-3 5-3-5-5-3 5-3z",
-      className: "icon-fill"
-    }));
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("rect", {
+        x: "13",
+        y: "16",
+        width: "38",
+        height: "32",
+        rx: "7"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M19 39l8-8 7 7 5-5 8 8"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("circle", {
+        cx: "42",
+        cy: "25",
+        r: "3.5"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M10 13l3-5 3 5 5 3-5 3-3 5-3-5-5-3 5-3z",
+        className: "icon-fill"
+      })]
+    });
   }
   if (name === "notebook") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("svg", {
       viewBox: "0 0 64 64",
-      "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("path", {
-      d: "M18 12h27a6 6 0 016 6v31a5 5 0 01-5 5H18a5 5 0 01-5-5V17a5 5 0 015-5z"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M22 12v42"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M29 24h13M29 32h10"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M44 12v15l-5-3-5 3V12",
-      className: "icon-fill"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M10 22h7M10 32h7M10 42h7"
-    }));
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M18 12h27a6 6 0 016 6v31a5 5 0 01-5 5H18a5 5 0 01-5-5V17a5 5 0 015-5z"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M22 12v42"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M29 24h13M29 32h10"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M44 12v15l-5-3-5 3V12",
+        className: "icon-fill"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M10 22h7M10 32h7M10 42h7"
+      })]
+    });
   }
   if (name === "magic") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("svg", {
       viewBox: "0 0 64 64",
-      "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("path", {
-      d: "M18 48l28-28"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M39 17l8 8"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M18 18l3-6 3 6 6 3-6 3-3 6-3-6-6-3 6-3z",
-      className: "icon-fill"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M31 47h21M34 54h13"
-    }));
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M18 48l28-28"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M39 17l8 8"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M18 18l3-6 3 6 6 3-6 3-3 6-3-6-6-3 6-3z",
+        className: "icon-fill"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M47 40l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M31 47h21M34 54h13"
+      })]
+    });
   }
   if (name === "video") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("svg", {
       viewBox: "0 0 64 64",
-      "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("rect", {
-      x: "10",
-      y: "16",
-      width: "44",
-      height: "32",
-      rx: "8"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M27 25l13 7-13 7V25z",
-      className: "icon-fill"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M16 16v32M48 16v32"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M16 24h-5M16 32h-5M16 40h-5M58 24h-5M58 32h-5M58 40h-5"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M45 9l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
-    }));
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("rect", {
+        x: "10",
+        y: "16",
+        width: "44",
+        height: "32",
+        rx: "8"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M27 25l13 7-13 7V25z",
+        className: "icon-fill"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M16 16v32M48 16v32"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M16 24h-5M16 32h-5M16 40h-5M58 24h-5M58 32h-5M58 40h-5"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M45 9l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
+      })]
+    });
   }
   if (name === "alarm") {
-    return /*#__PURE__*/React.createElement("svg", {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("svg", {
       viewBox: "0 0 64 64",
-      "aria-hidden": "true"
-    }, /*#__PURE__*/React.createElement("circle", {
-      cx: "32",
-      cy: "34",
-      r: "18"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M22 10l-9 8M42 10l9 8M32 22v13l9 5M24 54l-4 5M40 54l4 5"
-    }), /*#__PURE__*/React.createElement("path", {
-      d: "M25 5h14",
-      className: "icon-fill"
-    }));
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("circle", {
+        cx: "32",
+        cy: "34",
+        r: "18"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M22 10l-9 8M42 10l9 8M32 22v13l9 5M24 54l-4 5M40 54l4 5"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M25 5h14",
+        className: "icon-fill"
+      })]
+    });
   }
-  return /*#__PURE__*/React.createElement("svg", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("svg", {
     viewBox: "0 0 64 64",
-    "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("path", {
-    d: "M11 22h17l5-6h20v31a6 6 0 01-6 6H17a6 6 0 01-6-6V22z"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M11 28h42"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: "20",
-    y: "34",
-    width: "24",
-    height: "12",
-    rx: "4",
-    className: "icon-fill"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M24 40h16"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M49 14l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
-  }));
+    "aria-hidden": "true",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("path", {
+      d: "M11 22h17l5-6h20v31a6 6 0 01-6 6H17a6 6 0 01-6-6V22z"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+      d: "M11 28h42"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("rect", {
+      x: "20",
+      y: "34",
+      width: "24",
+      height: "12",
+      rx: "4",
+      className: "icon-fill"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+      d: "M24 40h16"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+      d: "M49 14l2-4 2 4 4 2-4 2-2 4-2-4-4-2 4-2z"
+    })]
+  });
 }
 function HomePromptCard({
   prompt,
   onCopy
 }) {
-  return /*#__PURE__*/React.createElement("article", {
-    className: "home-prompt-card"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
-    alt: ""
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "home-prompt-body"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "mini-pill"
-  }, prompt.category), /*#__PURE__*/React.createElement("h3", null, prompt.title), /*#__PURE__*/React.createElement("div", {
-    className: "home-card-bottom"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "tiny-tags"
-  }, (prompt.tags || []).slice(0, 2).map(tag => /*#__PURE__*/React.createElement("span", {
-    key: tag
-  }, "#", tag))), /*#__PURE__*/React.createElement("button", {
-    className: "copy-chip",
-    onClick: () => onCopy(prompt.prompt, prompt.id)
-  }, "コピー"))));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+    className: "home-prompt-card",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("img", {
+      src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
+      alt: ""
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "home-prompt-body",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        className: "mini-pill",
+        children: prompt.category
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+        children: prompt.title
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "home-card-bottom",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "tiny-tags",
+          children: (prompt.tags || []).slice(0, 2).map(tag => /*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+            children: ["#", tag]
+          }, tag))
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "copy-chip",
+          onClick: () => onCopy(prompt.prompt, prompt.id),
+          children: "コピー"
+        })]
+      })]
+    })]
+  });
 }
 function Library({
   copyText,
@@ -6258,146 +6969,195 @@ function Library({
     }
     setArmedCategoryId("");
   };
-  return /*#__PURE__*/React.createElement("section", {
-    className: `page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`
-  }, !currentCategory ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHead, {
-    title: "モックアップライブラリ",
-    action: /*#__PURE__*/React.createElement("div", {
-      className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
-      label: "ホームへ戻る",
-      onClick: () => setScreen("home")
-    }), /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: () => setEditingCategory({
-        id: "",
-        title: "",
-        description: "",
-        coverImage: ""
-      })
-    }, "＋ カテゴリを追加"))
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "library-intro"
-  }, /*#__PURE__*/React.createElement("p", null, "販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。")), /*#__PURE__*/React.createElement("div", {
-    className: "library-category-grid"
-  }, filteredCategories.map(category => /*#__PURE__*/React.createElement("article", {
-    className: `library-category-card ${draggedCategoryId === category.id || armedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
-    key: category.id,
-    "data-category-id": category.id
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "category-reorder-controls",
-    onClick: event => event.stopPropagation()
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    className: "category-drag-handle",
-    "aria-label": `${category.title}を並び替え`,
-    title: "ドラッグして並び替え",
-    onClick: event => handleCategoryHandleClick(event, category.id),
-    onKeyDown: event => handleCategoryKeyDown(event, category.id),
-    onPointerDown: event => startCategoryPointerDrag(event, category.id),
-    disabled: isCategorySearching
-  }, "⋮⋮")), /*#__PURE__*/React.createElement(MenuButton, {
-    onEdit: () => setEditingCategory(category),
-    onDuplicate: () => duplicateCategory(category),
-    onImage: () => setEditingCategory(category),
-    onDelete: () => deleteCategory(category.id)
-  }), /*#__PURE__*/React.createElement("button", {
-    className: "category-open",
-    onClick: () => {
-      setSelectedCategory(category);
-      setQuery("");
-    }
-  }, /*#__PURE__*/React.createElement(CoverImageCarousel, {
-    item: category,
-    className: "category-cover-carousel",
-    placeholderLabel: "カテゴリ"
-  }), /*#__PURE__*/React.createElement("span", null, category.title), mockupDisplay.showDescription !== false && /*#__PURE__*/React.createElement("small", null, category.description), mockupDisplay.showCount !== false && /*#__PURE__*/React.createElement("em", {
-    className: "category-count-label"
-  }, boardPrompts.filter(prompt => prompt.categoryId === category.id).length, "件"))))), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ホームへ戻る",
-    onClick: () => setScreen("home")
-  })) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageBackButton, {
-    label: "ライブラリへ戻る",
-    onClick: () => {
-      setSelectedCategory(null);
-      setQuery("");
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "library-detail-head"
-  }, /*#__PURE__*/React.createElement(CoverImageCarousel, {
-    item: currentCategory,
-    className: "library-detail-cover",
-    placeholderLabel: "カテゴリ"
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h2", null, currentCategory.title), /*#__PURE__*/React.createElement("p", null, currentCategory.description)), /*#__PURE__*/React.createElement("span", {
-    className: "prompt-count-pill"
-  }, "画像 ", imagePrompts.length, " / 20・ストック ", textStockCount, " / 100")), /*#__PURE__*/React.createElement("section", {
-    className: "prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "画像付きプロンプト"), /*#__PURE__*/React.createElement("p", null, "最大20個まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
-    className: "library-prompt-grid"
-  }, imagePromptSlots.map((prompt, index) => prompt ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
-    key: prompt.id,
-    prompt: prompt,
-    inlineEdit: inlineEdit,
-    setInlineEdit: setInlineEdit,
-    updatePrompt: updatePrompt,
-    duplicatePrompt: duplicatePrompt,
-    deletePrompt: () => deleteBoardPrompt(prompt.id),
-    copyText: copyText,
-    showMemo: () => setMemoPrompt(prompt),
-    showTags: true,
-    showMemoButton: true
-  }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
-    className: "add-prompt-card",
-    key: `empty-prompt-${index}`,
-    onClick: () => setEditingPrompt(createBlankLibraryPrompt())
-  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト")) : null))), /*#__PURE__*/React.createElement("section", {
-    className: "prompt-area text-prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトストック"), /*#__PURE__*/React.createElement("p", null, "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
-    className: "text-prompt-list"
-  }, textStockSlots.map((prompt, index) => /*#__PURE__*/React.createElement(TextStockFrame, {
-    key: prompt?.id || `stock-frame-${index}`,
-    prompt: prompt,
-    blankPrompt: createBlankLibraryPrompt(true),
-    onCreate: saveTextStockFrame,
-    onUpdate: updatePrompt,
-    copyText: copyText,
-    showMemo: () => prompt && setMemoPrompt(prompt)
-  }))), canAddTextStock && textStockCount >= stockFrameCount && /*#__PURE__*/React.createElement("button", {
-    className: "add-stock-button",
-    onClick: addTextStockFrame
-  }, "＋ プロンプトを追加"), !canAddTextStock && /*#__PURE__*/React.createElement("p", {
-    className: "limit-message"
-  }, "保存上限（100件）に達しました")), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ライブラリへ戻る",
-    onClick: () => {
-      setSelectedCategory(null);
-      setQuery("");
-    }
-  })), editingCategory && /*#__PURE__*/React.createElement(MockupCategoryModal, {
-    item: editingCategory,
-    onClose: () => setEditingCategory(null),
-    onSave: saveCategory
-  }), editingPrompt && /*#__PURE__*/React.createElement(LibraryPromptModal, {
-    item: editingPrompt,
-    categories: orderedCategories,
-    onClose: () => setEditingPrompt(null),
-    onSave: savePrompt
-  }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
-    prompt: memoPrompt,
-    onClose: () => setMemoPrompt(null),
-    onSave: memo => {
-      updatePrompt(memoPrompt.id, {
-        memo
-      });
-      setMemoPrompt(null);
-    }
-  }));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: `page library-page mockup-card-size-${mockupDisplay.categoryCardSize || "normal"} ${mockupDisplay.showDescription === false ? "mockup-hide-description" : ""} ${mockupDisplay.showCount === false ? "mockup-hide-count" : ""}`,
+    children: [!currentCategory ? /*#__PURE__*/_reactJsxRuntime.jsxs(_reactJsxRuntime.Fragment, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+        title: "モックアップライブラリ",
+        action: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "actions",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+            label: "ホームへ戻る",
+            onClick: () => setScreen("home")
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            className: "primary",
+            onClick: () => setEditingCategory({
+              id: "",
+              title: "",
+              description: "",
+              coverImage: ""
+            }),
+            children: "＋ カテゴリを追加"
+          })]
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+        className: "library-intro",
+        children: /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+          children: "販売画像づくりに使うモックアップを、Pinterestのボードのようにカテゴリで整理できます。"
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+        className: "library-category-grid",
+        children: filteredCategories.map(category => /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+          className: `library-category-card ${draggedCategoryId === category.id || armedCategoryId === category.id ? "is-dragging" : ""} ${dragOverCategoryId === category.id && draggedCategoryId !== category.id ? "is-drag-over" : ""}`,
+          "data-category-id": category.id,
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "category-reorder-controls",
+            onClick: event => event.stopPropagation(),
+            children: /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              type: "button",
+              className: "category-drag-handle",
+              "aria-label": `${category.title}を並び替え`,
+              title: "ドラッグして並び替え",
+              onClick: event => handleCategoryHandleClick(event, category.id),
+              onKeyDown: event => handleCategoryKeyDown(event, category.id),
+              onPointerDown: event => startCategoryPointerDrag(event, category.id),
+              disabled: isCategorySearching,
+              children: "⋮⋮"
+            })
+          }), /*#__PURE__*/_reactJsxRuntime.jsx(MenuButton, {
+            onEdit: () => setEditingCategory(category),
+            onDuplicate: () => duplicateCategory(category),
+            onImage: () => setEditingCategory(category),
+            onDelete: () => deleteCategory(category.id)
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+            className: "category-open",
+            onClick: () => {
+              setSelectedCategory(category);
+              setQuery("");
+            },
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx(CoverImageCarousel, {
+              item: category,
+              className: "category-cover-carousel",
+              placeholderLabel: "カテゴリ"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: category.title
+            }), mockupDisplay.showDescription !== false && /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+              children: category.description
+            }), mockupDisplay.showCount !== false && /*#__PURE__*/_reactJsxRuntime.jsxs("em", {
+              className: "category-count-label",
+              children: [boardPrompts.filter(prompt => prompt.categoryId === category.id).length, "件"]
+            })]
+          })]
+        }, category.id))
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+        className: "page-bottom-back",
+        label: "ホームへ戻る",
+        onClick: () => setScreen("home")
+      })]
+    }) : /*#__PURE__*/_reactJsxRuntime.jsxs(_reactJsxRuntime.Fragment, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+        label: "ライブラリへ戻る",
+        onClick: () => {
+          setSelectedCategory(null);
+          setQuery("");
+        }
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "library-detail-head",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx(CoverImageCarousel, {
+          item: currentCategory,
+          className: "library-detail-cover",
+          placeholderLabel: "カテゴリ"
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("h2", {
+            children: currentCategory.title
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            children: currentCategory.description
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+          className: "prompt-count-pill",
+          children: ["画像 ", imagePrompts.length, " / 20・ストック ", textStockCount, " / 100"]
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+        className: "prompt-area",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "prompt-area-head",
+          children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "画像付きプロンプト"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "最大20個まで保存できます。"
+            })]
+          })
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "library-prompt-grid",
+          children: imagePromptSlots.map((prompt, index) => prompt ? /*#__PURE__*/_reactJsxRuntime.jsx(LibraryImagePromptCard, {
+            prompt: prompt,
+            inlineEdit: inlineEdit,
+            setInlineEdit: setInlineEdit,
+            updatePrompt: updatePrompt,
+            duplicatePrompt: duplicatePrompt,
+            deletePrompt: () => deleteBoardPrompt(prompt.id),
+            copyText: copyText,
+            showMemo: () => setMemoPrompt(prompt),
+            showTags: true,
+            showMemoButton: true
+          }, prompt.id) : canAddImagePrompt ? /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+            className: "add-prompt-card",
+            onClick: () => setEditingPrompt(createBlankLibraryPrompt()),
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "＋"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+              children: "新しいプロンプト"
+            })]
+          }, `empty-prompt-${index}`) : null)
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+        className: "prompt-area text-prompt-area",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "prompt-area-head",
+          children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "プロンプトストック"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"
+            })]
+          })
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "text-prompt-list",
+          children: textStockSlots.map((prompt, index) => /*#__PURE__*/_reactJsxRuntime.jsx(TextStockFrame, {
+            prompt: prompt,
+            blankPrompt: createBlankLibraryPrompt(true),
+            onCreate: saveTextStockFrame,
+            onUpdate: updatePrompt,
+            copyText: copyText,
+            showMemo: () => prompt && setMemoPrompt(prompt)
+          }, prompt?.id || `stock-frame-${index}`))
+        }), canAddTextStock && textStockCount >= stockFrameCount && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "add-stock-button",
+          onClick: addTextStockFrame,
+          children: "＋ プロンプトを追加"
+        }), !canAddTextStock && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+          className: "limit-message",
+          children: "保存上限（100件）に達しました"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+        className: "page-bottom-back",
+        label: "ライブラリへ戻る",
+        onClick: () => {
+          setSelectedCategory(null);
+          setQuery("");
+        }
+      })]
+    }), editingCategory && /*#__PURE__*/_reactJsxRuntime.jsx(MockupCategoryModal, {
+      item: editingCategory,
+      onClose: () => setEditingCategory(null),
+      onSave: saveCategory
+    }), editingPrompt && /*#__PURE__*/_reactJsxRuntime.jsx(LibraryPromptModal, {
+      item: editingPrompt,
+      categories: orderedCategories,
+      onClose: () => setEditingPrompt(null),
+      onSave: savePrompt
+    }), memoPrompt && /*#__PURE__*/_reactJsxRuntime.jsx(MemoModal, {
+      prompt: memoPrompt,
+      onClose: () => setMemoPrompt(null),
+      onSave: memo => {
+        updatePrompt(memoPrompt.id, {
+          memo
+        });
+        setMemoPrompt(null);
+      }
+    })]
+  });
 }
 function CoverImageCarousel({
   item,
@@ -6418,38 +7178,41 @@ function CoverImageCarousel({
     return () => window.clearInterval(timer);
   }, [isHovering, images.length]);
   const currentImage = images[index] || images[0];
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
     className: `cover-image-carousel ${className}`,
     onMouseEnter: () => setIsHovering(true),
-    onMouseLeave: () => setIsHovering(false)
-  }, currentImage ? /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(currentImage),
-    alt: ""
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "image-placeholder",
-    "aria-label": `${placeholderLabel}未設定`
-  }, /*#__PURE__*/React.createElement("svg", {
-    viewBox: "0 0 64 64",
-    "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("rect", {
-    x: "12",
-    y: "16",
-    width: "40",
-    height: "32",
-    rx: "7"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M18 41l10-10 8 8 5-5 7 7"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "42",
-    cy: "25",
-    r: "4"
-  }))), images.length > 1 && /*#__PURE__*/React.createElement("div", {
-    className: "cover-image-dots",
-    "aria-hidden": "true"
-  }, images.map((_, dotIndex) => /*#__PURE__*/React.createElement("span", {
-    className: dotIndex === index ? "active" : "",
-    key: dotIndex
-  }))));
+    onMouseLeave: () => setIsHovering(false),
+    children: [currentImage ? /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+      src: imageDisplaySrc(currentImage),
+      alt: ""
+    }) : /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "image-placeholder",
+      "aria-label": `${placeholderLabel}未設定`,
+      children: /*#__PURE__*/_reactJsxRuntime.jsxs("svg", {
+        viewBox: "0 0 64 64",
+        "aria-hidden": "true",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("rect", {
+          x: "12",
+          y: "16",
+          width: "40",
+          height: "32",
+          rx: "7"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+          d: "M18 41l10-10 8 8 5-5 7 7"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("circle", {
+          cx: "42",
+          cy: "25",
+          r: "4"
+        })]
+      })
+    }), images.length > 1 && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "cover-image-dots",
+      "aria-hidden": "true",
+      children: images.map((_, dotIndex) => /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        className: dotIndex === index ? "active" : ""
+      }, dotIndex))
+    })]
+  });
 }
 function CoverImageUploader({
   item,
@@ -6490,7 +7253,7 @@ function CoverImageUploader({
     setUrlDraft("");
     setMessage("");
   };
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
     className: "cover-image-uploader",
     onClick: event => event.stopPropagation(),
     onDragOver: event => event.preventDefault(),
@@ -6505,39 +7268,51 @@ function CoverImageUploader({
       event.preventDefault();
       event.stopPropagation();
       addImages(files);
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "cover-image-strip"
-  }, images.map((image, index) => /*#__PURE__*/React.createElement("div", {
-    className: "cover-image-thumb",
-    key: `${imageDisplaySrc(image)}-${index}`
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(image),
-    alt: ""
-  }), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => applyImages(images.filter((_, imageIndex) => imageIndex !== index))
-  }, "削除"))), images.length < 3 && /*#__PURE__*/React.createElement("label", {
-    className: "cover-image-add"
-  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("small", null, "画像を追加"), /*#__PURE__*/React.createElement("input", {
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    multiple: true,
-    onChange: event => addImages(event.target.files || [])
-  }))), /*#__PURE__*/React.createElement("p", {
-    className: "cover-image-help"
-  }, "見出し画像は最大3枚まで設定できます"), /*#__PURE__*/React.createElement("div", {
-    className: "cover-image-url-row"
-  }, /*#__PURE__*/React.createElement("input", {
-    value: urlDraft,
-    onChange: event => setUrlDraft(event.target.value),
-    placeholder: "画像URLを追加"
-  }), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: addUrl
-  }, "追加")), message && /*#__PURE__*/React.createElement("p", {
-    className: "cover-image-message"
-  }, message));
+    },
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "cover-image-strip",
+      children: [images.map((image, index) => /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "cover-image-thumb",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("img", {
+          src: imageDisplaySrc(image),
+          alt: ""
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          type: "button",
+          onClick: () => applyImages(images.filter((_, imageIndex) => imageIndex !== index)),
+          children: "削除"
+        })]
+      }, `${imageDisplaySrc(image)}-${index}`)), images.length < 3 && /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+        className: "cover-image-add",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+          children: "＋"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+          children: "画像を追加"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          type: "file",
+          accept: "image/png,image/jpeg,image/webp",
+          multiple: true,
+          onChange: event => addImages(event.target.files || [])
+        })]
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+      className: "cover-image-help",
+      children: "見出し画像は最大3枚まで設定できます"
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "cover-image-url-row",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        value: urlDraft,
+        onChange: event => setUrlDraft(event.target.value),
+        placeholder: "画像URLを追加"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        type: "button",
+        onClick: addUrl,
+        children: "追加"
+      })]
+    }), message && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+      className: "cover-image-message",
+      children: message
+    })]
+  });
 }
 function LibraryImagePromptCard({
   prompt,
@@ -6555,80 +7330,86 @@ function LibraryImagePromptCard({
     coverImages,
     imageUrl: coverImages[0] || ""
   });
-  return /*#__PURE__*/React.createElement("article", {
-    className: "library-prompt-card"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "prompt-favorite-button image-prompt-heart",
-    "aria-label": prompt.favorite ? "お気に入りを解除" : "お気に入りに追加",
-    onClick: event => {
-      event.stopPropagation();
-      updatePrompt(prompt.id, {
-        favorite: !prompt.favorite
-      });
-    }
-  }, prompt.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement(PromptMenuButton, {
-    onDuplicate: () => duplicatePrompt(prompt),
-    onClearImage: () => updatePrompt(prompt.id, {
-      imageUrl: "",
-      coverImages: []
-    }),
-    onDelete: deletePrompt
-  }), /*#__PURE__*/React.createElement(CoverImageCarousel, {
-    item: prompt,
-    placeholderLabel: "プロンプト画像"
-  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
-    item: prompt,
-    category: "prompt",
-    onChange: updateCoverImages
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "prompt-card-content"
-  }, /*#__PURE__*/React.createElement(InlineEditable, {
-    className: "inline-title",
-    value: prompt.title,
-    placeholder: "タイトル",
-    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "title",
-    onEdit: () => setInlineEdit({
-      id: prompt.id,
-      field: "title"
-    }),
-    onSave: title => {
-      updatePrompt(prompt.id, {
-        title
-      });
-      setInlineEdit(null);
-    }
-  }), /*#__PURE__*/React.createElement(InlineEditable, {
-    className: "inline-prompt",
-    multiline: true,
-    value: prompt.prompt,
-    placeholder: "プロンプト本文",
-    isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "prompt",
-    onEdit: () => setInlineEdit({
-      id: prompt.id,
-      field: "prompt"
-    }),
-    onSave: promptText => {
-      updatePrompt(prompt.id, {
-        prompt: promptText
-      });
-      setInlineEdit(null);
-    }
-  }), showTags && Array.isArray(prompt.tags) && prompt.tags.length > 0 && /*#__PURE__*/React.createElement(TagRow, {
-    tags: prompt.tags.slice(0, 4)
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "prompt-card-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: event => {
-      event.stopPropagation();
-      copyText(prompt.prompt, prompt.id);
-    }
-  }, "📋 プロンプトをコピー"), showMemoButton && /*#__PURE__*/React.createElement("button", {
-    onClick: event => {
-      event.stopPropagation();
-      showMemo();
-    }
-  }, "メモ"))));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+    className: "library-prompt-card",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+      className: "prompt-favorite-button image-prompt-heart",
+      "aria-label": prompt.favorite ? "お気に入りを解除" : "お気に入りに追加",
+      onClick: event => {
+        event.stopPropagation();
+        updatePrompt(prompt.id, {
+          favorite: !prompt.favorite
+        });
+      },
+      children: prompt.favorite ? "♥" : "♡"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(PromptMenuButton, {
+      onDuplicate: () => duplicatePrompt(prompt),
+      onClearImage: () => updatePrompt(prompt.id, {
+        imageUrl: "",
+        coverImages: []
+      }),
+      onDelete: deletePrompt
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(CoverImageCarousel, {
+      item: prompt,
+      placeholderLabel: "プロンプト画像"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(CoverImageUploader, {
+      item: prompt,
+      category: "prompt",
+      onChange: updateCoverImages
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "prompt-card-content",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx(InlineEditable, {
+        className: "inline-title",
+        value: prompt.title,
+        placeholder: "タイトル",
+        isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "title",
+        onEdit: () => setInlineEdit({
+          id: prompt.id,
+          field: "title"
+        }),
+        onSave: title => {
+          updatePrompt(prompt.id, {
+            title
+          });
+          setInlineEdit(null);
+        }
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(InlineEditable, {
+        className: "inline-prompt",
+        multiline: true,
+        value: prompt.prompt,
+        placeholder: "プロンプト本文",
+        isEditing: inlineEdit?.id === prompt.id && inlineEdit.field === "prompt",
+        onEdit: () => setInlineEdit({
+          id: prompt.id,
+          field: "prompt"
+        }),
+        onSave: promptText => {
+          updatePrompt(prompt.id, {
+            prompt: promptText
+          });
+          setInlineEdit(null);
+        }
+      }), showTags && Array.isArray(prompt.tags) && prompt.tags.length > 0 && /*#__PURE__*/_reactJsxRuntime.jsx(TagRow, {
+        tags: prompt.tags.slice(0, 4)
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "prompt-card-actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: event => {
+            event.stopPropagation();
+            copyText(prompt.prompt, prompt.id);
+          },
+          children: "📋 プロンプトをコピー"
+        }), showMemoButton && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: event => {
+            event.stopPropagation();
+            showMemo();
+          },
+          children: "メモ"
+        })]
+      })]
+    })]
+  });
 }
 function TextStockFrame({
   prompt,
@@ -6679,73 +7460,81 @@ function TextStockFrame({
       favorite: nextFavorite
     });
   };
-  return /*#__PURE__*/React.createElement("article", {
-    className: "text-stock-frame"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "prompt-favorite-button text-stock-heart",
-    "aria-label": prompt?.favorite ? "お気に入りを解除" : "お気に入りに追加",
-    onClick: toggleFavorite,
-    disabled: !isSaved && !title.trim() && !promptText.trim()
-  }, prompt?.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("input", {
-    value: title,
-    onChange: event => setTitle(event.target.value),
-    onBlur: () => save({
-      title
-    }),
-    placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: promptText,
-    onChange: event => setPromptText(event.target.value),
-    onBlur: () => save({
-      prompt: promptText
-    }),
-    placeholder: "プロンプト本文"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "text-stock-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: copyStockPrompt,
-    disabled: !promptText.trim()
-  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
-    onClick: event => {
-      event.stopPropagation();
-      showMemo();
-    },
-    disabled: !isSaved
-  }, "メモ"), isSaved && onDelete && /*#__PURE__*/React.createElement("button", {
-    className: "danger text-stock-delete",
-    onClick: event => {
-      event.stopPropagation();
-      onDelete(prompt.id);
-    }
-  }, "削除")));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+    className: "text-stock-frame",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+      className: "prompt-favorite-button text-stock-heart",
+      "aria-label": prompt?.favorite ? "お気に入りを解除" : "お気に入りに追加",
+      onClick: toggleFavorite,
+      disabled: !isSaved && !title.trim() && !promptText.trim(),
+      children: prompt?.favorite ? "♥" : "♡"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      value: title,
+      onChange: event => setTitle(event.target.value),
+      onBlur: () => save({
+        title
+      }),
+      placeholder: "タイトル"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+      value: promptText,
+      onChange: event => setPromptText(event.target.value),
+      onBlur: () => save({
+        prompt: promptText
+      }),
+      placeholder: "プロンプト本文"
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "text-stock-actions",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "primary",
+        onClick: copyStockPrompt,
+        disabled: !promptText.trim(),
+        children: "📋 プロンプトをコピー"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: event => {
+          event.stopPropagation();
+          showMemo();
+        },
+        disabled: !isSaved,
+        children: "メモ"
+      }), isSaved && onDelete && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "danger text-stock-delete",
+        onClick: event => {
+          event.stopPropagation();
+          onDelete(prompt.id);
+        },
+        children: "削除"
+      })]
+    })]
+  });
 }
 function PromptThumbnail({
   imageUrl
 }) {
-  if (imageUrl) return /*#__PURE__*/React.createElement("img", {
+  if (imageUrl) return /*#__PURE__*/_reactJsxRuntime.jsx("img", {
     src: imageDisplaySrc(imageUrl),
     alt: ""
   });
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
     className: "image-placeholder",
-    "aria-label": "画像未設定"
-  }, /*#__PURE__*/React.createElement("svg", {
-    viewBox: "0 0 64 64",
-    "aria-hidden": "true"
-  }, /*#__PURE__*/React.createElement("rect", {
-    x: "12",
-    y: "16",
-    width: "40",
-    height: "32",
-    rx: "7"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M18 41l10-10 8 8 5-5 7 7"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "42",
-    cy: "25",
-    r: "4"
-  })));
+    "aria-label": "画像未設定",
+    children: /*#__PURE__*/_reactJsxRuntime.jsxs("svg", {
+      viewBox: "0 0 64 64",
+      "aria-hidden": "true",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("rect", {
+        x: "12",
+        y: "16",
+        width: "40",
+        height: "32",
+        rx: "7"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("path", {
+        d: "M18 41l10-10 8 8 5-5 7 7"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("circle", {
+        cx: "42",
+        cy: "25",
+        r: "4"
+      })]
+    })
+  });
 }
 function EditableThumbnail({
   prompt,
@@ -6763,7 +7552,7 @@ function EditableThumbnail({
     setDraft(image.src);
   };
   if (isEditing) {
-    return /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
       className: "thumbnail-editor",
       onClick: event => event.stopPropagation(),
       onDragOver: event => event.preventDefault(),
@@ -6778,35 +7567,42 @@ function EditableThumbnail({
         event.preventDefault();
         event.stopPropagation();
         importFiles(files);
-      }
-    }, /*#__PURE__*/React.createElement("input", {
-      value: draft,
-      onChange: event => setDraft(event.target.value),
-      placeholder: "サムネイル画像URL",
-      autoFocus: true
-    }), /*#__PURE__*/React.createElement("label", {
-      className: "mini-upload"
-    }, "画像を選ぶ", /*#__PURE__*/React.createElement("input", {
-      type: "file",
-      accept: "image/png,image/jpeg,image/webp",
-      onChange: event => readImage(event, imageUrl => setDraft(imageUrl), "prompt")
-    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: () => onSave(draft)
-    }, "保存"), /*#__PURE__*/React.createElement("button", {
-      onClick: onCancel
-    }, "閉じる")));
+      },
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        value: draft,
+        onChange: event => setDraft(event.target.value),
+        placeholder: "サムネイル画像URL",
+        autoFocus: true
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+        className: "mini-upload",
+        children: ["画像を選ぶ", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          type: "file",
+          accept: "image/png,image/jpeg,image/webp",
+          onChange: event => readImage(event, imageUrl => setDraft(imageUrl), "prompt")
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: () => onSave(draft),
+          children: "保存"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: onCancel,
+          children: "閉じる"
+        })]
+      })]
+    });
   }
-  return /*#__PURE__*/React.createElement("button", {
+  return /*#__PURE__*/_reactJsxRuntime.jsx("button", {
     className: "thumbnail-button",
     onClick: event => {
       event.stopPropagation();
       onEdit();
     },
-    "aria-label": "画像を変更"
-  }, /*#__PURE__*/React.createElement(PromptThumbnail, {
-    imageUrl: prompt.imageUrl
-  }));
+    "aria-label": "画像を変更",
+    children: /*#__PURE__*/_reactJsxRuntime.jsx(PromptThumbnail, {
+      imageUrl: prompt.imageUrl
+    })
+  });
 }
 function InlineEditable({
   value,
@@ -6834,16 +7630,21 @@ function InlineEditable({
       placeholder,
       className: `inline-input ${className || ""}`
     };
-    return multiline ? /*#__PURE__*/React.createElement("textarea", commonProps) : /*#__PURE__*/React.createElement("input", commonProps);
+    return multiline ? /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+      ...commonProps
+    }) : /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      ...commonProps
+    });
   }
   const Tag = className === "inline-title" ? "h3" : "p";
-  return /*#__PURE__*/React.createElement(Tag, {
+  return /*#__PURE__*/_reactJsxRuntime.jsx(Tag, {
     className: `inline-editable ${className || ""}`,
     onClick: event => {
       event.stopPropagation();
       onEdit();
-    }
-  }, value || placeholder);
+    },
+    children: value || placeholder
+  });
 }
 function TranslationModal({
   prompt,
@@ -6851,19 +7652,28 @@ function TranslationModal({
   copyText
 }) {
   const translation = prompt.japaneseTranslation || "このプロンプトにはまだ和訳がありません。編集画面から和訳を追加できます。";
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs(Modal, {
     title: "日本語訳",
-    onClose: onClose
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "translation-box"
-  }, /*#__PURE__*/React.createElement("h3", null, prompt.title, " の和訳"), /*#__PURE__*/React.createElement("p", null, translation)), /*#__PURE__*/React.createElement("div", {
-    className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onClose
-  }, "閉じる"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => copyText(translation)
-  }, "和訳をコピー")));
+    onClose: onClose,
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "translation-box",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("h3", {
+        children: [prompt.title, " の和訳"]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+        children: translation
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "modal-actions",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: onClose,
+        children: "閉じる"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "primary",
+        onClick: () => copyText(translation),
+        children: "和訳をコピー"
+      })]
+    })]
+  });
 }
 function MemoModal({
   prompt,
@@ -6881,35 +7691,50 @@ function MemoModal({
     }
     onClose();
   };
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs(Modal, {
     title: "メモ",
     onClose: requestClose,
-    hideClose: true
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "translation-box"
-  }, /*#__PURE__*/React.createElement("h3", null, prompt.title, " のメモ"), /*#__PURE__*/React.createElement("textarea", {
-    className: "memo-textarea",
-    value: memo,
-    onChange: event => setMemo(event.target.value),
-    placeholder: "このプロンプトで気づいたこと、使いどころ、商品化メモなど"
-  })), showConfirm && /*#__PURE__*/React.createElement("div", {
-    className: "unsaved-confirm"
-  }, /*#__PURE__*/React.createElement("strong", null, "保存せず閉じますか？"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setShowConfirm(false)
-  }, "キャンセル"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: onClose
-  }, "保存せず閉じる"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => onSave(memo)
-  }, "保存して閉じる"))), /*#__PURE__*/React.createElement("div", {
-    className: "memo-modal-footer"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: requestClose
-  }, "閉じる"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => onSave(memo)
-  }, "メモを保存")));
+    hideClose: true,
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "translation-box",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("h3", {
+        children: [prompt.title, " のメモ"]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        className: "memo-textarea",
+        value: memo,
+        onChange: event => setMemo(event.target.value),
+        placeholder: "このプロンプトで気づいたこと、使いどころ、商品化メモなど"
+      })]
+    }), showConfirm && /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "unsaved-confirm",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+        children: "保存せず閉じますか？"
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: () => setShowConfirm(false),
+          children: "キャンセル"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "danger",
+          onClick: onClose,
+          children: "保存せず閉じる"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: () => onSave(memo),
+          children: "保存して閉じる"
+        })]
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "memo-modal-footer",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: requestClose,
+        children: "閉じる"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "primary",
+        onClick: () => onSave(memo),
+        children: "メモを保存"
+      })]
+    })]
+  });
 }
 function MenuButton({
   onEdit,
@@ -6922,21 +7747,29 @@ function MenuButton({
     event.stopPropagation();
     action();
   };
-  return /*#__PURE__*/React.createElement("details", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
     className: "card-menu",
-    onClick: event => event.stopPropagation()
-  }, /*#__PURE__*/React.createElement("summary", {
-    "aria-label": "メニュー"
-  }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-    onClick: event => runMenuAction(event, onEdit)
-  }, "編集"), /*#__PURE__*/React.createElement("button", {
-    onClick: event => runMenuAction(event, onDuplicate)
-  }, "複製"), /*#__PURE__*/React.createElement("button", {
-    onClick: event => runMenuAction(event, onImage)
-  }, "画像変更"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: event => runMenuAction(event, onDelete)
-  }, "削除")));
+    onClick: event => event.stopPropagation(),
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("summary", {
+      "aria-label": "メニュー",
+      children: "…"
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: event => runMenuAction(event, onEdit),
+        children: "編集"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: event => runMenuAction(event, onDuplicate),
+        children: "複製"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: event => runMenuAction(event, onImage),
+        children: "画像変更"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "danger",
+        onClick: event => runMenuAction(event, onDelete),
+        children: "削除"
+      })]
+    })]
+  });
 }
 function PromptMenuButton({
   onDuplicate,
@@ -6948,19 +7781,26 @@ function PromptMenuButton({
     event.stopPropagation();
     action();
   };
-  return /*#__PURE__*/React.createElement("details", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
     className: "card-menu",
-    onClick: event => event.stopPropagation()
-  }, /*#__PURE__*/React.createElement("summary", {
-    "aria-label": "メニュー"
-  }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-    onClick: event => runMenuAction(event, onDuplicate)
-  }, "複製"), /*#__PURE__*/React.createElement("button", {
-    onClick: event => runMenuAction(event, onClearImage)
-  }, "画像を削除"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: event => runMenuAction(event, onDelete)
-  }, "削除")));
+    onClick: event => event.stopPropagation(),
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("summary", {
+      "aria-label": "メニュー",
+      children: "…"
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: event => runMenuAction(event, onDuplicate),
+        children: "複製"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        onClick: event => runMenuAction(event, onClearImage),
+        children: "画像を削除"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "danger",
+        onClick: event => runMenuAction(event, onDelete),
+        children: "削除"
+      })]
+    })]
+  });
 }
 async function readImage(event, onLoad, category = "prompt") {
   event?.preventDefault?.();
@@ -7001,31 +7841,34 @@ function MockupCategoryModal({
     coverImages,
     coverImage: coverImages[0] || ""
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs(Modal, {
     title: item.id ? "カテゴリを編集" : "カテゴリを追加",
-    onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
-    value: draft.title,
-    onChange: e => setDraft({
-      ...draft,
-      title: e.target.value
-    }),
-    placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.description,
-    onChange: e => setDraft({
-      ...draft,
-      description: e.target.value
-    }),
-    placeholder: "説明文"
-  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
-    item: draft,
-    category: "mockup",
-    onChange: setCoverImages
-  })), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
-    onSave: () => onSave(draft)
-  }));
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs(FormGrid, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        value: draft.title,
+        onChange: e => setDraft({
+          ...draft,
+          title: e.target.value
+        }),
+        placeholder: "タイトル"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        value: draft.description,
+        onChange: e => setDraft({
+          ...draft,
+          description: e.target.value
+        }),
+        placeholder: "説明文"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(CoverImageUploader, {
+        item: draft,
+        category: "mockup",
+        onChange: setCoverImages
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(ModalActions, {
+      onClose: onClose,
+      onSave: () => onSave(draft)
+    })]
+  });
 }
 function LibraryPromptModal({
   item,
@@ -7041,63 +7884,67 @@ function LibraryPromptModal({
     coverImages,
     imageUrl: coverImages[0] || ""
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
-    onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
-    value: draft.title,
-    onChange: e => setDraft({
-      ...draft,
-      title: e.target.value
-    }),
-    placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("select", {
-    value: draft.categoryId,
-    onChange: e => setDraft({
-      ...draft,
-      categoryId: e.target.value
-    })
-  }, categories.map(category => /*#__PURE__*/React.createElement("option", {
-    value: category.id,
-    key: category.id
-  }, category.title))), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.description,
-    onChange: e => setDraft({
-      ...draft,
-      description: e.target.value
-    }),
-    placeholder: "説明"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    className: "tall",
-    value: draft.prompt,
-    onChange: e => setDraft({
-      ...draft,
-      prompt: e.target.value
-    }),
-    placeholder: "プロンプト本文"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    className: "tall",
-    value: draft.japaneseTranslation || "",
-    onChange: e => setDraft({
-      ...draft,
-      japaneseTranslation: e.target.value
-    }),
-    placeholder: "和訳本文"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.memo || "",
-    onChange: e => setDraft({
-      ...draft,
-      memo: e.target.value
-    }),
-    placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
-    item: draft,
-    category: "mockup",
-    onChange: setCoverImages
-  })), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
-    onSave: () => onSave(draft)
-  }));
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs(FormGrid, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        value: draft.title,
+        onChange: e => setDraft({
+          ...draft,
+          title: e.target.value
+        }),
+        placeholder: "タイトル"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+        value: draft.categoryId,
+        onChange: e => setDraft({
+          ...draft,
+          categoryId: e.target.value
+        }),
+        children: categories.map(category => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          value: category.id,
+          children: category.title
+        }, category.id))
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        value: draft.description,
+        onChange: e => setDraft({
+          ...draft,
+          description: e.target.value
+        }),
+        placeholder: "説明"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        className: "tall",
+        value: draft.prompt,
+        onChange: e => setDraft({
+          ...draft,
+          prompt: e.target.value
+        }),
+        placeholder: "プロンプト本文"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        className: "tall",
+        value: draft.japaneseTranslation || "",
+        onChange: e => setDraft({
+          ...draft,
+          japaneseTranslation: e.target.value
+        }),
+        placeholder: "和訳本文"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        value: draft.memo || "",
+        onChange: e => setDraft({
+          ...draft,
+          memo: e.target.value
+        }),
+        placeholder: "メモ"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(CoverImageUploader, {
+        item: draft,
+        category: "mockup",
+        onChange: setCoverImages
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(ModalActions, {
+      onClose: onClose,
+      onSave: () => onSave(draft)
+    })]
+  });
 }
 const DEFAULT_FOLDER_NAME = "未分類";
 function folderNameOf(item) {
@@ -7246,148 +8093,194 @@ function PromptBook({
     if (!canAddTextStock) return;
     setStockFrameCount(count => Math.min(100, count + 1));
   };
-  return /*#__PURE__*/React.createElement("section", {
-    className: `page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "プロンプト帳",
-    action: /*#__PURE__*/React.createElement("div", {
-      className: "actions"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "prompt-count-pill"
-    }, "画像 ", imagePromptCount, " / 20・ストック ", textStockCount, " / 100"), /*#__PURE__*/React.createElement(PageBackButton, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: `page prompt-book-page prompt-view-${promptDisplay.viewMode || "card"} prompt-image-${promptDisplay.imageSize || "normal"} ${promptDisplay.showTags === false ? "prompt-hide-tags" : ""} ${promptDisplay.showMemo === false ? "prompt-hide-memo" : ""}`,
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+      title: "プロンプト帳",
+      action: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+          className: "prompt-count-pill",
+          children: ["画像 ", imagePromptCount, " / 20・ストック ", textStockCount, " / 100"]
+        }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+          label: "ホームへ戻る",
+          onClick: () => setScreen("home")
+        })]
+      })
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "folder-view-toolbar",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "folder-view-tabs",
+        role: "group",
+        "aria-label": "プロンプト帳の表示切り替え",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: viewMode === "list" ? "active-soft" : "",
+          onClick: () => setViewMode("list"),
+          children: "一覧"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: viewMode === "folders" ? "active-soft" : "",
+          onClick: () => setViewMode("folders"),
+          children: "ファイル別"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "folder-create-button",
+        onClick: addPromptFolder,
+        children: "＋ 新しいファイル"
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs(Filters, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+        value: tag,
+        onChange: e => setTag(e.target.value),
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          children: "すべて"
+        }), tags.map(item => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          children: item
+        }, item))]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+        className: "check",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          type: "checkbox",
+          checked: favoritesOnly,
+          onChange: e => setFavoritesOnly(e.target.checked)
+        }), " お気に入りのみ"]
+      })]
+    }), viewMode === "folders" ? /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "folder-board",
+      children: promptFolderGroups.map(group => /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+        className: "folder-panel",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "folder-cover",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+            children: "ファイル"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+            children: group.name
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("small", {
+            children: [group.items.length, "件"]
+          })]
+        }), group.items.length ? /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "library-prompt-grid",
+          children: group.items.map(prompt => !prompt.isTextStock ? /*#__PURE__*/_reactJsxRuntime.jsx(LibraryImagePromptCard, {
+            prompt: prompt,
+            inlineEdit: inlineEdit,
+            setInlineEdit: setInlineEdit,
+            updatePrompt: updatePrompt,
+            duplicatePrompt: duplicatePrompt,
+            deletePrompt: () => deletePrompt(prompt.id),
+            copyText: copyText,
+            showTranslation: () => setTranslationPrompt(prompt),
+            showMemo: () => setMemoPrompt(prompt),
+            showTags: promptDisplay.showTags !== false,
+            showMemoButton: promptDisplay.showMemo !== false
+          }, prompt.id) : /*#__PURE__*/_reactJsxRuntime.jsx(TextStockFrame, {
+            prompt: prompt,
+            blankPrompt: blankPrompt(true),
+            onCreate: saveTextStockFrame,
+            onUpdate: updatePrompt,
+            onDelete: deletePrompt,
+            copyText: copyText,
+            showTranslation: () => setTranslationPrompt(prompt),
+            showMemo: () => setMemoPrompt(prompt)
+          }, prompt.id))
+        }) : /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+          className: "folder-empty-text",
+          children: "このファイルにはまだ項目がありません。"
+        })]
+      }, group.name))
+    }) : /*#__PURE__*/_reactJsxRuntime.jsxs(_reactJsxRuntime.Fragment, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+        className: "prompt-area",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "prompt-area-head",
+          children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "画像付きプロンプト"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "お気に入り・よく使うプロンプトを、最大20個まで保存できます。"
+            })]
+          })
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "library-prompt-grid",
+          children: imagePromptSlots.map((prompt, index) => prompt ? /*#__PURE__*/_reactJsxRuntime.jsx(LibraryImagePromptCard, {
+            prompt: prompt,
+            inlineEdit: inlineEdit,
+            setInlineEdit: setInlineEdit,
+            updatePrompt: updatePrompt,
+            duplicatePrompt: duplicatePrompt,
+            deletePrompt: () => deletePrompt(prompt.id),
+            copyText: copyText,
+            showTranslation: () => setTranslationPrompt(prompt),
+            showMemo: () => setMemoPrompt(prompt),
+            showTags: promptDisplay.showTags !== false,
+            showMemoButton: promptDisplay.showMemo !== false
+          }, prompt.id) : canAddImagePrompt ? /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+            className: "add-prompt-card",
+            onClick: () => setEditing(blankPrompt()),
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "＋"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+              children: "新しいプロンプト"
+            })]
+          }, `my-empty-prompt-${index}`) : null)
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+        className: "prompt-area text-prompt-area",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "prompt-area-head",
+          children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "プロンプトストック"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"
+            })]
+          })
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "text-prompt-list",
+          children: textStockSlots.map((prompt, index) => /*#__PURE__*/_reactJsxRuntime.jsx(TextStockFrame, {
+            prompt: prompt,
+            blankPrompt: blankPrompt(true),
+            onCreate: saveTextStockFrame,
+            onUpdate: updatePrompt,
+            onDelete: deletePrompt,
+            copyText: copyText,
+            showTranslation: () => prompt && setTranslationPrompt(prompt),
+            showMemo: () => prompt && setMemoPrompt(prompt)
+          }, prompt?.id || `my-stock-frame-${index}`))
+        }), canAddTextStock && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "add-stock-button",
+          onClick: addTextStockFrame,
+          children: "＋ プロンプトを追加"
+        }), !canAddTextStock && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+          className: "limit-message",
+          children: "保存上限（100件）に達しました"
+        })]
+      })]
+    }), editing && /*#__PURE__*/_reactJsxRuntime.jsx(PromptModal, {
+      item: editing,
+      onClose: () => setEditing(null),
+      onSave: save
+    }), translationPrompt && /*#__PURE__*/_reactJsxRuntime.jsx(TranslationModal, {
+      prompt: translationPrompt,
+      onClose: () => setTranslationPrompt(null),
+      copyText: copyText
+    }), memoPrompt && /*#__PURE__*/_reactJsxRuntime.jsx(MemoModal, {
+      prompt: {
+        ...memoPrompt,
+        memo: memoPrompt.memo || memoPrompt.note
+      },
+      onClose: () => setMemoPrompt(null),
+      onSave: memo => {
+        updatePrompt(memoPrompt.id, {
+          memo,
+          note: memo
+        });
+        setMemoPrompt(null);
+      }
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+      className: "page-bottom-back",
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }))
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "folder-view-toolbar"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "folder-view-tabs",
-    role: "group",
-    "aria-label": "プロンプト帳の表示切り替え"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: viewMode === "list" ? "active-soft" : "",
-    onClick: () => setViewMode("list")
-  }, "一覧"), /*#__PURE__*/React.createElement("button", {
-    className: viewMode === "folders" ? "active-soft" : "",
-    onClick: () => setViewMode("folders")
-  }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
-    className: "folder-create-button",
-    onClick: addPromptFolder
-  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement(Filters, null, /*#__PURE__*/React.createElement("select", {
-    value: tag,
-    onChange: e => setTag(e.target.value)
-  }, /*#__PURE__*/React.createElement("option", null, "すべて"), tags.map(item => /*#__PURE__*/React.createElement("option", {
-    key: item
-  }, item))), /*#__PURE__*/React.createElement("label", {
-    className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: favoritesOnly,
-    onChange: e => setFavoritesOnly(e.target.checked)
-  }), " お気に入りのみ")), viewMode === "folders" ? /*#__PURE__*/React.createElement("div", {
-    className: "folder-board"
-  }, promptFolderGroups.map(group => /*#__PURE__*/React.createElement("section", {
-    className: "folder-panel",
-    key: group.name
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "folder-cover"
-  }, /*#__PURE__*/React.createElement("span", null, "ファイル"), /*#__PURE__*/React.createElement("strong", null, group.name), /*#__PURE__*/React.createElement("small", null, group.items.length, "件")), group.items.length ? /*#__PURE__*/React.createElement("div", {
-    className: "library-prompt-grid"
-  }, group.items.map(prompt => !prompt.isTextStock ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
-    key: prompt.id,
-    prompt: prompt,
-    inlineEdit: inlineEdit,
-    setInlineEdit: setInlineEdit,
-    updatePrompt: updatePrompt,
-    duplicatePrompt: duplicatePrompt,
-    deletePrompt: () => deletePrompt(prompt.id),
-    copyText: copyText,
-    showTranslation: () => setTranslationPrompt(prompt),
-    showMemo: () => setMemoPrompt(prompt),
-    showTags: promptDisplay.showTags !== false,
-    showMemoButton: promptDisplay.showMemo !== false
-  }) : /*#__PURE__*/React.createElement(TextStockFrame, {
-    key: prompt.id,
-    prompt: prompt,
-    blankPrompt: blankPrompt(true),
-    onCreate: saveTextStockFrame,
-    onUpdate: updatePrompt,
-    onDelete: deletePrompt,
-    copyText: copyText,
-    showTranslation: () => setTranslationPrompt(prompt),
-    showMemo: () => setMemoPrompt(prompt)
-  }))) : /*#__PURE__*/React.createElement("p", {
-    className: "folder-empty-text"
-  }, "このファイルにはまだ項目がありません。")))) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
-    className: "prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "画像付きプロンプト"), /*#__PURE__*/React.createElement("p", null, "お気に入り・よく使うプロンプトを、最大20個まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
-    className: "library-prompt-grid"
-  }, imagePromptSlots.map((prompt, index) => prompt ? /*#__PURE__*/React.createElement(LibraryImagePromptCard, {
-    key: prompt.id,
-    prompt: prompt,
-    inlineEdit: inlineEdit,
-    setInlineEdit: setInlineEdit,
-    updatePrompt: updatePrompt,
-    duplicatePrompt: duplicatePrompt,
-    deletePrompt: () => deletePrompt(prompt.id),
-    copyText: copyText,
-    showTranslation: () => setTranslationPrompt(prompt),
-    showMemo: () => setMemoPrompt(prompt),
-    showTags: promptDisplay.showTags !== false,
-    showMemoButton: promptDisplay.showMemo !== false
-  }) : canAddImagePrompt ? /*#__PURE__*/React.createElement("button", {
-    className: "add-prompt-card",
-    key: `my-empty-prompt-${index}`,
-    onClick: () => setEditing(blankPrompt())
-  }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいプロンプト")) : null))), /*#__PURE__*/React.createElement("section", {
-    className: "prompt-area text-prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトストック"), /*#__PURE__*/React.createElement("p", null, "画像を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
-    className: "text-prompt-list"
-  }, textStockSlots.map((prompt, index) => /*#__PURE__*/React.createElement(TextStockFrame, {
-    key: prompt?.id || `my-stock-frame-${index}`,
-    prompt: prompt,
-    blankPrompt: blankPrompt(true),
-    onCreate: saveTextStockFrame,
-    onUpdate: updatePrompt,
-    onDelete: deletePrompt,
-    copyText: copyText,
-    showTranslation: () => prompt && setTranslationPrompt(prompt),
-    showMemo: () => prompt && setMemoPrompt(prompt)
-  }))), canAddTextStock && /*#__PURE__*/React.createElement("button", {
-    className: "add-stock-button",
-    onClick: addTextStockFrame
-  }, "＋ プロンプトを追加"), !canAddTextStock && /*#__PURE__*/React.createElement("p", {
-    className: "limit-message"
-  }, "保存上限（100件）に達しました"))), editing && /*#__PURE__*/React.createElement(PromptModal, {
-    item: editing,
-    onClose: () => setEditing(null),
-    onSave: save
-  }), translationPrompt && /*#__PURE__*/React.createElement(TranslationModal, {
-    prompt: translationPrompt,
-    onClose: () => setTranslationPrompt(null),
-    copyText: copyText
-  }), memoPrompt && /*#__PURE__*/React.createElement(MemoModal, {
-    prompt: {
-      ...memoPrompt,
-      memo: memoPrompt.memo || memoPrompt.note
-    },
-    onClose: () => setMemoPrompt(null),
-    onSave: memo => {
-      updatePrompt(memoPrompt.id, {
-        memo,
-        note: memo
-      });
-      setMemoPrompt(null);
-    }
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ホームへ戻る",
-    onClick: () => setScreen("home")
-  }));
+    })]
+  });
 }
 function Midjourney({
   settings,
@@ -7562,122 +8455,162 @@ function Midjourney({
     }, 80);
     window.setTimeout(() => setHighlightedId(""), 1800);
   };
-  return /*#__PURE__*/React.createElement("section", {
-    className: "page mj-board-page"
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "Midjourneyパラメータ制作ボード",
-    action: /*#__PURE__*/React.createElement("div", {
-      className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: "page mj-board-page",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+      title: "Midjourneyパラメータ制作ボード",
+      action: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+          label: "ホームへ戻る",
+          onClick: () => setScreen("home")
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: save,
+          disabled: !canSave,
+          children: "完成プロンプトを保存"
+        })]
+      })
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "mj-workspace",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("aside", {
+        className: "mj-builder-panel",
+        children: /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+          className: "mj-input-panel",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "mj-field-head",
+            children: /*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "プロンプト"
+            })
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+            className: "mj-base-input",
+            value: displayedPrompt,
+            onChange: event => updatePromptField(event.target.value),
+            placeholder: activeLanguage === "en" ? "例：cute pastel clipart, white background, no shadow" : "ここに日本語訳を入力してください"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+            children: "パラメータ"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            className: "mj-help-text",
+            children: "✨ 右側の抽出済みパラメータをクリックすると、ここへ追加できます。"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+            className: "mj-final-input",
+            value: fullPrompt,
+            onChange: event => setFullPrompt(event.target.value),
+            placeholder: "例：--ar 1:1 --stylize 50 --chaos 10 --raw"
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "mj-save-grid",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              value: title,
+              onChange: event => setTitle(event.target.value),
+              placeholder: "保存タイトル"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+              value: imageUrl,
+              onChange: event => setImageUrl(event.target.value),
+              placeholder: "サンプル画像URL（最大5件・改行またはカンマ区切り）"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+              value: memo,
+              onChange: event => setMemo(event.target.value),
+              placeholder: "メモ"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "mj-composer-actions",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              className: "primary",
+              onClick: copyFullPrompt,
+              disabled: !completePrompt.trim(),
+              children: "📋 プロンプトをコピー"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              onClick: copyParams,
+              disabled: !fullPrompt.trim(),
+              children: "📋 パラメータをコピー"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              onClick: save,
+              disabled: !canSave,
+              children: "完成プロンプトを保存"
+            }), editingId && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              onClick: clearComposer,
+              children: "新規作成に戻る"
+            }), copied && /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "コピーしました"
+            })]
+          }), saveLimitReached && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            className: "limit-message",
+            children: "保存上限（50件）に達しました"
+          })]
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+        className: "mj-saved-shelf",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "mj-shelf-head",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+              children: "保存済みMJプロンプト"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+              children: "保存したMJプロンプトと登録画像を一覧で確認できます。"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "mj-image-search",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+              children: "画像から探す"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+              className: "mj-image-search-grid",
+              children: imageSearchItems.length ? imageSearchItems.map(item => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                onClick: () => jumpToCard(item.cardId),
+                children: /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                  src: imageDisplaySrc(item.image),
+                  alt: ""
+                })
+              }, `${item.cardId}-${item.index}-${imageSrc(item.image)}`)) : /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                children: "画像を登録すると、ここから探せます。"
+              })
+            })]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "mj-card-grid",
+          children: [shelfSlots.map((raw, index) => {
+            if (!raw) {
+              return settings.length < 50 ? /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+                className: "mj-empty-card",
+                onClick: addEmptySavedSetting,
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                  children: "＋"
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                  children: "新しいMJプロンプト"
+                })]
+              }, `mj-empty-${index}`) : null;
+            }
+            const item = normalizeMjSetting(raw);
+            return /*#__PURE__*/_reactJsxRuntime.jsx(MJEditableCard, {
+              item: item,
+              highlighted: highlightedId === item.id,
+              onUpdate: patch => updateSavedSetting(item.id, patch),
+              onDelete: () => setSettings(items => {
+                rememberDeletedSampleIdsFromItems(items.find(setting => setting.id === item.id));
+                return items.filter(setting => setting.id !== item.id);
+              }),
+              onCopyPrompt: () => copyText(mjCommand(item), item.id),
+              onCopyParams: () => copyText((item.extractedParams || []).join(" "), item.id),
+              onParamClick: applyParamFromCard,
+              onOpenImage: imageIndex => setImageModal({
+                images: item.images || [],
+                index: imageIndex
+              })
+            }, item.id);
+          }), settings.length >= 50 && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            className: "limit-message",
+            children: "保存上限（50件）に達しました"
+          })]
+        })]
+      })]
+    }), imageModal && /*#__PURE__*/_reactJsxRuntime.jsx(ImagePreviewModal, {
+      modal: imageModal,
+      setModal: setImageModal
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+      className: "page-bottom-back",
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: save,
-      disabled: !canSave
-    }, "完成プロンプトを保存"))
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "mj-workspace"
-  }, /*#__PURE__*/React.createElement("aside", {
-    className: "mj-builder-panel"
-  }, /*#__PURE__*/React.createElement("section", {
-    className: "mj-input-panel"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mj-field-head"
-  }, /*#__PURE__*/React.createElement("h3", null, "プロンプト")), /*#__PURE__*/React.createElement("textarea", {
-    className: "mj-base-input",
-    value: displayedPrompt,
-    onChange: event => updatePromptField(event.target.value),
-    placeholder: activeLanguage === "en" ? "例：cute pastel clipart, white background, no shadow" : "ここに日本語訳を入力してください"
-  }), /*#__PURE__*/React.createElement("h3", null, "パラメータ"), /*#__PURE__*/React.createElement("p", {
-    className: "mj-help-text"
-  }, "✨ 右側の抽出済みパラメータをクリックすると、ここへ追加できます。"), /*#__PURE__*/React.createElement("textarea", {
-    className: "mj-final-input",
-    value: fullPrompt,
-    onChange: event => setFullPrompt(event.target.value),
-    placeholder: "例：--ar 1:1 --stylize 50 --chaos 10 --raw"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "mj-save-grid"
-  }, /*#__PURE__*/React.createElement("input", {
-    value: title,
-    onChange: event => setTitle(event.target.value),
-    placeholder: "保存タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: imageUrl,
-    onChange: event => setImageUrl(event.target.value),
-    placeholder: "サンプル画像URL（最大5件・改行またはカンマ区切り）"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: memo,
-    onChange: event => setMemo(event.target.value),
-    placeholder: "メモ"
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "mj-composer-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: copyFullPrompt,
-    disabled: !completePrompt.trim()
-  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
-    onClick: copyParams,
-    disabled: !fullPrompt.trim()
-  }, "📋 パラメータをコピー"), /*#__PURE__*/React.createElement("button", {
-    onClick: save,
-    disabled: !canSave
-  }, "完成プロンプトを保存"), editingId && /*#__PURE__*/React.createElement("button", {
-    onClick: clearComposer
-  }, "新規作成に戻る"), copied && /*#__PURE__*/React.createElement("span", null, "コピーしました")), saveLimitReached && /*#__PURE__*/React.createElement("p", {
-    className: "limit-message"
-  }, "保存上限（50件）に達しました"))), /*#__PURE__*/React.createElement("section", {
-    className: "mj-saved-shelf"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mj-shelf-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "保存済みMJプロンプト"), /*#__PURE__*/React.createElement("p", null, "保存したMJプロンプトと登録画像を一覧で確認できます。")), /*#__PURE__*/React.createElement("div", {
-    className: "mj-image-search"
-  }, /*#__PURE__*/React.createElement("strong", null, "画像から探す"), /*#__PURE__*/React.createElement("div", {
-    className: "mj-image-search-grid"
-  }, imageSearchItems.length ? imageSearchItems.map(item => /*#__PURE__*/React.createElement("button", {
-    key: `${item.cardId}-${item.index}-${imageSrc(item.image)}`,
-    onClick: () => jumpToCard(item.cardId)
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(item.image),
-    alt: ""
-  }))) : /*#__PURE__*/React.createElement("small", null, "画像を登録すると、ここから探せます。")))), /*#__PURE__*/React.createElement("div", {
-    className: "mj-card-grid"
-  }, shelfSlots.map((raw, index) => {
-    if (!raw) {
-      return settings.length < 50 ? /*#__PURE__*/React.createElement("button", {
-        className: "mj-empty-card",
-        key: `mj-empty-${index}`,
-        onClick: addEmptySavedSetting
-      }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しいMJプロンプト")) : null;
-    }
-    const item = normalizeMjSetting(raw);
-    return /*#__PURE__*/React.createElement(MJEditableCard, {
-      key: item.id,
-      item: item,
-      highlighted: highlightedId === item.id,
-      onUpdate: patch => updateSavedSetting(item.id, patch),
-      onDelete: () => setSettings(items => {
-        rememberDeletedSampleIdsFromItems(items.find(setting => setting.id === item.id));
-        return items.filter(setting => setting.id !== item.id);
-      }),
-      onCopyPrompt: () => copyText(mjCommand(item), item.id),
-      onCopyParams: () => copyText((item.extractedParams || []).join(" "), item.id),
-      onParamClick: applyParamFromCard,
-      onOpenImage: imageIndex => setImageModal({
-        images: item.images || [],
-        index: imageIndex
-      })
-    });
-  }), settings.length >= 50 && /*#__PURE__*/React.createElement("p", {
-    className: "limit-message"
-  }, "保存上限（50件）に達しました")))), imageModal && /*#__PURE__*/React.createElement(ImagePreviewModal, {
-    modal: imageModal,
-    setModal: setImageModal
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ホームへ戻る",
-    onClick: () => setScreen("home")
-  }));
+    })]
+  });
 }
 function parseMidjourneyPrompt(value) {
   const params = Array.from(value.matchAll(/--[a-zA-Z0-9-]+(?:\s+(?!--)[^\s]+)*/g)).map(match => match[0].trim());
@@ -7791,162 +8724,190 @@ function MJEditableCard({
       title: nextTitle
     });
   };
-  return /*#__PURE__*/React.createElement("article", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
     id: `mj-card-${item.id}`,
-    className: `mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`
-  }, /*#__PURE__*/React.createElement("input", {
-    ref: fileInputRef,
-    style: {
-      display: "none"
-    },
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    multiple: true,
-    onClick: event => event.stopPropagation(),
-    onChange: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (event.currentTarget.files) addImageFiles(event.currentTarget.files);
-      event.currentTarget.value = "";
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: `mj-image-edit-zone ${isDragging ? "dragging" : ""}`,
-    role: "button",
-    tabIndex: 0,
-    onClick: event => {
-      if (images.length) {
+    className: `mj-card editable-mj-card ${highlighted ? "highlighted" : ""}`,
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      ref: fileInputRef,
+      style: {
+        display: "none"
+      },
+      type: "file",
+      accept: "image/png,image/jpeg,image/webp",
+      multiple: true,
+      onClick: event => event.stopPropagation(),
+      onChange: event => {
         event.preventDefault();
         event.stopPropagation();
-        onOpenImage(slideIndex);
-        return;
+        if (event.currentTarget.files) addImageFiles(event.currentTarget.files);
+        event.currentTarget.value = "";
       }
-      openFilePicker(event);
-    },
-    onKeyDown: event => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      if (images.length) {
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: `mj-image-edit-zone ${isDragging ? "dragging" : ""}`,
+      role: "button",
+      tabIndex: 0,
+      onClick: event => {
+        if (images.length) {
+          event.preventDefault();
+          event.stopPropagation();
+          onOpenImage(slideIndex);
+          return;
+        }
+        openFilePicker(event);
+      },
+      onKeyDown: event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        if (images.length) {
+          event.preventDefault();
+          event.stopPropagation();
+          onOpenImage(slideIndex);
+          return;
+        }
+        openFilePicker(event);
+      },
+      onDragEnter: event => {
         event.preventDefault();
         event.stopPropagation();
-        onOpenImage(slideIndex);
-        return;
-      }
-      openFilePicker(event);
-    },
-    onDragEnter: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsDragging(true);
-    },
-    onDragOver: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsDragging(true);
-    },
-    onDragLeave: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsDragging(false);
-    },
-    onDrop: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsDragging(false);
-      addImageFiles(event.dataTransfer.files);
-    },
-    onPaste: event => {
-      const files = clipboardImageFiles(event);
-      if (!files.length) return;
-      event.preventDefault();
-      event.stopPropagation();
-      addImageFiles(files);
-    }
-  }, images.length ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "mj-card-image image-only-button"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(images[slideIndex] || images[0]),
-    alt: ""
-  }), images.length > 1 && /*#__PURE__*/React.createElement("span", {
-    className: "image-dots"
-  }, images.map((_, dotIndex) => /*#__PURE__*/React.createElement("i", {
-    key: dotIndex,
-    className: dotIndex === slideIndex ? "active" : ""
-  }))))) : /*#__PURE__*/React.createElement(PromptThumbnail, {
-    imageUrl: ""
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "drop-hint"
-  }, "ここへドロップ"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    className: "image-edit-toggle",
-    onClick: openFilePicker
-  }, "画像を追加")), images.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "image-url-list image-delete-list"
-  }, images.map((image, index) => /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    key: `${imageSrc(image)}-${index}`,
-    onClick: () => removeImage(index)
-  }, "画像", index + 1, "を削除"))), imageMessage && /*#__PURE__*/React.createElement("small", {
-    className: "image-message"
-  }, imageMessage), /*#__PURE__*/React.createElement("div", {
-    className: "mj-card-body"
-  }, isEditingTitle ? /*#__PURE__*/React.createElement("input", {
-    className: "mj-title-edit-input",
-    value: titleDraft,
-    autoFocus: true,
-    onChange: event => setTitleDraft(event.target.value),
-    onBlur: saveTitle,
-    onKeyDown: event => {
-      if (event.key === "Enter") saveTitle();
-      if (event.key === "Escape") {
-        setTitleDraft(item.title || "");
-        setIsEditingTitle(false);
-      }
-    }
-  }) : /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    className: "mj-derived-title",
-    onClick: () => setIsEditingTitle(true)
-  }, item.title || promptCardHeading(promptText)), /*#__PURE__*/React.createElement("small", {
-    className: "mj-date"
-  }, "保存日：", formatSavedAt(item.createdAt)), /*#__PURE__*/React.createElement("label", {
-    className: "mj-edit-field"
-  }, /*#__PURE__*/React.createElement("span", null, "プロンプト"), /*#__PURE__*/React.createElement("textarea", {
-    className: "mj-card-textarea prompt",
-    value: promptText,
-    onChange: event => updatePrompt(event.target.value),
-    placeholder: "MJプロンプトを入力すると、パラメータを自動抽出します"
-  })), /*#__PURE__*/React.createElement("label", {
-    className: "mj-edit-field"
-  }, /*#__PURE__*/React.createElement("span", null, "メモ"), /*#__PURE__*/React.createElement("textarea", {
-    className: "mj-card-textarea memo",
-    value: item.memo || "",
-    onChange: event => onUpdate({
-      memo: event.target.value,
-      note: event.target.value,
-      description: event.target.value
-    }),
-    placeholder: "メモ"
-  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-    className: "mj-param-label"
-  }, "抽出済みパラメータ"), /*#__PURE__*/React.createElement("div", {
-    className: "mj-param-pills compact"
-  }, params.length ? params.map(param => /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    key: param,
-    onClick: () => onParamClick(param)
-  }, param)) : /*#__PURE__*/React.createElement("small", null, "パラメータなし"))), /*#__PURE__*/React.createElement("div", {
-    className: "mj-card-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    className: "primary",
-    onClick: onCopyPrompt
-  }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: onCopyParams
-  }, "📋 パラメータをコピー"), /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    className: "danger",
-    onClick: onDelete
-  }, "削除"))));
+        setIsDragging(true);
+      },
+      onDragOver: event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(true);
+      },
+      onDragLeave: event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(false);
+      },
+      onDrop: event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDragging(false);
+        addImageFiles(event.dataTransfer.files);
+      },
+      onPaste: event => {
+        const files = clipboardImageFiles(event);
+        if (!files.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        addImageFiles(files);
+      },
+      children: [images.length ? /*#__PURE__*/_reactJsxRuntime.jsx(_reactJsxRuntime.Fragment, {
+        children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "mj-card-image image-only-button",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("img", {
+            src: imageDisplaySrc(images[slideIndex] || images[0]),
+            alt: ""
+          }), images.length > 1 && /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+            className: "image-dots",
+            children: images.map((_, dotIndex) => /*#__PURE__*/_reactJsxRuntime.jsx("i", {
+              className: dotIndex === slideIndex ? "active" : ""
+            }, dotIndex))
+          })]
+        })
+      }) : /*#__PURE__*/_reactJsxRuntime.jsx(PromptThumbnail, {
+        imageUrl: ""
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        className: "drop-hint",
+        children: "ここへドロップ"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        type: "button",
+        className: "image-edit-toggle",
+        onClick: openFilePicker,
+        children: "画像を追加"
+      })]
+    }), images.length > 0 && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "image-url-list image-delete-list",
+      children: images.map((image, index) => /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+        type: "button",
+        onClick: () => removeImage(index),
+        children: ["画像", index + 1, "を削除"]
+      }, `${imageSrc(image)}-${index}`))
+    }), imageMessage && /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+      className: "image-message",
+      children: imageMessage
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "mj-card-body",
+      children: [isEditingTitle ? /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        className: "mj-title-edit-input",
+        value: titleDraft,
+        autoFocus: true,
+        onChange: event => setTitleDraft(event.target.value),
+        onBlur: saveTitle,
+        onKeyDown: event => {
+          if (event.key === "Enter") saveTitle();
+          if (event.key === "Escape") {
+            setTitleDraft(item.title || "");
+            setIsEditingTitle(false);
+          }
+        }
+      }) : /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        type: "button",
+        className: "mj-derived-title",
+        onClick: () => setIsEditingTitle(true),
+        children: item.title || promptCardHeading(promptText)
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("small", {
+        className: "mj-date",
+        children: ["保存日：", formatSavedAt(item.createdAt)]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+        className: "mj-edit-field",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+          children: "プロンプト"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+          className: "mj-card-textarea prompt",
+          value: promptText,
+          onChange: event => updatePrompt(event.target.value),
+          placeholder: "MJプロンプトを入力すると、パラメータを自動抽出します"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+        className: "mj-edit-field",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+          children: "メモ"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+          className: "mj-card-textarea memo",
+          value: item.memo || "",
+          onChange: event => onUpdate({
+            memo: event.target.value,
+            note: event.target.value,
+            description: event.target.value
+          }),
+          placeholder: "メモ"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+          className: "mj-param-label",
+          children: "抽出済みパラメータ"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "mj-param-pills compact",
+          children: params.length ? params.map(param => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            type: "button",
+            onClick: () => onParamClick(param),
+            children: param
+          }, param)) : /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+            children: "パラメータなし"
+          })
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "mj-card-actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          type: "button",
+          className: "primary",
+          onClick: onCopyPrompt,
+          children: "📋 プロンプトをコピー"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          type: "button",
+          onClick: onCopyParams,
+          children: "📋 パラメータをコピー"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          type: "button",
+          className: "danger",
+          onClick: onDelete,
+          children: "削除"
+        })]
+      })]
+    })]
+  });
 }
 function ImagePreviewModal({
   modal,
@@ -7960,24 +8921,30 @@ function ImagePreviewModal({
     images,
     index: (index + direction + images.length) % images.length
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/_reactJsxRuntime.jsx(Modal, {
     title: "画像プレビュー",
-    onClose: () => setModal(null)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "image-preview-modal"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageSrc(images[index]),
-    alt: ""
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "modal-actions"
-  }, images.length > 1 && /*#__PURE__*/React.createElement("button", {
-    onClick: () => move(-1)
-  }, "前へ"), images.length > 1 && /*#__PURE__*/React.createElement("button", {
-    onClick: () => move(1)
-  }, "次へ"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => setModal(null)
-  }, "閉じる"))));
+    onClose: () => setModal(null),
+    children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "image-preview-modal",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("img", {
+        src: imageSrc(images[index]),
+        alt: ""
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "modal-actions",
+        children: [images.length > 1 && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: () => move(-1),
+          children: "前へ"
+        }), images.length > 1 && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: () => move(1),
+          children: "次へ"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: () => setModal(null),
+          children: "閉じる"
+        })]
+      })]
+    })
+  });
 }
 function combinePrompt(basePrompt, params) {
   return [basePrompt, ...params].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
@@ -8125,7 +9092,7 @@ function GalleryPage({
     }));
     setScreen("journal");
   };
-  return /*#__PURE__*/React.createElement("section", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
     className: `page gallery-page gallery-gap-${galleryDisplay.gap || "normal"} gallery-ratio-${galleryDisplay.ratio || "square"} gallery-columns-${galleryDisplay.columns || "auto"}`,
     tabIndex: 0,
     onDragOver: event => event.preventDefault(),
@@ -8140,138 +9107,176 @@ function GalleryPage({
       event.preventDefault();
       event.stopPropagation();
       addFiles(files);
-    }
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "ギャラリー",
-    action: /*#__PURE__*/React.createElement("div", {
-      className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+    },
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+      title: "ギャラリー",
+      action: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+          label: "ホームへ戻る",
+          onClick: () => setScreen("home")
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: () => setScreen("journal"),
+          children: "ジャーナルへ"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: () => fileInputRef.current?.click(),
+          children: "＋ 画像を追加"
+        })]
+      })
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "folder-view-toolbar",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "folder-view-tabs",
+        role: "group",
+        "aria-label": "ギャラリーの表示切り替え",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: viewMode === "list" ? "active-soft" : "",
+          onClick: () => setViewMode("list"),
+          children: "一覧"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: viewMode === "folders" ? "active-soft" : "",
+          onClick: () => setViewMode("folders"),
+          children: "ファイル別"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "folder-create-button",
+        onClick: addGalleryFolder,
+        children: "＋ 新しいファイル"
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      ref: fileInputRef,
+      type: "file",
+      accept: "image/png,image/jpeg,image/webp",
+      multiple: true,
+      style: {
+        display: "none"
+      },
+      onChange: event => {
+        if (event.currentTarget.files) addFiles(event.currentTarget.files);
+        event.currentTarget.value = "";
+      }
+    }), viewMode === "folders" ? /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "folder-board gallery-folder-board",
+      children: galleryFolderGroups.map(group => /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+        className: "folder-panel",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "folder-cover",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+            children: "ファイル"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+            children: group.name
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("small", {
+            children: [group.items.length, "枚"]
+          })]
+        }), group.items.length ? /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "gallery-grid",
+          children: group.items.map(image => /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+            className: "gallery-card",
+            children: [galleryDisplay.showHeart !== false && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              className: "gallery-favorite-button",
+              "aria-label": "お気に入り",
+              onClick: () => updateImage(image.id, {
+                favorite: !image.favorite
+              }),
+              children: image.favorite ? "♥" : "♡"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              className: "gallery-image-button",
+              onClick: () => setPreviewId(image.id),
+              children: /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                src: imageDisplaySrc(image),
+                alt: ""
+              })
+            })]
+          }, image.id))
+        }) : /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+          className: "folder-empty-text",
+          children: "このファイルにはまだ画像がありません。"
+        })]
+      }, group.name))
+    }) : images.length ? /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "gallery-grid",
+      children: visibleImages.map(image => /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+        className: "gallery-card",
+        children: [galleryDisplay.showHeart !== false && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "gallery-favorite-button",
+          "aria-label": "お気に入り",
+          onClick: () => updateImage(image.id, {
+            favorite: !image.favorite
+          }),
+          children: image.favorite ? "♥" : "♡"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "gallery-image-button",
+          onClick: () => setPreviewId(image.id),
+          children: /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+            src: imageDisplaySrc(image),
+            alt: ""
+          })
+        })]
+      }, image.id))
+    }) : /*#__PURE__*/_reactJsxRuntime.jsx(Empty, {
+      text: "画像を追加すると、ここにギャラリーが表示されます。"
+    }), images.length > visibleCount && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      ref: loadMoreRef,
+      className: "lazy-load-sentinel",
+      children: "画像を読み込んでいます…"
+    }), preview && /*#__PURE__*/_reactJsxRuntime.jsx(Modal, {
+      title: preview.title || "画像詳細",
+      onClose: () => setPreviewId(""),
+      children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "gallery-detail-modal",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("img", {
+          src: imageSrc(preview),
+          alt: ""
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+          children: ["タイトル", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+            value: preview.title,
+            onChange: event => updateImage(preview.id, {
+              title: event.target.value
+            }),
+            placeholder: "タイトル"
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+          children: ["メモ", /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+            value: preview.memo,
+            onChange: event => updateImage(preview.id, {
+              memo: event.target.value
+            }),
+            placeholder: "メモ"
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("small", {
+          children: ["追加日：", formatSavedAt(preview.createdAt)]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+          className: "check",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+            type: "checkbox",
+            checked: preview.favorite,
+            onChange: event => updateImage(preview.id, {
+              favorite: event.target.checked
+            })
+          }), " お気に入り"]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "modal-actions",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            onClick: () => pasteToJournal(preview),
+            children: "ジャーナルに貼る"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            className: "danger",
+            onClick: () => deleteImage(preview.id),
+            children: "削除"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            className: "primary",
+            onClick: () => setPreviewId(""),
+            children: "閉じる"
+          })]
+        })]
+      })
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+      className: "page-bottom-back",
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setScreen("journal")
-    }, "ジャーナルへ"), /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: () => fileInputRef.current?.click()
-    }, "＋ 画像を追加"))
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "folder-view-toolbar"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "folder-view-tabs",
-    role: "group",
-    "aria-label": "ギャラリーの表示切り替え"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: viewMode === "list" ? "active-soft" : "",
-    onClick: () => setViewMode("list")
-  }, "一覧"), /*#__PURE__*/React.createElement("button", {
-    className: viewMode === "folders" ? "active-soft" : "",
-    onClick: () => setViewMode("folders")
-  }, "ファイル別")), /*#__PURE__*/React.createElement("button", {
-    className: "folder-create-button",
-    onClick: addGalleryFolder
-  }, "＋ 新しいファイル")), /*#__PURE__*/React.createElement("input", {
-    ref: fileInputRef,
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    multiple: true,
-    style: {
-      display: "none"
-    },
-    onChange: event => {
-      if (event.currentTarget.files) addFiles(event.currentTarget.files);
-      event.currentTarget.value = "";
-    }
-  }), viewMode === "folders" ? /*#__PURE__*/React.createElement("div", {
-    className: "folder-board gallery-folder-board"
-  }, galleryFolderGroups.map(group => /*#__PURE__*/React.createElement("section", {
-    className: "folder-panel",
-    key: group.name
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "folder-cover"
-  }, /*#__PURE__*/React.createElement("span", null, "ファイル"), /*#__PURE__*/React.createElement("strong", null, group.name), /*#__PURE__*/React.createElement("small", null, group.items.length, "枚")), group.items.length ? /*#__PURE__*/React.createElement("div", {
-    className: "gallery-grid"
-  }, group.items.map(image => /*#__PURE__*/React.createElement("article", {
-    className: "gallery-card",
-    key: image.id
-  }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
-    className: "gallery-favorite-button",
-    "aria-label": "お気に入り",
-    onClick: () => updateImage(image.id, {
-      favorite: !image.favorite
-    })
-  }, image.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("button", {
-    className: "gallery-image-button",
-    onClick: () => setPreviewId(image.id)
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(image),
-    alt: ""
-  }))))) : /*#__PURE__*/React.createElement("p", {
-    className: "folder-empty-text"
-  }, "このファイルにはまだ画像がありません。")))) : images.length ? /*#__PURE__*/React.createElement("div", {
-    className: "gallery-grid"
-  }, visibleImages.map(image => /*#__PURE__*/React.createElement("article", {
-    className: "gallery-card",
-    key: image.id
-  }, galleryDisplay.showHeart !== false && /*#__PURE__*/React.createElement("button", {
-    className: "gallery-favorite-button",
-    "aria-label": "お気に入り",
-    onClick: () => updateImage(image.id, {
-      favorite: !image.favorite
-    })
-  }, image.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("button", {
-    className: "gallery-image-button",
-    onClick: () => setPreviewId(image.id)
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(image),
-    alt: ""
-  }))))) : /*#__PURE__*/React.createElement(Empty, {
-    text: "画像を追加すると、ここにギャラリーが表示されます。"
-  }), images.length > visibleCount && /*#__PURE__*/React.createElement("div", {
-    ref: loadMoreRef,
-    className: "lazy-load-sentinel"
-  }, "画像を読み込んでいます…"), preview && /*#__PURE__*/React.createElement(Modal, {
-    title: preview.title || "画像詳細",
-    onClose: () => setPreviewId("")
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "gallery-detail-modal"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageSrc(preview),
-    alt: ""
-  }), /*#__PURE__*/React.createElement("label", null, "タイトル", /*#__PURE__*/React.createElement("input", {
-    value: preview.title,
-    onChange: event => updateImage(preview.id, {
-      title: event.target.value
-    }),
-    placeholder: "タイトル"
-  })), /*#__PURE__*/React.createElement("label", null, "メモ", /*#__PURE__*/React.createElement("textarea", {
-    value: preview.memo,
-    onChange: event => updateImage(preview.id, {
-      memo: event.target.value
-    }),
-    placeholder: "メモ"
-  })), /*#__PURE__*/React.createElement("small", null, "追加日：", formatSavedAt(preview.createdAt)), /*#__PURE__*/React.createElement("label", {
-    className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: preview.favorite,
-    onChange: event => updateImage(preview.id, {
-      favorite: event.target.checked
-    })
-  }), " お気に入り"), /*#__PURE__*/React.createElement("div", {
-    className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => pasteToJournal(preview)
-  }, "ジャーナルに貼る"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: () => deleteImage(preview.id)
-  }, "削除"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => setPreviewId("")
-  }, "閉じる")))), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ホームへ戻る",
-    onClick: () => setScreen("home")
-  }));
+    })]
+  });
 }
 function videoDisplaySrc(url) {
   if (!url) return "";
@@ -8288,10 +9293,13 @@ function clipboardVideoFiles(event) {
   return Array.from(event.clipboardData?.items || []).filter(item => item.kind === "file").map(item => item.getAsFile()).filter(file => Boolean(file) && isSupportedVideoFile(file));
 }
 function VideoPlaceholder() {
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
     className: "video-placeholder",
-    "aria-label": "動画サムネイル未設定"
-  }, /*#__PURE__*/React.createElement("span", null, "▶"));
+    "aria-label": "動画サムネイル未設定",
+    children: /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+      children: "▶"
+    })
+  });
 }
 function VideoLibrary({
   videos,
@@ -8571,10 +9579,8 @@ function VideoLibrary({
   const slots = searchActive ? filteredVideos : Array.from({
     length: videoSlotCount
   }, (_, index) => normalizedVideos[index] || null);
-  const draftVideoPreviewUrl = videoDisplaySrc(uploadedVideoUrl || draft.url);
-  const hasDraftVideoPreview = Boolean(draftVideoPreviewUrl && isPlayableVideoUrl(draftVideoPreviewUrl));
   if (selectedId) {
-    return /*#__PURE__*/React.createElement("section", {
+    return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
       className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`,
       tabIndex: 0,
       onPaste: event => {
@@ -8584,379 +9590,477 @@ function VideoLibrary({
         event.preventDefault();
         event.stopPropagation();
         if (videoFiles.length) importUploadedVideo(videoFiles[0]);else importThumbnail(files[0]);
-      }
-    }, /*#__PURE__*/React.createElement(PageHead, {
-      title: draft.id ? "動画プロンプトを編集" : "新しい動画プロンプト",
-      action: /*#__PURE__*/React.createElement(PageBackButton, {
-        label: "動画プロンプト帳へ戻る",
-        onClick: resetDraft
-      })
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "video-detail-editor"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "video-detail-form"
-    }, /*#__PURE__*/React.createElement("label", null, "タイトル", /*#__PURE__*/React.createElement("input", {
-      value: draft.title,
-      onChange: event => updateDraft({
-        title: event.target.value
-      }),
-      placeholder: "タイトル"
-    })), /*#__PURE__*/React.createElement("label", null, "動画URL", /*#__PURE__*/React.createElement("input", {
-      value: draft.url,
-      onChange: event => updateDraft({
-        url: event.target.value
-      }),
-      placeholder: "YouTube / Google Drive / Runway などのURL"
-    })), /*#__PURE__*/React.createElement("label", null, "使用モデル", /*#__PURE__*/React.createElement("select", {
-      value: draft.model,
-      onChange: event => updateDraft({
-        model: event.target.value
-      })
-    }, videoModels.map(model => /*#__PURE__*/React.createElement("option", {
-      key: model,
-      value: model
-    }, model)))), /*#__PURE__*/React.createElement("label", null, "動画プロンプト", /*#__PURE__*/React.createElement("textarea", {
-      className: "video-prompt-input",
-      value: draft.prompt,
-      onChange: event => updateDraft({
-        prompt: event.target.value
-      }),
-      placeholder: "動画生成プロンプト"
-    })), /*#__PURE__*/React.createElement("label", null, "メモ", /*#__PURE__*/React.createElement("textarea", {
-      value: draft.memo,
-      onChange: event => updateDraft({
-        memo: event.target.value
-      }),
-      placeholder: "メモ"
-    })), /*#__PURE__*/React.createElement("label", null, "タグ", /*#__PURE__*/React.createElement("input", {
-      value: tagDraft,
-      onChange: event => setTagDraft(event.target.value),
-      placeholder: "cinematic, camera move, product demo"
-    })), /*#__PURE__*/React.createElement("label", {
-      className: "check"
-    }, /*#__PURE__*/React.createElement("input", {
-      type: "checkbox",
-      checked: Boolean(draft.favorite),
-      onChange: event => updateDraft({
-        favorite: event.target.checked
-      })
-    }), " お気に入り")), /*#__PURE__*/React.createElement("aside", {
-      className: "video-thumbnail-panel"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: `video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`,
-      onClick: () => thumbnailInputRef.current?.click(),
-      onDragEnter: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsThumbnailDragging(true);
       },
-      onDragOver: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsThumbnailDragging(true);
-      },
-      onDragLeave: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsThumbnailDragging(false);
-      },
-      onDrop: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsThumbnailDragging(false);
-        importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
-      }
-    }, draft.thumbnail ? /*#__PURE__*/React.createElement("img", {
-      src: imageDisplaySrc(draft.thumbnail),
-      alt: ""
-    }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null), /*#__PURE__*/React.createElement("small", null, "クリック・ドロップ・貼り付けでサムネイル追加")), /*#__PURE__*/React.createElement("div", {
-      className: "video-thumbnail-mode",
-      role: "group",
-      "aria-label": "カード表面の表示"
-    }, /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("input", {
-      type: "radio",
-      name: "thumbnailMode",
-      checked: (draft.thumbnailMode || "thumbnail") === "thumbnail",
-      disabled: !draft.thumbnail,
-      onChange: () => updateDraft({
-        thumbnailMode: "thumbnail"
-      })
-    }), " サムネを使う"), /*#__PURE__*/React.createElement("label", null, /*#__PURE__*/React.createElement("input", {
-      type: "radio",
-      name: "thumbnailMode",
-      checked: draft.thumbnailMode === "video",
-      disabled: !draft.url && !uploadedVideoUrl,
-      onChange: () => updateDraft({
-        thumbnailMode: "video"
-      })
-    }), " 動画だけ表示")), /*#__PURE__*/React.createElement("div", {
-      className: "video-thumbnail-tools"
-    }, /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => thumbnailInputRef.current?.click()
-    }, "画像を選ぶ"), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => videoInputRef.current?.click()
-    }, "動画からサムネイル生成"), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => updateDraft({
-        thumbnail: ""
-      })
-    }, "削除")), /*#__PURE__*/React.createElement("div", {
-      className: `video-upload-preview ${isVideoUploadDragging ? "dragging" : ""}`,
-      onClick: () => uploadVideoInputRef.current?.click(),
-      onDragEnter: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsVideoUploadDragging(true);
-      },
-      onDragOver: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsVideoUploadDragging(true);
-      },
-      onDragLeave: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsVideoUploadDragging(false);
-      },
-      onDrop: event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setIsVideoUploadDragging(false);
-        importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
-      }
-    }, hasDraftVideoPreview ? /*#__PURE__*/React.createElement("video", {
-      src: draftVideoPreviewUrl,
-      controls: true,
-      playsInline: true
-    }) : /*#__PURE__*/React.createElement("div", {
-      className: "video-upload-placeholder"
-    }, /*#__PURE__*/React.createElement("span", null, "▶"), /*#__PURE__*/React.createElement("strong", null, "動画をアップロード"), /*#__PURE__*/React.createElement("small", null, "mp4 / webm / mov に対応。保存後もカード表面で再生できます。"))), /*#__PURE__*/React.createElement("div", {
-      className: "video-thumbnail-tools"
-    }, /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: () => uploadVideoInputRef.current?.click()
-    }, "動画を選ぶ"), /*#__PURE__*/React.createElement("button", {
-      type: "button",
-      onClick: clearUploadedVideo,
-      disabled: !draftVideoPreviewUrl
-    }, "アップロード動画を削除")), /*#__PURE__*/React.createElement("input", {
-      ref: thumbnailInputRef,
-      type: "file",
-      accept: "image/png,image/jpeg,image/webp",
-      style: {
-        display: "none"
-      },
-      onChange: event => {
-        importThumbnail(event.currentTarget.files?.[0]);
-        event.currentTarget.value = "";
-      }
-    }), /*#__PURE__*/React.createElement("input", {
-      ref: videoInputRef,
-      type: "file",
-      accept: "video/mp4,video/webm,video/ogg,video/quicktime,video/*",
-      style: {
-        display: "none"
-      },
-      onChange: event => {
-        importVideoThumbnail(event.currentTarget.files?.[0]);
-        event.currentTarget.value = "";
-      }
-    }), /*#__PURE__*/React.createElement("input", {
-      ref: uploadVideoInputRef,
-      type: "file",
-      accept: "video/mp4,video/webm,video/quicktime,video/*",
-      style: {
-        display: "none"
-      },
-      onChange: event => {
-        importUploadedVideo(event.currentTarget.files?.[0]);
-        event.currentTarget.value = "";
-      }
-    }))), /*#__PURE__*/React.createElement("div", {
-      className: "video-detail-actions"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: copyPrompt,
-      disabled: !draft.prompt.trim()
-    }, "📋 プロンプトをコピー"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => openVideo(draft.url),
-      disabled: !draft.url.trim()
-    }, "動画URLを開く"), /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: saveVideo
-    }, "保存する"), draft.id && /*#__PURE__*/React.createElement("button", {
-      className: "danger",
-      onClick: () => deleteVideo(draft.id)
-    }, "削除"), /*#__PURE__*/React.createElement(PageBackButton, {
-      label: "動画プロンプト帳へ戻る",
-      onClick: resetDraft
-    })));
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+        title: draft.id ? "動画プロンプトを編集" : "新しい動画プロンプト",
+        action: /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+          label: "動画プロンプト帳へ戻る",
+          onClick: resetDraft
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "video-detail-editor",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "video-detail-form",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["タイトル", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              value: draft.title,
+              onChange: event => updateDraft({
+                title: event.target.value
+              }),
+              placeholder: "タイトル"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["動画URL", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              value: draft.url,
+              onChange: event => updateDraft({
+                url: event.target.value
+              }),
+              placeholder: "YouTube / Google Drive / Runway などのURL"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["使用モデル", /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+              value: draft.model,
+              onChange: event => updateDraft({
+                model: event.target.value
+              }),
+              children: videoModels.map(model => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+                value: model,
+                children: model
+              }, model))
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["動画プロンプト", /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+              className: "video-prompt-input",
+              value: draft.prompt,
+              onChange: event => updateDraft({
+                prompt: event.target.value
+              }),
+              placeholder: "動画生成プロンプト"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["メモ", /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+              value: draft.memo,
+              onChange: event => updateDraft({
+                memo: event.target.value
+              }),
+              placeholder: "メモ"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["タグ", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              value: tagDraft,
+              onChange: event => setTagDraft(event.target.value),
+              placeholder: "cinematic, camera move, product demo"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            className: "check",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              type: "checkbox",
+              checked: Boolean(draft.favorite),
+              onChange: event => updateDraft({
+                favorite: event.target.checked
+              })
+            }), " お気に入り"]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("aside", {
+          className: "video-thumbnail-panel",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: `video-draft-preview ${isThumbnailDragging ? "dragging" : ""}`,
+            onClick: () => thumbnailInputRef.current?.click(),
+            onDragEnter: event => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsThumbnailDragging(true);
+            },
+            onDragOver: event => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsThumbnailDragging(true);
+            },
+            onDragLeave: event => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsThumbnailDragging(false);
+            },
+            onDrop: event => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsThumbnailDragging(false);
+              importThumbnail(Array.from(event.dataTransfer.files).find(isSupportedImageFile));
+            },
+            children: [draft.thumbnail ? /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+              src: imageDisplaySrc(draft.thumbnail),
+              alt: ""
+            }) : /*#__PURE__*/_reactJsxRuntime.jsx(VideoPlaceholder, {}), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+              children: "クリック・ドロップ・貼り付けでサムネイル追加"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "video-thumbnail-mode",
+            role: "group",
+            "aria-label": "カード表面の表示",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                type: "radio",
+                name: "thumbnailMode",
+                checked: (draft.thumbnailMode || "thumbnail") === "thumbnail",
+                disabled: !draft.thumbnail,
+                onChange: () => updateDraft({
+                  thumbnailMode: "thumbnail"
+                })
+              }), " サムネを使う"]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+                type: "radio",
+                name: "thumbnailMode",
+                checked: draft.thumbnailMode === "video",
+                disabled: !draft.url && !uploadedVideoUrl,
+                onChange: () => updateDraft({
+                  thumbnailMode: "video"
+                })
+              }), " 動画だけ表示"]
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "video-thumbnail-tools",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              type: "button",
+              onClick: () => thumbnailInputRef.current?.click(),
+              children: "画像を選ぶ"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              type: "button",
+              onClick: () => videoInputRef.current?.click(),
+              children: "動画からサムネイル生成"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              type: "button",
+              onClick: () => updateDraft({
+                thumbnail: ""
+              }),
+              children: "削除"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: `video-upload-preview ${isVideoUploadDragging ? "dragging" : ""}`,
+            onClick: () => uploadVideoInputRef.current?.click(),
+            onDragEnter: event => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsVideoUploadDragging(true);
+            },
+            onDragOver: event => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsVideoUploadDragging(true);
+            },
+            onDragLeave: event => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsVideoUploadDragging(false);
+            },
+            onDrop: event => {
+              event.preventDefault();
+              event.stopPropagation();
+              setIsVideoUploadDragging(false);
+              importUploadedVideo(Array.from(event.dataTransfer.files).find(isSupportedVideoFile));
+            },
+            children: uploadedVideoUrl ? /*#__PURE__*/_reactJsxRuntime.jsx("video", {
+              src: uploadedVideoUrl,
+              controls: true,
+              playsInline: true
+            }) : /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "video-upload-placeholder",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                children: "▶"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+                children: "動画をアップロード"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+                children: "mp4 / webm / mov に対応。保存後もカード表面で再生できます。"
+              })]
+            })
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "video-thumbnail-tools",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              type: "button",
+              onClick: () => uploadVideoInputRef.current?.click(),
+              children: "動画を選ぶ"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              type: "button",
+              onClick: clearUploadedVideo,
+              disabled: !uploadedVideoUrl,
+              children: "アップロード動画を削除"
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+            ref: thumbnailInputRef,
+            type: "file",
+            accept: "image/png,image/jpeg,image/webp",
+            style: {
+              display: "none"
+            },
+            onChange: event => {
+              importThumbnail(event.currentTarget.files?.[0]);
+              event.currentTarget.value = "";
+            }
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+            ref: videoInputRef,
+            type: "file",
+            accept: "video/mp4,video/webm,video/ogg,video/quicktime,video/*",
+            style: {
+              display: "none"
+            },
+            onChange: event => {
+              importVideoThumbnail(event.currentTarget.files?.[0]);
+              event.currentTarget.value = "";
+            }
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+            ref: uploadVideoInputRef,
+            type: "file",
+            accept: "video/mp4,video/webm,video/quicktime,video/*",
+            style: {
+              display: "none"
+            },
+            onChange: event => {
+              importUploadedVideo(event.currentTarget.files?.[0]);
+              event.currentTarget.value = "";
+            }
+          })]
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "video-detail-actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: copyPrompt,
+          disabled: !draft.prompt.trim(),
+          children: "📋 プロンプトをコピー"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: () => openVideo(draft.url),
+          disabled: !draft.url.trim(),
+          children: "動画URLを開く"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: saveVideo,
+          children: "保存する"
+        }), draft.id && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "danger",
+          onClick: () => deleteVideo(draft.id),
+          children: "削除"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+          label: "動画プロンプト帳へ戻る",
+          onClick: resetDraft
+        })]
+      })]
+    });
   }
-  return /*#__PURE__*/React.createElement("section", {
-    className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "動画プロンプト帳",
-    action: /*#__PURE__*/React.createElement("div", {
-      className: "actions"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "prompt-count-pill"
-    }, "動画 ", normalizedVideos.length, " / 20・ストック ", stockCount, " / 100"), /*#__PURE__*/React.createElement(PageBackButton, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: `page video-page video-view-${videoDisplay.viewMode || "card"} video-thumb-${videoDisplay.thumbnailSize || "normal"} ${videoDisplay.showTags === false ? "video-hide-tags" : ""} ${videoDisplay.showMemo === false ? "video-hide-memo" : ""}`,
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+      title: "動画プロンプト帳",
+      action: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+          className: "prompt-count-pill",
+          children: ["動画 ", normalizedVideos.length, " / 20・ストック ", stockCount, " / 100"]
+        }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+          label: "ホームへ戻る",
+          onClick: () => setScreen("home")
+        })]
+      })
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "video-filter-bar",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+        value: modelFilter,
+        onChange: event => setModelFilter(event.target.value),
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          children: "すべて"
+        }), videoModels.map(model => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          children: model
+        }, model))]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+        className: "check",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          type: "checkbox",
+          checked: favoriteOnly,
+          onChange: event => setFavoriteOnly(event.target.checked)
+        }), " お気に入りのみ"]
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+      className: "prompt-area video-prompt-area",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+        className: "prompt-area-head",
+        children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+            children: "動画プロンプト"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            children: "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。"
+          })]
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+        className: "library-prompt-grid video-grid",
+        children: slots.map((item, index) => {
+          const previewUrl = item ? videoDisplaySrc(tempVideoUrls[item.id] || item.url) : "";
+          const useThumbnail = item ? (item.thumbnailMode || "thumbnail") !== "video" && Boolean(item.thumbnail) : false;
+          const showVideoPreview = Boolean(item && previewUrl && isPlayableVideoUrl(previewUrl) && (hoverVideoId === item.id || !useThumbnail));
+          return item ? /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+            className: "library-prompt-card video-card video-prompt-card",
+            onClick: () => editVideo(item),
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              className: "video-favorite-button",
+              "aria-label": "お気に入り",
+              onClick: event => {
+                event.stopPropagation();
+                setVideos(items => extractVideoPromptItems(items).map(video => video.id === item.id ? {
+                  ...video,
+                  favorite: !video.favorite
+                } : video));
+              },
+              children: item.favorite ? "♥" : "♡"
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+              className: "card-menu video-card-menu",
+              onClick: event => event.stopPropagation(),
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("summary", {
+                "aria-label": "メニュー",
+                children: "…"
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  onClick: event => {
+                    event.preventDefault();
+                    editVideo(item);
+                  },
+                  children: "編集"
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  onClick: event => {
+                    event.preventDefault();
+                    setVideos(items => [{
+                      ...item,
+                      id: uid(),
+                      title: `${item.title} コピー`,
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString()
+                    }, ...extractVideoPromptItems(items)].slice(0, 20));
+                  },
+                  children: "複製"
+                }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  className: "danger",
+                  onClick: event => {
+                    event.preventDefault();
+                    deleteVideo(item.id);
+                  },
+                  children: "削除"
+                })]
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              className: "video-thumb-button",
+              onClick: event => {
+                event.stopPropagation();
+                editVideo(item);
+              },
+              onMouseEnter: () => setHoverVideoId(item.id),
+              onMouseLeave: () => setHoverVideoId(""),
+              children: showVideoPreview ? /*#__PURE__*/_reactJsxRuntime.jsx("video", {
+                src: previewUrl,
+                autoPlay: true,
+                muted: true,
+                loop: true,
+                playsInline: true
+              }) : useThumbnail ? /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                src: imageDisplaySrc(item.thumbnail),
+                alt: ""
+              }) : /*#__PURE__*/_reactJsxRuntime.jsx(VideoPlaceholder, {})
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "prompt-card-content video-card-body",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: item.title
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: item.prompt || item.memo || item.url
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "video-meta-row",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+                  className: "mini-pill",
+                  children: item.model || "その他"
+                }), videoDisplay.showTags !== false && !!(item.tags || []).length && /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+                  className: "video-tags",
+                  children: item.tags.slice(0, 2).map(tag => /*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+                    children: ["#", tag]
+                  }, tag))
+                })]
+              }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+                className: "prompt-card-actions video-card-actions",
+                children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  className: "primary",
+                  onClick: event => copyVideoPrompt(item, event),
+                  disabled: !item.prompt.trim(),
+                  children: "📋 プロンプトをコピー"
+                }), videoDisplay.showMemo !== false && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                  onClick: event => {
+                    event.stopPropagation();
+                    editVideo(item);
+                  },
+                  children: "メモ"
+                })]
+              })]
+            })]
+          }, item.id) : /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
+            className: "add-prompt-card video-add-card",
+            onClick: openNewVideo,
+            disabled: videoItems.length >= 20,
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+              children: "＋"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+              children: "新しい動画プロンプト"
+            })]
+          }, `empty-${index}`);
+        })
+      }), !searchActive && videoItems.length >= 20 && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+        className: "limit-message",
+        children: "動画プロンプトは最大20件まで保存できます"
+      }), searchActive && !filteredVideos.length && /*#__PURE__*/_reactJsxRuntime.jsx(Empty, {
+        text: "条件に合う動画プロンプトがありません。"
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+      className: "prompt-area text-prompt-area video-stock-area",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+        className: "prompt-area-head",
+        children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+            children: "プロンプトストック"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            children: "動画を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"
+          })]
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+        className: "text-prompt-list",
+        children: stockSlots.map((stock, index) => /*#__PURE__*/_reactJsxRuntime.jsx(TextStockFrame, {
+          prompt: stock,
+          blankPrompt: blankVideoPromptStock(),
+          onCreate: saveVideoStockFrame,
+          onUpdate: updateVideoStock,
+          onDelete: deleteVideoStock,
+          copyText: copyVideoStockText,
+          showMemo: () => stock && setMemoStock(stock)
+        }, stock?.id || `video-stock-frame-${index}`))
+      }), canAddStock && !stockQuery && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "add-stock-button",
+        onClick: addVideoStockFrame,
+        children: "＋ プロンプトを追加"
+      }), !canAddStock && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+        className: "limit-message",
+        children: "保存上限（100件）に達しました"
+      }), stockQuery && !filteredStocks.length && /*#__PURE__*/_reactJsxRuntime.jsx(Empty, {
+        text: "条件に合うプロンプトストックがありません。"
+      })]
+    }), memoStock && /*#__PURE__*/_reactJsxRuntime.jsx(MemoModal, {
+      prompt: {
+        ...memoStock,
+        id: memoStock.id,
+        memo: memoStock.memo || ""
+      },
+      onClose: () => setMemoStock(null),
+      onSave: memo => {
+        updateVideoStock(memoStock.id, {
+          memo
+        });
+        setMemoStock(null);
+      }
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+      className: "page-bottom-back",
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }))
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "video-filter-bar"
-  }, /*#__PURE__*/React.createElement("select", {
-    value: modelFilter,
-    onChange: event => setModelFilter(event.target.value)
-  }, /*#__PURE__*/React.createElement("option", null, "すべて"), videoModels.map(model => /*#__PURE__*/React.createElement("option", {
-    key: model
-  }, model))), /*#__PURE__*/React.createElement("label", {
-    className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: favoriteOnly,
-    onChange: event => setFavoriteOnly(event.target.checked)
-  }), " お気に入りのみ")), /*#__PURE__*/React.createElement("section", {
-    className: "prompt-area video-prompt-area"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "動画プロンプト"), /*#__PURE__*/React.createElement("p", null, "Runway・Kling・Veo・Hailuo・Pikaなどの動画生成プロンプトを最大20件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
-    className: "library-prompt-grid video-grid"
-  }, slots.map((item, index) => {
-    const previewUrl = item ? videoDisplaySrc(tempVideoUrls[item.id] || item.url) : "";
-    const useThumbnail = item ? (item.thumbnailMode || "thumbnail") !== "video" && Boolean(item.thumbnail) : false;
-    const showVideoPreview = Boolean(item && previewUrl && isPlayableVideoUrl(previewUrl) && (hoverVideoId === item.id || !useThumbnail));
-    return item ? /*#__PURE__*/React.createElement("article", {
-      className: "library-prompt-card video-card video-prompt-card",
-      key: item.id,
-      onClick: () => editVideo(item)
-    }, /*#__PURE__*/React.createElement("button", {
-      className: "video-favorite-button",
-      "aria-label": "お気に入り",
-      onClick: event => {
-        event.stopPropagation();
-        setVideos(items => extractVideoPromptItems(items).map(video => video.id === item.id ? {
-          ...video,
-          favorite: !video.favorite
-        } : video));
-      }
-    }, item.favorite ? "♥" : "♡"), /*#__PURE__*/React.createElement("details", {
-      className: "card-menu video-card-menu",
-      onClick: event => event.stopPropagation()
-    }, /*#__PURE__*/React.createElement("summary", {
-      "aria-label": "メニュー"
-    }, "…"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
-      onClick: event => {
-        event.preventDefault();
-        editVideo(item);
-      }
-    }, "編集"), /*#__PURE__*/React.createElement("button", {
-      onClick: event => {
-        event.preventDefault();
-        setVideos(items => [{
-          ...item,
-          id: uid(),
-          title: `${item.title} コピー`,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }, ...extractVideoPromptItems(items)].slice(0, 20));
-      }
-    }, "複製"), /*#__PURE__*/React.createElement("button", {
-      className: "danger",
-      onClick: event => {
-        event.preventDefault();
-        deleteVideo(item.id);
-      }
-    }, "削除"))), /*#__PURE__*/React.createElement("button", {
-      className: "video-thumb-button",
-      onClick: event => {
-        event.stopPropagation();
-        editVideo(item);
-      },
-      onMouseEnter: () => setHoverVideoId(item.id),
-      onMouseLeave: () => setHoverVideoId("")
-    }, showVideoPreview ? /*#__PURE__*/React.createElement("video", {
-      src: previewUrl,
-      autoPlay: true,
-      muted: true,
-      loop: true,
-      playsInline: true
-    }) : useThumbnail ? /*#__PURE__*/React.createElement("img", {
-      src: imageDisplaySrc(item.thumbnail),
-      alt: ""
-    }) : /*#__PURE__*/React.createElement(VideoPlaceholder, null)), /*#__PURE__*/React.createElement("div", {
-      className: "prompt-card-content video-card-body"
-    }, /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("p", null, item.prompt || item.memo || item.url), /*#__PURE__*/React.createElement("div", {
-      className: "video-meta-row"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "mini-pill"
-    }, item.model || "その他"), videoDisplay.showTags !== false && !!(item.tags || []).length && /*#__PURE__*/React.createElement("div", {
-      className: "video-tags"
-    }, item.tags.slice(0, 2).map(tag => /*#__PURE__*/React.createElement("span", {
-      key: tag
-    }, "#", tag)))), /*#__PURE__*/React.createElement("div", {
-      className: "prompt-card-actions video-card-actions"
-    }, /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: event => copyVideoPrompt(item, event),
-      disabled: !item.prompt.trim()
-    }, "📋 プロンプトをコピー"), videoDisplay.showMemo !== false && /*#__PURE__*/React.createElement("button", {
-      onClick: event => {
-        event.stopPropagation();
-        editVideo(item);
-      }
-    }, "メモ")))) : /*#__PURE__*/React.createElement("button", {
-      className: "add-prompt-card video-add-card",
-      key: `empty-${index}`,
-      onClick: openNewVideo,
-      disabled: videoItems.length >= 20
-    }, /*#__PURE__*/React.createElement("span", null, "＋"), /*#__PURE__*/React.createElement("strong", null, "新しい動画プロンプト"));
-  })), !searchActive && videoItems.length >= 20 && /*#__PURE__*/React.createElement("p", {
-    className: "limit-message"
-  }, "動画プロンプトは最大20件まで保存できます"), searchActive && !filteredVideos.length && /*#__PURE__*/React.createElement(Empty, {
-    text: "条件に合う動画プロンプトがありません。"
-  })), /*#__PURE__*/React.createElement("section", {
-    className: "prompt-area text-prompt-area video-stock-area"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "prompt-area-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, "プロンプトストック"), /*#__PURE__*/React.createElement("p", null, "動画を設定しないプロンプトはこちらに保存します。最大100件まで保存できます。"))), /*#__PURE__*/React.createElement("div", {
-    className: "text-prompt-list"
-  }, stockSlots.map((stock, index) => /*#__PURE__*/React.createElement(TextStockFrame, {
-    key: stock?.id || `video-stock-frame-${index}`,
-    prompt: stock,
-    blankPrompt: blankVideoPromptStock(),
-    onCreate: saveVideoStockFrame,
-    onUpdate: updateVideoStock,
-    onDelete: deleteVideoStock,
-    copyText: copyVideoStockText,
-    showMemo: () => stock && setMemoStock(stock)
-  }))), canAddStock && !stockQuery && /*#__PURE__*/React.createElement("button", {
-    className: "add-stock-button",
-    onClick: addVideoStockFrame
-  }, "＋ プロンプトを追加"), !canAddStock && /*#__PURE__*/React.createElement("p", {
-    className: "limit-message"
-  }, "保存上限（100件）に達しました"), stockQuery && !filteredStocks.length && /*#__PURE__*/React.createElement(Empty, {
-    text: "条件に合うプロンプトストックがありません。"
-  })), memoStock && /*#__PURE__*/React.createElement(MemoModal, {
-    prompt: {
-      ...memoStock,
-      id: memoStock.id,
-      memo: memoStock.memo || ""
-    },
-    onClose: () => setMemoStock(null),
-    onSave: memo => {
-      updateVideoStock(memoStock.id, {
-        memo
-      });
-      setMemoStock(null);
-    }
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ホームへ戻る",
-    onClick: () => setScreen("home")
-  }));
+    })]
+  });
 }
 function JournalPage({
   journal,
@@ -9098,221 +10202,271 @@ function JournalPage({
       y: event.clientY - rect.top - 60
     });
   };
-  return /*#__PURE__*/React.createElement("section", {
-    className: "page journal-page"
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "ジャーナル",
-    action: /*#__PURE__*/React.createElement("div", {
-      className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: "page journal-page",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+      title: "ジャーナル",
+      action: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+          label: "ホームへ戻る",
+          onClick: () => setScreen("home")
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: () => setScreen("gallery"),
+          children: "ギャラリーへ"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: () => fileInputRef.current?.click(),
+          children: "＋ 画像を追加"
+        })]
+      })
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      ref: fileInputRef,
+      type: "file",
+      accept: "image/png,image/jpeg,image/webp",
+      multiple: true,
+      style: {
+        display: "none"
+      },
+      onChange: event => {
+        if (event.currentTarget.files) addFiles(event.currentTarget.files);
+        event.currentTarget.value = "";
+      }
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+      ref: backgroundInputRef,
+      type: "file",
+      accept: "image/png,image/jpeg,image/webp",
+      multiple: true,
+      style: {
+        display: "none"
+      },
+      onChange: event => {
+        if (event.currentTarget.files) addBackgroundFiles(event.currentTarget.files);
+        event.currentTarget.value = "";
+      }
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "journal-layout",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("aside", {
+        className: "journal-tools",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+          children: ["背景", /*#__PURE__*/_reactJsxRuntime.jsxs("select", {
+            value: journal.background,
+            onChange: event => setJournal(current => ({
+              ...current,
+              background: event.target.value
+            })),
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "paper",
+              children: "無地アイボリー"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "grid",
+              children: "方眼紙"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "dot-grid",
+              children: "ドット方眼"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "kraft",
+              children: "クラフト紙"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "old-paper",
+              children: "古紙"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "pink",
+              children: "淡いピンク"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "blue",
+              children: "淡いブルー"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "green",
+              children: "淡いグリーン"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "linen",
+              children: "リネン風"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "washi",
+              children: "マスキングテープ風"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "scrapbook",
+              children: "スクラップブック風"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "lined",
+              children: "罫線ノート"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "check",
+              children: "チェック柄"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "floral",
+              children: "薄い花柄"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "watercolor",
+              children: "水彩にじみ"
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: "dark",
+              children: "ダーク紙"
+            }), customBackgrounds.map(background => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+              value: `custom-${background.id}`,
+              children: background.title || "お気に入り背景"
+            }, background.id))]
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: `journal-background-drop ${isBackgroundDragging ? "dragging" : ""}`,
+          onDragOver: event => event.preventDefault(),
+          onDragEnter: event => {
+            event.preventDefault();
+            setIsBackgroundDragging(true);
+          },
+          onDragLeave: () => setIsBackgroundDragging(false),
+          onDrop: event => {
+            event.preventDefault();
+            setIsBackgroundDragging(false);
+            addBackgroundFiles(event.dataTransfer.files);
+          },
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            type: "button",
+            onClick: () => backgroundInputRef.current?.click(),
+            children: "＋ 背景を追加"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+            children: "画像をドロップして背景にできます"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+            children: "推奨アスペクト比：3:2"
+          })]
+        }), selectedCustomBackground && /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "journal-background-editor",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["背景名", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              value: selectedCustomBackground.title,
+              onChange: event => updateBackground(selectedCustomBackground.id, {
+                title: event.target.value
+              })
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            className: "danger",
+            onClick: () => deleteBackground(selectedCustomBackground.id),
+            children: "背景を削除"
+          })]
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+          children: "画像ストック"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          className: "journal-stock",
+          children: visibleStockImages.map(image => /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "journal-stock-item",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              className: "journal-stock-add",
+              onClick: () => addJournalItem(image),
+              "aria-label": `${image.title || "画像"}をジャーナルに追加`,
+              children: /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+                src: imageDisplaySrc(image),
+                alt: ""
+              })
+            }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              className: "journal-stock-delete",
+              "aria-label": `${image.title || "画像"}を削除`,
+              onClick: event => {
+                event.stopPropagation();
+                deleteStockImage(image);
+              },
+              children: "×"
+            })]
+          }, image.id))
+        }), selected && /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+          className: "journal-edit-panel",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["サイズ", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              type: "range",
+              min: "80",
+              max: "360",
+              value: selected.width,
+              onChange: event => updateItem(selected.id, {
+                width: Number(event.target.value)
+              })
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            children: ["回転", /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              type: "range",
+              min: "-35",
+              max: "35",
+              value: selected.rotate,
+              onChange: event => updateItem(selected.id, {
+                rotate: Number(event.target.value)
+              })
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+            className: "check",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+              type: "checkbox",
+              checked: isStickerEffectOn(selected),
+              onChange: event => updateItem(selected.id, {
+                stickerEffect: event.target.checked
+              })
+            }), " シール風"]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+            className: "danger",
+            onClick: () => setJournal(current => {
+              rememberDeletedSampleIdsFromItems(current.items.find(item => item.id === selected.id));
+              return {
+                ...current,
+                items: current.items.filter(item => item.id !== selected.id)
+              };
+            }),
+            children: "選択画像を削除"
+          })]
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "journal-canvas",
+        children: [!journal.items.length && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+          className: "journal-board-note",
+          children: "画像ストックから追加すると、シール帳のように並べられます。"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+          ref: boardRef,
+          className: `journal-board ${journal.background}`,
+          tabIndex: 0,
+          style: selectedCustomBackground ? {
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${imageSrc(selectedCustomBackground)})`
+          } : undefined,
+          onPointerMove: moveItem,
+          onPointerUp: () => setDraggingId(""),
+          onPointerLeave: () => setDraggingId(""),
+          onDragOver: event => event.preventDefault(),
+          onDrop: event => {
+            event.preventDefault();
+            event.stopPropagation();
+            addFiles(event.dataTransfer.files);
+          },
+          onPaste: event => {
+            const files = clipboardImageFiles(event);
+            if (!files.length) return;
+            event.preventDefault();
+            event.stopPropagation();
+            addFiles(files);
+          },
+          children: journal.items.map(item => /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: `journal-sticker ${selectedId === item.id ? "selected" : ""}`,
+            style: {
+              left: item.x,
+              top: item.y,
+              width: item.width,
+              transform: `rotate(${item.rotate}deg)`
+            },
+            onPointerDown: event => {
+              event.preventDefault();
+              setSelectedId(item.id);
+              setDraggingId(item.id);
+            },
+            children: /*#__PURE__*/_reactJsxRuntime.jsx("img", {
+              className: isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image",
+              src: imageDisplaySrc(item),
+              alt: "",
+              draggable: false
+            })
+          }, item.id))
+        })]
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+      className: "page-bottom-back",
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setScreen("gallery")
-    }, "ギャラリーへ"), /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: () => fileInputRef.current?.click()
-    }, "＋ 画像を追加"))
-  }), /*#__PURE__*/React.createElement("input", {
-    ref: fileInputRef,
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    multiple: true,
-    style: {
-      display: "none"
-    },
-    onChange: event => {
-      if (event.currentTarget.files) addFiles(event.currentTarget.files);
-      event.currentTarget.value = "";
-    }
-  }), /*#__PURE__*/React.createElement("input", {
-    ref: backgroundInputRef,
-    type: "file",
-    accept: "image/png,image/jpeg,image/webp",
-    multiple: true,
-    style: {
-      display: "none"
-    },
-    onChange: event => {
-      if (event.currentTarget.files) addBackgroundFiles(event.currentTarget.files);
-      event.currentTarget.value = "";
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "journal-layout"
-  }, /*#__PURE__*/React.createElement("aside", {
-    className: "journal-tools"
-  }, /*#__PURE__*/React.createElement("label", null, "背景", /*#__PURE__*/React.createElement("select", {
-    value: journal.background,
-    onChange: event => setJournal(current => ({
-      ...current,
-      background: event.target.value
-    }))
-  }, /*#__PURE__*/React.createElement("option", {
-    value: "paper"
-  }, "無地アイボリー"), /*#__PURE__*/React.createElement("option", {
-    value: "grid"
-  }, "方眼紙"), /*#__PURE__*/React.createElement("option", {
-    value: "dot-grid"
-  }, "ドット方眼"), /*#__PURE__*/React.createElement("option", {
-    value: "kraft"
-  }, "クラフト紙"), /*#__PURE__*/React.createElement("option", {
-    value: "old-paper"
-  }, "古紙"), /*#__PURE__*/React.createElement("option", {
-    value: "pink"
-  }, "淡いピンク"), /*#__PURE__*/React.createElement("option", {
-    value: "blue"
-  }, "淡いブルー"), /*#__PURE__*/React.createElement("option", {
-    value: "green"
-  }, "淡いグリーン"), /*#__PURE__*/React.createElement("option", {
-    value: "linen"
-  }, "リネン風"), /*#__PURE__*/React.createElement("option", {
-    value: "washi"
-  }, "マスキングテープ風"), /*#__PURE__*/React.createElement("option", {
-    value: "scrapbook"
-  }, "スクラップブック風"), /*#__PURE__*/React.createElement("option", {
-    value: "lined"
-  }, "罫線ノート"), /*#__PURE__*/React.createElement("option", {
-    value: "check"
-  }, "チェック柄"), /*#__PURE__*/React.createElement("option", {
-    value: "floral"
-  }, "薄い花柄"), /*#__PURE__*/React.createElement("option", {
-    value: "watercolor"
-  }, "水彩にじみ"), /*#__PURE__*/React.createElement("option", {
-    value: "dark"
-  }, "ダーク紙"), customBackgrounds.map(background => /*#__PURE__*/React.createElement("option", {
-    key: background.id,
-    value: `custom-${background.id}`
-  }, background.title || "お気に入り背景")))), /*#__PURE__*/React.createElement("div", {
-    className: `journal-background-drop ${isBackgroundDragging ? "dragging" : ""}`,
-    onDragOver: event => event.preventDefault(),
-    onDragEnter: event => {
-      event.preventDefault();
-      setIsBackgroundDragging(true);
-    },
-    onDragLeave: () => setIsBackgroundDragging(false),
-    onDrop: event => {
-      event.preventDefault();
-      setIsBackgroundDragging(false);
-      addBackgroundFiles(event.dataTransfer.files);
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: () => backgroundInputRef.current?.click()
-  }, "＋ 背景を追加"), /*#__PURE__*/React.createElement("small", null, "画像をドロップして背景にできます"), /*#__PURE__*/React.createElement("small", null, "推奨アスペクト比：3:2")), selectedCustomBackground && /*#__PURE__*/React.createElement("div", {
-    className: "journal-background-editor"
-  }, /*#__PURE__*/React.createElement("label", null, "背景名", /*#__PURE__*/React.createElement("input", {
-    value: selectedCustomBackground.title,
-    onChange: event => updateBackground(selectedCustomBackground.id, {
-      title: event.target.value
-    })
-  })), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: () => deleteBackground(selectedCustomBackground.id)
-  }, "背景を削除")), /*#__PURE__*/React.createElement("strong", null, "画像ストック"), /*#__PURE__*/React.createElement("div", {
-    className: "journal-stock"
-  }, visibleStockImages.map(image => /*#__PURE__*/React.createElement("div", {
-    className: "journal-stock-item",
-    key: image.id
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "journal-stock-add",
-    onClick: () => addJournalItem(image),
-    "aria-label": `${image.title || "画像"}をジャーナルに追加`
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(image),
-    alt: ""
-  })), /*#__PURE__*/React.createElement("button", {
-    className: "journal-stock-delete",
-    "aria-label": `${image.title || "画像"}を削除`,
-    onClick: event => {
-      event.stopPropagation();
-      deleteStockImage(image);
-    }
-  }, "×")))), selected && /*#__PURE__*/React.createElement("div", {
-    className: "journal-edit-panel"
-  }, /*#__PURE__*/React.createElement("label", null, "サイズ", /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: "80",
-    max: "360",
-    value: selected.width,
-    onChange: event => updateItem(selected.id, {
-      width: Number(event.target.value)
-    })
-  })), /*#__PURE__*/React.createElement("label", null, "回転", /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: "-35",
-    max: "35",
-    value: selected.rotate,
-    onChange: event => updateItem(selected.id, {
-      rotate: Number(event.target.value)
-    })
-  })), /*#__PURE__*/React.createElement("label", {
-    className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: isStickerEffectOn(selected),
-    onChange: event => updateItem(selected.id, {
-      stickerEffect: event.target.checked
-    })
-  }), " シール風"), /*#__PURE__*/React.createElement("button", {
-    className: "danger",
-    onClick: () => setJournal(current => {
-      rememberDeletedSampleIdsFromItems(current.items.find(item => item.id === selected.id));
-      return {
-        ...current,
-        items: current.items.filter(item => item.id !== selected.id)
-      };
-    })
-  }, "選択画像を削除"))), /*#__PURE__*/React.createElement("div", {
-    className: "journal-canvas"
-  }, !journal.items.length && /*#__PURE__*/React.createElement("p", {
-    className: "journal-board-note"
-  }, "画像ストックから追加すると、シール帳のように並べられます。"), /*#__PURE__*/React.createElement("div", {
-    ref: boardRef,
-    className: `journal-board ${journal.background}`,
-    tabIndex: 0,
-    style: selectedCustomBackground ? {
-      backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${imageSrc(selectedCustomBackground)})`
-    } : undefined,
-    onPointerMove: moveItem,
-    onPointerUp: () => setDraggingId(""),
-    onPointerLeave: () => setDraggingId(""),
-    onDragOver: event => event.preventDefault(),
-    onDrop: event => {
-      event.preventDefault();
-      event.stopPropagation();
-      addFiles(event.dataTransfer.files);
-    },
-    onPaste: event => {
-      const files = clipboardImageFiles(event);
-      if (!files.length) return;
-      event.preventDefault();
-      event.stopPropagation();
-      addFiles(files);
-    }
-  }, journal.items.map(item => /*#__PURE__*/React.createElement("div", {
-    className: `journal-sticker ${selectedId === item.id ? "selected" : ""}`,
-    key: item.id,
-    style: {
-      left: item.x,
-      top: item.y,
-      width: item.width,
-      transform: `rotate(${item.rotate}deg)`
-    },
-    onPointerDown: event => {
-      event.preventDefault();
-      setSelectedId(item.id);
-      setDraggingId(item.id);
-    }
-  }, /*#__PURE__*/React.createElement("img", {
-    className: isStickerEffectOn(item) ? "journal-image sticker-outline" : "journal-image",
-    src: imageDisplaySrc(item),
-    alt: "",
-    draggable: false
-  })))))), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ホームへ戻る",
-    onClick: () => setScreen("home")
-  }));
+    })]
+  });
 }
 function Projects({
   projects,
@@ -9338,94 +10492,137 @@ function Projects({
     setProjects(items => item.id ? items.map(p => p.id === item.id ? next : p) : [next, ...items].slice(0, 30));
     setEditing(null);
   };
-  return /*#__PURE__*/React.createElement("section", {
-    className: `page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`
-  }, /*#__PURE__*/React.createElement(PageHead, {
-    title: "プロジェクト管理",
-    action: /*#__PURE__*/React.createElement("div", {
-      className: "actions"
-    }, /*#__PURE__*/React.createElement(PageBackButton, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("section", {
+    className: `page projects-page ${projectDisplay.showAlarms === false ? "projects-hide-alarms" : ""}`,
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageHead, {
+      title: "プロジェクト管理",
+      action: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "actions",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+          label: "ホームへ戻る",
+          onClick: () => setScreen("home")
+        }), canAddProject ? /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          className: "primary",
+          onClick: () => setEditing(blankProject()),
+          children: "追加する"
+        }) : /*#__PURE__*/_reactJsxRuntime.jsx("span", {
+          className: "limit-message",
+          children: "プロジェクトは最大30件まで登録できます"
+        })]
+      })
+    }), !canAddProject && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+      className: "limit-note",
+      children: "プロジェクトは最大30件まで登録できます"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "project-grid",
+      children: filtered.map(project => {
+        const linkedPrompts = prompts.filter(p => project.promptIds.includes(p.id));
+        const linkedMj = settings.filter(m => project.mjIds.includes(m.id));
+        return /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+          className: "project-card",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+            className: "project-top",
+            children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+                children: project.name
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+                children: project.description
+              })]
+            }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+              className: "actions",
+              children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                onClick: () => setEditing(project),
+                children: "編集"
+              }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+                className: "danger",
+                onClick: () => setProjects(items => {
+                  rememberDeletedSampleIdsFromItems(items.find(p => p.id === project.id));
+                  return items.filter(p => p.id !== project.id);
+                }),
+                children: "削除"
+              })]
+            })]
+          }), /*#__PURE__*/_reactJsxRuntime.jsx(TagRow, {
+            tags: project.tags
+          }), projectDisplay.showAlarms !== false && project.dueDate && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            className: "project-due-line",
+            children: projectDueText(project.dueDate)
+          }), project.note && /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+            className: "note",
+            children: project.note
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("h4", {
+            children: "関連プロンプト"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "mini-list",
+            children: linkedPrompts.length ? linkedPrompts.map(p => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              onClick: () => copyText(p.prompt, p.id),
+              children: p.title
+            }, p.id)) : /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+              children: "未設定"
+            })
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("h4", {
+            children: "関連ミッドジャーニー設定"
+          }), /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+            className: "mini-list",
+            children: linkedMj.length ? linkedMj.map(m => /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+              onClick: () => copyText(mjCommand(m)),
+              children: m.title
+            }, m.id)) : /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+              children: "未設定"
+            })
+          })]
+        }, project.id);
+      })
+    }), editing && /*#__PURE__*/_reactJsxRuntime.jsx(ProjectModal, {
+      item: editing,
+      prompts: prompts,
+      settings: settings,
+      onClose: () => setEditing(null),
+      onSave: save
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(PageBackButton, {
+      className: "page-bottom-back",
       label: "ホームへ戻る",
       onClick: () => setScreen("home")
-    }), canAddProject ? /*#__PURE__*/React.createElement("button", {
-      className: "primary",
-      onClick: () => setEditing(blankProject())
-    }, "追加する") : /*#__PURE__*/React.createElement("span", {
-      className: "limit-message"
-    }, "プロジェクトは最大30件まで登録できます"))
-  }), !canAddProject && /*#__PURE__*/React.createElement("p", {
-    className: "limit-note"
-  }, "プロジェクトは最大30件まで登録できます"), /*#__PURE__*/React.createElement("div", {
-    className: "project-grid"
-  }, filtered.map(project => {
-    const linkedPrompts = prompts.filter(p => project.promptIds.includes(p.id));
-    const linkedMj = settings.filter(m => project.mjIds.includes(m.id));
-    return /*#__PURE__*/React.createElement("article", {
-      className: "project-card",
-      key: project.id
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "project-top"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", null, project.name), /*#__PURE__*/React.createElement("p", null, project.description)), /*#__PURE__*/React.createElement("div", {
-      className: "actions"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setEditing(project)
-    }, "編集"), /*#__PURE__*/React.createElement("button", {
-      className: "danger",
-      onClick: () => setProjects(items => {
-        rememberDeletedSampleIdsFromItems(items.find(p => p.id === project.id));
-        return items.filter(p => p.id !== project.id);
-      })
-    }, "削除"))), /*#__PURE__*/React.createElement(TagRow, {
-      tags: project.tags
-    }), projectDisplay.showAlarms !== false && project.dueDate && /*#__PURE__*/React.createElement("p", {
-      className: "project-due-line"
-    }, projectDueText(project.dueDate)), project.note && /*#__PURE__*/React.createElement("p", {
-      className: "note"
-    }, project.note), /*#__PURE__*/React.createElement("h4", null, "関連プロンプト"), /*#__PURE__*/React.createElement("div", {
-      className: "mini-list"
-    }, linkedPrompts.length ? linkedPrompts.map(p => /*#__PURE__*/React.createElement("button", {
-      key: p.id,
-      onClick: () => copyText(p.prompt, p.id)
-    }, p.title)) : /*#__PURE__*/React.createElement("small", null, "未設定")), /*#__PURE__*/React.createElement("h4", null, "関連ミッドジャーニー設定"), /*#__PURE__*/React.createElement("div", {
-      className: "mini-list"
-    }, linkedMj.length ? linkedMj.map(m => /*#__PURE__*/React.createElement("button", {
-      key: m.id,
-      onClick: () => copyText(mjCommand(m))
-    }, m.title)) : /*#__PURE__*/React.createElement("small", null, "未設定")));
-  })), editing && /*#__PURE__*/React.createElement(ProjectModal, {
-    item: editing,
-    prompts: prompts,
-    settings: settings,
-    onClose: () => setEditing(null),
-    onSave: save
-  }), /*#__PURE__*/React.createElement(PageBackButton, {
-    className: "page-bottom-back",
-    label: "ホームへ戻る",
-    onClick: () => setScreen("home")
-  }));
+    })]
+  });
 }
 function PromptCard({
   prompt,
   onCopy,
   extra
 }) {
-  return /*#__PURE__*/React.createElement("article", {
-    className: "prompt-card"
-  }, /*#__PURE__*/React.createElement("img", {
-    src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
-    alt: ""
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-    className: "pill"
-  }, prompt.category), /*#__PURE__*/React.createElement("h3", null, prompt.title), /*#__PURE__*/React.createElement("p", null, prompt.description || prompt.note), /*#__PURE__*/React.createElement(TagRow, {
-    tags: prompt.tags
-  }), /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "プロンプト本文"), /*#__PURE__*/React.createElement("p", {
-    className: "prompt-text"
-  }, prompt.prompt))), /*#__PURE__*/React.createElement("div", {
-    className: "actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: () => onCopy(prompt.prompt, prompt.id)
-  }, "コピー"), extra));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("article", {
+    className: "prompt-card",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("img", {
+      src: imageDisplaySrc(prompt.imageUrl) || art("プロンプト", "#f5eadc", "#e7e7df"),
+      alt: ""
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+        className: "pill",
+        children: prompt.category
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("h3", {
+        children: prompt.title
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+        children: prompt.description || prompt.note
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(TagRow, {
+        tags: prompt.tags
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("details", {
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("summary", {
+          children: "プロンプト本文"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("p", {
+          className: "prompt-text",
+          children: prompt.prompt
+        })]
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "actions",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+        className: "primary",
+        onClick: () => onCopy(prompt.prompt, prompt.id),
+        children: "コピー"
+      }), extra]
+    })]
+  });
 }
 function PromptModal({
   item,
@@ -9441,73 +10638,78 @@ function PromptModal({
     coverImages,
     imageUrl: coverImages[0] || ""
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs(Modal, {
     title: item.id ? "プロンプトを編集" : "プロンプトを追加",
-    onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
-    value: draft.title,
-    onChange: e => setDraft({
-      ...draft,
-      title: e.target.value
-    }),
-    placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("select", {
-    value: draft.category,
-    onChange: e => setDraft({
-      ...draft,
-      category: e.target.value
-    })
-  }, categories.map(cat => /*#__PURE__*/React.createElement("option", {
-    key: cat
-  }, cat))), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.description,
-    onChange: e => setDraft({
-      ...draft,
-      description: e.target.value
-    }),
-    placeholder: "説明"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    className: "tall",
-    value: draft.prompt,
-    onChange: e => setDraft({
-      ...draft,
-      prompt: e.target.value
-    }),
-    placeholder: "プロンプト本文"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.note,
-    onChange: e => setDraft({
-      ...draft,
-      note: e.target.value
-    }),
-    placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.tagInput,
-    onChange: e => setDraft({
-      ...draft,
-      tagInput: e.target.value
-    }),
-    placeholder: "タグ（カンマ区切り）"
-  }), /*#__PURE__*/React.createElement(CoverImageUploader, {
-    item: draft,
-    category: "prompt",
-    onChange: setCoverImages
-  }), /*#__PURE__*/React.createElement("label", {
-    className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: draft.favorite,
-    onChange: e => setDraft({
-      ...draft,
-      favorite: e.target.checked
-    })
-  }), " お気に入り")), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
-    onSave: () => onSave({
-      ...draft,
-      tags: splitTags(draft.tagInput)
-    })
-  }));
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs(FormGrid, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        value: draft.title,
+        onChange: e => setDraft({
+          ...draft,
+          title: e.target.value
+        }),
+        placeholder: "タイトル"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("select", {
+        value: draft.category,
+        onChange: e => setDraft({
+          ...draft,
+          category: e.target.value
+        }),
+        children: categories.map(cat => /*#__PURE__*/_reactJsxRuntime.jsx("option", {
+          children: cat
+        }, cat))
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        value: draft.description,
+        onChange: e => setDraft({
+          ...draft,
+          description: e.target.value
+        }),
+        placeholder: "説明"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        className: "tall",
+        value: draft.prompt,
+        onChange: e => setDraft({
+          ...draft,
+          prompt: e.target.value
+        }),
+        placeholder: "プロンプト本文"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        value: draft.note,
+        onChange: e => setDraft({
+          ...draft,
+          note: e.target.value
+        }),
+        placeholder: "メモ"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        value: draft.tagInput,
+        onChange: e => setDraft({
+          ...draft,
+          tagInput: e.target.value
+        }),
+        placeholder: "タグ（カンマ区切り）"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(CoverImageUploader, {
+        item: draft,
+        category: "prompt",
+        onChange: setCoverImages
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+        className: "check",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          type: "checkbox",
+          checked: draft.favorite,
+          onChange: e => setDraft({
+            ...draft,
+            favorite: e.target.checked
+          })
+        }), " お気に入り"]
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(ModalActions, {
+      onClose: onClose,
+      onSave: () => onSave({
+        ...draft,
+        tags: splitTags(draft.tagInput)
+      })
+    })]
+  });
 }
 function MjModal({
   item,
@@ -9521,59 +10723,67 @@ function MjModal({
     ...draft,
     [key]: value
   });
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs(Modal, {
     title: item.id ? "ミッドジャーニー設定を編集" : "ミッドジャーニー設定を追加",
-    onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, null, /*#__PURE__*/React.createElement("input", {
-    value: draft.title,
-    onChange: e => set("title", e.target.value),
-    placeholder: "タイトル"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.description,
-    onChange: e => set("description", e.target.value),
-    placeholder: "説明"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "inline-fields"
-  }, /*#__PURE__*/React.createElement("input", {
-    value: draft.ar,
-    onChange: e => set("ar", e.target.value),
-    placeholder: "--ar 1:1"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.stylize,
-    onChange: e => set("stylize", e.target.value),
-    placeholder: "--stylize"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.chaos,
-    onChange: e => set("chaos", e.target.value),
-    placeholder: "--chaos"
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "inline-fields"
-  }, /*#__PURE__*/React.createElement("input", {
-    value: draft.profile,
-    onChange: e => set("profile", e.target.value),
-    placeholder: "--profile"
-  }), /*#__PURE__*/React.createElement("input", {
-    value: draft.seed,
-    onChange: e => set("seed", e.target.value),
-    placeholder: "--seed"
-  }), /*#__PURE__*/React.createElement("label", {
-    className: "check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: draft.raw,
-    onChange: e => set("raw", e.target.checked)
-  }), " --raw")), /*#__PURE__*/React.createElement("input", {
-    value: draft.extra,
-    onChange: e => set("extra", e.target.value),
-    placeholder: "その他自由入力、ベース文など"
-  }), /*#__PURE__*/React.createElement("textarea", {
-    value: draft.note,
-    onChange: e => set("note", e.target.value),
-    placeholder: "メモ"
-  }), /*#__PURE__*/React.createElement("code", null, mjCommand(draft))), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
-    onSave: () => onSave(draft)
-  }));
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs(FormGrid, {
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        value: draft.title,
+        onChange: e => set("title", e.target.value),
+        placeholder: "タイトル"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        value: draft.description,
+        onChange: e => set("description", e.target.value),
+        placeholder: "説明"
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "inline-fields",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          value: draft.ar,
+          onChange: e => set("ar", e.target.value),
+          placeholder: "--ar 1:1"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          value: draft.stylize,
+          onChange: e => set("stylize", e.target.value),
+          placeholder: "--stylize"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          value: draft.chaos,
+          onChange: e => set("chaos", e.target.value),
+          placeholder: "--chaos"
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "inline-fields",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          value: draft.profile,
+          onChange: e => set("profile", e.target.value),
+          placeholder: "--profile"
+        }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          value: draft.seed,
+          onChange: e => set("seed", e.target.value),
+          placeholder: "--seed"
+        }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+          className: "check",
+          children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+            type: "checkbox",
+            checked: draft.raw,
+            onChange: e => set("raw", e.target.checked)
+          }), " --raw"]
+        })]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        value: draft.extra,
+        onChange: e => set("extra", e.target.value),
+        placeholder: "その他自由入力、ベース文など"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+        value: draft.note,
+        onChange: e => set("note", e.target.value),
+        placeholder: "メモ"
+      }), /*#__PURE__*/_reactJsxRuntime.jsx("code", {
+        children: mjCommand(draft)
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(ModalActions, {
+      onClose: onClose,
+      onSave: () => onSave(draft)
+    })]
+  });
 }
 function ProjectModal({
   item,
@@ -9595,96 +10805,107 @@ function ProjectModal({
       [key]: exists ? draft[key].filter(item => item !== id) : [...draft[key], id]
     });
   };
-  return /*#__PURE__*/React.createElement(Modal, {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs(Modal, {
     title: item.id ? "プロジェクトを編集" : "プロジェクトを追加",
-    onClose: onClose
-  }, /*#__PURE__*/React.createElement(FormGrid, {
-    className: "project-edit-form"
-  }, /*#__PURE__*/React.createElement(ProjectField, {
-    label: "プロジェクト名"
-  }, /*#__PURE__*/React.createElement("input", {
-    value: draft.name,
-    onChange: e => setDraft({
-      ...draft,
-      name: e.target.value
-    }),
-    placeholder: "例：Christmas Sticker Set"
-  })), /*#__PURE__*/React.createElement(ProjectField, {
-    label: "概要"
-  }, /*#__PURE__*/React.createElement("textarea", {
-    value: draft.description,
-    onChange: e => setDraft({
-      ...draft,
-      description: e.target.value
-    }),
-    placeholder: "制作する素材セットの内容を書きます"
-  })), /*#__PURE__*/React.createElement(ProjectField, {
-    label: "目標・ゴール"
-  }, /*#__PURE__*/React.createElement("textarea", {
-    value: draft.note,
-    onChange: e => setDraft({
-      ...draft,
-      note: e.target.value
-    }),
-    placeholder: "点数、販売開始日、やることなど"
-  })), /*#__PURE__*/React.createElement(ProjectField, {
-    label: "タグ"
-  }, /*#__PURE__*/React.createElement("input", {
-    value: draft.tagInput,
-    onChange: e => setDraft({
-      ...draft,
-      tagInput: e.target.value
-    }),
-    placeholder: "季節商品, ステッカー, Etsy"
-  })), /*#__PURE__*/React.createElement(ProjectField, {
-    label: "達成予定日"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "date",
-    value: draft.dueDate || "",
-    onChange: e => setDraft({
-      ...draft,
-      dueDate: e.target.value
-    })
-  })), /*#__PURE__*/React.createElement("label", {
-    className: "check project-remind-check"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: Boolean(draft.remindOnHome),
-    onChange: e => setDraft({
-      ...draft,
-      remindOnHome: e.target.checked
-    })
-  }), "ホーム画面でリマインドする"), /*#__PURE__*/React.createElement(SelectList, {
-    title: "関連プロンプト",
-    description: "お気に入りを優先して10件表示します。必要な場合は「もっと見る」で追加表示できます。",
-    items: promptChoices,
-    selected: draft.promptIds,
-    getLabel: choice => choice.title || "無題のプロンプト",
-    getText: choice => `${choice.title} ${choice.description} ${choice.prompt} ${choice.note} ${(choice.tags || []).join(" ")}`,
-    onToggle: id => toggle("promptIds", id)
-  }), /*#__PURE__*/React.createElement(SelectList, {
-    title: "関連Midjourney設定",
-    description: "保存日の新しいものを優先して10件表示します。",
-    items: mjChoices,
-    selected: draft.mjIds,
-    getLabel: choice => choice.title || promptTitleFromText(choice.prompt || choice.fullPrompt || choice.basePrompt || choice.extra || ""),
-    getText: choice => `${choice.title || ""} ${choice.prompt || choice.fullPrompt || choice.basePrompt || ""} ${choice.parameters || choice.extra || ""} ${choice.memo || choice.note || ""}`,
-    onToggle: id => toggle("mjIds", id)
-  })), /*#__PURE__*/React.createElement(ModalActions, {
     onClose: onClose,
-    onSave: () => onSave({
-      ...draft,
-      tags: splitTags(draft.tagInput)
-    })
-  }));
+    children: [/*#__PURE__*/_reactJsxRuntime.jsxs(FormGrid, {
+      className: "project-edit-form",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx(ProjectField, {
+        label: "プロジェクト名",
+        children: /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          value: draft.name,
+          onChange: e => setDraft({
+            ...draft,
+            name: e.target.value
+          }),
+          placeholder: "例：Christmas Sticker Set"
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(ProjectField, {
+        label: "概要",
+        children: /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+          value: draft.description,
+          onChange: e => setDraft({
+            ...draft,
+            description: e.target.value
+          }),
+          placeholder: "制作する素材セットの内容を書きます"
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(ProjectField, {
+        label: "目標・ゴール",
+        children: /*#__PURE__*/_reactJsxRuntime.jsx("textarea", {
+          value: draft.note,
+          onChange: e => setDraft({
+            ...draft,
+            note: e.target.value
+          }),
+          placeholder: "点数、販売開始日、やることなど"
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(ProjectField, {
+        label: "タグ",
+        children: /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          value: draft.tagInput,
+          onChange: e => setDraft({
+            ...draft,
+            tagInput: e.target.value
+          }),
+          placeholder: "季節商品, ステッカー, Etsy"
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(ProjectField, {
+        label: "達成予定日",
+        children: /*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          type: "date",
+          value: draft.dueDate || "",
+          onChange: e => setDraft({
+            ...draft,
+            dueDate: e.target.value
+          })
+        })
+      }), /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+        className: "check project-remind-check",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+          type: "checkbox",
+          checked: Boolean(draft.remindOnHome),
+          onChange: e => setDraft({
+            ...draft,
+            remindOnHome: e.target.checked
+          })
+        }), "ホーム画面でリマインドする"]
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(SelectList, {
+        title: "関連プロンプト",
+        description: "お気に入りを優先して10件表示します。必要な場合は「もっと見る」で追加表示できます。",
+        items: promptChoices,
+        selected: draft.promptIds,
+        getLabel: choice => choice.title || "無題のプロンプト",
+        getText: choice => `${choice.title} ${choice.description} ${choice.prompt} ${choice.note} ${(choice.tags || []).join(" ")}`,
+        onToggle: id => toggle("promptIds", id)
+      }), /*#__PURE__*/_reactJsxRuntime.jsx(SelectList, {
+        title: "関連Midjourney設定",
+        description: "保存日の新しいものを優先して10件表示します。",
+        items: mjChoices,
+        selected: draft.mjIds,
+        getLabel: choice => choice.title || promptTitleFromText(choice.prompt || choice.fullPrompt || choice.basePrompt || choice.extra || ""),
+        getText: choice => `${choice.title || ""} ${choice.prompt || choice.fullPrompt || choice.basePrompt || ""} ${choice.parameters || choice.extra || ""} ${choice.memo || choice.note || ""}`,
+        onToggle: id => toggle("mjIds", id)
+      })]
+    }), /*#__PURE__*/_reactJsxRuntime.jsx(ModalActions, {
+      onClose: onClose,
+      onSave: () => onSave({
+        ...draft,
+        tags: splitTags(draft.tagInput)
+      })
+    })]
+  });
 }
 function ProjectField({
   label,
   children
 }) {
-  return /*#__PURE__*/React.createElement("label", {
-    className: "project-field"
-  }, /*#__PURE__*/React.createElement("span", null, label), children);
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+    className: "project-field",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("span", {
+      children: label
+    }), children]
+  });
 }
 function SelectList({
   title,
@@ -9697,22 +10918,33 @@ function SelectList({
 }) {
   const [expanded, setExpanded] = React.useState(false);
   const shown = expanded ? items : items.slice(0, 10);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "select-list"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "select-list-head"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("strong", null, title), description && /*#__PURE__*/React.createElement("small", null, description))), items.length ? shown.map(item => /*#__PURE__*/React.createElement("label", {
-    key: item.id,
-    className: "check select-row"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: selected.includes(item.id),
-    onChange: () => onToggle(item.id)
-  }), " ", getLabel(item))) : /*#__PURE__*/React.createElement("small", null, "先に項目を追加してください。"), items.length > 10 && !expanded && /*#__PURE__*/React.createElement("button", {
-    className: "ghost more-button",
-    type: "button",
-    onClick: () => setExpanded(true)
-  }, "もっと見る"));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+    className: "select-list",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("div", {
+      className: "select-list-head",
+      children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("strong", {
+          children: title
+        }), description && /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+          children: description
+        })]
+      })
+    }), items.length ? shown.map(item => /*#__PURE__*/_reactJsxRuntime.jsxs("label", {
+      className: "check select-row",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsx("input", {
+        type: "checkbox",
+        checked: selected.includes(item.id),
+        onChange: () => onToggle(item.id)
+      }), " ", getLabel(item)]
+    }, item.id)) : /*#__PURE__*/_reactJsxRuntime.jsx("small", {
+      children: "先に項目を追加してください。"
+    }), items.length > 10 && !expanded && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+      className: "ghost more-button",
+      type: "button",
+      onClick: () => setExpanded(true),
+      children: "もっと見る"
+    })]
+  });
 }
 function mjCommand(item) {
   if (item.prompt) return item.prompt;
@@ -9724,58 +10956,69 @@ function PageHead({
   title,
   action
 }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "page-head"
-  }, /*#__PURE__*/React.createElement("h2", null, title), action);
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+    className: "page-head",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("h2", {
+      children: title
+    }), action]
+  });
 }
 function PageBackButton({
   label = "前のページに戻る",
   onClick,
   className = ""
 }) {
-  return /*#__PURE__*/React.createElement("button", {
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("button", {
     type: "button",
     className: `page-back-button ${className}`.trim(),
-    onClick: onClick
-  }, "← ", label);
+    onClick: onClick,
+    children: ["← ", label]
+  });
 }
 function SectionTitle({
   title
 }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "section-title"
-  }, /*#__PURE__*/React.createElement("h2", null, title));
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+    className: "section-title",
+    children: /*#__PURE__*/_reactJsxRuntime.jsx("h2", {
+      children: title
+    })
+  });
 }
 function Filters({
   children
 }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "filters"
-  }, children);
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+    className: "filters",
+    children: children
+  });
 }
 function TagRow({
   tags
 }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "tags"
-  }, tags.map(tag => /*#__PURE__*/React.createElement("span", {
-    key: tag
-  }, "#", tag)));
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+    className: "tags",
+    children: tags.map(tag => /*#__PURE__*/_reactJsxRuntime.jsxs("span", {
+      children: ["#", tag]
+    }, tag))
+  });
 }
 function Empty({
   text
 }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "empty"
-  }, text);
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+    className: "empty",
+    children: text
+  });
 }
 function FormGrid({
   children,
   className = ""
 }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: `form-grid ${className}`.trim()
-  }, children);
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
+    className: `form-grid ${className}`.trim(),
+    children: children
+  });
 }
 function Modal({
   title,
@@ -9783,29 +11026,38 @@ function Modal({
   onClose,
   hideClose
 }) {
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/_reactJsxRuntime.jsx("div", {
     className: "modal-backdrop",
     role: "dialog",
-    "aria-modal": "true"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "modal"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "modal-head"
-  }, /*#__PURE__*/React.createElement("h2", null, title), !hideClose && /*#__PURE__*/React.createElement("button", {
-    onClick: onClose
-  }, "閉じる")), children));
+    "aria-modal": "true",
+    children: /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+      className: "modal",
+      children: [/*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+        className: "modal-head",
+        children: [/*#__PURE__*/_reactJsxRuntime.jsx("h2", {
+          children: title
+        }), !hideClose && /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+          onClick: onClose,
+          children: "閉じる"
+        })]
+      }), children]
+    })
+  });
 }
 function ModalActions({
   onClose,
   onSave
 }) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "modal-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onClose
-  }, "キャンセル"), /*#__PURE__*/React.createElement("button", {
-    className: "primary",
-    onClick: onSave
-  }, "保存する"));
+  return /*#__PURE__*/_reactJsxRuntime.jsxs("div", {
+    className: "modal-actions",
+    children: [/*#__PURE__*/_reactJsxRuntime.jsx("button", {
+      onClick: onClose,
+      children: "キャンセル"
+    }), /*#__PURE__*/_reactJsxRuntime.jsx("button", {
+      className: "primary",
+      onClick: onSave,
+      children: "保存する"
+    })]
+  });
 }
-ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/_reactJsxRuntime.jsx(App, {}));
