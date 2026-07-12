@@ -131,6 +131,7 @@ type JournalCollage = {
   title: string;
   background: string;
   items: JournalItem[];
+  customBackgrounds?: AtelierImage[];
   createdAt: string;
   updatedAt: string;
 };
@@ -6864,6 +6865,7 @@ function JournalPage({ journal, setJournal, setScreen }: any) {
       title: title.trim() || defaultTitle,
       background: journal.background,
       items: journal.items.map((item: JournalItem) => ({ ...item, scale: item.scale || 1 })),
+      customBackgrounds: customBackgrounds.map((background: AtelierImage) => ({ ...background })),
       createdAt: now,
       updatedAt: now,
     };
@@ -6878,9 +6880,15 @@ function JournalPage({ journal, setJournal, setScreen }: any) {
     setJournal((current: JournalState) => {
       const collage = (current.savedCollages || []).find((item: JournalCollage) => item.id === id);
       if (!collage) return current;
+      const savedBackgrounds = collage.customBackgrounds || [];
+      const mergedBackgrounds = [
+        ...savedBackgrounds,
+        ...(current.customBackgrounds || []).filter((background: AtelierImage) => !savedBackgrounds.some((saved) => saved.id === background.id)),
+      ];
       return {
         ...current,
         background: collage.background,
+        customBackgrounds: mergedBackgrounds,
         items: collage.items.map((item: JournalItem) => ({ ...item, scale: item.scale || 1 })),
       };
     });
@@ -6898,6 +6906,90 @@ function JournalPage({ journal, setJournal, setScreen }: any) {
     if (!draggingId || !boardRef.current) return;
     const rect = boardRef.current.getBoundingClientRect();
     updateItem(draggingId, { x: event.clientX - rect.left - 60, y: event.clientY - rect.top - 60 });
+  };
+  const collectExportStyles = () => {
+    return Array.from(document.styleSheets).map((sheet) => {
+      try {
+        return Array.from(sheet.cssRules).map((rule) => rule.cssText).join("\n");
+      } catch {
+        return "";
+      }
+    }).join("\n");
+  };
+  const exportCurrentCollageAsPng = async () => {
+    if (!boardRef.current) return;
+    const board = boardRef.current;
+    const rect = board.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const clone = board.cloneNode(true) as HTMLElement;
+    clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+    clone.querySelectorAll(".journal-transform-controls").forEach((node) => node.remove());
+    clone.querySelectorAll(".journal-sticker.selected").forEach((node) => node.classList.remove("selected"));
+    clone.querySelectorAll("img").forEach((node) => {
+      const image = node as HTMLImageElement;
+      if (image.src) image.setAttribute("src", image.src);
+    });
+    clone.style.backgroundImage = clone.style.backgroundImage.replace(/url\((['"]?)(.*?)\1\)/g, (_match, quote, url) => {
+      if (!url || url.startsWith("data:") || url.startsWith("blob:")) return `url(${quote}${url}${quote})`;
+      return `url(${quote}${new URL(url, window.location.href).href}${quote})`;
+    });
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.margin = "0";
+    clone.style.boxSizing = "border-box";
+    const cssText = collectExportStyles().replace(/]]>/g, "]]]]><![CDATA[>");
+    const markup = new XMLSerializer().serializeToString(clone);
+    const svg = [
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}" viewBox="0 0 ${rect.width} ${rect.height}">`,
+      `<foreignObject width="100%" height="100%">`,
+      `<div xmlns="http://www.w3.org/1999/xhtml" style="width:${rect.width}px;height:${rect.height}px;margin:0;">`,
+      `<style><![CDATA[${cssText}\n.journal-transform-controls{display:none!important}.journal-sticker.selected{outline:none!important;box-shadow:none!important;}]]></style>`,
+      markup,
+      `</div>`,
+      `</foreignObject>`,
+      `</svg>`,
+    ].join("");
+    const svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          const ratio = Math.min(2, window.devicePixelRatio || 1);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(rect.width * ratio);
+          canvas.height = Math.round(rect.height * ratio);
+          const context = canvas.getContext("2d");
+          if (!context) {
+            reject(new Error("Canvas is not available."));
+            return;
+          }
+          context.setTransform(ratio, 0, 0, ratio, 0, 0);
+          context.drawImage(image, 0, 0, rect.width, rect.height);
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error("PNG export failed."));
+              return;
+            }
+            const dateLabel = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `prompt-atelier-journal-${dateLabel}.png`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            resolve();
+          }, "image/png");
+        };
+        image.onerror = () => reject(new Error("PNG export failed."));
+        image.src = svgUrl;
+      });
+    } catch {
+      window.alert("画像として保存できませんでした。別の画像で試すか、ページを再読み込みしてからもう一度お試しください。");
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
   };
   return (
     <section className="page journal-page">
@@ -6976,6 +7068,7 @@ function JournalPage({ journal, setJournal, setScreen }: any) {
           )}
           <div className="journal-collage-panel">
             <button className="primary" type="button" onClick={saveCurrentCollage}>コラージュを保存</button>
+            <button type="button" onClick={exportCurrentCollageAsPng}>PNGで保存</button>
             {savedCollages.length ? (
               <>
                 <label>保存済みコラージュ
@@ -7033,6 +7126,9 @@ function JournalPage({ journal, setJournal, setScreen }: any) {
             tabIndex={0}
             style={selectedCustomBackground ? { backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)), url(${imageSrc(selectedCustomBackground)})` } : undefined}
             onPointerMove={moveItem}
+            onPointerDown={(event) => {
+              if (event.target === event.currentTarget) setSelectedId("");
+            }}
             onPointerUp={() => setDraggingId("")}
             onPointerLeave={() => setDraggingId("")}
             onDragOver={(event) => event.preventDefault()}
